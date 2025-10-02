@@ -77,47 +77,84 @@ export default function Profile() {
     }
 
     try {
-      toast.loading("Gerando PDF...");
+      const loadingToast = toast.loading("Coletando dados...");
       
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(20);
-      doc.text('MedHora - Relatório de Saúde', 20, 20);
-      
-      // User Info
-      doc.setFontSize(12);
-      doc.text(`Email: ${userEmail}`, 20, 40);
-      doc.text(`Nome: ${profile.full_name || 'Não informado'}`, 20, 50);
-      
-      // Health Data
-      doc.setFontSize(16);
-      doc.text('Dados de Saúde', 20, 70);
-      doc.setFontSize(12);
-      doc.text(`Altura: ${profile.height_cm ? (profile.height_cm / 100).toFixed(2) + ' m' : 'Não informado'}`, 20, 85);
-      doc.text(`Peso: ${profile.weight_kg ? profile.weight_kg + ' kg' : 'Não informado'}`, 20, 95);
-      
-      if (bmi) {
-        doc.text(`IMC: ${bmi} - ${getBMIStatus(parseFloat(bmi))}`, 20, 105);
+      // Fetch all necessary data
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Usuário não autenticado");
+        return;
       }
+
+      // Fetch items with schedules and stock
+      const { data: items } = await supabase
+        .from("items")
+        .select(`
+          id,
+          name,
+          dose_text,
+          category,
+          with_food,
+          schedules (
+            id,
+            times,
+            freq_type
+          ),
+          stock (
+            units_left,
+            unit_label
+          )
+        `)
+        .eq("is_active", true)
+        .order("category")
+        .order("name");
+
+      // Format items data to match expected structure
+      const formattedItems = (items || []).map(item => ({
+        name: item.name,
+        dose_text: item.dose_text,
+        category: item.category,
+        with_food: item.with_food,
+        schedules: item.schedules || [],
+        stock: item.stock ? [item.stock] : undefined,
+      }));
+
+      // Fetch health history
+      const { data: healthHistory } = await supabase
+        .from("health_history")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("recorded_at", { ascending: false })
+        .limit(30);
+
+      toast.dismiss(loadingToast);
+      toast.loading("Gerando PDF...");
+
+      // Load logo as base64
+      const logoImage = await fetch('/src/assets/horamend-logo.png')
+        .then(res => res.blob())
+        .then(blob => new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        }))
+        .catch(() => undefined);
+
+      const { generateCompletePDF } = await import('@/lib/pdfExport');
       
-      // Subscription Info
-      doc.setFontSize(16);
-      doc.text('Informações de Assinatura', 20, 125);
-      doc.setFontSize(12);
-      doc.text(`Plano: ${isPremium ? 'Premium' : 'Gratuito'}`, 20, 140);
+      await generateCompletePDF({
+        userEmail,
+        profile,
+        bmi,
+        items: formattedItems,
+        healthHistory: healthHistory || [],
+      }, logoImage);
       
-      // Footer
-      doc.setFontSize(10);
-      doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 280);
-      
-      // Save
-      doc.save(`medhora-relatorio-${new Date().toISOString().split('T')[0]}.pdf`);
-      
+      toast.dismiss();
       toast.success("PDF gerado com sucesso!");
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
+      toast.dismiss();
       toast.error("Erro ao gerar PDF");
     }
   };
