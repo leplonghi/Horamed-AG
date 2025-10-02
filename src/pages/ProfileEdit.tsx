@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { ArrowLeft, Save } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AvatarUpload from "@/components/AvatarUpload";
 
 export default function ProfileEdit() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function ProfileEdit() {
     weight_kg: "",
     height_cm: "",
     birth_date: "",
+    avatar_url: null,
   });
 
   useEffect(() => {
@@ -30,6 +32,9 @@ export default function ProfileEdit() {
       if (!user) return;
       setUserEmail(user.email || "");
 
+      // Get Google avatar as fallback
+      const googleAvatar = user.user_metadata?.avatar_url;
+
       const { data } = await supabase
         .from("profiles")
         .select("*")
@@ -41,7 +46,13 @@ export default function ProfileEdit() {
           ...data,
           weight_kg: data.weight_kg?.toString() || "",
           height_cm: data.height_cm?.toString() || "",
+          avatar_url: data.avatar_url || googleAvatar || null,
         });
+      } else if (googleAvatar) {
+        setProfile((prev: any) => ({
+          ...prev,
+          avatar_url: googleAvatar,
+        }));
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -106,6 +117,15 @@ export default function ProfileEdit() {
           </Button>
           <h1 className="text-xl font-bold text-foreground">Dados Pessoais</h1>
         </div>
+
+        {/* Avatar Upload */}
+        <Card className="p-6">
+          <AvatarUpload
+            avatarUrl={profile.avatar_url}
+            userEmail={userEmail}
+            onUploadComplete={(url) => setProfile({ ...profile, avatar_url: url })}
+          />
+        </Card>
 
         {/* Email (Read-only) */}
         <Card className="p-4">
