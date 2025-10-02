@@ -8,6 +8,7 @@ import Rotina from "./pages/Rotina";
 import AddItem from "./pages/AddItem";
 import Charts from "./pages/Charts";
 import WeeklyCalendar from "./pages/WeeklyCalendar";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/rotina" element={<ProtectedRoute><Rotina /><Navigation /></ProtectedRoute>} />
           <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /><Navigation /></ProtectedRoute>} />
           <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
+          <Route path="/perfil" element={<ProtectedRoute><Profile /><Navigation /></ProtectedRoute>} />
           <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

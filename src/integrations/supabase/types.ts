@@ -101,6 +101,42 @@ export type Database = {
         }
         Relationships: []
       }
+      medical_exams: {
+        Row: {
+          created_at: string | null
+          exam_date: string | null
+          extracted_data: Json | null
+          file_name: string
+          file_url: string
+          id: string
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          exam_date?: string | null
+          extracted_data?: Json | null
+          file_name: string
+          file_url: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          exam_date?: string | null
+          extracted_data?: Json | null
+          file_name?: string
+          file_url?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string | null
@@ -131,6 +167,42 @@ export type Database = {
           user_id?: string
           whatsapp_enabled?: boolean | null
           whatsapp_number?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          birth_date: string | null
+          created_at: string | null
+          full_name: string | null
+          height_cm: number | null
+          id: string
+          updated_at: string | null
+          user_id: string
+          weight_kg: number | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          height_cm?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+          weight_kg?: number | null
+        }
+        Update: {
+          avatar_url?: string | null
+          birth_date?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          height_cm?: number | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+          weight_kg?: number | null
         }
         Relationships: []
       }

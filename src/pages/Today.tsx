@@ -32,6 +32,12 @@ export default function Today() {
   const [lowStockItems, setLowStockItems] = useState<LowStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
+  const [stats, setStats] = useState({
+    totalToday: 0,
+    completed: 0,
+    pending: 0,
+    lowStock: 0,
+  });
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -108,6 +114,50 @@ export default function Today() {
       toast.error("Erro ao carregar dados de hoje");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const { data: todayDoses } = await supabase
+        .from("dose_instances")
+        .select(`
+          *,
+          items!inner(user_id)
+        `)
+        .eq("items.user_id", user.id)
+        .gte("due_at", today.toISOString())
+        .lt("due_at", tomorrow.toISOString());
+
+      const completed = todayDoses?.filter((d) => d.status === "taken").length || 0;
+      const pending = todayDoses?.filter((d) => d.status === "scheduled").length || 0;
+
+      const { data: stockData } = await supabase
+        .from("stock")
+        .select(`
+          *,
+          items!inner(user_id)
+        `)
+        .eq("items.user_id", user.id);
+
+      const lowStock = stockData?.filter((s) => s.units_left < s.units_total * 0.2).length || 0;
+
+      setStats({
+        totalToday: todayDoses?.length || 0,
+        completed,
+        pending,
+        lowStock,
+      });
+    } catch (error) {
+      console.error("Error loading stats:", error);
     }
   };
 

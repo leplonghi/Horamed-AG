@@ -1,1 +1,7 @@
 project_id = "zmsuqdwleyqpdthaqvbi"
+
+[functions.extract-medication]
+verify_jwt = false
+
+[functions.extract-exam]
+verify_jwt = false
