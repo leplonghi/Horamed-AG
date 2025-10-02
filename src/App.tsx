@@ -10,6 +10,10 @@ import Charts from "./pages/Charts";
 import WeeklyCalendar from "./pages/WeeklyCalendar";
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
+import Notifications from "./pages/Notifications";
+import Privacy from "./pages/Privacy";
+import CalendarIntegration from "./pages/CalendarIntegration";
+import HelpSupport from "./pages/HelpSupport";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Plans from "./pages/Plans";
@@ -31,7 +35,11 @@ const App = () => (
           <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /><Navigation /></ProtectedRoute>} />
           <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><Profile /><Navigation /></ProtectedRoute>} />
-          <Route path="/perfil/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+          <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+          <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+          <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
+          <Route path="/calendar-integration" element={<ProtectedRoute><CalendarIntegration /></ProtectedRoute>} />
+          <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
           <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
           <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

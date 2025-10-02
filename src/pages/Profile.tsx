@@ -174,7 +174,7 @@ export default function Profile() {
               </button>
 
               <button 
-                onClick={() => toast.info("Em desenvolvimento")}
+                onClick={() => navigate('/notifications')}
                 className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
               >
                 <Bell className="h-5 w-5 text-primary" />
@@ -183,7 +183,7 @@ export default function Profile() {
               </button>
 
               <button 
-                onClick={() => toast.info("Em desenvolvimento")}
+                onClick={() => navigate('/privacy')}
                 className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
               >
                 <Shield className="h-5 w-5 text-primary" />
@@ -192,7 +192,7 @@ export default function Profile() {
               </button>
 
               <button 
-                onClick={() => toast.info("Em desenvolvimento")}
+                onClick={() => navigate('/calendar-integration')}
                 className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
               >
                 <Calendar className="h-5 w-5 text-primary" />
@@ -210,7 +210,7 @@ export default function Profile() {
               </button>
 
               <button 
-                onClick={() => toast.info("Em desenvolvimento")}
+                onClick={() => navigate('/help-support')}
                 className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
               >
                 <HelpCircle className="h-5 w-5 text-primary" />

@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Pill } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
 import logo from "@/assets/horamend-logo.png";
 
 export default function AddItem() {
@@ -26,6 +27,7 @@ export default function AddItem() {
   const isEditing = searchParams.get("edit");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [addMethod, setAddMethod] = useState<"manual" | "ocr">("manual");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -374,6 +376,32 @@ export default function AddItem() {
               </p>
             </div>
           </div>
+
+          {!isEditing && (
+            <Tabs value={addMethod} onValueChange={(v) => setAddMethod(v as "manual" | "ocr")} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="manual">Manual</TabsTrigger>
+                <TabsTrigger value="ocr">Ler Receita (IA)</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="ocr" className="mt-4">
+                <Card className="p-6">
+                  <MedicationOCRWrapper
+                    onResult={(result) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: result.name,
+                        dose_text: result.dose || "",
+                        category: result.category || "medicamento",
+                      }));
+                      setAddMethod("manual");
+                      toast.success("Dados extraídos! Complete as informações abaixo.");
+                    }}
+                  />
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <Card className="p-6 space-y-6">
