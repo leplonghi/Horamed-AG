@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,8 +15,6 @@ export default function Notifications() {
   const [preferences, setPreferences] = useState({
     email_enabled: true,
     push_enabled: true,
-    whatsapp_enabled: false,
-    whatsapp_number: "",
   });
 
   useEffect(() => {
@@ -39,8 +36,6 @@ export default function Notifications() {
         setPreferences({
           email_enabled: data.email_enabled,
           push_enabled: data.push_enabled,
-          whatsapp_enabled: data.whatsapp_enabled,
-          whatsapp_number: data.whatsapp_number || "",
         });
       }
     } catch (error) {
@@ -118,38 +113,6 @@ export default function Notifications() {
               />
             </div>
 
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="whatsapp">WhatsApp</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receber lembretes via WhatsApp
-                  </p>
-                </div>
-                <Switch
-                  id="whatsapp"
-                  checked={preferences.whatsapp_enabled}
-                  onCheckedChange={(checked) =>
-                    setPreferences({ ...preferences, whatsapp_enabled: checked })
-                  }
-                />
-              </div>
-
-              {preferences.whatsapp_enabled && (
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp-number">Número do WhatsApp</Label>
-                  <Input
-                    id="whatsapp-number"
-                    type="tel"
-                    placeholder="(00) 00000-0000"
-                    value={preferences.whatsapp_number}
-                    onChange={(e) =>
-                      setPreferences({ ...preferences, whatsapp_number: e.target.value })
-                    }
-                  />
-                </div>
-              )}
-            </div>
           </Card>
 
           <Button

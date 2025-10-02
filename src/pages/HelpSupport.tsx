@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Mail, MessageCircle, FileText, ExternalLink } from "lucide-react";
+import { ArrowLeft, Mail, FileText, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
@@ -18,9 +18,6 @@ export default function HelpSupport() {
     window.location.href = "mailto:suporte@horamed.com.br";
   };
 
-  const handleWhatsApp = () => {
-    toast.info("WhatsApp em breve!");
-  };
 
   return (
     <>
@@ -57,23 +54,6 @@ export default function HelpSupport() {
               </button>
             </Card>
 
-            <Card className="p-4 hover:bg-accent/50 transition-colors">
-              <button
-                onClick={handleWhatsApp}
-                className="w-full text-left flex items-center justify-between"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">WhatsApp</p>
-                    <p className="text-sm text-muted-foreground">Chat direto com suporte</p>
-                  </div>
-                </div>
-                <ExternalLink className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </Card>
           </div>
 
           <Card className="p-6 space-y-4">
@@ -129,8 +109,6 @@ export default function HelpSupport() {
               <span className="font-semibold">Tempo de resposta:</span>
               <br />
               E-mail: até 24 horas úteis
-              <br />
-              WhatsApp: resposta imediata (horário comercial)
             </p>
           </Card>
         </div>

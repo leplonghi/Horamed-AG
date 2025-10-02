@@ -12,7 +12,7 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import Notifications from "./pages/Notifications";
 import Privacy from "./pages/Privacy";
-import CalendarIntegration from "./pages/CalendarIntegration";
+
 import HelpSupport from "./pages/HelpSupport";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -38,7 +38,7 @@ const App = () => (
           <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
           <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
-          <Route path="/calendar-integration" element={<ProtectedRoute><CalendarIntegration /></ProtectedRoute>} />
+          
           <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
           <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
           <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />

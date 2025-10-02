@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
-  CheckCircle2, User, Bell, Shield, Calendar, CreditCard, 
+  CheckCircle2, User, Bell, Shield, CreditCard, 
   HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -142,10 +142,6 @@ export default function Profile() {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <span>Integração de calendário</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
                   <span>Backup e restauração</span>
                 </div>
               </div>
@@ -191,14 +187,6 @@ export default function Profile() {
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
 
-              <button 
-                onClick={() => navigate('/calendar-integration')}
-                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
-              >
-                <Calendar className="h-5 w-5 text-primary" />
-                <span className="flex-1 text-left text-foreground">Integração de calendário</span>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
 
               <button 
                 onClick={() => navigate('/planos')}
