@@ -7,14 +7,6 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://horamed.lovable.app?forceHideBadge=true',
     cleartext: true
-  },
-  plugins: {
-    BiometricAuth: {
-      androidTitle: 'Autenticação Biométrica',
-      androidSubtitle: 'Use sua digital ou Face ID',
-      androidConfirmationRequired: false,
-      androidBiometryStrength: 1,
-    }
   }
 };
 

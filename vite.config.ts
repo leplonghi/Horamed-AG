@@ -21,12 +21,11 @@ export default defineConfig(({ mode }) => ({
         '@capacitor/core',
         '@capacitor/app',
         '@capacitor/android',
-        '@capacitor/ios',
-        '@aparajita/capacitor-biometric-auth'
+        '@capacitor/ios'
       ]
     }
   },
   optimizeDeps: {
-    exclude: ['@capacitor/core', '@capacitor/app', '@aparajita/capacitor-biometric-auth']
+    exclude: ['@capacitor/core', '@capacitor/app']
   }
 }));

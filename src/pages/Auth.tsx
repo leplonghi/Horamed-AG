@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,9 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Mail, Chrome, Fingerprint } from "lucide-react";
+import { Mail, Chrome } from "lucide-react";
 import logo from "@/assets/horamend-logo.png";
 import { z } from "zod";
-import { useBiometric } from "@/hooks/useBiometric";
 
 const passwordSchema = z.string()
   .min(8, "A senha deve ter no mínimo 8 caracteres")
@@ -23,17 +22,6 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { isAvailable, isNativePlatform, authenticate, getBiometryName } = useBiometric();
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-
-  useEffect(() => {
-    // Check if user has biometric credentials saved
-    const checkBiometricSetup = async () => {
-      const hasBiometric = localStorage.getItem('biometric_enabled');
-      setBiometricEnabled(hasBiometric === 'true');
-    };
-    checkBiometricSetup();
-  }, []);
 
   const handleGoogleLogin = async () => {
     try {
@@ -104,15 +92,7 @@ export default function Auth() {
 
       if (error) throw error;
       
-      // If biometric is available and not yet enabled, offer to enable it
-      if (isAvailable && isNativePlatform && !biometricEnabled) {
-        localStorage.setItem('biometric_email', email);
-        localStorage.setItem('biometric_enabled', 'true');
-        setBiometricEnabled(true);
-        toast.success(`Login realizado! ${getBiometryName()} ativada 💚`);
-      } else {
-        toast.success("Login realizado! 💚");
-      }
+      toast.success("Login realizado! 💚");
       
       navigate("/");
     } catch (error: any) {
@@ -123,38 +103,6 @@ export default function Auth() {
     }
   };
 
-  const handleBiometricLogin = async () => {
-    try {
-      setLoading(true);
-      
-      // Authenticate with biometrics
-      await authenticate(`Use ${getBiometryName()} para entrar no HoraMed`);
-      
-      // Get stored email
-      const storedEmail = localStorage.getItem('biometric_email');
-      if (!storedEmail) {
-        toast.error("Credenciais biométricas não encontradas. Faça login com e-mail primeiro.");
-        return;
-      }
-
-      // Get current session or prompt for password
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        toast.success("Login realizado com biometria! 💚");
-        navigate("/");
-      } else {
-        toast.error("Sessão expirada. Faça login com e-mail novamente.");
-        localStorage.removeItem('biometric_enabled');
-        setBiometricEnabled(false);
-      }
-    } catch (error: any) {
-      console.error("Biometric login error:", error);
-      toast.error("Falha na autenticação biométrica");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -229,30 +177,6 @@ export default function Auth() {
               <Chrome className="h-4 w-4 mr-2" />
               Entrar com Google
             </Button>
-
-            {isAvailable && isNativePlatform && biometricEnabled && (
-              <>
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">ou</span>
-                  </div>
-                </div>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleBiometricLogin}
-                  disabled={loading}
-                  className="w-full"
-                >
-                  <Fingerprint className="h-4 w-4 mr-2" />
-                  Entrar com {getBiometryName()}
-                </Button>
-              </>
-            )}
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4">
