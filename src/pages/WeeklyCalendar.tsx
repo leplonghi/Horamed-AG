@@ -146,8 +146,8 @@ export default function WeeklyCalendar() {
             <h1 className="text-2xl font-bold text-foreground">HoraMed</h1>
           </div>
 
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">Calendário 📅</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-foreground">Calendário</h2>
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -165,6 +165,24 @@ export default function WeeklyCalendar() {
               </Button>
             </div>
           </div>
+
+          <Card className="p-4 mb-4">
+            <h3 className="text-sm font-semibold mb-3 text-foreground">Legenda</h3>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-primary"></div>
+                <span className="text-sm text-muted-foreground">Tomado</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-destructive"></div>
+                <span className="text-sm text-muted-foreground">Esquecido</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-muted"></div>
+                <span className="text-sm text-muted-foreground">Pulado</span>
+              </div>
+            </div>
+          </Card>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
             {weekDays.map((day) => {
@@ -201,7 +219,11 @@ export default function WeeklyCalendar() {
                             key={dose.id}
                             className={`p-2 rounded-lg border ${
                               dose.status === "taken"
-                                ? "bg-success/10 border-success/20"
+                                ? "bg-primary/10 border-primary/20"
+                                : dose.status === "missed"
+                                ? "bg-destructive/10 border-destructive/20"
+                                : dose.status === "skipped"
+                                ? "bg-muted border-muted"
                                 : "bg-card border-border"
                             }`}
                           >
@@ -221,9 +243,9 @@ export default function WeeklyCalendar() {
                                 onClick={() => toggleDoseStatus(dose.id, dose.status)}
                               >
                                 {dose.status === "taken" ? (
-                                  <CheckCircle2 className="h-3 w-3 text-success" />
+                                  <CheckCircle2 className="h-3 w-3 text-primary" />
                                 ) : (
-                                  <Circle className="h-3 w-3 text-muted-foreground" />
+                                  <Circle className="h-3 w-3 text-primary" />
                                 )}
                               </Button>
                             </div>

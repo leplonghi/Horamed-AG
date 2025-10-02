@@ -298,8 +298,8 @@ export default function Today() {
           </div>
 
           <div className="space-y-1">
-            <h2 className="text-3xl font-bold text-foreground">
-              {greeting}{profile?.nickname ? `, ${profile.nickname}` : ""}! 👋
+            <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
+              {greeting}{profile?.nickname ? `, ${profile.nickname}` : ""}! <span className="text-primary">👋</span>
             </h2>
             <p className="text-muted-foreground">
               {format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
@@ -310,31 +310,31 @@ export default function Today() {
           {profile && (profile.birth_date || profile.weight_kg || profile.height_cm) && (
             <div className="grid grid-cols-3 gap-3">
               {profile.birth_date && (
-                <Card className="p-4 bg-blue-50 border-blue-200">
+                <Card className="p-4 bg-primary/10 border-primary/20">
                   <div className="flex flex-col gap-1">
-                    <User className="h-5 w-5 text-blue-600 mb-1" />
+                    <div className="text-2xl text-primary">🎂</div>
                     <p className="text-xs text-muted-foreground">Idade</p>
-                    <p className="text-xl font-bold text-blue-600">
+                    <p className="text-xl font-bold text-foreground">
                       {differenceInYears(new Date(), new Date(profile.birth_date))} anos
                     </p>
                   </div>
                 </Card>
               )}
               {profile.weight_kg && (
-                <Card className="p-4 bg-green-50 border-green-200">
+                <Card className="p-4 bg-primary/10 border-primary/20">
                   <div className="flex flex-col gap-1">
-                    <Activity className="h-5 w-5 text-green-600 mb-1" />
+                    <div className="text-2xl text-primary">⚖️</div>
                     <p className="text-xs text-muted-foreground">Peso</p>
-                    <p className="text-xl font-bold text-green-600">{profile.weight_kg} kg</p>
+                    <p className="text-xl font-bold text-foreground">{profile.weight_kg} kg</p>
                   </div>
                 </Card>
               )}
               {profile.height_cm && (
-                <Card className="p-4 bg-purple-50 border-purple-200">
+                <Card className="p-4 bg-primary/10 border-primary/20">
                   <div className="flex flex-col gap-1">
-                    <Ruler className="h-5 w-5 text-purple-600 mb-1" />
+                    <div className="text-2xl text-primary">📏</div>
                     <p className="text-xs text-muted-foreground">Altura</p>
-                    <p className="text-xl font-bold text-purple-600">{(profile.height_cm / 100).toFixed(2)} m</p>
+                    <p className="text-xl font-bold text-foreground">{(profile.height_cm / 100).toFixed(2)} m</p>
                   </div>
                 </Card>
               )}
@@ -343,10 +343,10 @@ export default function Today() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="p-4 bg-success/5 border-success/20">
+            <Card className="p-4 bg-primary/10 border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <TrendingUp className="h-5 w-5 text-success" />
+              <div className="p-2 rounded-lg bg-primary/20">
+                <TrendingUp className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Adesão semanal</p>
@@ -355,9 +355,9 @@ export default function Today() {
             </div>
           </Card>
 
-          <Card className="p-4 bg-primary/5 border-primary/20">
+          <Card className="p-4 bg-primary/10 border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div className="p-2 rounded-lg bg-primary/20">
                 <Pill className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -367,10 +367,10 @@ export default function Today() {
             </div>
           </Card>
 
-          <Card className="p-4 bg-warning/5 border-warning/20">
+          <Card className="p-4 bg-primary/10 border-primary/20">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Package className="h-5 w-5 text-warning" />
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Acabando</p>
@@ -411,8 +411,8 @@ export default function Today() {
                         </p>
                       )}
                       {dose.items.with_food && (
-                        <p className="text-xs text-accent font-medium">
-                          🍽️ Tomar com alimento
+                        <p className="text-xs text-primary font-medium">
+                          <span className="text-primary">🍽️</span> Tomar com alimento
                         </p>
                       )}
                     </div>
@@ -462,14 +462,14 @@ export default function Today() {
           {lowStockItems.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Package className="h-5 w-5 text-warning" />
+                <Package className="h-5 w-5 text-primary" />
                 Estoque baixo
               </h2>
 
               {lowStockItems.map((item) => (
                 <Card
                   key={item.id}
-                  className="p-4 bg-warning/5 border-warning/30"
+                  className="p-4 bg-primary/5 border-primary/20"
                 >
                 <div className="flex items-center justify-between">
                   <div>
@@ -479,7 +479,7 @@ export default function Today() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium text-warning">
+                    <p className="text-sm font-medium text-primary">
                       {item.projected_days_left}{" "}
                       {item.projected_days_left === 1 ? "dia" : "dias"}
                     </p>

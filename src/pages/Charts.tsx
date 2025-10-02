@@ -159,55 +159,43 @@ export default function Charts() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <Card className="p-5 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
-            <div className="flex flex-col gap-2">
-              <div className="p-2 rounded-lg bg-white/20 w-fit">
-                <Target className="h-5 w-5" />
-              </div>
+          <Card className="p-4 bg-primary/10 border-primary/20">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Adesão Semanal</p>
-                <p className="text-4xl font-bold">{stats.weeklyAdherence}%</p>
-                <p className="text-xs text-white/70">últimos 7 dias</p>
+                <p className="text-sm text-muted-foreground">Total de Itens</p>
+                <p className="text-3xl font-bold text-foreground">{stats.totalDoses}</p>
               </div>
+              <Pill className="h-10 w-10 text-primary" />
             </div>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-green-500 to-green-600 text-white">
-            <div className="flex flex-col gap-2">
-              <div className="p-2 rounded-lg bg-white/20 w-fit">
-                <Pill className="h-5 w-5" />
-              </div>
+          <Card className="p-4 bg-primary/10 border-primary/20">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Sequência</p>
-                <p className="text-4xl font-bold">{stats.streak}</p>
-                <p className="text-xs text-white/70">dias seguidos</p>
+                <p className="text-sm text-muted-foreground">Doses Tomadas</p>
+                <p className="text-3xl font-bold text-foreground">{stats.takenDoses}</p>
               </div>
+              <Target className="h-10 w-10 text-primary" />
             </div>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-orange-500 to-orange-600 text-white">
-            <div className="flex flex-col gap-2">
-              <div className="p-2 rounded-lg bg-white/20 w-fit">
-                <Clock className="h-5 w-5" />
-              </div>
+          <Card className="p-4 bg-primary/10 border-primary/20">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Atraso Médio</p>
-                <p className="text-4xl font-bold">8</p>
-                <p className="text-xs text-white/70">minutos</p>
+                <p className="text-sm text-muted-foreground">Taxa de Adesão</p>
+                <p className="text-3xl font-bold text-foreground">{stats.weeklyAdherence}%</p>
               </div>
+              <TrendingUp className="h-10 w-10 text-primary" />
             </div>
           </Card>
 
-          <Card className="p-5 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
-            <div className="flex flex-col gap-2">
-              <div className="p-2 rounded-lg bg-white/20 w-fit">
-                <Calendar className="h-5 w-5" />
-              </div>
+          <Card className="p-4 bg-primary/10 border-primary/20">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Adesão Mensal</p>
-                <p className="text-4xl font-bold">89%</p>
-                <p className="text-xs text-white/70">últimos 30 dias</p>
+                <p className="text-sm text-muted-foreground">Sequência</p>
+                <p className="text-3xl font-bold text-foreground">{stats.streak} dias</p>
               </div>
+              <Calendar className="h-10 w-10 text-primary" />
             </div>
           </Card>
         </div>
@@ -228,8 +216,8 @@ export default function Charts() {
                   </div>
                   <div className="text-right">
                     <p className={`text-2xl font-bold ${
-                      slot.adherence >= 90 ? "text-success" :
-                      slot.adherence >= 70 ? "text-warning" : "text-destructive"
+                      slot.adherence >= 90 ? "text-primary" :
+                      slot.adherence >= 70 ? "text-primary/70" : "text-primary/50"
                     }`}>
                       {slot.adherence}%
                     </p>
@@ -239,8 +227,8 @@ export default function Charts() {
                 <div className="h-2 bg-muted rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
-                      slot.adherence >= 90 ? "bg-success" :
-                      slot.adherence >= 70 ? "bg-warning" : "bg-destructive"
+                      slot.adherence >= 90 ? "bg-primary" :
+                      slot.adherence >= 70 ? "bg-primary/70" : "bg-primary/50"
                     }`}
                     style={{ width: `${slot.adherence}%` }}
                   />
@@ -254,18 +242,18 @@ export default function Charts() {
         {missedItems.length > 0 && (
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-warning" />
+              <AlertCircle className="h-5 w-5 text-primary" />
               Itens Mais Esquecidos
             </h3>
             <div className="space-y-3">
               {missedItems.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-warning/5 rounded-lg border border-warning/20">
+                <div key={i} className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-sm text-muted-foreground">{item.time}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-warning">{item.count} faltas</p>
+                    <p className="text-lg font-bold text-primary">{item.count} faltas</p>
                   </div>
                 </div>
               ))}
@@ -274,12 +262,12 @@ export default function Charts() {
         )}
 
         {/* Insights */}
-        <Card className="p-6 bg-blue-50 border-blue-200">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-blue-700">
+        <Card className="p-6 bg-primary/5 border-primary/20">
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-primary">
             <Lightbulb className="h-5 w-5" />
             Insights
           </h3>
-          <ul className="space-y-2 text-sm text-blue-900">
+          <ul className="space-y-2 text-sm text-foreground">
             <li className="flex gap-2">
               <span>•</span>
               <span>Sua adesão está {stats.weeklyAdherence >= 80 ? "excelente" : "precisando melhorar"}! Continue assim.</span>
