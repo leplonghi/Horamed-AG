@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill } from "lucide-react";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO } from "date-fns";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill, XCircle, SkipForward } from "lucide-react";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO, isBefore } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
+import DoseStatusDialog from "@/components/DoseStatusDialog";
 
 interface DoseInstance {
   id: string;
@@ -24,10 +25,39 @@ export default function WeeklyCalendar() {
   );
   const [doses, setDoses] = useState<DoseInstance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDose, setSelectedDose] = useState<{ id: string; name: string } | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchWeekDoses();
   }, [currentWeekStart]);
+
+  useEffect(() => {
+    // Mark past scheduled doses as missed automatically
+    markPastDosesAsMissed();
+  }, [doses]);
+
+  const markPastDosesAsMissed = async () => {
+    try {
+      const now = new Date();
+      const pastScheduledDoses = doses.filter(
+        (dose) => dose.status === 'scheduled' && isBefore(parseISO(dose.due_at), now)
+      );
+
+      if (pastScheduledDoses.length > 0) {
+        const doseIds = pastScheduledDoses.map((d) => d.id);
+        await supabase
+          .from("dose_instances")
+          .update({ status: 'missed' })
+          .in('id', doseIds);
+        
+        // Refresh data
+        fetchWeekDoses();
+      }
+    } catch (error) {
+      console.error("Error marking past doses as missed:", error);
+    }
+  };
 
   const fetchWeekDoses = async () => {
     try {
@@ -56,47 +86,35 @@ export default function WeeklyCalendar() {
     }
   };
 
-  const toggleDoseStatus = async (doseId: string, currentStatus: string) => {
+  const handleDoseClick = (doseId: string, doseName: string) => {
+    setSelectedDose({ id: doseId, name: doseName });
+    setDialogOpen(true);
+  };
+
+  const updateDoseStatus = async (doseId: string, newStatus: 'taken' | 'missed' | 'skipped') => {
     try {
-      const newStatus = currentStatus === "taken" ? "scheduled" : "taken";
       const updateData: any = { status: newStatus };
       
-      if (newStatus === "taken") {
+      const dose = doses.find(d => d.id === doseId);
+      if (!dose) return;
+
+      if (newStatus === 'taken') {
         updateData.taken_at = new Date().toISOString();
         
-        const dose = doses.find(d => d.id === doseId);
-        if (dose) {
-          const { data: stockData } = await supabase
-            .from("stock")
-            .select("units_left")
-            .eq("item_id", dose.item_id)
-            .single();
+        const { data: stockData } = await supabase
+          .from("stock")
+          .select("units_left")
+          .eq("item_id", dose.item_id)
+          .single();
 
-          if (stockData && stockData.units_left > 0) {
-            await supabase
-              .from("stock")
-              .update({ units_left: stockData.units_left - 1 })
-              .eq("item_id", dose.item_id);
-          }
+        if (stockData && stockData.units_left > 0) {
+          await supabase
+            .from("stock")
+            .update({ units_left: stockData.units_left - 1 })
+            .eq("item_id", dose.item_id);
         }
       } else {
         updateData.taken_at = null;
-        
-        const dose = doses.find(d => d.id === doseId);
-        if (dose) {
-          const { data: stockData } = await supabase
-            .from("stock")
-            .select("units_left, units_total")
-            .eq("item_id", dose.item_id)
-            .single();
-
-          if (stockData && stockData.units_left < stockData.units_total) {
-            await supabase
-              .from("stock")
-              .update({ units_left: stockData.units_left + 1 })
-              .eq("item_id", dose.item_id);
-          }
-        }
       }
 
       const { error } = await supabase
@@ -106,10 +124,11 @@ export default function WeeklyCalendar() {
 
       if (error) throw error;
       
-      toast.success(newStatus === "taken" ? "Dose marcada como tomada! 💚" : "Dose desmarcada");
+      const statusText = newStatus === 'taken' ? 'tomada' : newStatus === 'missed' ? 'esquecida' : 'pulada';
+      toast.success(`Dose marcada como ${statusText}! ${newStatus === 'taken' ? '💚' : ''}`);
       fetchWeekDoses();
     } catch (error) {
-      console.error("Error toggling dose status:", error);
+      console.error("Error updating dose status:", error);
       toast.error("Erro ao atualizar status da dose");
     }
   };
@@ -215,9 +234,10 @@ export default function WeeklyCalendar() {
                         </p>
                       ) : (
                         dayDoses.map((dose) => (
-                          <div
+                          <button
                             key={dose.id}
-                            className={`p-2 rounded-lg border ${
+                            onClick={() => handleDoseClick(dose.id, dose.items.name)}
+                            className={`w-full p-2 rounded-lg border text-left transition-all hover:scale-105 ${
                               dose.status === "taken"
                                 ? "bg-primary/10 border-primary/20"
                                 : dose.status === "missed"
@@ -236,20 +256,20 @@ export default function WeeklyCalendar() {
                                   {format(parseISO(dose.due_at), "HH:mm")}
                                 </p>
                               </div>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-5 w-5 flex-shrink-0"
-                                onClick={() => toggleDoseStatus(dose.id, dose.status)}
-                              >
-                                {dose.status === "taken" ? (
-                                  <CheckCircle2 className="h-3 w-3 text-primary" />
-                                ) : (
-                                  <Circle className="h-3 w-3 text-primary" />
-                                )}
-                              </Button>
+                              {dose.status === "taken" && (
+                                <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
+                              )}
+                              {dose.status === "missed" && (
+                                <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
+                              )}
+                              {dose.status === "skipped" && (
+                                <SkipForward className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                              )}
+                              {dose.status === "scheduled" && (
+                                <Circle className="h-3 w-3 text-primary flex-shrink-0" />
+                              )}
                             </div>
-                          </div>
+                          </button>
                         ))
                       )}
                     </div>
@@ -261,6 +281,15 @@ export default function WeeklyCalendar() {
         </div>
       </div>
       <Navigation />
+      
+      {selectedDose && (
+        <DoseStatusDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          doseName={selectedDose.name}
+          onSelectStatus={(status) => updateDoseStatus(selectedDose.id, status)}
+        />
+      )}
     </>
   );
 }

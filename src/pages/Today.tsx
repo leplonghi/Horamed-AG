@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Clock, Pill, TrendingUp, Package, User, Activity, Ruler } from "lucide-react";
 import { toast } from "sonner";
-import { format, parseISO, differenceInYears } from "date-fns";
+import { format, parseISO, differenceInYears, subDays, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
 import AdBanner from "@/components/AdBanner";
+import AdherenceChart from "@/components/AdherenceChart";
 
 interface DoseInstance {
   id: string;
@@ -44,11 +45,13 @@ export default function Today() {
   const [greeting, setGreeting] = useState("");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [weeklyAdherence, setWeeklyAdherence] = useState<{ day: string; taken: number; total: number }[]>([]);
   const [stats, setStats] = useState({
     totalToday: 0,
     completed: 0,
     pending: 0,
     lowStock: 0,
+    weeklyAdherence: 0,
   });
 
   useEffect(() => {
@@ -59,6 +62,8 @@ export default function Today() {
 
     fetchTodayData();
     fetchProfile();
+    loadStats();
+    loadWeeklyAdherence();
 
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -155,6 +160,43 @@ export default function Today() {
     }
   };
 
+  const loadWeeklyAdherence = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const weekData = [];
+      for (let i = 6; i >= 0; i--) {
+        const day = startOfDay(subDays(new Date(), i));
+        const nextDay = new Date(day);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        const { data: doses } = await supabase
+          .from("dose_instances")
+          .select(`
+            *,
+            items!inner(user_id)
+          `)
+          .eq("items.user_id", user.id)
+          .gte("due_at", day.toISOString())
+          .lt("due_at", nextDay.toISOString());
+
+        const total = doses?.length || 0;
+        const taken = doses?.filter((d) => d.status === "taken").length || 0;
+
+        weekData.push({
+          day: format(day, "EEE", { locale: ptBR }),
+          taken,
+          total,
+        });
+      }
+
+      setWeeklyAdherence(weekData);
+    } catch (error) {
+      console.error("Error loading weekly adherence:", error);
+    }
+  };
+
   const loadStats = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -178,6 +220,21 @@ export default function Today() {
       const completed = todayDoses?.filter((d) => d.status === "taken").length || 0;
       const pending = todayDoses?.filter((d) => d.status === "scheduled").length || 0;
 
+      // Calculate weekly adherence
+      const last7Days = subDays(new Date(), 7);
+      const { data: weekDoses } = await supabase
+        .from("dose_instances")
+        .select(`
+          *,
+          items!inner(user_id)
+        `)
+        .eq("items.user_id", user.id)
+        .gte("due_at", last7Days.toISOString());
+
+      const weekTotal = weekDoses?.length || 0;
+      const weekTaken = weekDoses?.filter((d) => d.status === "taken").length || 0;
+      const weeklyAdherence = weekTotal > 0 ? Math.round((weekTaken / weekTotal) * 100) : 0;
+
       const { data: stockData } = await supabase
         .from("stock")
         .select(`
@@ -193,6 +250,7 @@ export default function Today() {
         completed,
         pending,
         lowStock,
+        weeklyAdherence,
       });
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -353,7 +411,7 @@ export default function Today() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Adesão semanal</p>
-                <p className="text-2xl font-bold text-foreground">92%</p>
+                <p className="text-2xl font-bold text-foreground">{stats.weeklyAdherence}%</p>
               </div>
             </div>
           </Card>
@@ -382,6 +440,11 @@ export default function Today() {
             </div>
           </Card>
         </div>
+
+          {/* Weekly Adherence Chart */}
+          {weeklyAdherence.length > 0 && (
+            <AdherenceChart weeklyData={weeklyAdherence} />
+          )}
 
           {/* Upcoming Doses */}
           <div className="space-y-3">

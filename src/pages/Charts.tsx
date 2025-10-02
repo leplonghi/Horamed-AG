@@ -22,6 +22,13 @@ interface MissedItem {
   time: string;
 }
 
+interface HealthData {
+  date: string;
+  weight: number | null;
+  height: number | null;
+  bmi: number | null;
+}
+
 export default function Charts() {
   const [stats, setStats] = useState({
     weeklyAdherence: 0,
@@ -31,6 +38,7 @@ export default function Charts() {
   });
   const [timeSlotStats, setTimeSlotStats] = useState<TimeSlotStats[]>([]);
   const [missedItems, setMissedItems] = useState<MissedItem[]>([]);
+  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { hasFeature } = useSubscription();
@@ -41,8 +49,37 @@ export default function Charts() {
       setShowUpgradeModal(true);
     } else {
       loadStats();
+      loadHealthData();
     }
   }, [hasFeature]);
+
+  const loadHealthData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("weight_kg, height_cm")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile) {
+        const bmi = profile.weight_kg && profile.height_cm 
+          ? profile.weight_kg / Math.pow(profile.height_cm / 100, 2)
+          : null;
+
+        setHealthData({
+          date: new Date().toISOString(),
+          weight: profile.weight_kg,
+          height: profile.height_cm,
+          bmi,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading health data:", error);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -323,6 +360,46 @@ export default function Charts() {
             )}
           </ul>
         </Card>
+
+        {/* Health Data Stats */}
+        {healthData && (healthData.weight || healthData.height) && (
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Dados de Saúde
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {healthData.weight && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-1">Peso Atual</p>
+                  <p className="text-3xl font-bold text-foreground">{healthData.weight}</p>
+                  <p className="text-xs text-muted-foreground">kg</p>
+                </div>
+              )}
+              {healthData.height && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-1">Altura</p>
+                  <p className="text-3xl font-bold text-foreground">{(healthData.height / 100).toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">m</p>
+                </div>
+              )}
+              {healthData.bmi && (
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <p className="text-sm text-muted-foreground mb-1">IMC</p>
+                  <p className="text-3xl font-bold text-primary">{healthData.bmi.toFixed(1)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {healthData.bmi < 18.5 ? 'Abaixo do peso' :
+                     healthData.bmi < 25 ? 'Peso normal' :
+                     healthData.bmi < 30 ? 'Sobrepeso' : 'Obesidade'}
+                  </p>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              💡 Mantenha seus dados atualizados no perfil para acompanhar sua evolução
+            </p>
+          </Card>
+        )}
       </div>
     </div>
   );
