@@ -282,8 +282,14 @@ export default function Today() {
       <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+              <Pill className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">MedTracker</h1>
+          </div>
+
           <div className="space-y-1 mb-6">
-            <h1 className="text-2xl font-bold text-primary">MedTracker</h1>
             <h2 className="text-3xl font-bold text-foreground">
               {greeting}{nickname ? `, ${nickname}` : ""}! 👋
             </h2>

@@ -340,23 +340,27 @@ export default function AddItem() {
     <>
       <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-primary">MedTracker</h1>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h2 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                  <Pill className="h-8 w-8" />
-                  {isEditing ? "Editar Item" : "Adicionar Item"}
-                </h2>
-                <p className="text-muted-foreground">
-                  {isEditing
-                    ? "Atualize as informações do seu medicamento"
-                    : "Adicione um novo medicamento ou suplemento"}
-                </p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+              <Pill className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">MedTracker</h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                <Pill className="h-6 w-6" />
+                {isEditing ? "Editar Item" : "Adicionar Item"}
+              </h2>
+              <p className="text-muted-foreground">
+                {isEditing
+                  ? "Atualize as informações do seu medicamento"
+                  : "Adicione um novo medicamento ou suplemento"}
+              </p>
             </div>
           </div>
 

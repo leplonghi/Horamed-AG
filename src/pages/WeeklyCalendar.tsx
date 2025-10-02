@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -139,26 +139,30 @@ export default function WeeklyCalendar() {
     <>
       <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-primary">MedTracker</h1>
-            <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-foreground">Calendário 📅</h2>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToPreviousWeek}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToNextWeek}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+              <Pill className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground">MedTracker</h1>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-foreground">Calendário 📅</h2>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousWeek}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextWeek}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 

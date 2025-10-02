@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Camera, Search } from "lucide-react";
+import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, Package } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -23,27 +23,31 @@ interface Item {
     times: any;
     freq_type: string;
   }>;
+  stock?: Array<{
+    units_left: number;
+    unit_label: string;
+  }>;
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
   medicamento: "💊",
-  vitamina: "🧪",
-  suplemento: "🌿",
+  vitamina: "🔴",
+  suplemento: "⚡",
   outro: "📦",
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  medicamento: "Medicamento",
-  vitamina: "Vitamina",
-  suplemento: "Suplemento",
-  outro: "Outro",
+  medicamento: "medicamento",
+  vitamina: "vitamina",
+  suplemento: "suplemento",
+  outro: "outro",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  medicamento: "bg-primary/10 text-primary border-primary/20",
-  vitamina: "bg-warning/10 text-warning border-warning/20",
-  suplemento: "bg-success/10 text-success border-success/20",
-  outro: "bg-muted text-muted-foreground border-border",
+  medicamento: "bg-blue-100 text-blue-700 border-blue-200",
+  vitamina: "bg-red-100 text-red-700 border-red-200",
+  suplemento: "bg-amber-100 text-amber-700 border-amber-200",
+  outro: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
 export default function Rotina() {
@@ -73,6 +77,10 @@ export default function Rotina() {
             id,
             times,
             freq_type
+          ),
+          stock (
+            units_left,
+            unit_label
           )
         `)
         .eq("is_active", true)
@@ -80,7 +88,13 @@ export default function Rotina() {
         .order("name");
 
       if (error) throw error;
-      setItems(data || []);
+      
+      const formattedData = (data || []).map(item => ({
+        ...item,
+        stock: item.stock ? (Array.isArray(item.stock) ? item.stock : [item.stock]) : []
+      }));
+      
+      setItems(formattedData);
     } catch (error) {
       console.error("Error fetching items:", error);
       toast.error("Erro ao carregar itens");
@@ -159,6 +173,10 @@ export default function Rotina() {
     }
   };
 
+  const getCategoryCount = (category: string) => {
+    return items.filter(item => item.category === category).length;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-6 flex items-center justify-center">
@@ -172,13 +190,32 @@ export default function Rotina() {
       <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-primary">MedTracker</h1>
-            <h2 className="text-3xl font-bold text-foreground">Rotina 📋</h2>
-            <p className="text-muted-foreground">
-              Gerencie seus medicamentos e suplementos
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+                <Pill className="h-6 w-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">MedTracker</h1>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="icon"
+                className="rounded-full bg-success hover:bg-success/90"
+                onClick={() => setShowOCR(true)}
+              >
+                <Camera className="h-5 w-5" />
+              </Button>
+              <Button
+                size="icon"
+                className="rounded-full"
+                onClick={() => navigate("/adicionar")}
+              >
+                <Plus className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
+
+          <h2 className="text-2xl font-bold text-foreground">Minha Rotina</h2>
 
           {/* Search */}
           <div className="relative">
@@ -187,33 +224,44 @@ export default function Rotina() {
               placeholder="Buscar medicamentos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 rounded-full"
             />
           </div>
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="todos">Todos</TabsTrigger>
-              <TabsTrigger value="medicamento" className="flex items-center gap-1">
-                <span>{CATEGORY_ICONS.medicamento}</span>
-                <span className="hidden sm:inline text-xs">{CATEGORY_LABELS.medicamento}</span>
-              </TabsTrigger>
-              <TabsTrigger value="vitamina" className="flex items-center gap-1">
-                <span>{CATEGORY_ICONS.vitamina}</span>
-                <span className="hidden sm:inline text-xs">{CATEGORY_LABELS.vitamina}</span>
-              </TabsTrigger>
-              <TabsTrigger value="suplemento" className="flex items-center gap-1">
-                <span>{CATEGORY_ICONS.suplemento}</span>
-                <span className="hidden sm:inline text-xs">{CATEGORY_LABELS.suplemento}</span>
-              </TabsTrigger>
-              <TabsTrigger value="outro" className="flex items-center gap-1">
-                <span>{CATEGORY_ICONS.outro}</span>
-                <span className="hidden sm:inline text-xs">{CATEGORY_LABELS.outro}</span>
-              </TabsTrigger>
-            </TabsList>
+            <div className="relative">
+              <TabsList className="w-full justify-start h-auto p-1 bg-transparent gap-2 overflow-x-auto flex-nowrap">
+                <TabsTrigger 
+                  value="todos" 
+                  className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-white px-4 py-2 whitespace-nowrap"
+                >
+                  <Pill className="h-4 w-4 mr-2" />
+                  Todos {items.length}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="medicamento" 
+                  className="rounded-full data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground px-4 py-2 whitespace-nowrap"
+                >
+                  <Pill className="h-4 w-4 mr-2" />
+                  Medicamentos {getCategoryCount("medicamento")}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="vitamina" 
+                  className="rounded-full data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground px-4 py-2 whitespace-nowrap"
+                >
+                  ❤️ Vitaminas {getCategoryCount("vitamina")}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="suplemento" 
+                  className="rounded-full data-[state=active]:bg-secondary data-[state=active]:text-secondary-foreground px-4 py-2 whitespace-nowrap"
+                >
+                  ⚡ Suplementos {getCategoryCount("suplemento")}
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-            <TabsContent value={activeTab} className="space-y-3">
+            <TabsContent value={activeTab} className="space-y-3 mt-6">
               {filteredItems.length === 0 ? (
                 <Card className="p-8 text-center">
                   <p className="text-muted-foreground">
@@ -222,56 +270,64 @@ export default function Rotina() {
                 </Card>
               ) : (
                 filteredItems.map((item) => (
-                  <Card key={item.id} className="p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <span className="text-2xl flex-shrink-0">{CATEGORY_ICONS[item.category]}</span>
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <h3 className="text-lg font-semibold text-foreground truncate">
-                            {item.name}
-                          </h3>
+                  <Card key={item.id} className="p-5 hover:shadow-md transition-shadow">
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-foreground">
+                              {item.name}
+                            </h3>
+                            <Badge variant="outline" className={`${CATEGORY_COLORS[item.category]} text-xs px-2 py-0.5 rounded-md`}>
+                              {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                            </Badge>
+                          </div>
                           {item.dose_text && (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-foreground">
                               {item.dose_text}
                             </p>
                           )}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Badge variant="outline" className={`${CATEGORY_COLORS[item.category]} text-xs`}>
-                              {CATEGORY_LABELS[item.category]}
-                            </Badge>
-                            {item.schedules && item.schedules.length > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {getScheduleSummary(item.schedules[0])}
-                              </span>
-                            )}
-                          </div>
+                        </div>
+
+                        <div className="flex gap-1 flex-shrink-0">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => navigate(`/adicionar?edit=${item.id}`)}
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => deleteItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
                         </div>
                       </div>
 
-                      <div className="flex gap-1 flex-shrink-0">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => markDoseAsTaken(item.id)}
-                          className="bg-success/10 hover:bg-success/20 text-success border-success/20"
-                        >
-                          ✓
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/adicionar?edit=${item.id}`)}
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteItem(item.id)}
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                        {item.schedules && item.schedules.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>Diariamente às {getScheduleSummary(item.schedules[0])}</span>
+                          </div>
+                        )}
+                        {item.with_food && (
+                          <div className="flex items-center gap-2">
+                            <UtensilsCrossed className="h-4 w-4" />
+                            <span>Tomar com alimento</span>
+                          </div>
+                        )}
+                        {item.stock && item.stock.length > 0 && (
+                          <div className="flex items-center gap-2">
+                            <Package className="h-4 w-4" />
+                            <span>{item.stock[0].units_left} {item.stock[0].unit_label} restantes</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -279,15 +335,6 @@ export default function Rotina() {
               )}
             </TabsContent>
           </Tabs>
-
-          {/* Floating Action Button */}
-          <Button
-            onClick={() => setShowOCR(true)}
-            className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-lg hover:shadow-xl z-40"
-            size="icon"
-          >
-            <Camera className="h-6 w-6" />
-          </Button>
         </div>
       </div>
 
