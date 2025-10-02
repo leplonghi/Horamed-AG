@@ -28,8 +28,17 @@ export default function Privacy() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Delete user data
+      // Delete all user data in correct order (respecting foreign keys)
+      // First delete dependent records
+      await supabase.from("dose_instances").delete().match({ item_id: user.id });
+      await supabase.from("schedules").delete().match({ item_id: user.id });
+      await supabase.from("stock").delete().match({ item_id: user.id });
+      
+      // Then delete main records
       await supabase.from("items").delete().eq("user_id", user.id);
+      await supabase.from("medical_exams").delete().eq("user_id", user.id);
+      await supabase.from("notification_preferences").delete().eq("user_id", user.id);
+      await supabase.from("subscriptions").delete().eq("user_id", user.id);
       await supabase.from("profiles").delete().eq("user_id", user.id);
       
       // Sign out

@@ -9,6 +9,13 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Mail, Chrome, Pill } from "lucide-react";
 import logo from "@/assets/horamend-logo.png";
+import { z } from "zod";
+
+const passwordSchema = z.string()
+  .min(8, "A senha deve ter no mínimo 8 caracteres")
+  .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+  .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+  .regex(/[0-9]/, "A senha deve conter pelo menos um número");
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -39,6 +46,13 @@ export default function Auth() {
     e.preventDefault();
     if (!email || !password) {
       toast.error("Preencha todos os campos");
+      return;
+    }
+
+    // Validate password strength
+    const validation = passwordSchema.safeParse(password);
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message);
       return;
     }
 
@@ -185,10 +199,10 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Mínimo de 6 caracteres
+                  Mínimo de 8 caracteres, com letras maiúsculas, minúsculas e números
                 </p>
               </div>
 

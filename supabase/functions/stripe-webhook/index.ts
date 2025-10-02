@@ -116,8 +116,15 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Webhook error:', error);
+    
+    // Don't expose internal error details to external callers
+    const isSignatureError = error instanceof Error && 
+      (error.message.includes('signature') || error.message.includes('webhook'));
+    
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ 
+        error: isSignatureError ? 'Invalid webhook signature' : 'Webhook processing failed' 
+      }),
       {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
