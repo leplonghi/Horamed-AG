@@ -198,11 +198,9 @@ export default function Rotina() {
       <Header />
       <div className="min-h-screen bg-background pt-20 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
+          {/* Action Buttons */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="HoraMed" className="h-10 w-auto" />
-            </div>
+            <h2 className="text-2xl font-bold text-foreground">Minha Rotina</h2>
             <div className="flex gap-2">
               <Button
                 size="icon"
@@ -237,8 +235,6 @@ export default function Rotina() {
               </Button>
             </div>
           </div>
-
-          <h2 className="text-2xl font-bold text-foreground">Minha Rotina</h2>
 
           <AdBanner />
 

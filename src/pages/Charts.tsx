@@ -220,13 +220,10 @@ export default function Charts() {
       <div className="min-h-screen bg-background pt-20 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="HoraMed" className="h-10 w-auto" />
-            </div>
-          <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <TrendingUp className="h-6 w-6" />
-            Gráficos
-          </h2>
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="h-6 w-6" />
+              Gráficos
+            </h2>
           <p className="text-muted-foreground">
             Acompanhe sua adesão ao tratamento
           </p>

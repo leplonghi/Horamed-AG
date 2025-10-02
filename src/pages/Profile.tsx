@@ -168,10 +168,6 @@ export default function Profile() {
       <Header />
       <div className="min-h-screen bg-background pt-20 p-4 pb-24 max-w-md mx-auto">
         <div className="space-y-4">
-          {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
-            <img src={logo} alt="MedHora" className="h-10 w-auto" />
-          </div>
 
           {/* Plan Card */}
           <Card className="p-4 border-2 border-primary/20">

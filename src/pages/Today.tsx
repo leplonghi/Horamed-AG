@@ -352,11 +352,6 @@ export default function Today() {
       <Header />
       <div className="min-h-screen bg-background pt-20 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="HoraMed" className="h-10 w-auto" />
-          </div>
-
           <AdBanner />
 
           <div className="space-y-1">
