@@ -9,6 +9,7 @@ import AddItem from "./pages/AddItem";
 import Charts from "./pages/Charts";
 import WeeklyCalendar from "./pages/WeeklyCalendar";
 import Profile from "./pages/Profile";
+import ProfileEdit from "./pages/ProfileEdit";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Plans from "./pages/Plans";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /><Navigation /></ProtectedRoute>} />
           <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><Profile /><Navigation /></ProtectedRoute>} />
+          <Route path="/perfil/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
           <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

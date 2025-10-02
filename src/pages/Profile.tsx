@@ -1,36 +1,28 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { User, LogOut, Upload, FileText, Trash2, Pill, Crown } from "lucide-react";
+import { 
+  CheckCircle2, User, Bell, Shield, Calendar, CreditCard, 
+  HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { useSubscription } from "@/hooks/useSubscription";
-import SubscriptionBadge from "@/components/SubscriptionBadge";
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [profile, setProfile] = useState<any>({
     full_name: "",
-    nickname: "",
-    weight_kg: "",
-    height_cm: "",
-    birth_date: "",
-    avatar_url: "",
+    weight_kg: null,
+    height_cm: null,
   });
-  const [exams, setExams] = useState<any[]>([]);
-  const { subscription, isPremium, daysLeft, loading: subLoading } = useSubscription();
+  const { subscription, isPremium, daysLeft } = useSubscription();
 
   useEffect(() => {
     loadProfile();
-    loadExams();
   }, []);
 
   const loadProfile = async () => {
@@ -39,68 +31,32 @@ export default function Profile() {
       if (!user) return;
       setUserEmail(user.email || "");
 
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (error && error.code !== "PGRST116") throw error;
-      if (data) {
-        setProfile({
-          ...data,
-          weight_kg: data.weight_kg?.toString() || "",
-          height_cm: data.height_cm?.toString() || "",
-        });
-      }
+      if (data) setProfile(data);
     } catch (error) {
       console.error("Error loading profile:", error);
     }
   };
 
-  const loadExams = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("medical_exams")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setExams(data || []);
-    } catch (error) {
-      console.error("Error loading exams:", error);
+  const calculateBMI = () => {
+    if (profile.weight_kg && profile.height_cm) {
+      const heightM = profile.height_cm / 100;
+      const bmi = profile.weight_kg / (heightM * heightM);
+      return bmi.toFixed(1);
     }
+    return null;
   };
 
-  const handleSaveProfile = async () => {
-    setLoading(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { error } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user.id,
-          full_name: profile.full_name,
-          nickname: profile.nickname,
-          weight_kg: profile.weight_kg ? parseFloat(profile.weight_kg) : null,
-          height_cm: profile.height_cm ? parseFloat(profile.height_cm) : null,
-          birth_date: profile.birth_date || null,
-          avatar_url: profile.avatar_url,
-        });
-
-      if (error) throw error;
-      toast.success("Perfil atualizado com sucesso!");
-    } catch (error: any) {
-      toast.error("Erro ao salvar perfil");
-    } finally {
-      setLoading(false);
-    }
+  const getBMIStatus = (bmi: number) => {
+    if (bmi < 18.5) return "Abaixo do peso";
+    if (bmi < 25) return "Peso normal";
+    if (bmi < 30) return "Sobrepeso";
+    return "Obesidade";
   };
 
   const handleLogout = async () => {
@@ -108,129 +64,249 @@ export default function Profile() {
     navigate("/auth");
   };
 
+  const handleExportJSON = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: items } = await supabase
+        .from("items")
+        .select("*")
+        .eq("user_id", user.id);
+
+      const dataStr = JSON.stringify(items, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'horamed-dados.json';
+      link.click();
+      toast.success("Dados exportados com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao exportar dados");
+    }
+  };
+
+  const handleExportPDF = () => {
+    toast.info("Funcionalidade em desenvolvimento");
+  };
+
+  const bmi = calculateBMI();
+
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
-                <Pill className="h-6 w-6 text-white" />
-              </div>
-              <h1 className="text-2xl font-bold text-foreground">HoraMed</h1>
+      <div className="min-h-screen bg-background p-4 pb-24 max-w-md mx-auto">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
+            <h1 className="text-xl font-bold text-foreground">MedHora</h1>
           </div>
 
-          <h2 className="text-2xl font-bold text-foreground">Meu Perfil</h2>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-6 mb-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src={profile.avatar_url} />
-                <AvatarFallback>
-                  <User className="h-12 w-12" />
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1">
-                <h3 className="text-2xl font-semibold">
-                  {profile.full_name || "Usuário"}
-                </h3>
-                <p className="text-muted-foreground">{userEmail}</p>
-                <div className="mt-2">
-                  <SubscriptionBadge />
+          {/* Plan Card */}
+          <Card className="p-4 border-2 border-primary/20">
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Crown className="h-5 w-5 text-primary" />
                 </div>
-              </div>
-            </div>
-
-            {!subLoading && (
-              <Card className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20 mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Crown className="h-5 w-5 text-primary" />
-                      <h4 className="font-semibold">
-                        {isPremium ? 'Plano Premium' : 'Plano Gratuito'}
-                      </h4>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {isPremium 
-                        ? 'Você tem acesso a todas as funcionalidades'
-                        : daysLeft !== null && daysLeft > 0
-                        ? `${daysLeft} dias restantes do período de teste`
-                        : 'Período de teste expirado'
-                      }
-                    </p>
-                  </div>
-                  <Button
-                    variant={isPremium ? "outline" : "default"}
-                    onClick={() => navigate('/planos')}
-                  >
-                    {isPremium ? 'Gerenciar' : 'Fazer Upgrade'}
-                  </Button>
-                </div>
-              </Card>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="full_name">Nome completo</Label>
-                <Input
-                  id="full_name"
-                  value={profile.full_name}
-                  onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="nickname">Apelido</Label>
-                <Input
-                  id="nickname"
-                  value={profile.nickname}
-                  onChange={(e) => setProfile({ ...profile, nickname: e.target.value })}
-                  placeholder="Como gostaria de ser chamado?"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="birth_date">Data de Nascimento</Label>
-                <Input
-                  id="birth_date"
-                  type="date"
-                  value={profile.birth_date}
-                  onChange={(e) => setProfile({ ...profile, birth_date: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="weight">Peso (kg)</Label>
-                  <Input
-                    id="weight"
-                    type="number"
-                    step="0.1"
-                    value={profile.weight_kg}
-                    onChange={(e) => setProfile({ ...profile, weight_kg: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="height">Altura (cm)</Label>
-                  <Input
-                    id="height"
-                    type="number"
-                    value={profile.height_cm}
-                    onChange={(e) => setProfile({ ...profile, height_cm: e.target.value })}
-                  />
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground">
+                    {isPremium ? 'Premium' : 'Gratuito'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isPremium 
+                      ? 'Acesso completo' 
+                      : daysLeft !== null && daysLeft > 0
+                      ? `${daysLeft} dias restantes`
+                      : 'Período expirado'
+                    }
+                  </p>
                 </div>
               </div>
 
-              <Button onClick={handleSaveProfile} disabled={loading} className="w-full">
-                {loading ? "Salvando..." : "Salvar Perfil"}
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Tudo do Plus</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Até 2 cuidadores</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Arquivo de ocorrências por IA</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Integração de calendário</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <span>Backup e restauração</span>
+                </div>
+              </div>
+
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={() => navigate('/planos')}
+              >
+                {isPremium ? 'Gerenciar' : 'Assinar'}
               </Button>
             </div>
+          </Card>
+
+          {/* Settings Section */}
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground px-2">Configurações</h2>
+            
+            <Card className="divide-y divide-border">
+              <button 
+                onClick={() => navigate('/profile/edit')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <User className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Dados pessoais</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => toast.info("Em desenvolvimento")}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <Bell className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Notificações</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => toast.info("Em desenvolvimento")}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Privacidade e segurança</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => toast.info("Em desenvolvimento")}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <Calendar className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Integração de calendário</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => navigate('/planos')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <CreditCard className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Cobrança e pagamentos</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => toast.info("Em desenvolvimento")}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <HelpCircle className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Ajuda e suporte</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </Card>
+          </div>
+
+          {/* Health Data Section */}
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground px-2">Dados de Saúde</h2>
+            
+            <Card className="p-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Altura</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {profile.height_cm ? `${(profile.height_cm / 100).toFixed(2)} m` : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">Peso</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {profile.weight_kg ? `${profile.weight_kg} kg` : '-'}
+                  </p>
+                </div>
+              </div>
+
+              {bmi && (
+                <div className="p-3 bg-primary/5 rounded-lg border border-primary/10">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Activity className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-medium text-foreground">IMC (Índice de Massa Corporal)</p>
+                  </div>
+                  <p className="text-2xl font-bold text-primary">{bmi}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Classificado como: {getBMIStatus(parseFloat(bmi))}
+                  </p>
+                </div>
+              )}
+
+              <Button 
+                variant="link" 
+                className="text-primary p-0 h-auto mt-3"
+                onClick={() => navigate('/profile/edit')}
+              >
+                Editar dados
+              </Button>
+            </Card>
+          </div>
+
+          {/* Export Data Section */}
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground px-2">Exportar Dados</h2>
+            
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Baixe uma cópia dos seus dados em conformidade com a LGPD
+              </p>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={handleExportJSON}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Exportar dados (JSON)
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start gap-2"
+                  onClick={handleExportPDF}
+                >
+                  <FileDown className="h-4 w-4" />
+                  Exportar relatório (PDF)
+                </Button>
+              </div>
+            </Card>
+          </div>
+
+          {/* Logout Button */}
+          <Button 
+            variant="ghost" 
+            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Sair da conta
+          </Button>
+
+          {/* Warning Message */}
+          <Card className="p-4 bg-warning/10 border-warning/20">
+            <p className="text-xs text-foreground">
+              <span className="font-semibold">Aviso importante:</span> Este aplicativo é apenas informativo e não substitui a consulta com um profissional médico antes de alterar tratamentos.
+            </p>
           </Card>
         </div>
       </div>

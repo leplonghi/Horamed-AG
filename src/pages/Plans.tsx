@@ -1,204 +1,183 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Crown, Loader2, ArrowLeft } from 'lucide-react';
-import { useSubscription } from '@/hooks/useSubscription';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
-import SubscriptionBadge from '@/components/SubscriptionBadge';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { ArrowLeft, CheckCircle2, Crown, Shield } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Plans() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const { isPremium, subscription } = useSubscription();
-  const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleUpgrade = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {},
+        body: { userId: user.id }
       });
 
       if (error) throw error;
-
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (error: any) {
-      console.error('Error creating checkout:', error);
-      toast({
-        title: 'Erro ao processar pagamento',
-        description: error.message || 'Tente novamente mais tarde',
-        variant: 'destructive',
-      });
+      console.error('Checkout error:', error);
+      toast.error("Erro ao processar pagamento");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      setLoading(true);
-      toast({
-        title: 'Redirecionando...',
-        description: 'Abrindo portal de gerenciamento',
-      });
-      
-      // In production, you would create a Stripe Customer Portal session
-      // For now, we'll just show a message
-      toast({
-        title: 'Em desenvolvimento',
-        description: 'Portal de gerenciamento em breve!',
-      });
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleManageSubscription = () => {
+    toast.info("Gerenciamento de assinatura em desenvolvimento");
   };
 
   const freePlanFeatures = [
-    'Cadastro de 1 medicamento',
-    '3 dias de teste grátis',
-    'Lembretes básicos',
-    'Acesso ao calendário',
+    "1 medicamento ativo",
+    "Histórico de 7 dias",
+    "Notificações básicas",
+    "Suporte por email"
   ];
 
   const premiumPlanFeatures = [
-    'Medicamentos ilimitados',
-    'Uso ilimitado (sem expiração)',
-    'Sem anúncios',
-    'Gráficos avançados de adesão',
-    'OCR de receitas médicas',
-    'Suporte prioritário',
-    'Backup automático na nuvem',
+    "Medicamentos ilimitados",
+    "OCR de receitas médicas",
+    "Histórico completo",
+    "Até 2 cuidadores",
+    "Arquivo de ocorrências por IA",
+    "Integração de calendário",
+    "Backup e restauração",
+    "Suporte prioritário"
   ];
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-24">
-      <div className="max-w-4xl mx-auto">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="mb-4"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
-        </Button>
-
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Escolha seu plano</h1>
-          <p className="text-muted-foreground">
-            Gerencie seus medicamentos com eficiência
-          </p>
-          {subscription && (
-            <div className="mt-4 flex justify-center">
-              <SubscriptionBadge />
-            </div>
-          )}
+    <div className="min-h-screen bg-background p-4 pb-24 max-w-md mx-auto">
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/perfil")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold text-foreground">Planos</h1>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Free Plan */}
-          <Card className="relative">
-            <CardHeader>
-              <CardTitle className="text-2xl">Gratuito</CardTitle>
-              <CardDescription>Teste por 3 dias</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">R$ 0</span>
-                <span className="text-muted-foreground">/mês</span>
+        {/* Description */}
+        <p className="text-muted-foreground text-sm px-2">
+          Escolha o plano ideal para gerenciar seus medicamentos e cuidados de saúde
+        </p>
+
+        {/* Free Plan */}
+        <Card className="p-4 border-2">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                <Shield className="h-5 w-5 text-muted-foreground" />
               </div>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {freePlanFeatures.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground text-lg">Gratuito</h3>
+                <p className="text-sm text-muted-foreground">Para experimentar o app</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {freePlanFeatures.map((feature, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-muted-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <p className="text-2xl font-bold text-foreground">R$ 0</p>
+              <p className="text-sm text-muted-foreground">3 dias de teste</p>
+            </div>
+
+            {!isPremium && (
               <Button variant="outline" className="w-full" disabled>
                 Plano Atual
               </Button>
-            </CardFooter>
-          </Card>
+            )}
+          </div>
+        </Card>
 
-          {/* Premium Plan */}
-          <Card className="relative border-2 border-primary shadow-lg">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-              <Crown className="h-4 w-4" />
-              RECOMENDADO
+        {/* Premium Plan */}
+        <Card className="p-4 border-2 border-primary bg-primary/5 relative overflow-hidden">
+          <div className="absolute top-3 right-3">
+            <div className="bg-primary text-primary-foreground text-xs font-semibold px-2 py-1 rounded">
+              Recomendado
             </div>
-            <CardHeader className="pt-8">
-              <CardTitle className="text-2xl flex items-center gap-2">
-                Premium
-                <Crown className="h-5 w-5 text-primary" />
-              </CardTitle>
-              <CardDescription>Recursos ilimitados</CardDescription>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">R$ 9,90</span>
-                <span className="text-muted-foreground">/mês</span>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-3">
-                {premiumPlanFeatures.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm font-medium">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-            <CardFooter className="flex-col gap-2">
-              {isPremium ? (
-                <Button
-                  onClick={handleManageSubscription}
-                  disabled={loading}
-                  className="w-full"
-                  variant="outline"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Gerenciar Assinatura
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleUpgrade}
-                  disabled={loading}
-                  className="w-full"
-                  size="lg"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Assinar Premium
-                </Button>
-              )}
-              <p className="text-xs text-center text-muted-foreground">
-                Cancele quando quiser, sem multas
-              </p>
-            </CardFooter>
-          </Card>
-        </div>
+          </div>
 
-        <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>
-            Pagamento 100% seguro processado pela Stripe
-          </p>
-          <p className="mt-2">
-            Tem dúvidas? Entre em contato conosco
-          </p>
-        </div>
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Crown className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground text-lg">Premium</h3>
+                <p className="text-sm text-muted-foreground">Acesso completo a todos os recursos</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {premiumPlanFeatures.map((feature, index) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="text-foreground">{feature}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-2">
+              <p className="text-2xl font-bold text-foreground">
+                R$ 25,40<span className="text-base font-normal text-muted-foreground">/mês</span>
+              </p>
+              <p className="text-sm text-muted-foreground">Cobrado mensalmente</p>
+            </div>
+
+            {isPremium ? (
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleManageSubscription}
+              >
+                Gerenciar Assinatura
+              </Button>
+            ) : (
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={handleUpgrade}
+                disabled={loading}
+              >
+                {loading ? "Processando..." : "Assinar Premium"}
+              </Button>
+            )}
+          </div>
+        </Card>
+
+        {/* Security Info */}
+        <Card className="p-4 bg-muted/30">
+          <div className="flex items-start gap-3">
+            <Shield className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Pagamento 100% seguro</p>
+              <p className="text-xs text-muted-foreground">
+                Seus dados são protegidos e criptografados. Pagamento processado via Stripe.
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );
