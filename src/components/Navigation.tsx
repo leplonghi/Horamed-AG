@@ -1,4 +1,4 @@
-import { Home, Calendar, BarChart3, Plus } from "lucide-react";
+import { Home, CalendarDays, Calendar, BarChart3, Plus } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -7,7 +7,8 @@ export default function Navigation() {
 
   const navItems = [
     { path: "/", icon: Home, label: "Hoje" },
-    { path: "/rotina", icon: Calendar, label: "Rotina" },
+    { path: "/rotina", icon: CalendarDays, label: "Rotina" },
+    { path: "/calendario", icon: Calendar, label: "Semana" },
     { path: "/graficos", icon: BarChart3, label: "Gráficos" },
   ];
 

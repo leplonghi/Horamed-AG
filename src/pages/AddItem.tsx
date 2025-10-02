@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,15 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Plus, Clock } from "lucide-react";
 import { toast } from "sonner";
+import MedicationOCR from "@/components/MedicationOCR";
 
 export default function AddItem() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     dose_text: "",
+    category: "medicamento",
     with_food: false,
     notes: "",
     times: ["08:00"],
@@ -24,6 +28,12 @@ export default function AddItem() {
     units_total: 0,
     unit_label: "unidades",
   });
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserId(user?.id || null);
+    });
+  }, []);
 
   const addTimeField = () => {
     setFormData({
@@ -45,6 +55,15 @@ export default function AddItem() {
     setFormData({ ...formData, times: newTimes });
   };
 
+  const handleOCRResult = (result: any) => {
+    setFormData({
+      ...formData,
+      name: result.name || "",
+      dose_text: result.dose || "",
+      category: result.category || "medicamento",
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -57,6 +76,11 @@ export default function AddItem() {
       return;
     }
 
+    if (!userId) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -64,9 +88,10 @@ export default function AddItem() {
       const { data: item, error: itemError } = await supabase
         .from("items")
         .insert({
-          user_id: "temp-user-id", // Will be replaced with auth.uid() later
+          user_id: userId,
           name: formData.name,
           dose_text: formData.dose_text || null,
+          category: formData.category,
           with_food: formData.with_food,
           notes: formData.notes || null,
         })
@@ -164,6 +189,9 @@ export default function AddItem() {
           </div>
         </div>
 
+        {/* OCR Component */}
+        <MedicationOCR onResult={handleOCRResult} />
+
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           <Card className="p-6 space-y-6">
@@ -180,6 +208,26 @@ export default function AddItem() {
                   }
                   required
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">Categoria *</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, category: value })
+                  }
+                >
+                  <SelectTrigger id="category">
+                    <SelectValue placeholder="Selecione a categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="medicamento">💊 Medicamento</SelectItem>
+                    <SelectItem value="suplemento">🌿 Suplemento</SelectItem>
+                    <SelectItem value="vitamina">✨ Vitamina</SelectItem>
+                    <SelectItem value="pet">🐾 Pet</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

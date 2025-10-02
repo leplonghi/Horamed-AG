@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Pill, Clock, Edit, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -10,6 +12,7 @@ interface Item {
   id: string;
   name: string;
   dose_text: string | null;
+  category: string;
   with_food: boolean;
   is_active: boolean;
   schedules: Array<{
@@ -19,9 +22,24 @@ interface Item {
   }>;
 }
 
+const CATEGORY_ICONS = {
+  medicamento: "💊",
+  suplemento: "🌿",
+  vitamina: "✨",
+  pet: "🐾",
+};
+
+const CATEGORY_COLORS = {
+  medicamento: "bg-primary/10 text-primary border-primary/30",
+  suplemento: "bg-accent/10 text-accent border-accent/30",
+  vitamina: "bg-warning/10 text-warning border-warning/30",
+  pet: "bg-secondary/10 text-secondary border-secondary/30",
+};
+
 export default function Rotina() {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("todos");
 
   useEffect(() => {
     fetchItems();
@@ -35,6 +53,7 @@ export default function Rotina() {
           id,
           name,
           dose_text,
+          category,
           with_food,
           is_active,
           schedules (
@@ -44,6 +63,7 @@ export default function Rotina() {
           )
         `)
         .eq("is_active", true)
+        .order("category")
         .order("name");
 
       if (error) throw error;
@@ -55,6 +75,10 @@ export default function Rotina() {
       setLoading(false);
     }
   };
+
+  const filteredItems = activeTab === "todos" 
+    ? items 
+    : items.filter(item => item.category === activeTab);
 
   const deleteItem = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir este item?")) return;
@@ -97,8 +121,19 @@ export default function Rotina() {
           </p>
         </div>
 
-        {/* Items List */}
-        {items.length === 0 ? (
+        {/* Category Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="medicamento">💊</TabsTrigger>
+            <TabsTrigger value="suplemento">🌿</TabsTrigger>
+            <TabsTrigger value="vitamina">✨</TabsTrigger>
+            <TabsTrigger value="pet">🐾</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value={activeTab}>
+            {/* Items List */}
+            {filteredItems.length === 0 ? (
           <Card className="p-12 text-center space-y-4">
             <div className="flex justify-center">
               <div className="p-4 rounded-full bg-primary/10">
@@ -116,10 +151,10 @@ export default function Rotina() {
                 Adicionar primeiro item
               </Button>
             </Link>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {items.map((item) => (
+            </Card>
+          ) : (
+            <div className="grid gap-4">
+              {filteredItems.map((item) => (
               <Card
                 key={item.id}
                 className="p-5 hover:shadow-md transition-all bg-gradient-to-r from-card to-card/50"
@@ -127,13 +162,21 @@ export default function Rotina() {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <Pill className="h-4 w-4 text-primary" />
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">
+                          {CATEGORY_ICONS[item.category as keyof typeof CATEGORY_ICONS]}
+                        </span>
+                        <div className="space-y-1">
+                          <h3 className="text-xl font-semibold text-foreground">
+                            {item.name}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className={CATEGORY_COLORS[item.category as keyof typeof CATEGORY_COLORS]}
+                          >
+                            {item.category}
+                          </Badge>
                         </div>
-                        <h3 className="text-xl font-semibold text-foreground">
-                          {item.name}
-                        </h3>
                       </div>
 
                       {item.dose_text && (
@@ -188,9 +231,11 @@ export default function Rotina() {
                   </div>
                 </div>
               </Card>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

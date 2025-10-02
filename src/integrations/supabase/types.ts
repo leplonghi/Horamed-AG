@@ -64,6 +64,7 @@ export type Database = {
       }
       items: {
         Row: {
+          category: string | null
           created_at: string | null
           dose_text: string | null
           id: string
@@ -75,6 +76,7 @@ export type Database = {
           with_food: boolean | null
         }
         Insert: {
+          category?: string | null
           created_at?: string | null
           dose_text?: string | null
           id?: string
@@ -86,6 +88,7 @@ export type Database = {
           with_food?: boolean | null
         }
         Update: {
+          category?: string | null
           created_at?: string | null
           dose_text?: string | null
           id?: string
@@ -95,6 +98,39 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           with_food?: boolean | null
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string | null
+          email_enabled: boolean | null
+          id: string
+          push_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+          whatsapp_enabled: boolean | null
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_enabled?: boolean | null
+          id?: string
+          push_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+          whatsapp_enabled?: boolean | null
+          whatsapp_number?: string | null
         }
         Relationships: []
       }

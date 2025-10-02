@@ -7,8 +7,11 @@ import Today from "./pages/Today";
 import Rotina from "./pages/Rotina";
 import AddItem from "./pages/AddItem";
 import Charts from "./pages/Charts";
+import WeeklyCalendar from "./pages/WeeklyCalendar";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Navigation from "./components/Navigation";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -19,10 +22,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<><Today /><Navigation /></>} />
-          <Route path="/rotina" element={<><Rotina /><Navigation /></>} />
-          <Route path="/adicionar" element={<AddItem />} />
-          <Route path="/graficos" element={<><Charts /><Navigation /></>} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/" element={<ProtectedRoute><Today /><Navigation /></ProtectedRoute>} />
+          <Route path="/rotina" element={<ProtectedRoute><Rotina /><Navigation /></ProtectedRoute>} />
+          <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /><Navigation /></ProtectedRoute>} />
+          <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
+          <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
