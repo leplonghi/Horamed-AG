@@ -43,11 +43,13 @@ export default function Plans() {
     "1 medicamento ativo",
     "Histórico de 7 dias",
     "Notificações básicas",
+    "Com anúncios",
     "Suporte por email"
   ];
 
   const premiumPlanFeatures = [
     "Medicamentos ilimitados",
+    "Sem anúncios",
     "OCR de receitas médicas",
     "Histórico completo",
     "Até 2 cuidadores",
@@ -105,8 +107,12 @@ export default function Plans() {
             </div>
 
             {!isPremium && (
-              <Button variant="outline" className="w-full" disabled>
-                Plano Atual
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={handleUpgrade}
+              >
+                Upgrade para Premium
               </Button>
             )}
           </div>
