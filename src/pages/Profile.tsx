@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import logo from "@/assets/horamend-logo.png";
 
@@ -164,7 +165,8 @@ export default function Profile() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-4 pb-24 max-w-md mx-auto">
+      <Header />
+      <div className="min-h-screen bg-background pt-20 p-4 pb-24 max-w-md mx-auto">
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">

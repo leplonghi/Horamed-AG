@@ -10,6 +10,7 @@ import Navigation from "@/components/Navigation";
 import AdBanner from "@/components/AdBanner";
 import AdherenceChart from "@/components/AdherenceChart";
 import GoogleAd from "@/components/GoogleAd";
+import Header from "@/components/Header";
 import logo from "@/assets/horamend-logo.png";
 
 interface DoseInstance {
@@ -348,7 +349,8 @@ export default function Today() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pb-24">
+      <Header />
+      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">

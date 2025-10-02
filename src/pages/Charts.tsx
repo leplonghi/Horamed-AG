@@ -8,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import Header from "@/components/Header";
 import logo from "@/assets/horamend-logo.png";
 import HealthDataChart from "@/components/HealthDataChart";
 
@@ -214,12 +215,14 @@ export default function Charts() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6 pb-24">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="HoraMed" className="h-10 w-auto" />
-          </div>
+    <>
+      <Header />
+      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="HoraMed" className="h-10 w-auto" />
+            </div>
           <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <TrendingUp className="h-6 w-6" />
             Gráficos
@@ -367,5 +370,6 @@ export default function Charts() {
         <HealthDataChart data={healthHistory} />
       </div>
     </div>
+    </>
   );
 }

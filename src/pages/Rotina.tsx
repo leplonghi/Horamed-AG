@@ -9,6 +9,7 @@ import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, 
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import Header from "@/components/Header";
 import MedicationOCR from "@/components/MedicationOCR";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
 import AdBanner from "@/components/AdBanner";
@@ -194,7 +195,8 @@ export default function Rotina() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pb-24">
+      <Header />
+      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
