@@ -145,11 +145,11 @@ export default function Charts() {
           }
         ];
 
-        // Calculate missed items
-        const skippedDoses = doses.filter(d => d.status === "skipped" || d.status === "scheduled");
+        // Calculate missed/skipped items (items not taken)
+        const notTakenDoses = doses.filter(d => d.status === "missed" || d.status === "skipped");
         const itemCounts: Record<string, { count: number; time: string }> = {};
         
-        skippedDoses.forEach(dose => {
+        notTakenDoses.forEach(dose => {
           const itemName = dose.items.name;
           const hour = format(new Date(dose.due_at), "HH:mm");
           if (!itemCounts[itemName]) {
@@ -310,26 +310,30 @@ export default function Charts() {
           </div>
         </Card>
 
-        {/* Missed Items */}
+        {/* Missed/Skipped Items */}
         {missedItems.length > 0 && (
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-primary" />
-              Itens Mais Esquecidos
+              Itens Mais Esquecidos/Pulados
             </h3>
             <div className="space-y-3">
               {missedItems.map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <div key={i} className="flex items-center justify-between p-3 bg-destructive/5 rounded-lg border border-destructive/20">
                   <div>
                     <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">{item.time}</p>
+                    <p className="text-sm text-muted-foreground">Horário: {item.time}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-primary">{item.count} faltas</p>
+                    <p className="text-lg font-bold text-destructive">{item.count}x</p>
+                    <p className="text-xs text-muted-foreground">não tomadas</p>
                   </div>
                 </div>
               ))}
             </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              💡 Doses puladas não reduzem o estoque, mas afetam sua taxa de adesão
+            </p>
           </Card>
         )}
 

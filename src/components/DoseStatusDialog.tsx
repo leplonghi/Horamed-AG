@@ -39,9 +39,9 @@ export default function DoseStatusDialog({
         <div className="space-y-2 pt-2">
           <Button
             onClick={() => handleSelect('taken')}
-            className="w-full justify-start gap-3 h-auto py-3 bg-primary hover:bg-primary/90"
+            className="w-full justify-start gap-3 h-auto py-3 bg-primary hover:bg-primary/90 text-primary-foreground"
           >
-            <CheckCircle2 className="h-5 w-5" />
+            <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
             <div className="text-left">
               <p className="font-semibold">Tomado</p>
               <p className="text-xs opacity-90">Eu tomei este medicamento</p>
@@ -50,10 +50,9 @@ export default function DoseStatusDialog({
 
           <Button
             onClick={() => handleSelect('missed')}
-            variant="destructive"
-            className="w-full justify-start gap-3 h-auto py-3"
+            className="w-full justify-start gap-3 h-auto py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
-            <XCircle className="h-5 w-5" />
+            <XCircle className="h-5 w-5 text-destructive-foreground" />
             <div className="text-left">
               <p className="font-semibold">Esquecido</p>
               <p className="text-xs opacity-90">Eu esqueci de tomar</p>
@@ -62,13 +61,12 @@ export default function DoseStatusDialog({
 
           <Button
             onClick={() => handleSelect('skipped')}
-            variant="outline"
-            className="w-full justify-start gap-3 h-auto py-3"
+            className="w-full justify-start gap-3 h-auto py-3 bg-muted hover:bg-muted/80 text-foreground"
           >
-            <SkipForward className="h-5 w-5" />
+            <SkipForward className="h-5 w-5 text-muted-foreground" />
             <div className="text-left">
               <p className="font-semibold">Pulado</p>
-              <p className="text-xs text-muted-foreground">Decidi não tomar</p>
+              <p className="text-xs text-muted-foreground">Decidi não tomar (não reduz estoque)</p>
             </div>
           </Button>
         </div>
