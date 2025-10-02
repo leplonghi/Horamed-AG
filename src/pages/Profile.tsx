@@ -64,30 +64,16 @@ export default function Profile() {
     navigate("/auth");
   };
 
-  const handleExportJSON = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: items } = await supabase
-        .from("items")
-        .select("*")
-        .eq("user_id", user.id);
-
-      const dataStr = JSON.stringify(items, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'horamed-dados.json';
-      link.click();
-      toast.success("Dados exportados com sucesso!");
-    } catch (error) {
-      toast.error("Erro ao exportar dados");
-    }
-  };
-
   const handleExportPDF = () => {
+    if (!isPremium) {
+      toast.error("Esta funcionalidade é exclusiva para usuários Premium", {
+        action: {
+          label: "Ver Planos",
+          onClick: () => navigate('/planos'),
+        },
+      });
+      return;
+    }
     toast.info("Funcionalidade em desenvolvimento");
   };
 
@@ -259,24 +245,20 @@ export default function Profile() {
               <p className="text-sm text-muted-foreground mb-4">
                 Baixe uma cópia dos seus dados em conformidade com a LGPD
               </p>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={handleExportJSON}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Exportar dados (JSON)
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start gap-2"
-                  onClick={handleExportPDF}
-                >
-                  <FileDown className="h-4 w-4" />
-                  Exportar relatório (PDF)
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-2"
+                onClick={handleExportPDF}
+                disabled={!isPremium}
+              >
+                <FileDown className="h-4 w-4" />
+                Exportar relatório (PDF) {!isPremium && "- Premium"}
+              </Button>
+              {!isPremium && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  A exportação de relatórios está disponível apenas para usuários Premium
+                </p>
+              )}
             </Card>
           </div>
 

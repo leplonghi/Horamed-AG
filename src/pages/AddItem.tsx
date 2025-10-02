@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Pill } from "lucide-react";
 import Navigation from "@/components/Navigation";
@@ -48,7 +48,7 @@ export default function AddItem() {
   const [stockData, setStockData] = useState({
     enabled: false,
     units_total: 0,
-    unit_label: "unidades",
+    unit_label: "un",
   });
 
   useEffect(() => {
@@ -378,13 +378,33 @@ export default function AddItem() {
           </div>
 
           {!isEditing && (
-            <Tabs value={addMethod} onValueChange={(v) => setAddMethod(v as "manual" | "ocr")} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="manual">Manual</TabsTrigger>
-                <TabsTrigger value="ocr">Ler Receita (IA)</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="ocr" className="mt-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  type="button"
+                  variant={addMethod === "manual" ? "default" : "outline"}
+                  onClick={() => setAddMethod("manual")}
+                  className="h-auto py-4"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Pill className="h-6 w-6" />
+                    <span>Manual</span>
+                  </div>
+                </Button>
+                <Button
+                  type="button"
+                  variant={addMethod === "ocr" ? "default" : "outline"}
+                  onClick={() => setAddMethod("ocr")}
+                  className="h-auto py-4"
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <Pill className="h-6 w-6" />
+                    <span>Ler Remédio</span>
+                  </div>
+                </Button>
+              </div>
+
+              {addMethod === "ocr" && (
                 <Card className="p-6">
                   <MedicationOCRWrapper
                     onResult={(result) => {
@@ -399,8 +419,8 @@ export default function AddItem() {
                     }}
                   />
                 </Card>
-              </TabsContent>
-            </Tabs>
+              )}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -482,13 +502,7 @@ export default function AddItem() {
               </div>
 
               <div className="space-y-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <Label>Horários</Label>
-                  <Button type="button" variant="outline" size="sm" onClick={addSchedule}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar agendamento
-                  </Button>
-                </div>
+                <Label>Horários</Label>
 
                 {schedules.map((schedule, scheduleIndex) => (
                   <Card key={scheduleIndex} className="p-4 space-y-4">
@@ -594,14 +608,21 @@ export default function AddItem() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="unit-label">Unidade</Label>
-                      <Input
-                        id="unit-label"
-                        placeholder="comprimidos, cápsulas..."
+                      <Select
                         value={stockData.unit_label}
-                        onChange={(e) =>
-                          setStockData({ ...stockData, unit_label: e.target.value })
+                        onValueChange={(value) =>
+                          setStockData({ ...stockData, unit_label: value })
                         }
-                      />
+                      >
+                        <SelectTrigger id="unit-label">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="un">un (unidades)</SelectItem>
+                          <SelectItem value="gr">gr (gramas)</SelectItem>
+                          <SelectItem value="ml">ml (mililitros)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 )}
