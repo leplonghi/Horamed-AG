@@ -300,7 +300,10 @@ export default function Rotina() {
                 Fechar
               </Button>
             </div>
-            <MedicationOCR />
+            <MedicationOCR onResult={(result) => {
+              setShowOCR(false);
+              navigate(`/adicionar?name=${encodeURIComponent(result.name)}&dose=${encodeURIComponent(result.dose || '')}&category=${result.category || 'medicamento'}`);
+            }} />
           </div>
         </div>
       )}

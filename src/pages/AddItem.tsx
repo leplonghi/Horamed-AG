@@ -55,8 +55,22 @@ export default function AddItem() {
 
     if (isEditing) {
       loadItemData(isEditing);
+    } else {
+      // Check for OCR params in URL
+      const name = searchParams.get("name");
+      const dose = searchParams.get("dose");
+      const category = searchParams.get("category");
+      
+      if (name) {
+        setFormData(prev => ({
+          ...prev,
+          name: name,
+          dose_text: dose || "",
+          category: category || "medicamento",
+        }));
+      }
     }
-  }, [isEditing]);
+  }, [isEditing, searchParams]);
 
   const loadItemData = async (itemId: string) => {
     try {
