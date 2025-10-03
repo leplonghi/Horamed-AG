@@ -165,185 +165,224 @@ export default function WeeklyCalendar() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="HoraMed" className="h-10 w-auto" />
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">Calendário</h2>
-              <p className="text-sm text-muted-foreground">
-                {format(currentWeekStart, "d MMM", { locale: ptBR })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 0 }), "d MMM", { locale: ptBR })}
-              </p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6 pb-24">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Header with Logo and Title */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="HoraMed" className="h-12 w-auto drop-shadow-md" />
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Calendário Semanal</h1>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Calendar className="h-3 w-3" />
+                  {format(currentWeekStart, "d MMM", { locale: ptBR })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 0 }), "d MMM yyyy", { locale: ptBR })}
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={goToPreviousWeek}
+                className="hover:scale-105 transition-transform"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={goToNextWeek}
+                className="hover:scale-105 transition-transform"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           </div>
 
-          {/* Weekly Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card className="p-4 bg-primary/10 border-primary/20">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" />
-                  <p className="text-xs text-muted-foreground">Adesao</p>
+          {/* Weekly Stats - Enhanced */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Adesao</p>
+                  <TrendingUp className="h-5 w-5 text-primary" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{weeklyAdherence}%</p>
+                <p className="text-3xl font-bold text-foreground">{weeklyAdherence}%</p>
+                <div className="w-full bg-primary/20 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-primary rounded-full h-2 transition-all duration-500"
+                    style={{ width: `${weeklyAdherence}%` }}
+                  />
+                </div>
               </div>
             </Card>
 
-            <Card className="p-4 bg-primary/10 border-primary/20">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  <p className="text-xs text-muted-foreground">Tomadas</p>
+            <Card className="p-5 bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-success uppercase tracking-wide">Tomadas</p>
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{takenDoses}</p>
+                <p className="text-3xl font-bold text-foreground">{takenDoses}</p>
+                <p className="text-xs text-muted-foreground">de {totalWeekDoses} doses</p>
               </div>
             </Card>
 
-            <Card className="p-4 bg-destructive/10 border-destructive/20">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <XCircle className="h-4 w-4 text-destructive" />
-                  <p className="text-xs text-muted-foreground">Esquecidas</p>
+            <Card className="p-5 bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-destructive uppercase tracking-wide">Esquecidas</p>
+                  <XCircle className="h-5 w-5 text-destructive" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{missedDoses}</p>
+                <p className="text-3xl font-bold text-foreground">{missedDoses}</p>
+                <p className="text-xs text-muted-foreground">requer atencao</p>
               </div>
             </Card>
 
-            <Card className="p-4 bg-muted border-muted">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <SkipForward className="h-4 w-4 text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground">Puladas</p>
+            <Card className="p-5 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-warning uppercase tracking-wide">Puladas</p>
+                  <SkipForward className="h-5 w-5 text-warning" />
                 </div>
-                <p className="text-2xl font-bold text-foreground">{skippedDoses}</p>
+                <p className="text-3xl font-bold text-foreground">{skippedDoses}</p>
+                <p className="text-xs text-muted-foreground">intencionalmente</p>
               </div>
             </Card>
           </div>
 
-          <Card className="p-4">
+          <Card className="p-5 shadow-lg border-primary/20 bg-gradient-to-r from-card to-primary/5">
             <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" />
-                <h3 className="text-sm font-semibold text-foreground">Resumo da Semana</h3>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Pill className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-foreground">Legenda do Calendario</h3>
+                  <p className="text-xs text-muted-foreground">Status das medicacoes</p>
+                </div>
               </div>
               <div className="flex flex-wrap gap-3">
-                <Badge variant="outline" className="bg-primary/10 border-primary/20">
-                  <CheckCircle2 className="h-3 w-3 mr-1 text-primary" />
-                  Tomado
+                <Badge variant="outline" className="bg-success/10 border-success/30 px-3 py-1.5 shadow-sm">
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-success" />
+                  <span className="text-success font-medium">Tomado</span>
                 </Badge>
-                <Badge variant="outline" className="bg-destructive/10 border-destructive/20">
-                  <XCircle className="h-3 w-3 mr-1 text-destructive" />
-                  Esquecido
+                <Badge variant="outline" className="bg-destructive/10 border-destructive/30 px-3 py-1.5 shadow-sm">
+                  <XCircle className="h-3.5 w-3.5 mr-1.5 text-destructive" />
+                  <span className="text-destructive font-medium">Esquecido</span>
                 </Badge>
-                <Badge variant="outline" className="bg-muted">
-                  <SkipForward className="h-3 w-3 mr-1 text-muted-foreground" />
-                  Pulado
+                <Badge variant="outline" className="bg-warning/10 border-warning/30 px-3 py-1.5 shadow-sm">
+                  <SkipForward className="h-3.5 w-3.5 mr-1.5 text-warning" />
+                  <span className="text-warning font-medium">Pulado</span>
                 </Badge>
-                <Badge variant="outline">
-                  <Circle className="h-3 w-3 mr-1 text-primary" />
-                  Agendado
+                <Badge variant="outline" className="bg-primary/10 border-primary/30 px-3 py-1.5 shadow-sm">
+                  <Circle className="h-3.5 w-3.5 mr-1.5 text-primary" />
+                  <span className="text-primary font-medium">Agendado</span>
                 </Badge>
               </div>
             </div>
           </Card>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
             {weekDays.map((day) => {
               const dayDoses = doses.filter((dose) =>
                 isSameDay(parseISO(dose.due_at), day)
               );
               const isToday = isSameDay(day, new Date());
+              const takenToday = dayDoses.filter(d => d.status === 'taken').length;
+              const adherenceToday = dayDoses.length > 0 ? (takenToday / dayDoses.length) * 100 : 0;
 
               return (
                 <Card
                   key={day.toISOString()}
-                  className={`p-3 ${
-                    isToday ? "border-primary border-2 bg-primary/5" : ""
+                  className={`p-4 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 ${
+                    isToday 
+                      ? "border-primary border-2 bg-gradient-to-br from-primary/10 to-primary/5 ring-2 ring-primary/20" 
+                      : "border-border hover:border-primary/50"
                   }`}
                 >
-                  <div className="space-y-2">
+                  <div className="space-y-3">
+                    {/* Day Header */}
                     <div className="text-center space-y-1">
-                      <p className="text-xs text-muted-foreground uppercase">
+                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                         {format(day, "EEE", { locale: ptBR })}
                       </p>
-                      <p className={`text-xl font-bold ${isToday ? "text-primary" : "text-foreground"}`}>
+                      <div className={`text-3xl font-bold ${isToday ? "text-primary" : "text-foreground"}`}>
                         {format(day, "d")}
-                      </p>
+                      </div>
+                      {isToday && (
+                        <Badge variant="outline" className="bg-primary/10 border-primary/30 text-[10px]">
+                          Hoje
+                        </Badge>
+                      )}
+                      
+                      {/* Progress Indicator */}
                       {dayDoses.length > 0 && (
-                        <div className="flex items-center justify-center gap-1 text-xs">
-                          <Target className="h-3 w-3 text-primary" />
-                          <span className="text-muted-foreground">
-                            {dayDoses.filter(d => d.status === 'taken').length}/{dayDoses.length}
-                          </span>
+                        <div className="space-y-1 pt-2">
+                          <div className="flex items-center justify-center gap-1.5 text-xs font-semibold">
+                            <Target className="h-3.5 w-3.5 text-primary" />
+                            <span className={takenToday === dayDoses.length ? "text-success" : "text-foreground"}>
+                              {takenToday}/{dayDoses.length}
+                            </span>
+                          </div>
+                          <div className="w-full bg-muted rounded-full h-1.5">
+                            <div 
+                              className={`rounded-full h-1.5 transition-all duration-500 ${
+                                adherenceToday === 100 ? "bg-success" : adherenceToday >= 50 ? "bg-primary" : "bg-destructive"
+                              }`}
+                              style={{ width: `${adherenceToday}%` }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="space-y-1.5">
+                    {/* Doses List */}
+                    <div className="space-y-2">
                       {dayDoses.length === 0 ? (
-                        <p className="text-xs text-muted-foreground text-center py-2">
-                          Sem doses
-                        </p>
+                        <div className="text-center py-4 px-2 bg-muted/50 rounded-lg">
+                          <p className="text-xs text-muted-foreground">Sem doses</p>
+                        </div>
                       ) : (
                         dayDoses.map((dose) => (
                           <button
                             key={dose.id}
                             onClick={() => handleDoseClick(dose.id, dose.items.name)}
-                            className={`w-full p-2 rounded-lg border text-left transition-all hover:scale-105 group ${
+                            className={`w-full p-2.5 rounded-lg border text-left transition-all hover:scale-105 hover:shadow-md group ${
                               dose.status === "taken"
-                                ? "bg-primary/10 border-primary/20"
+                                ? "bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-sm"
                                 : dose.status === "missed"
-                                ? "bg-destructive/10 border-destructive/20"
+                                ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-sm"
                                 : dose.status === "skipped"
-                                ? "bg-muted border-muted"
-                                : "bg-card border-border"
+                                ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-sm"
+                                : "bg-gradient-to-br from-primary/5 to-card border-primary/30 shadow-sm"
                             }`}
                           >
-                            <div className="flex items-start justify-between gap-1">
+                            <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium truncate">
+                                <p className="text-xs font-semibold truncate leading-tight">
                                   {dose.items.name}
                                 </p>
-                                <div className="flex items-center gap-1">
-                                  <p className="text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <p className="text-xs text-muted-foreground font-medium">
                                     {format(parseISO(dose.due_at), "HH:mm")}
                                   </p>
-                                  {dose.status === "taken" && (
-                                    <span className="text-[10px] text-primary">✓</span>
-                                  )}
                                 </div>
                               </div>
-                              {dose.status === "taken" && (
-                                <CheckCircle2 className="h-3 w-3 text-primary flex-shrink-0" />
-                              )}
-                              {dose.status === "missed" && (
-                                <XCircle className="h-3 w-3 text-destructive flex-shrink-0" />
-                              )}
-                              {dose.status === "skipped" && (
-                                <SkipForward className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                              )}
-                              {dose.status === "scheduled" && (
-                                <Circle className="h-3 w-3 text-primary flex-shrink-0" />
-                              )}
+                              <div className="flex-shrink-0">
+                                {dose.status === "taken" && (
+                                  <CheckCircle2 className="h-4 w-4 text-success" />
+                                )}
+                                {dose.status === "missed" && (
+                                  <XCircle className="h-4 w-4 text-destructive" />
+                                )}
+                                {dose.status === "skipped" && (
+                                  <SkipForward className="h-4 w-4 text-warning" />
+                                )}
+                                {dose.status === "scheduled" && (
+                                  <Circle className="h-4 w-4 text-primary" />
+                                )}
+                              </div>
                             </div>
                           </button>
                         ))
