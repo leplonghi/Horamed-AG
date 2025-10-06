@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,17 +13,46 @@ interface DoseInstance {
   };
 }
 
+interface AlarmSettings {
+  enabled: boolean;
+  sound: string;
+  duration: number;
+  alertMinutes: number;
+}
+
+const ALARM_SOUNDS = [
+  { id: "beep", name: "Beep Simples", url: "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLTgjMGHm7A7+OZUQ0PVqzn7qxaFg1Lp+LyvmohBSx+zPLTgjIFHm3A7+GZUQ0PVqzn7qxaFg1" },
+  { id: "bell", name: "Sino", url: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" },
+  { id: "chime", name: "Chime Suave", url: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3" },
+  { id: "alert", name: "Alerta Forte", url: "https://assets.mixkit.co/active_storage/sfx/2871/2871-preview.mp3" },
+];
+
 export const useMedicationAlarm = () => {
   const notifiedDoses = useRef<Set<string>>(new Set());
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [settings, setSettings] = useState<AlarmSettings>({
+    enabled: true,
+    sound: "beep",
+    duration: 30,
+    alertMinutes: 5,
+  });
+
+  // Load settings from localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("alarmSettings");
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings));
+    }
+  }, []);
 
   // Initialize audio for alarm
   useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.loop = true;
-    // Using a data URI for a simple beep sound
-    audioRef.current.src = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLTgjMGHm7A7+OZUQ0PVqzn7qxaFg1Lp+LyvmohBSx+zPLTgjIFHm3A7+GZUQ0PVqzn7qxaFg1";
-  }, []);
+    const sound = ALARM_SOUNDS.find(s => s.id === settings.sound);
+    if (sound) {
+      audioRef.current = new Audio(sound.url);
+      audioRef.current.loop = true;
+    }
+  }, [settings.sound]);
 
   // Request notification permission
   useEffect(() => {
@@ -38,13 +67,15 @@ export const useMedicationAlarm = () => {
 
   // Check for upcoming doses every minute
   useEffect(() => {
+    if (!settings.enabled) return;
+
     const checkUpcomingDoses = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         const now = new Date();
-        const fifteenMinutesLater = new Date(now.getTime() + 15 * 60000);
+        const alertWindow = new Date(now.getTime() + (settings.alertMinutes + 5) * 60000);
 
         const { data: doses } = await supabase
           .from("dose_instances")
@@ -60,7 +91,7 @@ export const useMedicationAlarm = () => {
           `)
           .eq("status", "scheduled")
           .gte("due_at", now.toISOString())
-          .lte("due_at", fifteenMinutesLater.toISOString())
+          .lte("due_at", alertWindow.toISOString())
           .order("due_at");
 
         if (doses && doses.length > 0) {
@@ -72,8 +103,8 @@ export const useMedicationAlarm = () => {
               const dueTime = new Date(dose.due_at);
               const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / 60000);
               
-              // Trigger alarm for doses within 5 minutes
-              if (minutesUntil <= 5 && minutesUntil >= 0) {
+              // Trigger alarm based on settings
+              if (minutesUntil <= settings.alertMinutes && minutesUntil >= 0) {
                 playAlarm();
                 showNotification(dose, minutesUntil);
                 notifiedDoses.current.add(doseKey);
@@ -90,18 +121,19 @@ export const useMedicationAlarm = () => {
     const interval = setInterval(checkUpcomingDoses, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, []);
+  }, [settings]);
 
   const playAlarm = () => {
     if (audioRef.current) {
       audioRef.current.play().catch((error) => {
         console.error("Error playing alarm:", error);
+        toast.error("Erro ao tocar alarme. Toque na tela para ativar o áudio.");
       });
 
-      // Stop alarm after 30 seconds
+      // Stop alarm after configured duration
       setTimeout(() => {
         stopAlarm();
-      }, 30000);
+      }, settings.duration * 1000);
     }
   };
 

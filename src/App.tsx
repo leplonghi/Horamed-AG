@@ -20,6 +20,7 @@ import HelpSupport from "./pages/HelpSupport";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Plans from "./pages/Plans";
+import AlarmSettings from "./pages/AlarmSettings";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -45,6 +46,7 @@ const App = () => {
               <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
               <Route path="/assinatura" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+              <Route path="/alarme" element={<ProtectedRoute><AlarmSettings /></ProtectedRoute>} />
               <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
               <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
               <Route path="/graficos" element={<ProtectedRoute><Charts /><Navigation /></ProtectedRoute>} />
