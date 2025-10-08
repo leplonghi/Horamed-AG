@@ -170,6 +170,7 @@ export type Database = {
           email_enabled: boolean | null
           id: string
           push_enabled: boolean | null
+          push_token: string | null
           updated_at: string | null
           user_id: string
           whatsapp_enabled: boolean | null
@@ -180,6 +181,7 @@ export type Database = {
           email_enabled?: boolean | null
           id?: string
           push_enabled?: boolean | null
+          push_token?: string | null
           updated_at?: string | null
           user_id: string
           whatsapp_enabled?: boolean | null
@@ -190,6 +192,7 @@ export type Database = {
           email_enabled?: boolean | null
           id?: string
           push_enabled?: boolean | null
+          push_token?: string | null
           updated_at?: string | null
           user_id?: string
           whatsapp_enabled?: boolean | null
