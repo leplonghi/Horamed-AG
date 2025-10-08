@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Today from "./pages/Today";
 import Rotina from "./pages/Rotina";
 import AddItem from "./pages/AddItem";
+import StockManagement from "./pages/StockManagement";
 import Charts from "./pages/Charts";
 import WeeklyCalendar from "./pages/WeeklyCalendar";
 import Profile from "./pages/Profile";
@@ -42,6 +43,7 @@ const App = () => {
               <Route path="/rotina" element={<ProtectedRoute><Rotina /><Navigation /></ProtectedRoute>} />
               <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /><Navigation /></ProtectedRoute>} />
               <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
+              <Route path="/estoque" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
               <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
               <Route path="/assinatura" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { 
   CheckCircle2, User, Bell, Shield, CreditCard, 
-  HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity
+  HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity, Package
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -256,6 +256,15 @@ export default function Profile() {
               >
                 <Bell className="h-5 w-5 text-primary" />
                 <span className="flex-1 text-left text-foreground">Configurações de Alarme</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+
+              <button 
+                onClick={() => navigate('/estoque')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <Package className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Gerenciar Estoque</span>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
 

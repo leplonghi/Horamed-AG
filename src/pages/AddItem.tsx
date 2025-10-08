@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Pill } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Pill, Package } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
 import logo from "@/assets/horamend-logo.png";
@@ -48,7 +48,9 @@ export default function AddItem() {
   const [stockData, setStockData] = useState({
     enabled: false,
     units_total: 0,
+    units_left: 0,
     unit_label: "un",
+    alert_threshold: 20, // Alert when stock is below 20%
   });
 
   useEffect(() => {
@@ -113,7 +115,9 @@ export default function AddItem() {
           setStockData({
             enabled: true,
             units_total: stockArray[0].units_total,
+            units_left: stockArray[0].units_left || stockArray[0].units_total,
             unit_label: stockArray[0].unit_label,
+            alert_threshold: 20,
           });
         }
       }
@@ -248,7 +252,7 @@ export default function AddItem() {
           await supabase.from("stock").insert({
             item_id: isEditing,
             units_total: stockData.units_total,
-            units_left: stockData.units_total,
+            units_left: stockData.units_left || stockData.units_total,
             unit_label: stockData.unit_label,
           });
         } else {
@@ -573,11 +577,14 @@ export default function AddItem() {
               </div>
 
               <div className="space-y-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg">
                   <div className="space-y-0.5">
-                    <Label htmlFor="stock-enabled">Controlar estoque</Label>
+                    <Label htmlFor="stock-enabled" className="flex items-center gap-2 text-base font-semibold">
+                      <Package className="h-5 w-5 text-primary" />
+                      Controlar Estoque
+                    </Label>
                     <p className="text-sm text-muted-foreground">
-                      Receba alertas quando estiver acabando
+                      Receba alertas automáticos quando o medicamento estiver acabando
                     </p>
                   </div>
                   <Switch
@@ -590,41 +597,102 @@ export default function AddItem() {
                 </div>
 
                 {stockData.enabled && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="units">Quantidade total</Label>
-                      <Input
-                        id="units"
-                        type="number"
-                        min="0"
-                        value={stockData.units_total}
-                        onChange={(e) =>
-                          setStockData({
-                            ...stockData,
-                            units_total: parseInt(e.target.value) || 0,
-                          })
-                        }
-                      />
+                  <Card className="p-4 space-y-4 bg-muted/30">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="units-total" className="text-sm font-medium">
+                          Quantidade Total *
+                        </Label>
+                        <Input
+                          id="units-total"
+                          type="number"
+                          min="1"
+                          placeholder="Ex: 30"
+                          value={stockData.units_total || ""}
+                          onChange={(e) =>
+                            setStockData({
+                              ...stockData,
+                              units_total: parseInt(e.target.value) || 0,
+                            })
+                          }
+                          required={stockData.enabled}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Quantidade que você tem agora
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="unit-label" className="text-sm font-medium">
+                          Unidade *
+                        </Label>
+                        <Select
+                          value={stockData.unit_label}
+                          onValueChange={(value) =>
+                            setStockData({ ...stockData, unit_label: value })
+                          }
+                        >
+                          <SelectTrigger id="unit-label">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="comprimidos">comprimidos</SelectItem>
+                            <SelectItem value="cápsulas">cápsulas</SelectItem>
+                            <SelectItem value="gotas">gotas</SelectItem>
+                            <SelectItem value="ml">ml (mililitros)</SelectItem>
+                            <SelectItem value="gr">gr (gramas)</SelectItem>
+                            <SelectItem value="unidades">unidades</SelectItem>
+                            <SelectItem value="sachês">sachês</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="unit-label">Unidade</Label>
-                      <Select
-                        value={stockData.unit_label}
-                        onValueChange={(value) =>
-                          setStockData({ ...stockData, unit_label: value })
-                        }
-                      >
-                        <SelectTrigger id="unit-label">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="un">un (unidades)</SelectItem>
-                          <SelectItem value="gr">gr (gramas)</SelectItem>
-                          <SelectItem value="ml">ml (mililitros)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="alert-threshold" className="text-sm font-medium">
+                        Alerta de Estoque Baixo
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <Input
+                          id="alert-threshold"
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={stockData.alert_threshold}
+                          onChange={(e) =>
+                            setStockData({
+                              ...stockData,
+                              alert_threshold: parseInt(e.target.value) || 20,
+                            })
+                          }
+                          className="w-20"
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          % restante para alertar
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Você será alertado quando restar apenas{" "}
+                        <strong>{stockData.alert_threshold}%</strong> do estoque total
+                        {stockData.units_total > 0 && (
+                          <span className="text-warning font-medium">
+                            {" "}(≈ {Math.ceil((stockData.units_total * stockData.alert_threshold) / 100)}{" "}
+                            {stockData.unit_label})
+                          </span>
+                        )}
+                      </p>
                     </div>
-                  </div>
+
+                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground flex items-start gap-2">
+                        <Package className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Como funciona:</strong> O sistema calcula automaticamente
+                          quando seu estoque vai acabar baseado no consumo diário. Você receberá
+                          alertas na página inicial e no gráfico de estoque.
+                        </span>
+                      </p>
+                    </div>
+                  </Card>
                 )}
               </div>
             </Card>
