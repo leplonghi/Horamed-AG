@@ -28,6 +28,7 @@ import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Pharmacy from "./pages/Pharmacy";
 import Emergency from "./pages/Emergency";
+import MyDoses from "./pages/MyDoses";
 
 function AppContent() {
   const location = useLocation();
@@ -58,6 +59,7 @@ function AppContent() {
         <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
         <Route path="/farmacia" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
         <Route path="/emergencia" element={<ProtectedRoute><Emergency /></ProtectedRoute>} />
+        <Route path="/doses" element={<ProtectedRoute><MyDoses /></ProtectedRoute>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showNavigation && <Navigation />}

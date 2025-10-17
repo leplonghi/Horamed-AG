@@ -36,37 +36,46 @@ export default function DoseStatusDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-2 pt-2">
+        <div className="space-y-3 pt-2">
           <Button
             onClick={() => handleSelect('taken')}
-            className="w-full justify-start gap-3 h-auto py-3 bg-primary hover:bg-primary/90 text-primary-foreground"
+            className="w-full justify-start gap-4 h-auto py-4 bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.02]"
           >
-            <CheckCircle2 className="h-5 w-5 text-primary-foreground" />
-            <div className="text-left">
-              <p className="font-semibold">Tomado</p>
-              <p className="text-xs opacity-90">Eu tomei este medicamento</p>
+            <div className="p-2 rounded-full bg-primary-foreground/20">
+              <CheckCircle2 className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-base">✓ Tomado</p>
+              <p className="text-xs opacity-90">Tomei este medicamento no horário certo</p>
+              <p className="text-xs opacity-75 mt-1">→ Reduz o estoque automaticamente</p>
             </div>
           </Button>
 
           <Button
             onClick={() => handleSelect('missed')}
-            className="w-full justify-start gap-3 h-auto py-3 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            className="w-full justify-start gap-4 h-auto py-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground transition-all hover:scale-[1.02]"
           >
-            <XCircle className="h-5 w-5 text-destructive-foreground" />
-            <div className="text-left">
-              <p className="font-semibold">Esquecido</p>
-              <p className="text-xs opacity-90">Eu esqueci de tomar</p>
+            <div className="p-2 rounded-full bg-destructive-foreground/20">
+              <XCircle className="h-6 w-6 text-destructive-foreground" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-base">⚠️ Esquecido</p>
+              <p className="text-xs opacity-90">Esqueci de tomar e já passou o horário</p>
+              <p className="text-xs opacity-75 mt-1">→ Afeta suas estatísticas de compromisso</p>
             </div>
           </Button>
 
           <Button
             onClick={() => handleSelect('skipped')}
-            className="w-full justify-start gap-3 h-auto py-3 bg-muted hover:bg-muted/80 text-foreground"
+            className="w-full justify-start gap-4 h-auto py-4 bg-muted hover:bg-muted/80 text-foreground border border-border transition-all hover:scale-[1.02]"
           >
-            <SkipForward className="h-5 w-5 text-muted-foreground" />
-            <div className="text-left">
-              <p className="font-semibold">Pulado</p>
-              <p className="text-xs text-muted-foreground">Decidi não tomar (não reduz estoque)</p>
+            <div className="p-2 rounded-full bg-muted-foreground/10">
+              <SkipForward className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-base">→ Pulado</p>
+              <p className="text-xs text-muted-foreground">Decidi não tomar por algum motivo</p>
+              <p className="text-xs text-muted-foreground mt-1">→ Não reduz estoque nem afeta estatísticas</p>
             </div>
           </Button>
         </div>

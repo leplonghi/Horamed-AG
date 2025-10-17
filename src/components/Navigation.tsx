@@ -1,4 +1,4 @@
-import { Home, Calendar, User, TrendingUp } from "lucide-react";
+import { Home, Calendar, User, Pill } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,8 +6,8 @@ export default function Navigation() {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", icon: Home, label: "Hoje" },
-    { path: "/rotina", icon: TrendingUp, label: "Rotina" },
+    { path: "/", icon: Home, label: "Início" },
+    { path: "/doses", icon: Pill, label: "Minhas Doses" },
     { path: "/calendario", icon: Calendar, label: "Calendário" },
     { path: "/perfil", icon: User, label: "Perfil" },
   ];
