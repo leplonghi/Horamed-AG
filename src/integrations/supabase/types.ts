@@ -14,6 +14,144 @@ export type Database = {
   }
   public: {
     Tables: {
+      categorias_saude: {
+        Row: {
+          created_at: string | null
+          id: string
+          label: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          label: string
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          label?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      compartilhamentos_doc: {
+        Row: {
+          allow_download: boolean | null
+          created_at: string | null
+          document_id: string
+          expires_at: string | null
+          id: string
+          revoked_at: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          allow_download?: boolean | null
+          created_at?: string | null
+          document_id: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          allow_download?: boolean | null
+          created_at?: string | null
+          document_id?: string
+          expires_at?: string | null
+          id?: string
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compartilhamentos_doc_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compartilhamentos_doc_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams_v"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos_saude: {
+        Row: {
+          categoria_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          file_path: string
+          id: string
+          issued_at: string | null
+          meta: Json | null
+          mime_type: string
+          notes: string | null
+          ocr_text: string | null
+          profile_id: string | null
+          provider: string | null
+          title: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          categoria_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          file_path: string
+          id?: string
+          issued_at?: string | null
+          meta?: Json | null
+          mime_type: string
+          notes?: string | null
+          ocr_text?: string | null
+          profile_id?: string | null
+          provider?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          categoria_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          file_path?: string
+          id?: string
+          issued_at?: string | null
+          meta?: Json | null
+          mime_type?: string
+          notes?: string | null
+          ocr_text?: string | null
+          profile_id?: string | null
+          provider?: string | null
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documentos_saude_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_saude_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dose_instances: {
         Row: {
           created_at: string | null
@@ -94,6 +232,67 @@ export type Database = {
           recommendation?: string | null
         }
         Relationships: []
+      }
+      eventos_saude: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          due_date: string
+          id: string
+          notes: string | null
+          profile_id: string | null
+          related_document_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["health_event_type"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          due_date: string
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          related_document_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["health_event_type"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          related_document_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["health_event_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_saude_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_saude_related_document_id_fkey"
+            columns: ["related_document_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eventos_saude_related_document_id_fkey"
+            columns: ["related_document_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams_v"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       health_history: {
         Row: {
@@ -486,6 +685,20 @@ export type Database = {
       }
     }
     Views: {
+      medical_exams_v: {
+        Row: {
+          created_at: string | null
+          exam_date: string | null
+          extracted_data: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string | null
+          notes: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_adherence_streaks: {
         Row: {
           current_streak: number | null
@@ -499,7 +712,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      health_event_type:
+        | "checkup"
+        | "reforco_vacina"
+        | "renovacao_exame"
+        | "consulta"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -626,6 +843,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      health_event_type: [
+        "checkup",
+        "reforco_vacina",
+        "renovacao_exame",
+        "consulta",
+      ],
+    },
   },
 } as const
