@@ -25,38 +25,24 @@ export default function CompartilharDocumento() {
           return;
         }
 
-        // Buscar compartilhamento (sem autenticação)
-        const { data: share, error: shareError } = await supabase
-          .from("compartilhamentos_doc")
-          .select("*, documentos_saude(*)")
-          .eq("token", token)
-          .single();
+        // Call secure Edge Function to validate token
+        const { data, error: validationError } = await supabase.functions.invoke(
+          "validar-compartilhamento",
+          { body: { token } }
+        );
 
-        if (shareError || !share) {
-          setError("Link de compartilhamento não encontrado");
+        if (validationError || !data?.success) {
+          setError(data?.error || "Link de compartilhamento não encontrado");
           return;
         }
 
-        // Verificar validade
-        if (share.revoked_at) {
-          setError("Este link foi revogado");
-          return;
-        }
-
-        if (share.expires_at && new Date(share.expires_at) < new Date()) {
-          setError("Este link expirou");
-          return;
-        }
-
-        setCompartilhamento(share);
-        setDocumento(share.documentos_saude);
-
-        // Obter URL assinada do documento
-        const { data: urlData } = await supabase.storage
-          .from("cofre-saude")
-          .createSignedUrl(share.documentos_saude.file_path, 3600);
-
-        if (urlData) setSignedUrl(urlData.signedUrl);
+        // Set data from secure response
+        setDocumento(data.document);
+        setCompartilhamento({
+          expires_at: data.expires_at,
+          allow_download: data.allow_download,
+        });
+        setSignedUrl(data.signed_url || "");
       } catch (err: any) {
         setError("Erro ao carregar documento");
         console.error(err);

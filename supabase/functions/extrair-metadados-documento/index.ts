@@ -31,6 +31,32 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) throw new Error("Não autenticado");
 
+    // Check subscription and enforce limits
+    const { data: subscription } = await supabaseClient
+      .from("subscriptions")
+      .select("plan_type, status")
+      .eq("user_id", user.id)
+      .single();
+
+    const isPremium = subscription?.plan_type === "premium" && subscription?.status === "active";
+
+    // Count user's documents
+    const { count } = await supabaseClient
+      .from("documentos_saude")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    // Enforce limit for free users
+    if (!isPremium && count && count >= 5) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Limite de documentos atingido", 
+          requiresUpgrade: true 
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Usar Lovable AI para extração de metadados via OCR simulado
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     

@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.agendar-lembretes-saude]
 verify_jwt = false
+
+[functions.validar-compartilhamento]
+verify_jwt = false
