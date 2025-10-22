@@ -20,6 +20,9 @@ import StreakBadge from "@/components/StreakBadge";
 import AchievementsSection from "@/components/AchievementsSection";
 import ProgressDashboard from "@/components/ProgressDashboard";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
+import HealthAssistantChat from "@/components/HealthAssistantChat";
+import MonthlyReportCard from "@/components/MonthlyReportCard";
+import SmartInsightsCard from "@/components/SmartInsightsCard";
 
 interface DoseInstance {
   id: string;
@@ -555,6 +558,9 @@ export default function Today() {
             </div>
           )}
 
+          {/* Smart Insights */}
+          <SmartInsightsCard />
+
           {/* Progress Dashboard */}
           {!streakData.loading && (
             <ProgressDashboard
@@ -566,6 +572,9 @@ export default function Today() {
               monthlyProgress={stats.weeklyAdherence}
             />
           )}
+
+          {/* Monthly Report */}
+          <MonthlyReportCard />
 
           {/* Achievements Section */}
           <AchievementsSection />
@@ -616,6 +625,7 @@ export default function Today() {
         </div>
       </div>
       <Navigation />
+      <HealthAssistantChat />
     </>
   );
 }
