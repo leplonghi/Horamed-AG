@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUploadDocumento } from "@/hooks/useCofre";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -12,17 +13,36 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
+import DocumentOCR from "@/components/DocumentOCR";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
   const [files, setFiles] = useState<File[]>([]);
   const [categoria, setCategoria] = useState<string>("");
+  const [titulo, setTitulo] = useState<string>("");
+  const [dataEmissao, setDataEmissao] = useState<string>("");
+  const [dataValidade, setDataValidade] = useState<string>("");
+  const [prestador, setPrestador] = useState<string>("");
   const [criarLembrete, setCriarLembrete] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
   const { profiles, activeProfile } = useUserProfiles();
   const uploadDocumento = useUploadDocumento();
+
+  const handleOCRResult = (result: {
+    title: string;
+    issued_at?: string;
+    expires_at?: string;
+    provider?: string;
+    category?: string;
+  }) => {
+    setTitulo(result.title);
+    if (result.issued_at) setDataEmissao(result.issued_at);
+    if (result.expires_at) setDataValidade(result.expires_at);
+    if (result.provider) setPrestador(result.provider);
+    if (result.category) setCategoria(result.category);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -78,6 +98,8 @@ export default function CofreUpload() {
         <h1 className="text-3xl font-bold mb-6">Enviar Documentos</h1>
 
         <div className="space-y-6">
+          <DocumentOCR onResult={handleOCRResult} />
+
           <Card>
             <CardContent className="pt-6">
               <Label htmlFor="file-upload" className="cursor-pointer">
@@ -128,6 +150,16 @@ export default function CofreUpload() {
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div>
+                <Label htmlFor="titulo">Título</Label>
+                <Input
+                  id="titulo"
+                  placeholder="Nome do documento"
+                  value={titulo}
+                  onChange={(e) => setTitulo(e.target.value)}
+                />
+              </div>
+
+              <div>
                 <Label htmlFor="categoria">Categoria</Label>
                 <Select value={categoria} onValueChange={setCategoria}>
                   <SelectTrigger id="categoria">
@@ -141,6 +173,37 @@ export default function CofreUpload() {
                     <SelectItem value="outro">Outros</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dataEmissao">Data de Emissão</Label>
+                  <Input
+                    id="dataEmissao"
+                    type="date"
+                    value={dataEmissao}
+                    onChange={(e) => setDataEmissao(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dataValidade">Data de Validade</Label>
+                  <Input
+                    id="dataValidade"
+                    type="date"
+                    value={dataValidade}
+                    onChange={(e) => setDataValidade(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="prestador">Prestador/Laboratório</Label>
+                <Input
+                  id="prestador"
+                  placeholder="Nome do prestador de serviço"
+                  value={prestador}
+                  onChange={(e) => setPrestador(e.target.value)}
+                />
               </div>
 
               <div className="flex items-center justify-between">
