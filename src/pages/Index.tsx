@@ -9,23 +9,36 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/hoje");
-      }
-    });
+    console.log('Index page mounted');
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        console.log('Session check:', !!session);
+        if (session) {
+          navigate("/hoje");
+        }
+      })
+      .catch((error) => {
+        console.error('Error checking session:', error);
+      });
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
+    try {
+      console.log('Starting Google login');
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
 
-    if (error) {
-      console.error("Error:", error);
+      if (error) {
+        console.error("Google login error:", error);
+        alert('Erro ao fazer login com Google. Por favor, tente novamente.');
+      }
+    } catch (error) {
+      console.error("Exception during Google login:", error);
+      alert('Erro inesperado. Por favor, recarregue a página.');
     }
   };
 

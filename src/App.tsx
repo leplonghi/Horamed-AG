@@ -78,6 +78,12 @@ function AppContent() {
 const queryClient = new QueryClient();
 
 const App = () => {
+  console.log('App initializing', {
+    hasSupabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
+    hasSupabaseKey: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    mode: import.meta.env.MODE
+  });
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
