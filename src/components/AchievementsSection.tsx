@@ -3,9 +3,16 @@ import AchievementCard from "./AchievementCard";
 import { Card } from "./ui/card";
 import { Trophy, Lock } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 export default function AchievementsSection() {
   const { achievements, loading, unlockedCount } = useAchievements();
+  const { isEnabled } = useFeatureFlags();
+
+  // Feature flag: badges desabilitada por padrão
+  if (!isEnabled('badges')) {
+    return null;
+  }
 
   if (loading) {
     return (

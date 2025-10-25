@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AlertTriangle, Phone, MapPin, Clock, Activity } from "lucide-react";
+import { AlertTriangle, Phone, MapPin, Clock, Activity, Lock } from "lucide-react";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface EmergencyResponse {
   guidance: string;
@@ -30,11 +31,35 @@ interface EmergencyResponse {
 
 const Emergency = () => {
   const navigate = useNavigate();
+  const { isEnabled } = useFeatureFlags();
   const [medicationName, setMedicationName] = useState("");
   const [missedDoses, setMissedDoses] = useState("1");
   const [timeSinceMissed, setTimeSinceMissed] = useState("");
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<EmergencyResponse | null>(null);
+
+  // Feature flag: emergency desabilitada por padrão
+  if (!isEnabled('emergency')) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <Header />
+        <main className="container mx-auto px-4 py-6">
+          <div className="max-w-md mx-auto text-center pt-20 space-y-6">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold">Funcionalidade Desabilitada</h2>
+            <p className="text-muted-foreground">
+              O Modo Emergência está temporariamente desabilitado. Em caso de emergência real, ligue para o SAMU (192).
+            </p>
+            <Button onClick={() => navigate('/hoje')} variant="outline">
+              Voltar para Início
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const handleEmergency = async () => {
     if (!medicationName.trim() || !timeSinceMissed.trim()) {

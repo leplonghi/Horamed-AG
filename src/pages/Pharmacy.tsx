@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, TrendingDown, MapPin, ExternalLink, Truck, Store } from "lucide-react";
+import { Search, TrendingDown, MapPin, ExternalLink, Truck, Store, Lock } from "lucide-react";
+import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 interface PharmacyPrice {
   name: string;
@@ -27,9 +28,33 @@ interface PriceComparison {
 
 const Pharmacy = () => {
   const navigate = useNavigate();
+  const { isEnabled } = useFeatureFlags();
   const [medicationName, setMedicationName] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<PriceComparison | null>(null);
+
+  // Feature flag: prices desabilitada por padrão
+  if (!isEnabled('prices')) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <Header />
+        <main className="container mx-auto px-4 py-6">
+          <div className="max-w-md mx-auto text-center pt-20 space-y-6">
+            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+              <Lock className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold">Funcionalidade Desabilitada</h2>
+            <p className="text-muted-foreground">
+              A pesquisa de preços em farmácias está temporariamente desabilitada. Estamos trabalhando em parcerias para oferecer este serviço em breve.
+            </p>
+            <Button onClick={() => navigate('/hoje')} variant="outline">
+              Voltar para Início
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const searchPrices = async () => {
     if (!medicationName.trim()) {

@@ -294,6 +294,33 @@ export type Database = {
           },
         ]
       }
+      feature_flags: {
+        Row: {
+          config: Json | null
+          created_at: string | null
+          enabled: boolean
+          id: string
+          key: string
+          updated_at: string | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+          key: string
+          updated_at?: string | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string | null
+          enabled?: boolean
+          id?: string
+          key?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       health_history: {
         Row: {
           created_at: string

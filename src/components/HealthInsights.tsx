@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
+import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 interface Insight {
   id: string;
@@ -32,7 +33,11 @@ export default function HealthInsights() {
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const { isPremium } = useSubscription();
+  const { isEnabled } = useFeatureFlags();
   const navigate = useNavigate();
+
+  // Feature flag: interactions desabilitada por padrão
+  const interactionsEnabled = isEnabled('interactions');
 
   useEffect(() => {
     if (isPremium) {
@@ -66,21 +71,32 @@ export default function HealthInsights() {
     toast.loading('Analisando seus medicamentos...');
 
     try {
-      // Análise de interações medicamentosas
-      const { data: interactionData } = await supabase.functions.invoke(
-        'analyze-drug-interactions'
-      );
+      let interactionData = null;
+      let predictiveData = null;
+
+      // Análise de interações medicamentosas (apenas se flag habilitada)
+      if (interactionsEnabled) {
+        const { data } = await supabase.functions.invoke(
+          'analyze-drug-interactions'
+        );
+        interactionData = data;
+      }
 
       // Análise preditiva de saúde
-      const { data: predictiveData } = await supabase.functions.invoke(
+      const { data } = await supabase.functions.invoke(
         'predictive-health-analysis'
       );
+      predictiveData = data;
 
       toast.dismiss();
       
       if (interactionData?.insights?.length > 0 || predictiveData?.insights?.length > 0) {
+        const interactionCount = interactionData?.total || 0;
+        const predictiveCount = predictiveData?.total || 0;
         toast.success('Análise concluída! Novos insights detectados', {
-          description: `${interactionData?.total || 0} interações + ${predictiveData?.total || 0} padrões`
+          description: interactionsEnabled 
+            ? `${interactionCount} interações + ${predictiveCount} padrões`
+            : `${predictiveCount} padrões detectados`
         });
         await loadInsights();
       } else {

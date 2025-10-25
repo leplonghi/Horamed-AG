@@ -51,6 +51,7 @@ export default function Charts() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Mantém check de subscription, mas respeita feature flag também
     if (!hasFeature('charts')) {
       setShowUpgradeModal(true);
     } else {
