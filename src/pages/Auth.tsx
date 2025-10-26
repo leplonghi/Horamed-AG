@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Mail, Chrome } from "lucide-react";
+import { Mail, Chrome, Fingerprint } from "lucide-react";
 import logo from "@/assets/horamend-logo.png";
 import { z } from "zod";
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 
 const passwordSchema = z.string()
   .min(8, "A senha deve ter no mínimo 8 caracteres")
@@ -22,6 +23,16 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { isAvailable, isLoading: biometricLoading, loginWithBiometric, isBiometricEnabled, setupBiometricLogin } = useBiometricAuth();
+
+  useEffect(() => {
+    // Auto-redirect if already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+  }, [navigate]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -94,6 +105,15 @@ export default function Auth() {
       
       toast.success("Login realizado! 💚");
       
+      // Ask if user wants to enable biometric login
+      if (isAvailable && !isBiometricEnabled) {
+        setTimeout(() => {
+          if (window.confirm("Deseja ativar login por biometria?")) {
+            setupBiometricLogin(email, password);
+          }
+        }, 1000);
+      }
+      
       navigate("/");
     } catch (error: any) {
       console.error("Error:", error);
@@ -123,6 +143,19 @@ export default function Auth() {
           </TabsList>
 
           <TabsContent value="login" className="space-y-4">
+            {isAvailable && isBiometricEnabled && (
+              <Button
+                type="button"
+                onClick={loginWithBiometric}
+                disabled={biometricLoading}
+                className="w-full"
+                variant="outline"
+              >
+                <Fingerprint className="h-4 w-4 mr-2" />
+                {biometricLoading ? "Autenticando..." : "Entrar com Biometria"}
+              </Button>
+            )}
+
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-email">E-mail</Label>
