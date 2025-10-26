@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          resource: string
+          resource_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource: string
+          resource_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          resource?: string
+          resource_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       categorias_saude: {
         Row: {
           created_at: string | null
@@ -82,6 +118,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      consents: {
+        Row: {
+          created_at: string
+          granted: boolean
+          granted_at: string | null
+          id: string
+          ip_address: unknown
+          purpose: Database["public"]["Enums"]["consent_purpose"]
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown
+          purpose: Database["public"]["Enums"]["consent_purpose"]
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown
+          purpose?: Database["public"]["Enums"]["consent_purpose"]
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       documentos_saude: {
         Row: {
@@ -637,38 +712,50 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          canceled_at: string | null
           created_at: string
           expires_at: string | null
           id: string
           plan_type: string
+          price_variant: string | null
           started_at: string
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          trial_used: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          canceled_at?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           plan_type: string
+          price_variant?: string | null
           started_at?: string
           status: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          canceled_at?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
           plan_type?: string
+          price_variant?: string | null
           started_at?: string
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          trial_used?: boolean | null
           updated_at?: string
           user_id?: string
         }
@@ -736,9 +823,22 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      has_consent: {
+        Args: {
+          p_purpose: Database["public"]["Enums"]["consent_purpose"]
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      is_on_trial: { Args: { p_user_id: string }; Returns: boolean }
     }
     Enums: {
+      consent_purpose:
+        | "health_data"
+        | "notifications"
+        | "data_sharing"
+        | "marketing"
+        | "analytics"
       health_event_type:
         | "checkup"
         | "reforco_vacina"
@@ -871,6 +971,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      consent_purpose: [
+        "health_data",
+        "notifications",
+        "data_sharing",
+        "marketing",
+        "analytics",
+      ],
       health_event_type: [
         "checkup",
         "reforco_vacina",

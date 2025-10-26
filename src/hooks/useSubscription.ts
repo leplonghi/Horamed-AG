@@ -5,12 +5,16 @@ import { useToast } from '@/hooks/use-toast';
 export interface Subscription {
   id: string;
   user_id: string;
-  plan_type: 'free' | 'premium';
-  status: 'active' | 'cancelled' | 'expired';
+  plan_type: 'free' | 'premium_individual' | 'premium_family';
+  status: 'active' | 'cancelled' | 'expired' | 'trial';
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   started_at: string;
   expires_at: string | null;
+  trial_ends_at: string | null;
+  trial_used: boolean;
+  price_variant: 'A' | 'B' | 'C';
+  canceled_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -120,16 +124,25 @@ export function useSubscription() {
     }
   };
 
-  const isPremium = subscription?.plan_type === 'premium' && subscription?.status === 'active';
+  const isPremium = (subscription?.plan_type === 'premium_individual' || subscription?.plan_type === 'premium_family') 
+    && (subscription?.status === 'active' || subscription?.status === 'trial');
   const isFree = subscription?.plan_type === 'free';
+  
+  const isOnTrial = subscription?.status === 'trial' && subscription?.trial_ends_at 
+    ? new Date(subscription.trial_ends_at) > new Date()
+    : false;
+  
+  const trialDaysLeft = subscription?.trial_ends_at && isOnTrial
+    ? Math.max(0, Math.ceil((new Date(subscription.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
   
   const daysLeft = subscription?.expires_at 
     ? Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
-  const isExpired = subscription?.status === 'expired' || (daysLeft !== null && daysLeft <= 0);
+  const isExpired = subscription?.status === 'expired' || (daysLeft !== null && daysLeft <= 0 && !isOnTrial);
 
-  const canAddMedication = isPremium || (isFree && !isExpired);
+  const canAddMedication = isPremium || isOnTrial || (isFree && !isExpired);
   
   const hasFeature = (feature: 'ocr' | 'charts' | 'unlimited_meds' | 'no_ads') => {
     if (isPremium) return true;
@@ -149,6 +162,8 @@ export function useSubscription() {
     isPremium,
     isFree,
     isExpired,
+    isOnTrial,
+    trialDaysLeft,
     daysLeft,
     canAddMedication,
     hasFeature,
