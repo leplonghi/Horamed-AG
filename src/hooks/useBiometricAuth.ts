@@ -48,18 +48,22 @@ export const useBiometricAuth = () => {
   const setupBiometricLogin = async (email: string, password: string) => {
     const success = await authenticate();
     if (success) {
-      localStorage.setItem("biometric_email", email);
-      localStorage.setItem("biometric_enabled", "true");
-      toast({
-        title: "Biometria ativada",
-        description: "Login por biometria configurado com sucesso",
-      });
+      // Get current session to store refresh token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.refresh_token) {
+        localStorage.setItem("biometric_refresh_token", session.refresh_token);
+        localStorage.setItem("biometric_enabled", "true");
+        toast({
+          title: "Biometria ativada",
+          description: "Login por biometria configurado com sucesso",
+        });
+      }
     }
   };
 
   const loginWithBiometric = async () => {
-    const email = localStorage.getItem("biometric_email");
-    if (!email) {
+    const refreshToken = localStorage.getItem("biometric_refresh_token");
+    if (!refreshToken) {
       toast({
         title: "Erro",
         description: "Biometria não configurada",
@@ -70,26 +74,27 @@ export const useBiometricAuth = () => {
 
     const success = await authenticate();
     if (success) {
-      // Usar magic link ou session refresh
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-        },
+      // Use refresh token to restore session
+      const { error } = await supabase.auth.setSession({
+        access_token: refreshToken,
+        refresh_token: refreshToken,
       });
 
       if (error) {
+        // If refresh token expired, clear and ask to login again
+        localStorage.removeItem("biometric_refresh_token");
+        localStorage.removeItem("biometric_enabled");
         toast({
-          title: "Erro ao autenticar",
-          description: error.message,
+          title: "Sessão expirada",
+          description: "Faça login novamente para reativar a biometria",
           variant: "destructive",
         });
         return false;
       }
 
       toast({
-        title: "Verifique seu email",
-        description: "Enviamos um link de acesso",
+        title: "Login realizado",
+        description: "Bem-vindo de volta!",
       });
       return true;
     }
@@ -97,7 +102,7 @@ export const useBiometricAuth = () => {
   };
 
   const disableBiometric = () => {
-    localStorage.removeItem("biometric_email");
+    localStorage.removeItem("biometric_refresh_token");
     localStorage.removeItem("biometric_enabled");
     toast({
       title: "Biometria desativada",
