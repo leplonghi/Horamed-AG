@@ -38,7 +38,7 @@ import DataExport from './pages/DataExport';
 import DocumentScan from './pages/DocumentScan';
 import CaregiverAccept from './pages/CaregiverAccept';
 import ConsultationCardView from './pages/ConsultationCardView';
-import Admin from './pages/Admin';
+import Admin from './pages/Admin'; // Admin dashboard
 
 function AppContent() {
   const location = useLocation();

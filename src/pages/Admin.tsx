@@ -5,6 +5,7 @@ import FeatureFlagsAdmin from "@/components/FeatureFlagsAdmin";
 import NotificationMetrics from "@/components/NotificationMetrics";
 import { Shield, Activity } from "lucide-react";
 
+// Admin page for feature flags and metrics
 export default function Admin() {
   return (
     <div className="min-h-screen bg-background">
