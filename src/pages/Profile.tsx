@@ -379,6 +379,14 @@ export default function Profile() {
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
 
+              <button
+                onClick={() => navigate('/terms')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <FileText className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Termos de Uso e LGPD</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
 
               <button 
                 onClick={() => navigate('/planos')}

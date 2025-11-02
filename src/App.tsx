@@ -20,6 +20,7 @@ import Notifications from "./pages/Notifications";
 import Privacy from "./pages/Privacy";
 import SubscriptionManagement from "./pages/SubscriptionManagement";
 import HelpSupport from "./pages/HelpSupport";
+import Terms from "./pages/Terms";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Plans from "./pages/Plans";
@@ -69,6 +70,7 @@ function AppContent() {
         <Route path="/alarme" element={<ProtectedRoute><AlarmSettings /></ProtectedRoute>} />
         <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
         <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
+        <Route path="/terms" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
         <Route path="/graficos" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
         <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
         <Route path="/farmacia" element={<ProtectedRoute><Pharmacy /></ProtectedRoute>} />
