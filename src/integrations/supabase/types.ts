@@ -1024,6 +1024,59 @@ export type Database = {
           },
         ]
       }
+      notification_logs: {
+        Row: {
+          body: string
+          created_at: string
+          delivery_status: string
+          dose_id: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          notification_type: string
+          scheduled_at: string
+          sent_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          delivery_status?: string
+          dose_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type: string
+          scheduled_at: string
+          sent_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          delivery_status?: string
+          dose_id?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          notification_type?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_dose_id_fkey"
+            columns: ["dose_id"]
+            isOneToOne: false
+            referencedRelation: "dose_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_metrics: {
         Row: {
           created_at: string
