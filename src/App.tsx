@@ -39,6 +39,9 @@ import DocumentScan from './pages/DocumentScan';
 import CaregiverAccept from './pages/CaregiverAccept';
 import ConsultationCardView from './pages/ConsultationCardView';
 import Admin from './pages/Admin'; // Admin dashboard
+import HealthTimeline from './pages/HealthTimeline';
+import HealthDashboard from './pages/HealthDashboard';
+import MedicalAppointments from './pages/MedicalAppointments';
 
 function AppContent() {
   const location = useLocation();
@@ -80,6 +83,9 @@ function AppContent() {
             <Route path="/cuidador/aceitar/:token" element={<CaregiverAccept />} />
             <Route path="/consulta/:token" element={<ConsultationCardView />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/timeline" element={<ProtectedRoute><HealthTimeline /></ProtectedRoute>} />
+            <Route path="/evolucao" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
+            <Route path="/agenda" element={<ProtectedRoute><MedicalAppointments /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       {showNavigation && <Navigation />}

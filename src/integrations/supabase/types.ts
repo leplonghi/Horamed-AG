@@ -320,6 +320,76 @@ export type Database = {
         }
         Relationships: []
       }
+      consultas_medicas: {
+        Row: {
+          created_at: string
+          data_consulta: string
+          documento_id: string | null
+          especialidade: string | null
+          id: string
+          local: string | null
+          medico_nome: string | null
+          motivo: string | null
+          observacoes: string | null
+          profile_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_consulta: string
+          documento_id?: string | null
+          especialidade?: string | null
+          id?: string
+          local?: string | null
+          medico_nome?: string | null
+          motivo?: string | null
+          observacoes?: string | null
+          profile_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_consulta?: string
+          documento_id?: string | null
+          especialidade?: string | null
+          id?: string
+          local?: string | null
+          medico_nome?: string | null
+          motivo?: string | null
+          observacoes?: string | null
+          profile_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_medicas_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_medicas_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consultas_medicas_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consultation_cards: {
         Row: {
           created_at: string
@@ -629,6 +699,64 @@ export type Database = {
           },
         ]
       }
+      exames_laboratoriais: {
+        Row: {
+          created_at: string
+          data_exame: string
+          documento_id: string | null
+          id: string
+          laboratorio: string | null
+          medico_solicitante: string | null
+          profile_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_exame: string
+          documento_id?: string | null
+          id?: string
+          laboratorio?: string | null
+          medico_solicitante?: string | null
+          profile_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_exame?: string
+          documento_id?: string | null
+          id?: string
+          laboratorio?: string | null
+          medico_solicitante?: string | null
+          profile_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exames_laboratoriais_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exames_laboratoriais_documento_id_fkey"
+            columns: ["documento_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams_v"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exames_laboratoriais_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_flags: {
         Row: {
           config: Json | null
@@ -855,6 +983,47 @@ export type Database = {
         }
         Relationships: []
       }
+      medical_shares: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          profile_id: string | null
+          revoked_at: string | null
+          token: string
+          user_id: string
+          views_count: number
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          profile_id?: string | null
+          revoked_at?: string | null
+          token: string
+          user_id: string
+          views_count?: number
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          profile_id?: string | null
+          revoked_at?: string | null
+          token?: string
+          user_id?: string
+          views_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "medical_shares_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_metrics: {
         Row: {
           created_at: string
@@ -1010,6 +1179,62 @@ export type Database = {
           },
         ]
       }
+      sinais_vitais: {
+        Row: {
+          created_at: string
+          data_medicao: string
+          frequencia_cardiaca: number | null
+          glicemia: number | null
+          id: string
+          observacoes: string | null
+          peso_kg: number | null
+          pressao_diastolica: number | null
+          pressao_sistolica: number | null
+          profile_id: string | null
+          saturacao_oxigenio: number | null
+          temperatura: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_medicao?: string
+          frequencia_cardiaca?: number | null
+          glicemia?: number | null
+          id?: string
+          observacoes?: string | null
+          peso_kg?: number | null
+          pressao_diastolica?: number | null
+          pressao_sistolica?: number | null
+          profile_id?: string | null
+          saturacao_oxigenio?: number | null
+          temperatura?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_medicao?: string
+          frequencia_cardiaca?: number | null
+          glicemia?: number | null
+          id?: string
+          observacoes?: string | null
+          peso_kg?: number | null
+          pressao_diastolica?: number | null
+          pressao_sistolica?: number | null
+          profile_id?: string | null
+          saturacao_oxigenio?: number | null
+          temperatura?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sinais_vitais_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock: {
         Row: {
           id: string
@@ -1137,6 +1362,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      valores_exames: {
+        Row: {
+          created_at: string
+          exame_id: string
+          id: string
+          parametro: string
+          referencia_max: number | null
+          referencia_min: number | null
+          referencia_texto: string | null
+          status: string | null
+          unidade: string | null
+          valor: number | null
+          valor_texto: string | null
+        }
+        Insert: {
+          created_at?: string
+          exame_id: string
+          id?: string
+          parametro: string
+          referencia_max?: number | null
+          referencia_min?: number | null
+          referencia_texto?: string | null
+          status?: string | null
+          unidade?: string | null
+          valor?: number | null
+          valor_texto?: string | null
+        }
+        Update: {
+          created_at?: string
+          exame_id?: string
+          id?: string
+          parametro?: string
+          referencia_max?: number | null
+          referencia_min?: number | null
+          referencia_texto?: string | null
+          status?: string | null
+          unidade?: string | null
+          valor?: number | null
+          valor_texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valores_exames_exame_id_fkey"
+            columns: ["exame_id"]
+            isOneToOne: false
+            referencedRelation: "exames_laboratoriais"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

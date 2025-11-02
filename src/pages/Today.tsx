@@ -23,6 +23,7 @@ import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import HealthAssistantChat from "@/components/HealthAssistantChat";
 import MonthlyReportCard from "@/components/MonthlyReportCard";
 import SmartInsightsCard from "@/components/SmartInsightsCard";
+import HealthHistoryLinks from "@/components/HealthHistoryLinks";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface DoseInstance {
@@ -645,6 +646,7 @@ export default function Today() {
             />
           )}
 
+          <HealthHistoryLinks />
           <MonthlyReportCard />
           <AchievementsSection />
           <HealthInsights />
