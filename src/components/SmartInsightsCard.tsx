@@ -198,37 +198,56 @@ export default function SmartInsightsCard() {
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold flex items-center gap-2">
-        <Lightbulb className="h-5 w-5 text-primary" />
-        Insights Inteligentes
-      </h3>
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 animate-pulse">
+          <Lightbulb className="h-6 w-6 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Insights Inteligentes</h3>
+          <p className="text-xs text-muted-foreground">
+            Baseados em IA e seus padrões de uso
+          </p>
+        </div>
+      </div>
       
       <div className="space-y-3">
-        {insights.map((insight) => (
+        {insights.map((insight, index) => (
           <Card
             key={insight.id}
+            style={{ animationDelay: `${index * 100}ms` }}
             className={cn(
-              "p-4 relative animate-fade-in",
+              "p-5 relative backdrop-blur-sm bg-gradient-to-br transition-all duration-300 hover:scale-[1.01] hover:shadow-lg animate-scale-in border-2",
               getColorClasses(insight.priority)
             )}
           >
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 h-6 w-6"
+              className="absolute top-3 right-3 h-7 w-7 hover:bg-background/50 transition-all hover:scale-110"
               onClick={() => dismissInsight(insight.id)}
             >
               <X className="h-4 w-4" />
             </Button>
             
-            <div className="flex items-start gap-3 pr-8">
-              <div className="mt-0.5">
+            <div className="flex items-start gap-4 pr-10">
+              <div className={cn(
+                "p-3 rounded-xl transition-transform duration-300 hover:scale-110",
+                insight.priority === "high" ? "bg-destructive/20" :
+                insight.priority === "medium" ? "bg-orange-500/20" :
+                "bg-primary/20"
+              )}>
                 {getIcon(insight.type)}
               </div>
-              <div className="space-y-1 flex-1">
-                <h4 className="font-semibold text-sm">{insight.title}</h4>
-                <p className="text-sm opacity-90">{insight.description}</p>
+              <div className="space-y-2 flex-1 min-w-0">
+                <h4 className="font-bold text-base leading-tight">{insight.title}</h4>
+                <p className="text-sm leading-relaxed opacity-90">{insight.description}</p>
+                {insight.priority === "high" && (
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>Ação recomendada</span>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

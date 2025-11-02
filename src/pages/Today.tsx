@@ -6,6 +6,7 @@ import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Clock, Pill, TrendingUp, Package, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO, differenceInYears, subDays, startOfDay } from "date-fns";
@@ -413,19 +414,22 @@ export default function Today() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pt-20 p-4 sm:p-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
           <AdBanner />
 
-          {/* Header with greeting */}
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-2 flex-1">
-              <h2 className="text-3xl font-bold text-foreground">
-                {greeting}{profile?.nickname ? `, ${profile.nickname}` : ""}!
-              </h2>
-              <p className="text-muted-foreground">
-                {format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
-              </p>
+          {/* Header with greeting - Enhanced */}
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="space-y-3 flex-1">
+              <div className="space-y-1">
+                <h2 className="text-3xl sm:text-4xl font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                  {greeting}{profile?.nickname ? `, ${profile.nickname}` : ""}!
+                </h2>
+                <p className="text-base text-muted-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4" />
+                  {format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                </p>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {!streakData.loading && streakData.currentStreak > 0 && (
                   <StreakBadge streak={streakData.currentStreak} type="current" />
@@ -441,146 +445,201 @@ export default function Today() {
             onDismiss={criticalAlerts.dismissAlert}
           />
 
-          {/* Next 3 Doses - Compact View */}
-          <div className="space-y-3">
-            <h2 className="text-xl font-semibold flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Próximas 3 doses
-            </h2>
+          {/* Next 3 Doses - Enhanced View */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
+                <Clock className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Próximas Doses</h2>
+                <p className="text-xs text-muted-foreground">
+                  {upcomingDoses.length === 0 ? 'Nenhuma dose agendada' : `${upcomingDoses.length} dose(s) hoje`}
+                </p>
+              </div>
+            </div>
 
             {upcomingDoses.length === 0 ? (
-              <Card className="p-6 text-center">
-                <p className="text-muted-foreground">
-                  ✓ Nenhuma dose programada para agora
-                </p>
+              <Card className="relative overflow-hidden p-8 text-center bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed animate-fade-in">
+                <div className="absolute inset-0 bg-grid-pattern opacity-5" />
+                <div className="relative space-y-2">
+                  <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
+                    <Pill className="h-10 w-10 text-primary" />
+                  </div>
+                  <p className="font-semibold text-foreground">
+                    Tudo em dia por agora
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma dose programada para este momento
+                  </p>
+                </div>
               </Card>
             ) : (
-              upcomingDoses.slice(0, 3).map((dose) => {
-                // Check if item has zero stock
-                const hasZeroStock = criticalAlerts.alerts.some(
-                  alert => alert.type === "zero_stock" && alert.itemId === dose.item_id
-                );
+              <div className="space-y-3">
+                {upcomingDoses.slice(0, 3).map((dose, index) => {
+                  const hasZeroStock = criticalAlerts.alerts.some(
+                    alert => alert.type === "zero_stock" && alert.itemId === dose.item_id
+                  );
 
-                return (
-                  <Card
-                    key={dose.id}
-                    className="p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <h3 className="text-lg font-semibold text-foreground">
-                            {dose.items.name}
-                          </h3>
-                          {dose.items.dose_text && (
-                            <p className="text-sm text-muted-foreground">
-                              {dose.items.dose_text}
-                            </p>
-                          )}
-                          {dose.items.with_food && (
-                            <p className="text-xs text-primary font-medium">
-                              🍽️ Tomar com alimento
-                            </p>
-                          )}
+                  return (
+                    <Card
+                      key={dose.id}
+                      style={{ animationDelay: `${index * 100}ms` }}
+                      className="relative overflow-hidden p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] animate-scale-in border-l-4 border-l-primary bg-gradient-to-r from-background to-muted/20"
+                    >
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+                      <div className="relative space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                              {dose.items.name}
+                            </h3>
+                            {dose.items.dose_text && (
+                              <p className="text-sm text-muted-foreground">
+                                💊 {dose.items.dose_text}
+                              </p>
+                            )}
+                            {dose.items.with_food && (
+                              <div className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
+                                🍽️ Tomar com alimento
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 sm:text-right">
+                            <Clock className="h-5 w-5 text-primary sm:hidden" />
+                            <div>
+                              <p className="text-3xl sm:text-4xl font-bold text-primary">
+                                {format(parseISO(dose.due_at), "HH:mm")}
+                              </p>
+                              <p className="text-xs text-muted-foreground hidden sm:block">
+                                horário
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-primary">
-                            {format(parseISO(dose.due_at), "HH:mm")}
-                          </p>
+
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            onClick={() => markAsTaken(dose.id, dose.item_id)}
+                            disabled={hasZeroStock}
+                            className="flex-1 sm:flex-none bg-gradient-to-r from-primary to-primary/90 hover:shadow-lg transition-all hover:scale-105 min-w-[140px]"
+                          >
+                            ✓ Tomei Agora
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => snoozeDose(dose.id, 15)}
+                            className="border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all"
+                          >
+                            ⏰ +15 min
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => skipDose(dose.id)}
+                            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                          >
+                            Pular
+                          </Button>
                         </div>
                       </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onClick={() => markAsTaken(dose.id, dose.item_id)}
-                          disabled={hasZeroStock}
-                          className="flex-1 bg-primary hover:bg-primary/90 min-w-[120px]"
-                        >
-                          ✓ Tomei
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => snoozeDose(dose.id, 15)}
-                          className="border-primary/30 hover:bg-primary/5"
-                        >
-                          +15 min
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => skipDose(dose.id)}
-                          className="text-muted-foreground"
-                        >
-                          Pular
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })
+                    </Card>
+                  );
+                })}
+              </div>
             )}
           </div>
 
-          {/* Low Stock Alerts - Only if exists */}
+          {/* Low Stock Alerts - Enhanced */}
           {lowStockItems.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-xl font-semibold flex items-center gap-2 text-orange-600 dark:text-orange-500">
-                <Package className="h-5 w-5" />
-                ⚠️ Estoque baixo ({lowStockItems.length})
-              </h2>
-              {lowStockItems.slice(0, 3).map((item) => (
-                <Card
-                  key={item.id}
-                  className="p-4 border-orange-500/30 bg-orange-500/5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-foreground">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {item.units_left} {item.unit_label} restantes
-                      </p>
+            <div className="space-y-4 animate-fade-in">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 animate-pulse">
+                  <Package className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                    Estoque Baixo
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    {lowStockItems.length} {lowStockItems.length === 1 ? 'medicamento precisa' : 'medicamentos precisam'} de reposição
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {lowStockItems.slice(0, 3).map((item, index) => (
+                  <Card
+                    key={item.id}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                    className="p-4 border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-500/5 to-background hover:shadow-lg transition-all duration-300 hover:scale-[1.01] animate-scale-in"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-foreground truncate">{item.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {item.units_left} {item.unit_label} restantes
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                          {item.projected_days_left}
+                        </p>
+                        <p className="text-xs text-muted-foreground">dias</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-orange-600 dark:text-orange-500">
-                        ~{item.projected_days_left} dias
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Collapsible Weekly Summary */}
+          {/* Collapsible Weekly Summary - Enhanced */}
           <Collapsible open={showWeeklySummary} onOpenChange={setShowWeeklySummary}>
-            <Card className="p-4">
-              <CollapsibleTrigger className="w-full flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                  Resumo Semanal
-                </h3>
-                {showWeeklySummary ? (
-                  <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                )}
+            <Card className="overflow-hidden border-2 hover:shadow-lg transition-all duration-300">
+              <CollapsibleTrigger className="w-full p-5 flex items-center justify-between hover:bg-muted/30 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-bold text-foreground">
+                      Resumo Semanal
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Seu desempenho nos últimos 7 dias
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="font-bold">
+                    {stats.weeklyAdherence}%
+                  </Badge>
+                  {showWeeklySummary ? (
+                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
               </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4 space-y-4">
+              <CollapsibleContent className="p-5 pt-0 space-y-4 animate-fade-in bg-gradient-to-b from-muted/20 to-background">
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-primary">{stats.weeklyAdherence}%</p>
-                    <p className="text-xs text-muted-foreground">Adesão</p>
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                    <p className="text-3xl font-bold text-primary">{stats.weeklyAdherence}%</p>
+                    <p className="text-xs text-muted-foreground mt-1">Adesão Semanal</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-foreground">{upcomingDoses.length}</p>
-                    <p className="text-xs text-muted-foreground">Hoje</p>
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-muted to-muted/50">
+                    <p className="text-3xl font-bold text-foreground">{upcomingDoses.length}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Doses Hoje</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-500">{lowStockItems.length}</p>
-                    <p className="text-xs text-muted-foreground">Acabando</p>
+                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{lowStockItems.length}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Acabando</p>
                   </div>
                 </div>
                 {weeklyAdherence.length > 0 && (
-                  <AdherenceChart weeklyData={weeklyAdherence} />
+                  <div className="pt-2">
+                    <AdherenceChart weeklyData={weeklyAdherence} />
+                  </div>
                 )}
               </CollapsibleContent>
             </Card>
