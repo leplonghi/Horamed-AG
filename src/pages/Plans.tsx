@@ -68,17 +68,20 @@ export default function Plans() {
   const freePlanFeatures = [
     "1 medicamento ativo",
     "Notificações básicas",
-    "Com anúncios",
-    
+    "Acesso limitado ao histórico",
+    "Com anúncios"
   ];
 
   const premiumPlanFeatures = [
-    "✨ Proteção Inteligente - Detecta interações PERIGOSAS",
-    "🎯 Análise Preditiva - Descubra POR QUE você esquece",
-    "👨‍👩‍👧‍👦 Múltiplos perfis - Toda família em 1 conta",
-    "📊 Relatórios que impressionam médicos",
-    "🚫 Zero propagandas atrapalhando alertas",
-    "🤖 OCR de receitas médicas",
+    "💊 Medicamentos ilimitados",
+    "📋 Histórico médico completo e seguro",
+    "🔬 Análise de exames laboratoriais",
+    "📅 Agenda médica integrada",
+    "📈 Painel de evolução da saúde",
+    "✨ Análise de interações medicamentosas",
+    "👨‍👩‍👧‍👦 Múltiplos perfis familiares",
+    "🤖 OCR de receitas e documentos",
+    "🚫 Sem anúncios",
     "⚡ Suporte prioritário"
   ];
 

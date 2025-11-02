@@ -54,7 +54,7 @@ const Index = () => {
               HoraMed
             </h1>
             <p className="text-lg text-muted-foreground">
-              Sua saúde no horário certo
+              Gestão completa da sua saúde em um só lugar
             </p>
           </div>
         </div>
