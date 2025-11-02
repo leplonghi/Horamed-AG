@@ -80,7 +80,7 @@ export default function Cofre() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      <div className="container max-w-4xl mx-auto px-4 py-6">
+      <div className="container max-w-4xl mx-auto px-4 pt-20 pb-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">Cofre de Saúde</h1>
