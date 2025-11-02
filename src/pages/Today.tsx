@@ -56,7 +56,7 @@ interface UserProfile {
 }
 
 export default function Today() {
-  const { stopAlarm } = useMedicationAlarm();
+  const { stopAlarm, scheduleNotificationsForNextDay } = useMedicationAlarm();
   usePushNotifications();
   const streakData = useStreakCalculator();
   const criticalAlerts = useCriticalAlerts();
@@ -79,6 +79,20 @@ export default function Today() {
   const [showHealthStats, setShowHealthStats] = useState(false);
 
   useMedicationAlarm();
+
+  // Schedule notifications for next 24 hours on app open
+  useEffect(() => {
+    const scheduleNotifications = async () => {
+      try {
+        await scheduleNotificationsForNextDay();
+        console.log('Notifications scheduled for next 24 hours');
+      } catch (error) {
+        console.error('Error scheduling notifications:', error);
+      }
+    };
+
+    scheduleNotifications();
+  }, [scheduleNotificationsForNextDay]);
 
   useEffect(() => {
     const hour = new Date().getHours();

@@ -185,6 +185,24 @@ export const useMedicationAlarm = () => {
       console.error("Failed to schedule notification with fallback");
     }
 
+    // Send push notification for wearables and background delivery
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.functions.invoke('send-dose-notification', {
+          body: {
+            doseId: dose.id,
+            userId: user.id,
+            title,
+            body,
+            scheduledAt: new Date().toISOString(),
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Error sending push notification:', error);
+    }
+
     // Also show toast notification
     toast.info(title, {
       description: body,
@@ -196,5 +214,14 @@ export const useMedicationAlarm = () => {
     });
   };
 
-  return { stopAlarm, getNotificationStats };
+  const scheduleNotificationsForNextDay = async () => {
+    try {
+      await supabase.functions.invoke('schedule-dose-notifications');
+      console.log('Scheduled notifications for next 24 hours');
+    } catch (error) {
+      console.error('Error scheduling notifications:', error);
+    }
+  };
+
+  return { stopAlarm, getNotificationStats, scheduleNotificationsForNextDay };
 };

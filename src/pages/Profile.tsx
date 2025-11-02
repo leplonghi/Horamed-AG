@@ -335,7 +335,7 @@ export default function Profile() {
               </button>
 
               <button 
-                onClick={() => navigate('/notifications')}
+                onClick={() => navigate('/notificacoes')}
                 className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
               >
                 <Bell className="h-5 w-5 text-primary" />

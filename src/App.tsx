@@ -42,6 +42,7 @@ import Admin from './pages/Admin'; // Admin dashboard
 import HealthTimeline from './pages/HealthTimeline';
 import HealthDashboard from './pages/HealthDashboard';
 import MedicalAppointments from './pages/MedicalAppointments';
+import NotificationSettings from "./pages/NotificationSettings";
 
 function AppContent() {
   const location = useLocation();
@@ -86,6 +87,7 @@ function AppContent() {
             <Route path="/timeline" element={<ProtectedRoute><HealthTimeline /></ProtectedRoute>} />
             <Route path="/evolucao" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
             <Route path="/agenda" element={<ProtectedRoute><MedicalAppointments /></ProtectedRoute>} />
+            <Route path="/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       {showNavigation && <Navigation />}

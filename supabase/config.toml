@@ -3,6 +3,12 @@ project_id = "zmsuqdwleyqpdthaqvbi"
 [functions.audit-log]
 verify_jwt = true
 
+[functions.send-dose-notification]
+verify_jwt = true
+
+[functions.schedule-dose-notifications]
+verify_jwt = false
+
 [functions.extract-medication]
 verify_jwt = true
 
