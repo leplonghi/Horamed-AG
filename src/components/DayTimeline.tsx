@@ -40,13 +40,13 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "medication":
-        return <Pill className="h-6 w-6" />;
+        return <Pill className="h-4 w-4" />;
       case "appointment":
-        return <Stethoscope className="h-6 w-6" />;
+        return <Stethoscope className="h-4 w-4" />;
       case "exam":
-        return <TestTube className="h-6 w-6" />;
+        return <TestTube className="h-4 w-4" />;
       default:
-        return <Calendar className="h-6 w-6" />;
+        return <Calendar className="h-4 w-4" />;
     }
   };
 
@@ -106,16 +106,16 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
             if (!hourItems || hourItems.length === 0) return null;
 
             return (
-              <div key={hour} className="relative pl-12">
+              <div key={hour} className="relative pl-10">
                 {/* Hora */}
-                <div className="absolute left-0 top-0 text-right w-10">
-                  <span className="text-2xl font-bold text-muted-foreground">
+                <div className="absolute left-0 top-0 text-right w-8">
+                  <span className="text-lg font-bold text-muted-foreground">
                     {hour}:00
                   </span>
                 </div>
 
                 {/* Items */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {hourItems.map((item) => {
                     const isPast = isCurrentDay && isBefore(
                       parseISO(`${format(date, "yyyy-MM-dd")}T${item.time}`),
@@ -128,25 +128,25 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
                       <Card
                         key={item.id}
                         className={cn(
-                          "border-l-4 transition-all hover:shadow-lg",
-                          isDone && "bg-green-50 border-green-500",
-                          isMissed && "bg-red-50 border-red-500",
+                          "border-l-4 transition-all hover:shadow-md",
+                          isDone && "bg-green-50 border-green-500 dark:bg-green-950/20",
+                          isMissed && "bg-red-50 border-red-500 dark:bg-red-950/20",
                           !isDone && !isMissed && "border-primary"
                         )}
                       >
-                        <CardContent className="p-6">
-                          <div className="flex items-start gap-4">
+                        <CardContent className="p-4">
+                          <div className="flex items-start gap-3">
                             {/* Ícone */}
                             <div
                               className={cn(
-                                "p-3 rounded-full text-white shrink-0",
+                                "p-2 rounded-full text-white shrink-0",
                                 isDone && "bg-green-500",
                                 isMissed && "bg-red-500",
                                 !isDone && !isMissed && getTypeColor(item.type)
                               )}
                             >
                               {isDone ? (
-                                <CheckCircle2 className="h-6 w-6" />
+                                <CheckCircle2 className="h-4 w-4" />
                               ) : (
                                 getTypeIcon(item.type)
                               )}
@@ -154,36 +154,36 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
 
                             {/* Conteúdo */}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-4 mb-2">
+                              <div className="flex items-start justify-between gap-3 mb-2">
                                 <div className="flex-1">
-                                  <Badge variant="outline" className="mb-2 text-xs">
+                                  <Badge variant="outline" className="mb-1 text-xs">
                                     {getTypeLabel(item.type)}
                                   </Badge>
-                                  <h3 className="text-xl font-bold mb-1">
+                                  <h3 className="text-base font-bold mb-0.5">
                                     {item.title}
                                   </h3>
                                   {item.subtitle && (
-                                    <p className="text-base text-muted-foreground">
+                                    <p className="text-sm text-muted-foreground">
                                       {item.subtitle}
                                     </p>
                                   )}
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-3xl font-bold text-primary">
+                                  <p className="text-xl font-bold text-primary">
                                     {item.time}
                                   </p>
                                   {isPast && !isDone && !isMissed && (
-                                    <Badge variant="destructive" className="mt-1">
+                                    <Badge variant="destructive" className="mt-0.5 text-xs">
                                       Atrasado
                                     </Badge>
                                   )}
                                   {isDone && (
-                                    <Badge variant="default" className="mt-1 bg-green-500">
+                                    <Badge variant="default" className="mt-0.5 bg-green-500 text-xs">
                                       ✓ Feito
                                     </Badge>
                                   )}
                                   {isMissed && (
-                                    <Badge variant="destructive" className="mt-1">
+                                    <Badge variant="destructive" className="mt-0.5 text-xs">
                                       Perdido
                                     </Badge>
                                   )}
@@ -192,24 +192,23 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
 
                               {/* Ações - apenas para medicamentos pendentes */}
                               {item.type === "medication" && !isDone && !isMissed && (
-                                <div className="flex gap-3 mt-4">
+                                <div className="flex gap-2 mt-3">
                                   <Button
-                                    size="lg"
+                                    size="default"
                                     onClick={item.onMarkDone}
-                                    className="flex-1 text-lg py-6"
+                                    className="flex-1"
                                   >
-                                    <CheckCircle2 className="h-5 w-5 mr-2" />
-                                    ✓ Tomei
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Tomei
                                   </Button>
                                   {item.onSnooze && (
                                     <Button
-                                      size="lg"
+                                      size="default"
                                       variant="outline"
                                       onClick={item.onSnooze}
-                                      className="text-lg py-6"
                                     >
-                                      <Clock className="h-5 w-5 mr-2" />
-                                      Mais tarde
+                                      <Clock className="h-4 w-4 mr-2" />
+                                      Adiar
                                     </Button>
                                   )}
                                 </div>
