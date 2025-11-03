@@ -401,8 +401,8 @@ export default function AddItem() {
         toast.success("Item adicionado com sucesso! 🎉");
       }
 
-      console.log("✅ Operação concluída, navegando para /rotina");
-      navigate("/rotina");
+      console.log("✅ Operação concluída, navegando para /medicamentos");
+      navigate("/medicamentos");
     } catch (error) {
       console.error("❌ Error saving item:", error);
       toast.error("Erro ao salvar item");
