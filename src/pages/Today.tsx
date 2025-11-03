@@ -220,6 +220,10 @@ export default function Today() {
 
     loadData(selectedDate);
     loadEventCounts();
+  }, [loadData, loadEventCounts, selectedDate]);
+
+  // Schedule notifications only once on mount
+  useEffect(() => {
     scheduleNotificationsForNextDay();
 
     // Set up realtime subscription
@@ -257,7 +261,8 @@ export default function Today() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadData, loadEventCounts, scheduleNotificationsForNextDay, selectedDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const markAsTaken = async (doseId: string, itemId: string, itemName: string) => {
     try {
