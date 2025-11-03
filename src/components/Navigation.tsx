@@ -6,10 +6,10 @@ export default function Navigation() {
   const location = useLocation();
 
   const navItems = [
-    { path: "/", icon: Home, label: "Início" },
-    { path: "/doses", icon: Pill, label: "Doses" },
-    { path: "/cofre", icon: FolderHeart, label: "Cofre" },
-    { path: "/perfil", icon: User, label: "Perfil" },
+    { path: "/hoje", icon: Home, label: "Hoje" },
+    { path: "/medicamentos", icon: Pill, label: "Medicamentos" },
+    { path: "/historico", icon: Calendar, label: "Histórico" },
+    { path: "/mais", icon: User, label: "Mais" },
   ];
 
   return (

@@ -1,32 +1,23 @@
-import { useState, useEffect, useMemo } from "react";
-import HealthInsights from "@/components/HealthInsights";
-import ProfileSelector from "@/components/ProfileSelector";
-import CriticalAlertBanner from "@/components/CriticalAlertBanner";
-import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Pill, TrendingUp, Package, ChevronDown, ChevronUp } from "lucide-react";
+import { Clock, Plus, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { format, parseISO, differenceInYears, subDays, startOfDay } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
-import AdBanner from "@/components/AdBanner";
-import AdherenceChart from "@/components/AdherenceChart";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import StreakBadge from "@/components/StreakBadge";
-import AchievementsSection from "@/components/AchievementsSection";
-import ProgressDashboard from "@/components/ProgressDashboard";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
-import HealthAssistantChat from "@/components/HealthAssistantChat";
-import MonthlyReportCard from "@/components/MonthlyReportCard";
-import SmartInsightsCard from "@/components/SmartInsightsCard";
-import HealthHistoryLinks from "@/components/HealthHistoryLinks";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useNavigate } from "react-router-dom";
+import CriticalAlertBanner from "@/components/CriticalAlertBanner";
+import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
+import DoseActionButton from "@/components/DoseActionButton";
 
 interface DoseInstance {
   id: string;
@@ -48,16 +39,9 @@ interface LowStock {
   projected_days_left: number;
 }
 
-interface UserProfile {
-  full_name: string | null;
-  nickname: string | null;
-  birth_date: string | null;
-  weight_kg: number | null;
-  height_cm: number | null;
-}
-
 export default function Today() {
-  const { stopAlarm, scheduleNotificationsForNextDay } = useMedicationAlarm();
+  const navigate = useNavigate();
+  const { scheduleNotificationsForNextDay } = useMedicationAlarm();
   usePushNotifications();
   const streakData = useStreakCalculator();
   const criticalAlerts = useCriticalAlerts();
@@ -66,34 +50,8 @@ export default function Today() {
   const [lowStockItems, setLowStockItems] = useState<LowStock[]>([]);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [weeklyAdherence, setWeeklyAdherence] = useState<{ day: string; taken: number; total: number }[]>([]);
-  const [stats, setStats] = useState({
-    totalToday: 0,
-    completed: 0,
-    pending: 0,
-    lowStock: 0,
-    weeklyAdherence: 0,
-  });
-  const [showWeeklySummary, setShowWeeklySummary] = useState(false);
-  const [showHealthStats, setShowHealthStats] = useState(false);
-
-  useMedicationAlarm();
-
-  // Schedule notifications for next 24 hours on app open
-  useEffect(() => {
-    const scheduleNotifications = async () => {
-      try {
-        await scheduleNotificationsForNextDay();
-        console.log('Notifications scheduled for next 24 hours');
-      } catch (error) {
-        console.error('Error scheduling notifications:', error);
-      }
-    };
-
-    scheduleNotifications();
-  }, [scheduleNotificationsForNextDay]);
+  const [userName, setUserName] = useState("");
+  const [todayStats, setTodayStats] = useState({ total: 0, completed: 0 });
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -101,45 +59,32 @@ export default function Today() {
     else if (hour < 18) setGreeting("Boa tarde");
     else setGreeting("Boa noite");
 
-    fetchTodayData();
-    fetchProfile();
-    loadStats();
-    loadWeeklyAdherence();
-
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
+    loadData();
+    scheduleNotificationsForNextDay();
   }, []);
 
-  const fetchProfile = async () => {
+  const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Load user name
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, nickname, birth_date, weight_kg, height_cm")
+        .select("nickname, full_name")
         .eq("user_id", user.id)
         .single();
 
       if (profileData) {
-        setProfile(profileData);
+        setUserName(profileData.nickname || profileData.full_name || "");
       }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
 
-  const fetchTodayData = async () => {
-    try {
+      // Load today's doses
       const now = new Date();
       const endOfDay = new Date(now);
       endOfDay.setHours(23, 59, 59, 999);
 
-      // Fetch upcoming doses for today
-      const { data: doses, error: dosesError } = await supabase
+      const { data: doses } = await supabase
         .from("dose_instances")
         .select(`
           id,
@@ -148,17 +93,30 @@ export default function Today() {
           item_id,
           items (name, dose_text, with_food)
         `)
-        .eq("status", "scheduled")
         .gte("due_at", now.toISOString())
         .lte("due_at", endOfDay.toISOString())
         .order("due_at", { ascending: true })
-        .limit(5);
+        .limit(10);
 
-      if (dosesError) throw dosesError;
       setUpcomingDoses(doses || []);
 
-      // Fetch low stock items
-      const { data: items, error: itemsError } = await supabase
+      // Calculate today stats
+      const startOfDay = new Date(now);
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const { data: todayDoses } = await supabase
+        .from("dose_instances")
+        .select(`*, items!inner(user_id)`)
+        .eq("items.user_id", user.id)
+        .gte("due_at", startOfDay.toISOString())
+        .lte("due_at", endOfDay.toISOString());
+
+      const total = todayDoses?.length || 0;
+      const completed = todayDoses?.filter(d => d.status === "taken").length || 0;
+      setTodayStats({ total, completed });
+
+      // Load low stock items
+      const { data: items } = await supabase
         .from("items")
         .select(`
           id,
@@ -166,8 +124,6 @@ export default function Today() {
           stock (units_left, unit_label, projected_end_at)
         `)
         .eq("is_active", true);
-
-      if (itemsError) throw itemsError;
 
       const lowStock = items
         ?.filter((item: any) => {
@@ -194,113 +150,16 @@ export default function Today() {
 
       setLowStockItems(lowStock || []);
     } catch (error) {
-      console.error("Error fetching today data:", error);
-      toast.error("Erro ao carregar dados de hoje");
+      console.error("Error loading data:", error);
+      toast.error("Erro ao carregar dados");
     } finally {
       setLoading(false);
     }
   };
 
-  const loadWeeklyAdherence = async () => {
+  const markAsTaken = async (doseId: string, itemId: string, itemName: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const weekData = [];
-      for (let i = 6; i >= 0; i--) {
-        const day = startOfDay(subDays(new Date(), i));
-        const nextDay = new Date(day);
-        nextDay.setDate(nextDay.getDate() + 1);
-
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select(`
-            *,
-            items!inner(user_id)
-          `)
-          .eq("items.user_id", user.id)
-          .gte("due_at", day.toISOString())
-          .lt("due_at", nextDay.toISOString());
-
-        const total = doses?.length || 0;
-        const taken = doses?.filter((d) => d.status === "taken").length || 0;
-
-        weekData.push({
-          day: format(day, "EEE", { locale: ptBR }),
-          taken,
-          total,
-        });
-      }
-
-      setWeeklyAdherence(weekData);
-    } catch (error) {
-      console.error("Error loading weekly adherence:", error);
-    }
-  };
-
-  const loadStats = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const { data: todayDoses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", today.toISOString())
-        .lt("due_at", tomorrow.toISOString());
-
-      const completed = todayDoses?.filter((d) => d.status === "taken").length || 0;
-      const pending = todayDoses?.filter((d) => d.status === "scheduled").length || 0;
-
-      // Calculate weekly adherence
-      const last7Days = subDays(new Date(), 7);
-      const { data: weekDoses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", last7Days.toISOString());
-
-      const weekTotal = weekDoses?.length || 0;
-      const weekTaken = weekDoses?.filter((d) => d.status === "taken").length || 0;
-      const weeklyAdherence = weekTotal > 0 ? Math.round((weekTaken / weekTotal) * 100) : 0;
-
-      const { data: stockData } = await supabase
-        .from("stock")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id);
-
-      const lowStock = stockData?.filter((s) => s.units_left < s.units_total * 0.2).length || 0;
-
-      setStats({
-        totalToday: todayDoses?.length || 0,
-        completed,
-        pending,
-        lowStock,
-        weeklyAdherence,
-      });
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    }
-  };
-
-  const markAsTaken = async (doseId: string, itemId: string) => {
-    try {
-      // Check if item has stock
+      // Check stock
       const { data: stockData } = await supabase
         .from("stock")
         .select("units_left")
@@ -308,38 +167,18 @@ export default function Today() {
         .single();
 
       if (stockData && stockData.units_left === 0) {
-        toast.error("❌ Estoque zerado! Reabasteça antes de registrar dose.");
+        toast.error("Estoque zerado! Reabasteça antes de registrar dose.");
         return;
       }
 
-      // Check for recent duplicate (within 4 hours)
-      const fourHoursAgo = new Date();
-      fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
-
-      const { data: recentDoses } = await supabase
-        .from("dose_instances")
-        .select("taken_at")
-        .eq("item_id", itemId)
-        .eq("status", "taken")
-        .gte("taken_at", fourHoursAgo.toISOString());
-
-      if (recentDoses && recentDoses.length > 0) {
-        const confirmed = window.confirm(
-          "Você já registrou essa medicação nas últimas 4 horas. Tem certeza que deseja registrar novamente?"
-        );
-        if (!confirmed) return;
-      }
-
-      const takenAt = new Date();
-      const { error } = await supabase
+      // Update dose
+      await supabase
         .from("dose_instances")
         .update({
           status: "taken",
-          taken_at: takenAt.toISOString(),
+          taken_at: new Date().toISOString(),
         })
         .eq("id", doseId);
-
-      if (error) throw error;
 
       // Decrement stock
       if (stockData && stockData.units_left > 0) {
@@ -349,32 +188,17 @@ export default function Today() {
           .eq("item_id", itemId);
       }
 
-      showMotivationalMessage();
-      fetchTodayData();
+      toast.success(`✓ ${itemName} confirmado!`);
+      loadData();
       streakData.refresh();
       criticalAlerts.refresh();
     } catch (error) {
-      console.error("Error marking dose as taken:", error);
+      console.error("Error marking dose:", error);
       toast.error("Erro ao confirmar dose");
     }
   };
 
-  const showMotivationalMessage = () => {
-    const messages = [
-      "✓ Dose confirmada! Você está no controle!",
-      "✓ Ótimo trabalho! Continue assim!",
-      "✓ Parabéns! Sua saúde agradece!",
-      "✓ Excelente! Mais um passo rumo à sua meta!",
-      "✓ Mandou bem! Sua dedicação faz a diferença!",
-    ];
-    
-    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-    toast.success(randomMessage, {
-      duration: 2500,
-    });
-  };
-
-  const snoozeDose = async (doseId: string, minutes: number) => {
+  const snoozeDose = async (doseId: string, itemName: string) => {
     try {
       const { data: dose } = await supabase
         .from("dose_instances")
@@ -384,346 +208,239 @@ export default function Today() {
 
       if (dose) {
         const newTime = new Date(dose.due_at);
-        newTime.setMinutes(newTime.getMinutes() + minutes);
+        newTime.setMinutes(newTime.getMinutes() + 15);
 
         await supabase
           .from("dose_instances")
           .update({
             due_at: newTime.toISOString(),
-            status: "snoozed",
           })
           .eq("id", doseId);
 
-        toast.success(`Lembrete adiado por ${minutes} minutos`);
-        fetchTodayData();
+        toast.success(`⏰ ${itemName} adiado por 15 minutos`);
+        loadData();
       }
     } catch (error) {
       console.error("Error snoozing dose:", error);
-      toast.error("Erro ao adiar lembrete");
+      toast.error("Erro ao adiar dose");
     }
   };
 
-  const skipDose = async (doseId: string) => {
+  const skipDose = async (doseId: string, itemName: string) => {
     try {
       await supabase
         .from("dose_instances")
         .update({ status: "skipped" })
         .eq("id", doseId);
 
-      toast("Dose pulada");
-      fetchTodayData();
+      toast.success(`→ ${itemName} pulado`);
+      loadData();
     } catch (error) {
       console.error("Error skipping dose:", error);
       toast.error("Erro ao pular dose");
     }
   };
 
+  const adherencePercentage = todayStats.total > 0 
+    ? Math.round((todayStats.completed / todayStats.total) * 100) 
+    : 0;
+
   if (loading) {
-    return <PageSkeleton />;
+    return (
+      <>
+        <Header />
+        <PageSkeleton />
+        <Navigation />
+      </>
+    );
   }
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 pt-20 p-4 sm:p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-          <AdBanner />
-
-          {/* Header with greeting - Enhanced */}
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-            <div className="space-y-3 flex-1">
-              <div className="space-y-1">
-                <h2 className="text-3xl sm:text-4xl font-bold text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
-                  {greeting}{profile?.nickname ? `, ${profile.nickname}` : ""}!
-                </h2>
-                <p className="text-base text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  {format(currentTime, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {!streakData.loading && streakData.currentStreak > 0 && (
-                  <StreakBadge streak={streakData.currentStreak} type="current" />
-                )}
-              </div>
+      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Greeting */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold">
+                {greeting}{userName && `, ${userName}`}!
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {upcomingDoses.length > 0 
+                  ? `Você tem ${upcomingDoses.length} dose${upcomingDoses.length > 1 ? 's' : ''} para tomar hoje`
+                  : "Nenhuma dose programada para hoje"}
+              </p>
             </div>
-            <ProfileSelector />
-          </div>
-
-          {/* Critical Alerts Section */}
-          <CriticalAlertBanner 
-            alerts={criticalAlerts.alerts} 
-            onDismiss={criticalAlerts.dismissAlert}
-          />
-
-          {/* Next 3 Doses - Enhanced View */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10">
-                <Clock className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Próximas Doses</h2>
-                <p className="text-xs text-muted-foreground">
-                  {upcomingDoses.length === 0 ? 'Nenhuma dose agendada' : `${upcomingDoses.length} dose(s) hoje`}
-                </p>
-              </div>
-            </div>
-
-            {upcomingDoses.length === 0 ? (
-              <Card className="relative overflow-hidden p-8 text-center bg-gradient-to-br from-primary/5 to-accent/5 border-2 border-dashed animate-fade-in">
-                <div className="absolute inset-0 bg-grid-pattern opacity-5" />
-                <div className="relative space-y-2">
-                  <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10">
-                    <Pill className="h-10 w-10 text-primary" />
-                  </div>
-                  <p className="font-semibold text-foreground">
-                    Tudo em dia por agora
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Nenhuma dose programada para este momento
-                  </p>
-                </div>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                {upcomingDoses.slice(0, 3).map((dose, index) => {
-                  const hasZeroStock = criticalAlerts.alerts.some(
-                    alert => alert.type === "zero_stock" && alert.itemId === dose.item_id
-                  );
-
-                  return (
-                    <Card
-                      key={dose.id}
-                      style={{ animationDelay: `${index * 100}ms` }}
-                      className="relative overflow-hidden p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] animate-scale-in border-l-4 border-l-primary bg-gradient-to-r from-background to-muted/20"
-                    >
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-                      <div className="relative space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                          <div className="space-y-2 flex-1 min-w-0">
-                            <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                              {dose.items.name}
-                            </h3>
-                            {dose.items.dose_text && (
-                              <p className="text-sm text-muted-foreground">
-                                💊 {dose.items.dose_text}
-                              </p>
-                            )}
-                            {dose.items.with_food && (
-                              <div className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary">
-                                🍽️ Tomar com alimento
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 sm:text-right">
-                            <Clock className="h-5 w-5 text-primary sm:hidden" />
-                            <div>
-                              <p className="text-3xl sm:text-4xl font-bold text-primary">
-                                {format(parseISO(dose.due_at), "HH:mm")}
-                              </p>
-                              <p className="text-xs text-muted-foreground hidden sm:block">
-                                horário
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            onClick={() => markAsTaken(dose.id, dose.item_id)}
-                            disabled={hasZeroStock}
-                            className="flex-1 sm:flex-none bg-gradient-to-r from-primary to-primary/90 hover:shadow-lg transition-all hover:scale-105 min-w-[140px]"
-                          >
-                            ✓ Tomei Agora
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => snoozeDose(dose.id, 15)}
-                            className="border-primary/30 hover:bg-primary/5 hover:border-primary/50 transition-all"
-                          >
-                            ⏰ +15 min
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            onClick={() => skipDose(dose.id)}
-                            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                          >
-                            Pular
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
+            {streakData.currentStreak > 0 && (
+              <StreakBadge streak={streakData.currentStreak} type="current" />
             )}
           </div>
 
-          {/* Low Stock Alerts - Enhanced */}
-          {lowStockItems.length > 0 && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/10 animate-pulse">
-                  <Package className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                    Estoque Baixo
-                  </h2>
-                  <p className="text-xs text-muted-foreground">
-                    {lowStockItems.length} {lowStockItems.length === 1 ? 'medicamento precisa' : 'medicamentos precisam'} de reposição
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {lowStockItems.slice(0, 3).map((item, index) => (
-                  <Card
-                    key={item.id}
-                    style={{ animationDelay: `${index * 100}ms` }}
-                    className="p-4 border-l-4 border-l-orange-500 bg-gradient-to-r from-orange-500/5 to-background hover:shadow-lg transition-all duration-300 hover:scale-[1.01] animate-scale-in"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-foreground truncate">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {item.units_left} {item.unit_label} restantes
-                        </p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                          {item.projected_days_left}
-                        </p>
-                        <p className="text-xs text-muted-foreground">dias</p>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Collapsible Weekly Summary - Enhanced */}
-          <Collapsible open={showWeeklySummary} onOpenChange={setShowWeeklySummary}>
-            <Card className="overflow-hidden border-2 hover:shadow-lg transition-all duration-300">
-              <CollapsibleTrigger className="w-full p-5 flex items-center justify-between hover:bg-muted/30 transition-colors">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20">
-                    <TrendingUp className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-lg font-bold text-foreground">
-                      Resumo Semanal
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Seu desempenho nos últimos 7 dias
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="font-bold">
-                    {stats.weeklyAdherence}%
-                  </Badge>
-                  {showWeeklySummary ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-5 pt-0 space-y-4 animate-fade-in bg-gradient-to-b from-muted/20 to-background">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                    <p className="text-3xl font-bold text-primary">{stats.weeklyAdherence}%</p>
-                    <p className="text-xs text-muted-foreground mt-1">Adesão Semanal</p>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-muted to-muted/50">
-                    <p className="text-3xl font-bold text-foreground">{upcomingDoses.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Doses Hoje</p>
-                  </div>
-                  <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
-                    <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{lowStockItems.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Acabando</p>
-                  </div>
-                </div>
-                {weeklyAdherence.length > 0 && (
-                  <div className="pt-2">
-                    <AdherenceChart weeklyData={weeklyAdherence} />
-                  </div>
-                )}
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Smart Insights */}
-          <SmartInsightsCard />
-
-          {/* Collapsible Health Stats */}
-          {profile && (profile.birth_date || profile.weight_kg || profile.height_cm) && (
-            <Collapsible open={showHealthStats} onOpenChange={setShowHealthStats}>
-              <Card className="p-4">
-                <CollapsibleTrigger className="w-full flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">📊 Dados de Saúde</h3>
-                  {showHealthStats ? (
-                    <ChevronUp className="h-5 w-5 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-4">
-                  <div className="grid grid-cols-3 gap-3">
-                    {profile.birth_date && (
-                      <div className="text-center p-3 bg-primary/5 rounded-lg">
-                        <p className="text-2xl">🎂</p>
-                        <p className="text-sm font-bold text-foreground">
-                          {differenceInYears(new Date(), new Date(profile.birth_date))}
-                        </p>
-                        <p className="text-xs text-muted-foreground">anos</p>
-                      </div>
-                    )}
-                    {profile.weight_kg && (
-                      <div className="text-center p-3 bg-primary/5 rounded-lg">
-                        <p className="text-2xl">⚖️</p>
-                        <p className="text-sm font-bold text-foreground">{profile.weight_kg}</p>
-                        <p className="text-xs text-muted-foreground">kg</p>
-                      </div>
-                    )}
-                    {profile.height_cm && (
-                      <div className="text-center p-3 bg-primary/5 rounded-lg">
-                        <p className="text-2xl">📏</p>
-                        <p className="text-sm font-bold text-foreground">
-                          {(profile.height_cm / 100).toFixed(2)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">m</p>
-                      </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          )}
-
-          {/* Progress Dashboard - Compact */}
-          {!streakData.loading && streakData.currentStreak >= 3 && (
-            <ProgressDashboard
-              currentStreak={streakData.currentStreak}
-              longestStreak={streakData.longestStreak}
-              thisWeekAverage={streakData.thisWeekAverage}
-              lastWeekAverage={streakData.lastWeekAverage}
-              monthlyGoal={90}
-              monthlyProgress={stats.weeklyAdherence}
+          {/* Critical Alerts */}
+          {criticalAlerts.alerts.length > 0 && (
+            <CriticalAlertBanner 
+              alerts={criticalAlerts.alerts}
+              onDismiss={criticalAlerts.dismissAlert}
             />
           )}
 
-          <HealthHistoryLinks />
-          <MonthlyReportCard />
-          <AchievementsSection />
-          <HealthInsights />
+          {/* Today Summary */}
+          {todayStats.total > 0 && (
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Progresso de Hoje</p>
+                    <p className="text-3xl font-bold">
+                      {todayStats.completed}/{todayStats.total}
+                    </p>
+                    <p className="text-sm mt-1">
+                      {adherencePercentage >= 80 && "🎉 Excelente!"}
+                      {adherencePercentage >= 50 && adherencePercentage < 80 && "💪 Bom trabalho!"}
+                      {adherencePercentage < 50 && "Vamos lá!"}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-4xl font-bold text-primary">{adherencePercentage}%</div>
+                    <p className="text-xs text-muted-foreground">de adesão</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Low Stock Alerts */}
+          {lowStockItems.length > 0 && (
+            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+              <CardContent className="pt-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                      Estoque Baixo
+                    </h3>
+                    {lowStockItems.map((item) => (
+                      <p key={item.id} className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>{item.name}</strong>: {item.units_left} {item.unit_label} 
+                        ({item.projected_days_left} dias restantes)
+                      </p>
+                    ))}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => navigate('/estoque')}
+                    className="shrink-0"
+                  >
+                    <Package className="h-4 w-4 mr-1" />
+                    Gerenciar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Upcoming Doses */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Próximas Doses</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/medicamentos')}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Adicionar
+              </Button>
+            </div>
+
+            {upcomingDoses.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-lg font-medium mb-2">Tudo em dia!</p>
+                  <p className="text-muted-foreground">
+                    Nenhuma dose programada para agora
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              upcomingDoses
+                .filter(dose => dose.status === 'scheduled')
+                .map((dose) => (
+                  <Card key={dose.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-semibold">
+                              {format(parseISO(dose.due_at), "HH:mm", { locale: ptBR })}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-lg mb-1">
+                            {dose.items.name}
+                          </h3>
+                          {dose.items.dose_text && (
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {dose.items.dose_text}
+                            </p>
+                          )}
+                          {dose.items.with_food && (
+                            <Badge variant="secondary" className="text-xs">
+                              🍽️ Com alimento
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          <DoseActionButton
+                            variant="taken"
+                            onClick={() => markAsTaken(dose.id, dose.item_id, dose.items.name)}
+                          />
+                          <DoseActionButton
+                            variant="snooze"
+                            onClick={() => snoozeDose(dose.id, dose.items.name)}
+                          />
+                          <DoseActionButton
+                            variant="more"
+                            onClick={() => skipDose(dose.id, dose.items.name)}
+                          />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-3 pt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/historico')}
+              className="h-auto py-4"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Clock className="h-5 w-5" />
+                <span className="text-sm">Ver Histórico</span>
+              </div>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/medicamentos')}
+              className="h-auto py-4"
+            >
+              <div className="flex flex-col items-center gap-2">
+                <Plus className="h-5 w-5" />
+                <span className="text-sm">Medicamentos</span>
+              </div>
+            </Button>
+          </div>
         </div>
       </div>
       <Navigation />
-      <HealthAssistantChat />
     </>
   );
 }
