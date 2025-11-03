@@ -60,7 +60,7 @@ export default function ProfileSelector() {
               {getInitials(activeProfile.name)}
             </AvatarFallback>
           </Avatar>
-          <span className="max-w-[100px] truncate">{activeProfile.name}</span>
+          <span className="max-w-[80px] truncate">{activeProfile.name}</span>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DialogTrigger>
