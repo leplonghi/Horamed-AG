@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
+import TutorialHint from "@/components/TutorialHint";
 
 export default function Cofre() {
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
@@ -84,7 +85,11 @@ export default function Cofre() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold">Cofre de Saúde</h1>
-            <p className="text-muted-foreground">Seus documentos médicos em um só lugar</p>
+            <p className="text-muted-foreground">
+              {documentos && documentos.length > 0 
+                ? `${documentos.length} documento${documentos.length > 1 ? 's' : ''} guardado${documentos.length > 1 ? 's' : ''}`
+                : "Seus documentos médicos em um só lugar"}
+            </p>
           </div>
           <Link to="/cofre/upload">
             <Button>
@@ -93,6 +98,12 @@ export default function Cofre() {
             </Button>
           </Link>
         </div>
+
+        <TutorialHint
+          id="cofre_page"
+          title="Seu cofre digital seguro 🔒"
+          message="Guarde exames, receitas, vacinas e consultas aqui. Compartilhe facilmente com médicos quando precisar! Tudo com segurança e privacidade."
+        />
 
         <div className="flex gap-2 mb-4">
           <Input

@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { 
   CheckCircle2, User, Bell, Shield, CreditCard, 
-  HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity, Package, FileText, Users, Plus, Trash2, UserPlus, QrCode, ScanLine
+  HelpCircle, LogOut, FileDown, ChevronRight, Crown, Activity, Package, FileText, Users, Plus, Trash2, 
+  History, Settings, BookOpen
 } from "lucide-react";
 import CaregiverManager from "@/components/CaregiverManager";
 import ConsultationCardGenerator from "@/components/ConsultationCardGenerator";
@@ -405,6 +406,31 @@ export default function Profile() {
                 <span className="flex-1 text-left text-foreground">Ajuda e suporte</span>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
+
+              <button 
+                onClick={() => navigate('/tutorial')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <BookOpen className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Tutorial Interativo</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
+            </Card>
+          </div>
+
+          {/* Tools & Features */}
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-foreground px-2">Ferramentas</h2>
+            
+            <Card className="divide-y divide-border">
+              <button 
+                onClick={() => navigate('/historico')}
+                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
+              >
+                <History className="h-5 w-5 text-primary" />
+                <span className="flex-1 text-left text-foreground">Histórico de Doses</span>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </button>
             </Card>
           </div>
 
@@ -528,7 +554,7 @@ export default function Profile() {
           {isEnabled('caregiverHandshake') && (
             <Card className="p-6">
               <div className="flex items-center gap-3 mb-4">
-                <UserPlus className="h-6 w-6 text-primary" />
+                <Users className="h-6 w-6 text-primary" />
                 <h2 className="text-xl font-semibold">Cuidadores</h2>
               </div>
               <CaregiverManager />

@@ -13,6 +13,8 @@ import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import FloatingActionButton from "@/components/FloatingActionButton";
+import TutorialHint from "@/components/TutorialHint";
+import InfoDialog from "@/components/InfoDialog";
 
 interface Item {
   id: string;
@@ -162,7 +164,7 @@ export default function Medications() {
             <div>
               <h1 className="text-3xl font-bold">Meus Medicamentos</h1>
               <p className="text-muted-foreground">
-                Gerencie sua rotina de medicamentos
+                {items.length > 0 && `${items.length} medicamento${items.length > 1 ? 's' : ''} ativo${items.length > 1 ? 's' : ''}`}
               </p>
             </div>
             <Button onClick={handleAddClick} size="lg">
@@ -170,6 +172,12 @@ export default function Medications() {
               Adicionar
             </Button>
           </div>
+
+          <TutorialHint
+            id="medications_page"
+            title="Gerencie seus medicamentos 💊"
+            message="Aqui você cadastra seus remédios, vitaminas e suplementos. Clique em 'Adicionar' para começar. Nome + horários já são suficientes!"
+          />
 
           {/* Search */}
           <div className="relative">

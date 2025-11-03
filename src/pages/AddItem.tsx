@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ export default function AddItem() {
   const [addMethod, setAddMethod] = useState<"manual" | "ocr">("manual");
   const [showHealthSetup, setShowHealthSetup] = useState(false);
   const [hasHealthProfile, setHasHealthProfile] = useState(false);
+  const { showFeedback } = useFeedbackToast();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -391,7 +393,7 @@ export default function AddItem() {
           });
         }
 
-        toast.success("Item adicionado com sucesso! 🎉");
+        showFeedback("medication-added", { medicationName: formData.name });
       }
 
       navigate("/medicamentos");

@@ -20,7 +20,10 @@ import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import DoseActionButton from "@/components/DoseActionButton";
 import FloatingActionButton from "@/components/FloatingActionButton";
-import HelpTooltip from "@/components/HelpTooltip";
+import TutorialHint from "@/components/TutorialHint";
+import InfoDialog from "@/components/InfoDialog";
+import DailySummaryModal from "@/components/DailySummaryModal";
+import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import ProgressDashboard from "@/components/ProgressDashboard";
 import { TrendingUp, Activity, Calendar } from "lucide-react";
 
@@ -57,9 +60,10 @@ export default function Today() {
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
   const [userName, setUserName] = useState("");
-  const [todayStats, setTodayStats] = useState({ total: 0, completed: 0 });
+  const [todayStats, setTodayStats] = useState({ total: 0, taken: 0, completed: 0 });
   const [weekStats, setWeekStats] = useState({ thisWeek: 0, lastWeek: 0 });
   const [monthStats, setMonthStats] = useState({ current: 0, goal: 90 });
+  const { showFeedback } = useFeedbackToast();
 
   const loadData = useCallback(async () => {
 
@@ -111,8 +115,9 @@ export default function Today() {
         .lte("due_at", endOfDay.toISOString());
 
       const total = todayDoses?.length || 0;
-      const completed = todayDoses?.filter(d => d.status === "taken").length || 0;
-      setTodayStats({ total, completed });
+      const taken = todayDoses?.filter(d => d.status === "taken").length || 0;
+      const completed = taken; // taken is the same as completed
+      setTodayStats({ total, taken, completed });
 
       // Calculate weekly stats
       const startOfThisWeek = new Date(now);
@@ -282,7 +287,7 @@ export default function Today() {
           .eq("item_id", itemId);
       }
 
-      toast.success(`✓ ${itemName} confirmado!`);
+      showFeedback("dose-taken", { medicationName: itemName });
       loadData();
       streakData.refresh();
       criticalAlerts.refresh();
@@ -311,7 +316,7 @@ export default function Today() {
           })
           .eq("id", doseId);
 
-        toast.success(`⏰ ${itemName} adiado por 15 minutos`);
+        showFeedback("dose-snoozed");
         loadData();
       }
     } catch (error) {
@@ -327,7 +332,7 @@ export default function Today() {
         .update({ status: "skipped" })
         .eq("id", doseId);
 
-      toast.success(`→ ${itemName} pulado`);
+      showFeedback("dose-skipped");
       loadData();
     } catch (error) {
       console.error("Error skipping dose:", error);
@@ -367,7 +372,26 @@ export default function Today() {
               </p>
             </div>
             {streakData.currentStreak > 0 && (
-              <StreakBadge streak={streakData.currentStreak} type="current" />
+              <div className="flex items-center gap-2">
+                <StreakBadge streak={streakData.currentStreak} type="current" />
+                <InfoDialog
+                  title="O que é streak?"
+                  description="Streak são dias seguidos com adesão acima de 80%. Quanto maior seu streak, mais consistente você está sendo com seus medicamentos!"
+                  triggerClassName="h-5 w-5"
+                >
+                  <div className="text-sm">
+                    <p className="font-semibold mb-2">Benefícios do streak:</p>
+                    <ul className="space-y-1">
+                      <li>🔥 Mostra sua consistência</li>
+                      <li>💪 Motiva você a continuar</li>
+                      <li>📊 Indica boa adesão ao tratamento</li>
+                    </ul>
+                    <p className="mt-3">
+                      <strong>Seu recorde:</strong> {streakData.longestStreak} dias!
+                    </p>
+                  </div>
+                </InfoDialog>
+              </div>
             )}
           </div>
 
@@ -385,7 +409,22 @@ export default function Today() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Hoje</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm text-muted-foreground">Hoje</p>
+                      <InfoDialog
+                        title="O que é adesão?"
+                        description="Adesão é a proporção de doses tomadas em relação ao total programado. Por exemplo: se você tinha 4 doses hoje e tomou 3, sua adesão é 75%. Acima de 80% é excelente!"
+                      >
+                        <div className="text-sm">
+                          <p className="font-semibold mb-2">Níveis de adesão:</p>
+                          <ul className="space-y-1">
+                            <li>🎉 <strong>80-100%:</strong> Excelente! Continue assim!</li>
+                            <li>💪 <strong>50-79%:</strong> Bom trabalho, mas pode melhorar</li>
+                            <li>⚠️ <strong>Abaixo de 50%:</strong> Atenção necessária</li>
+                          </ul>
+                        </div>
+                      </InfoDialog>
+                    </div>
                     <p className="text-3xl font-bold">
                       {todayStats.completed}/{todayStats.total}
                     </p>
@@ -487,11 +526,17 @@ export default function Today() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-semibold">Próximas Doses</h2>
-              <HelpTooltip 
-                content="Aqui aparecem os medicamentos que você deve tomar hoje. Confirme quando tomar, adie por 15 minutos ou pule a dose."
-                side="right"
+              <InfoDialog
+                title="Como funciona?"
+                description="Aqui aparecem os medicamentos que você deve tomar hoje. Confirme quando tomar, adie por 15 minutos ou pule a dose. Suas doses são organizadas por horário."
               />
             </div>
+
+            <TutorialHint
+              id="today_doses"
+              title="Marque suas doses! 💊"
+              message="Clique em '✓ Tomei' quando tomar um medicamento. Use 'Mais tarde' para adiar 15 minutos. Seu progresso diário será atualizado automaticamente!"
+            />
 
             {upcomingDoses.length === 0 ? (
               <Card className="border-dashed border-2">
@@ -589,6 +634,7 @@ export default function Today() {
       </div>
       <FloatingActionButton />
       <Navigation />
+      <DailySummaryModal />
     </>
   );
 }
