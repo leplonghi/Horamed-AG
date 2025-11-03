@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, ArrowLeft } from "lucide-react";
+import { Upload, FileText, ArrowLeft, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,6 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
-import DocumentOCR from "@/components/DocumentOCR";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
@@ -26,28 +26,49 @@ export default function CofreUpload() {
   const [criarLembrete, setCriarLembrete] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
 
   const { profiles, activeProfile } = useUserProfiles();
   const uploadDocumento = useUploadDocumento();
 
-  const handleOCRResult = (result: {
-    title: string;
-    issued_at?: string;
-    expires_at?: string;
-    provider?: string;
-    category?: string;
-  }) => {
-    setTitulo(result.title);
-    if (result.issued_at) setDataEmissao(result.issued_at);
-    if (result.expires_at) setDataValidade(result.expires_at);
-    if (result.provider) setPrestador(result.provider);
-    if (result.category) setCategoria(result.category);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setFiles((prev) => [...prev, ...newFiles]);
+
+      // Extrai automaticamente do primeiro arquivo se for imagem
+      const firstFile = newFiles[0];
+      if (firstFile && firstFile.type.startsWith('image/')) {
+        setIsExtracting(true);
+        try {
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64 = reader.result as string;
+            
+            const { data, error } = await supabase.functions.invoke('extract-document', {
+              body: { image: base64 }
+            });
+
+            if (error) throw error;
+
+            if (data) {
+              setTitulo(data.title || '');
+              if (data.issued_at) setDataEmissao(data.issued_at);
+              if (data.expires_at) setDataValidade(data.expires_at);
+              if (data.provider) setPrestador(data.provider);
+              if (data.category) setCategoria(data.category);
+
+              toast.success("Informações extraídas automaticamente! Você pode editá-las se necessário.");
+            }
+          };
+          reader.readAsDataURL(firstFile);
+        } catch (error) {
+          console.error('Erro ao extrair informações:', error);
+          toast.error("Não foi possível extrair informações automaticamente. Preencha os campos manualmente.");
+        } finally {
+          setIsExtracting(false);
+        }
+      }
     }
   };
 
@@ -97,9 +118,14 @@ export default function CofreUpload() {
 
         <h1 className="text-3xl font-bold mb-6">Enviar Documentos</h1>
 
-        <div className="space-y-6">
-          <DocumentOCR onResult={handleOCRResult} />
+        {isExtracting && (
+          <div className="mb-4 p-4 bg-primary/10 rounded-lg flex items-center gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <span className="text-sm font-medium">Extraindo informações do documento automaticamente...</span>
+          </div>
+        )}
 
+        <div className="space-y-6">
           <Card>
             <CardContent className="pt-6">
               <Label htmlFor="file-upload" className="cursor-pointer">
@@ -110,6 +136,9 @@ export default function CofreUpload() {
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
                     PDF, JPG ou PNG até 10MB
+                  </p>
+                  <p className="text-xs text-primary mt-2 font-medium">
+                    ✨ Imagens serão processadas automaticamente
                   </p>
                 </div>
                 <input
