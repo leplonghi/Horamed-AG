@@ -15,6 +15,7 @@ import { ListSkeleton } from "@/components/LoadingSkeleton";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import TutorialHint from "@/components/TutorialHint";
 import InfoDialog from "@/components/InfoDialog";
+import { cn } from "@/lib/utils";
 
 interface Item {
   id: string;
@@ -38,6 +39,24 @@ const CATEGORY_ICONS: Record<string, string> = {
   vitamina: "🧪",
   suplemento: "🌿",
   outro: "📦",
+};
+
+const MEDICATION_COLORS = [
+  "bg-blue-100 dark:bg-blue-950 border-blue-300 dark:border-blue-700",
+  "bg-purple-100 dark:bg-purple-950 border-purple-300 dark:border-purple-700",
+  "bg-pink-100 dark:bg-pink-950 border-pink-300 dark:border-pink-700",
+  "bg-green-100 dark:bg-green-950 border-green-300 dark:border-green-700",
+  "bg-orange-100 dark:bg-orange-950 border-orange-300 dark:border-orange-700",
+  "bg-teal-100 dark:bg-teal-950 border-teal-300 dark:border-teal-700",
+  "bg-indigo-100 dark:bg-indigo-950 border-indigo-300 dark:border-indigo-700",
+  "bg-rose-100 dark:bg-rose-950 border-rose-300 dark:border-rose-700",
+  "bg-cyan-100 dark:bg-cyan-950 border-cyan-300 dark:border-cyan-700",
+  "bg-amber-100 dark:bg-amber-950 border-amber-300 dark:border-amber-700",
+];
+
+const getColorForMedication = (id: string) => {
+  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return MEDICATION_COLORS[hash % MEDICATION_COLORS.length];
 };
 
 export default function Medications() {
@@ -221,9 +240,10 @@ export default function Medications() {
             <div className="space-y-3">
               {filteredItems.map((item) => {
                 const stockStatus = getStockStatus(item.stock);
+                const colorClass = getColorForMedication(item.id);
                 
                 return (
-                  <Card key={item.id} className="hover:shadow-md transition-shadow overflow-hidden">
+                  <Card key={item.id} className={cn("hover:shadow-md transition-shadow overflow-hidden border-l-4", colorClass)}>
                     <CardContent className="p-4 overflow-x-hidden">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
