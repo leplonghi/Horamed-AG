@@ -8,7 +8,7 @@ export default function Navigation() {
   const navItems = [
     { path: "/hoje", icon: Home, label: "Hoje" },
     { path: "/medicamentos", icon: Pill, label: "Medicamentos" },
-    { path: "/historico", icon: Calendar, label: "Histórico" },
+    { path: "/cofre", icon: FolderHeart, label: "Cofre" },
     { path: "/mais", icon: User, label: "Mais" },
   ];
 

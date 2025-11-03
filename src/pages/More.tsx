@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   FileText, Users, Settings, Crown, LogOut, 
-  ChevronRight, HelpCircle, Shield, Bell, QrCode, Package, FolderHeart
+  ChevronRight, HelpCircle, Shield, Bell, QrCode, Package, FolderHeart, History
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -51,6 +51,13 @@ export default function More() {
   };
 
   const menuItems = [
+    {
+      title: "Histórico de Doses",
+      description: "Ver suas doses",
+      icon: History,
+      path: "/historico",
+      badge: null,
+    },
     {
       title: "Cofre de Saúde",
       description: "Documentos e exames",
