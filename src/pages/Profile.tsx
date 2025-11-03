@@ -204,7 +204,7 @@ export default function Profile() {
               )}
             </div>
 
-            <Card className="divide-y divide-border overflow-hidden">
+            <Card className="overflow-hidden">
               {profiles.map(profile => {
                 const getInitials = (name: string) => {
                   return name
@@ -229,50 +229,52 @@ export default function Profile() {
                 const isActive = activeProfile?.id === profile.id;
 
                 return (
-                  <button
+                  <div
                     key={profile.id}
-                    onClick={() => {
-                      if (!isActive) {
-                        switchProfile(profile);
-                      }
-                    }}
-                    className={`w-full p-3 flex items-center gap-2.5 transition-colors text-left ${
-                      isActive 
-                        ? 'bg-primary/5 hover:bg-primary/10 border-l-2 border-primary' 
-                        : 'hover:bg-accent'
+                    className={`border-b last:border-b-0 ${
+                      isActive ? 'bg-primary/5' : ''
                     }`}
                   >
-                    <Avatar className="h-10 w-10 shrink-0">
-                      <AvatarImage src={profile.avatar_url || undefined} />
-                      <AvatarFallback className="text-sm">{getInitials(profile.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <p className="font-medium text-sm truncate">{profile.name}</p>
-                        {isActive && (
-                          <Badge className="text-[10px] h-5">Ativo</Badge>
-                        )}
+                    <button
+                      onClick={() => {
+                        if (!isActive) {
+                          switchProfile(profile);
+                        }
+                      }}
+                      className="w-full p-3 flex items-center gap-3 transition-colors text-left hover:bg-accent/50"
+                    >
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage src={profile.avatar_url || undefined} />
+                        <AvatarFallback className="text-sm">{getInitials(profile.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-sm truncate">{profile.name}</p>
+                          {isActive && (
+                            <Badge className="text-[10px] h-5 shrink-0">Ativo</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {getRelationshipLabel(profile.relationship)}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {getRelationshipLabel(profile.relationship)}
-                      </p>
-                    </div>
-                    {!profile.is_primary && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Deseja remover o perfil de ${profile.name}?`)) {
-                            deleteProfile(profile.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    )}
-                  </button>
+                      {!profile.is_primary && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Deseja remover o perfil de ${profile.name}?`)) {
+                              deleteProfile(profile.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+                    </button>
+                  </div>
                 );
               })}
             </Card>
