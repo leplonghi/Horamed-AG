@@ -242,8 +242,8 @@ export default function Today() {
       )
       .subscribe();
 
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(loadData, 60000);
+    // Auto-refresh every 5 minutes instead of 60 seconds
+    const interval = setInterval(loadData, 300000);
 
     return () => {
       supabase.removeChannel(channel);

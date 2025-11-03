@@ -86,7 +86,7 @@ export const useMedicationAlarm = () => {
     requestPermissions();
   }, []);
 
-  // Check for upcoming doses every minute
+  // Check for upcoming doses every 3 minutes to reduce load
   useEffect(() => {
     if (!settings.enabled) return;
 
@@ -139,7 +139,7 @@ export const useMedicationAlarm = () => {
     };
 
     checkUpcomingDoses();
-    const interval = setInterval(checkUpcomingDoses, 60000); // Check every minute
+    const interval = setInterval(checkUpcomingDoses, 180000); // Check every 3 minutes
 
     return () => clearInterval(interval);
   }, [settings]);
