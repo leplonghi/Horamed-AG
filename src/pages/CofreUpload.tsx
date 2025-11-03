@@ -23,6 +23,11 @@ export default function CofreUpload() {
   const [dataEmissao, setDataEmissao] = useState<string>("");
   const [dataValidade, setDataValidade] = useState<string>("");
   const [prestador, setPrestador] = useState<string>("");
+  const [medico, setMedico] = useState<string>("");
+  const [especialidade, setEspecialidade] = useState<string>("");
+  const [tipoExame, setTipoExame] = useState<string>("");
+  const [dose, setDose] = useState<string>("");
+  const [proximaDose, setProximaDose] = useState<string>("");
   const [criarLembrete, setCriarLembrete] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -57,6 +62,13 @@ export default function CofreUpload() {
               if (data.expires_at) setDataValidade(data.expires_at);
               if (data.provider) setPrestador(data.provider);
               if (data.category) setCategoria(data.category);
+              
+              // Campos específicos por categoria
+              if (data.doctor) setMedico(data.doctor);
+              if (data.specialty) setEspecialidade(data.specialty);
+              if (data.exam_type) setTipoExame(data.exam_type);
+              if (data.dose) setDose(data.dose);
+              if (data.next_dose) setProximaDose(data.next_dose);
 
               toast.success("Informações extraídas automaticamente! Você pode editá-las se necessário.");
             }
@@ -79,6 +91,16 @@ export default function CofreUpload() {
   const handleUpload = async () => {
     if (files.length === 0) {
       toast.error("Selecione pelo menos um arquivo");
+      return;
+    }
+
+    if (!categoria) {
+      toast.error("Selecione uma categoria");
+      return;
+    }
+
+    if (!titulo) {
+      toast.error("Preencha o título do documento");
       return;
     }
 
@@ -116,7 +138,10 @@ export default function CofreUpload() {
           Voltar
         </Button>
 
-        <h1 className="text-3xl font-bold mb-6">Enviar Documentos</h1>
+        <h1 className="text-3xl font-bold mb-2">Enviar Documentos</h1>
+        <p className="text-muted-foreground mb-6">
+          Selecione a categoria primeiro para ver os campos específicos
+        </p>
 
         {isExtracting && (
           <div className="mb-4 p-4 bg-primary/10 rounded-lg flex items-center gap-3">
@@ -179,75 +204,233 @@ export default function CofreUpload() {
           <Card>
             <CardContent className="pt-6 space-y-4">
               <div>
-                <Label htmlFor="titulo">Título</Label>
-                <Input
-                  id="titulo"
-                  placeholder="Nome do documento"
-                  value={titulo}
-                  onChange={(e) => setTitulo(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="categoria">Categoria</Label>
+                <Label htmlFor="categoria">Categoria *</Label>
                 <Select value={categoria} onValueChange={setCategoria}>
                   <SelectTrigger id="categoria">
-                    <SelectValue placeholder="Selecione uma categoria" />
+                    <SelectValue placeholder="Selecione primeiro a categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="exame">Exames</SelectItem>
-                    <SelectItem value="receita">Receitas</SelectItem>
+                    <SelectItem value="exame">Exames Laboratoriais</SelectItem>
+                    <SelectItem value="receita">Receitas Médicas</SelectItem>
                     <SelectItem value="vacinacao">Vacinação</SelectItem>
-                    <SelectItem value="consulta">Consultas</SelectItem>
-                    <SelectItem value="outro">Outros</SelectItem>
+                    <SelectItem value="consulta">Consultas Médicas</SelectItem>
+                    <SelectItem value="outro">Outros Documentos</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="dataEmissao">Data de Emissão</Label>
-                  <Input
-                    id="dataEmissao"
-                    type="date"
-                    value={dataEmissao}
-                    onChange={(e) => setDataEmissao(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dataValidade">Data de Validade</Label>
-                  <Input
-                    id="dataValidade"
-                    type="date"
-                    value={dataValidade}
-                    onChange={(e) => setDataValidade(e.target.value)}
-                  />
-                </div>
-              </div>
+              {categoria && (
+                <>
+                  <div>
+                    <Label htmlFor="titulo">Título *</Label>
+                    <Input
+                      id="titulo"
+                      placeholder={
+                        categoria === "exame" ? "Ex: Hemograma Completo" :
+                        categoria === "receita" ? "Ex: Receita de Antibiótico" :
+                        categoria === "vacinacao" ? "Ex: Vacina COVID-19" :
+                        categoria === "consulta" ? "Ex: Consulta Cardiologista" :
+                        "Nome do documento"
+                      }
+                      value={titulo}
+                      onChange={(e) => setTitulo(e.target.value)}
+                    />
+                  </div>
 
-              <div>
-                <Label htmlFor="prestador">Prestador/Laboratório</Label>
-                <Input
-                  id="prestador"
-                  placeholder="Nome do prestador de serviço"
-                  value={prestador}
-                  onChange={(e) => setPrestador(e.target.value)}
-                />
-              </div>
+                  {/* Campos para EXAMES */}
+                  {categoria === "exame" && (
+                    <>
+                      <div>
+                        <Label htmlFor="tipoExame">Tipo de Exame</Label>
+                        <Input
+                          id="tipoExame"
+                          placeholder="Ex: Sangue, Urina, Imagem"
+                          value={tipoExame}
+                          onChange={(e) => setTipoExame(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dataEmissao">Data do Exame *</Label>
+                        <Input
+                          id="dataEmissao"
+                          type="date"
+                          value={dataEmissao}
+                          onChange={(e) => setDataEmissao(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="prestador">Laboratório</Label>
+                        <Input
+                          id="prestador"
+                          placeholder="Ex: Delboni, Fleury"
+                          value={prestador}
+                          onChange={(e) => setPrestador(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
 
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="lembrete">Criar lembrete automático</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Para check-ups e renovações
-                  </p>
-                </div>
-                <Switch
-                  id="lembrete"
-                  checked={criarLembrete}
-                  onCheckedChange={setCriarLembrete}
-                />
-              </div>
+                  {/* Campos para RECEITAS */}
+                  {categoria === "receita" && (
+                    <>
+                      <div>
+                        <Label htmlFor="dataEmissao">Data da Receita *</Label>
+                        <Input
+                          id="dataEmissao"
+                          type="date"
+                          value={dataEmissao}
+                          onChange={(e) => setDataEmissao(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dataValidade">Validade</Label>
+                        <Input
+                          id="dataValidade"
+                          type="date"
+                          value={dataValidade}
+                          onChange={(e) => setDataValidade(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="medico">Médico Prescritor</Label>
+                        <Input
+                          id="medico"
+                          placeholder="Nome do médico"
+                          value={medico}
+                          onChange={(e) => setMedico(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Campos para VACINAÇÃO */}
+                  {categoria === "vacinacao" && (
+                    <>
+                      <div>
+                        <Label htmlFor="dataEmissao">Data da Aplicação *</Label>
+                        <Input
+                          id="dataEmissao"
+                          type="date"
+                          value={dataEmissao}
+                          onChange={(e) => setDataEmissao(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="dose">Dose</Label>
+                        <Input
+                          id="dose"
+                          placeholder="Ex: 1ª dose, 2ª dose, Reforço"
+                          value={dose}
+                          onChange={(e) => setDose(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="proximaDose">Próxima Dose</Label>
+                        <Input
+                          id="proximaDose"
+                          type="date"
+                          value={proximaDose}
+                          onChange={(e) => setProximaDose(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="prestador">Local de Aplicação</Label>
+                        <Input
+                          id="prestador"
+                          placeholder="Ex: UBS, Clínica particular"
+                          value={prestador}
+                          onChange={(e) => setPrestador(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Campos para CONSULTAS */}
+                  {categoria === "consulta" && (
+                    <>
+                      <div>
+                        <Label htmlFor="dataEmissao">Data da Consulta *</Label>
+                        <Input
+                          id="dataEmissao"
+                          type="date"
+                          value={dataEmissao}
+                          onChange={(e) => setDataEmissao(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="medico">Nome do Médico</Label>
+                        <Input
+                          id="medico"
+                          placeholder="Ex: Dr. João Silva"
+                          value={medico}
+                          onChange={(e) => setMedico(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="especialidade">Especialidade</Label>
+                        <Input
+                          id="especialidade"
+                          placeholder="Ex: Cardiologia, Dermatologia"
+                          value={especialidade}
+                          onChange={(e) => setEspecialidade(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="prestador">Local</Label>
+                        <Input
+                          id="prestador"
+                          placeholder="Ex: Hospital São Luiz"
+                          value={prestador}
+                          onChange={(e) => setPrestador(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Campos para OUTROS */}
+                  {categoria === "outro" && (
+                    <>
+                      <div>
+                        <Label htmlFor="dataEmissao">Data do Documento</Label>
+                        <Input
+                          id="dataEmissao"
+                          type="date"
+                          value={dataEmissao}
+                          onChange={(e) => setDataEmissao(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="prestador">Origem/Prestador</Label>
+                        <Input
+                          id="prestador"
+                          placeholder="Nome do prestador de serviço"
+                          value={prestador}
+                          onChange={(e) => setPrestador(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Lembrete automático - mostrar apenas para categorias relevantes */}
+                  {(categoria === "vacinacao" || categoria === "exame") && (
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <div>
+                        <Label htmlFor="lembrete">Criar lembrete automático</Label>
+                        <p className="text-xs text-muted-foreground">
+                          {categoria === "vacinacao" 
+                            ? "Para a próxima dose" 
+                            : "Para próximo check-up"}
+                        </p>
+                      </div>
+                      <Switch
+                        id="lembrete"
+                        checked={criarLembrete}
+                        onCheckedChange={setCriarLembrete}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -255,7 +438,7 @@ export default function CofreUpload() {
             className="w-full"
             size="lg"
             onClick={handleUpload}
-            disabled={uploading || files.length === 0}
+            disabled={uploading || files.length === 0 || !categoria || !titulo}
           >
             {uploading ? "Enviando..." : "Enviar Documentos"}
           </Button>
