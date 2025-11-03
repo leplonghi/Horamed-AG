@@ -57,7 +57,7 @@ serve(async (req) => {
       );
     }
 
-    // Usar Lovable AI para extração de metadados via OCR simulado
+    // Usar Lovable AI para extração de metadados via OCR
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     let extractedData = {
@@ -72,20 +72,42 @@ serve(async (req) => {
 
     // Se for imagem ou PDF, tentar extrair com IA
     if (mimeType.startsWith("image/") || mimeType === "application/pdf") {
-      const prompt = `Você é um assistente médico especializado em extrair informações de documentos de saúde.
-      
-Analise este documento médico e extraia as seguintes informações em formato JSON:
-- title: título ou nome do documento/exame/procedimento
-- issued_at: data de emissão (formato YYYY-MM-DD)
-- expires_at: data de validade/vencimento se houver (formato YYYY-MM-DD)
-- provider: nome do prestador de serviço/laboratório/clínica
-- categoria: classifique como "exame", "receita", "vacinacao", "consulta" ou "outro"
-- ocr_text: texto extraído do documento
-- meta: informações adicionais relevantes
+      const prompt = `Você é um assistente médico especializado em extrair informações PRECISAS de documentos de saúde.
 
-Retorne APENAS um objeto JSON válido, sem markdown ou texto adicional.`;
+Analise CUIDADOSAMENTE este documento e extraia as seguintes informações em formato JSON:
+
+1. **title**: Nome EXATO do exame/documento como aparece no cabeçalho
+2. **issued_at**: Data de COLETA/EMISSÃO (formato YYYY-MM-DD) - procure por "Data de coleta", "Data do exame", etc.
+3. **expires_at**: Data de validade (YYYY-MM-DD) - APENAS se explicitamente mencionada
+4. **provider**: Nome COMPLETO do laboratório/clínica (procure no cabeçalho/rodapé)
+5. **categoria**: "exame" (laboratoriais/imagem), "receita", "vacinacao", "consulta", ou "outro"
+6. **ocr_text**: Texto completo extraído do documento
+7. **meta**: Informações adicionais relevantes (médico solicitante, observações, etc.)
+
+REGRAS:
+- NÃO confunda tipos de documentos (exame ≠ atestado ≠ receita)
+- Seja PRECISO com datas - verifique o contexto
+- SEMPRE procure o nome do laboratório
+- Para exames, extraia valores numéricos importantes
+
+Retorne APENAS JSON válido sem markdown.`;
 
       try {
+        // Get file URL from storage
+        const { data: urlData } = await supabaseClient.storage
+          .from('cofre-saude')
+          .createSignedUrl(filePath, 300); // 5 min expiry
+
+        if (!urlData?.signedUrl) {
+          throw new Error("Failed to get signed URL");
+        }
+
+        // Download file
+        const fileResponse = await fetch(urlData.signedUrl);
+        const fileBuffer = await fileResponse.arrayBuffer();
+        const base64File = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)));
+        const dataUrl = `data:${mimeType};base64,${base64File}`;
+
         const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
@@ -93,26 +115,40 @@ Retorne APENAS um objeto JSON válido, sem markdown ou texto adicional.`;
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
+            model: "google/gemini-2.5-pro",
             messages: [
               { role: "system", content: prompt },
               { 
-                role: "user", 
-                content: `Documento: ${filePath}. Tipo: ${mimeType}. Por favor, extraia os metadados.` 
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "Analise este documento COM ATENÇÃO e extraia as informações com PRECISÃO:"
+                  },
+                  {
+                    type: "image_url",
+                    image_url: { url: dataUrl }
+                  }
+                ]
               }
             ],
+            temperature: 0.1,
           }),
         });
 
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();
           const content = aiData.choices?.[0]?.message?.content || "{}";
+          console.log("AI extraction result:", content);
           
-          // Tentar parsear JSON da resposta
+          // Parse JSON response
           try {
-            const parsed = JSON.parse(content.replace(/```json\n?|\n?```/g, ""));
+            const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+            const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+            
             extractedData = {
-              title: parsed.title || "",
+              title: parsed.title || "Documento sem título",
               issued_at: parsed.issued_at || null,
               expires_at: parsed.expires_at || null,
               provider: parsed.provider || "",
@@ -120,9 +156,13 @@ Retorne APENAS um objeto JSON válido, sem markdown ou texto adicional.`;
               ocr_text: parsed.ocr_text || "",
               meta: parsed.meta || {}
             };
+            console.log("Extracted data:", extractedData);
           } catch (e) {
-            console.error("Erro ao parsear resposta IA:", e);
+            console.error("Erro ao parsear resposta IA:", e, "Content:", content);
           }
+        } else {
+          const errorText = await aiResponse.text();
+          console.error("AI API error:", errorText);
         }
       } catch (error) {
         console.error("Erro ao chamar IA:", error);
