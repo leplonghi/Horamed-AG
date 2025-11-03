@@ -63,6 +63,7 @@ export default function Today() {
   const [todayStats, setTodayStats] = useState({ total: 0, taken: 0, completed: 0 });
   const [weekStats, setWeekStats] = useState({ thisWeek: 0, lastWeek: 0 });
   const [monthStats, setMonthStats] = useState({ current: 0, goal: 90 });
+  const [hasActiveMedications, setHasActiveMedications] = useState(false);
   const { showFeedback } = useFeedbackToast();
 
   const loadData = useCallback(async () => {
@@ -166,6 +167,15 @@ export default function Today() {
       const monthAverage = monthTotal > 0 ? Math.round((monthCompleted / monthTotal) * 100) : 0;
 
       setMonthStats({ current: monthAverage, goal: 90 });
+
+      // Check if user has active medications
+      const { data: userItems } = await supabase
+        .from("items")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      setHasActiveMedications((userItems?.length || 0) > 0);
 
       // Load low stock items
       const { data: items } = await supabase
@@ -538,7 +548,7 @@ export default function Today() {
               message="Clique em '✓ Tomei' quando tomar um medicamento. Use 'Mais tarde' para adiar 15 minutos. Seu progresso diário será atualizado automaticamente!"
             />
 
-            {upcomingDoses.length === 0 ? (
+            {!hasActiveMedications ? (
               <Card className="border-dashed border-2">
                 <CardContent className="py-12 text-center">
                   <div className="mb-4 bg-primary/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
@@ -555,6 +565,18 @@ export default function Today() {
                     <Plus className="h-5 w-5 mr-2" />
                     Adicionar Medicamento
                   </Button>
+                </CardContent>
+              </Card>
+            ) : upcomingDoses.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <div className="mb-4 bg-green-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                    <Clock className="h-8 w-8 text-green-600" />
+                  </div>
+                  <p className="text-lg font-semibold mb-2">Tudo em dia! ✨</p>
+                  <p className="text-muted-foreground">
+                    Você não tem doses pendentes para agora
+                  </p>
                 </CardContent>
               </Card>
             ) : (
