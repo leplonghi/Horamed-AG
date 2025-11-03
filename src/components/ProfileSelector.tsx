@@ -64,7 +64,7 @@ export default function ProfileSelector() {
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="z-50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />

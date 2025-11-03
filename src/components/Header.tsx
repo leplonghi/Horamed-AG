@@ -51,7 +51,7 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-b border-border z-40 shadow-sm animate-slide-up">
+    <header className="fixed top-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-b border-border z-50 shadow-sm animate-slide-up">
       <div className="max-w-4xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 animate-fade-in">
