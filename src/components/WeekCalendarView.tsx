@@ -192,7 +192,7 @@ export default function WeekCalendarView({
         </div>
 
           {/* Week Days */}
-        <div className="grid grid-cols-7 gap-0.5">
+        <div className="grid grid-cols-7 gap-1">
           {weekDays.map((day) => {
             const count = getEventCount(day);
             const isDayToday = isToday(day);
@@ -203,24 +203,24 @@ export default function WeekCalendarView({
                 key={day.toISOString()}
                 onClick={() => onDateSelect(day)}
                 className={cn(
-                  "flex flex-col items-center p-1 rounded-lg transition-all min-w-0",
+                  "flex flex-col items-center justify-center p-1.5 rounded-lg transition-all min-w-0 min-h-[60px]",
                   "hover:bg-accent",
                   isSelected && "bg-primary text-primary-foreground hover:bg-primary/90",
                   isDayToday && !isSelected && "ring-1 ring-primary"
                 )}
               >
-                <span className="text-[9px] font-medium uppercase truncate w-full text-center">
-                  {format(day, "EEE", { locale: ptBR }).slice(0, 3)}
+                <span className="text-[8px] font-medium uppercase truncate w-full text-center leading-tight mb-0.5">
+                  {format(day, "EEEEEE", { locale: ptBR })}
                 </span>
                 <span className={cn(
-                  "text-sm font-semibold",
+                  "text-lg font-bold leading-none",
                   isDayToday && !isSelected && "text-primary"
                 )}>
                   {format(day, "d")}
                 </span>
                 {count > 0 && (
                   <div className={cn(
-                    "h-0.5 w-0.5 rounded-full",
+                    "h-1 w-1 rounded-full mt-1",
                     isSelected ? "bg-primary-foreground" : "bg-primary"
                   )} />
                 )}
