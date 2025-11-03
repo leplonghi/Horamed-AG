@@ -12,6 +12,7 @@ import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 interface Item {
   id: string;
@@ -182,18 +183,30 @@ export default function Medications() {
           </div>
 
           {/* Medications List */}
-          {filteredItems.length === 0 ? (
+          {filteredItems.length === 0 && searchTerm === "" ? (
+            <Card className="border-dashed border-2">
+              <CardContent className="py-16 text-center">
+                <div className="mb-4 bg-primary/10 rounded-full w-20 h-20 mx-auto flex items-center justify-center">
+                  <Pill className="h-10 w-10 text-primary" />
+                </div>
+                <p className="text-xl font-semibold mb-2">Nenhum medicamento cadastrado</p>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Adicione medicamentos, vitaminas e suplementos para organizar sua rotina de saúde
+                </p>
+                <Button onClick={handleAddClick} size="lg">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Adicionar Primeiro Medicamento
+                </Button>
+              </CardContent>
+            </Card>
+          ) : filteredItems.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Pill className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-medium mb-2">Nenhum medicamento cadastrado</p>
-                <p className="text-muted-foreground mb-4">
-                  Comece adicionando seus medicamentos para organizar sua rotina
+                <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-lg font-medium mb-2">Nenhum resultado encontrado</p>
+                <p className="text-muted-foreground">
+                  Tente buscar com outro termo
                 </p>
-                <Button onClick={handleAddClick}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Adicionar Medicamento
-                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -259,6 +272,7 @@ export default function Medications() {
           )}
         </div>
       </div>
+      <FloatingActionButton />
       <Navigation />
       <UpgradeModal 
         open={showUpgradeModal} 

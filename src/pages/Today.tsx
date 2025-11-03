@@ -18,6 +18,7 @@ import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import DoseActionButton from "@/components/DoseActionButton";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 interface DoseInstance {
   id: string;
@@ -343,26 +344,25 @@ export default function Today() {
 
           {/* Upcoming Doses */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Próximas Doses</h2>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate('/medicamentos')}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar
-              </Button>
-            </div>
+            <h2 className="text-xl font-semibold">Próximas Doses</h2>
 
             {upcomingDoses.length === 0 ? (
-              <Card>
+              <Card className="border-dashed border-2">
                 <CardContent className="py-12 text-center">
-                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-lg font-medium mb-2">Tudo em dia!</p>
-                  <p className="text-muted-foreground">
-                    Nenhuma dose programada para agora
+                  <div className="mb-4 bg-primary/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                    <Plus className="h-8 w-8 text-primary" />
+                  </div>
+                  <p className="text-lg font-semibold mb-2">Adicione seu primeiro medicamento</p>
+                  <p className="text-muted-foreground mb-4">
+                    Clique no botão + para começar a organizar sua rotina de medicamentos
                   </p>
+                  <Button 
+                    onClick={() => navigate('/adicionar')}
+                    size="lg"
+                  >
+                    <Plus className="h-5 w-5 mr-2" />
+                    Adicionar Medicamento
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -440,6 +440,7 @@ export default function Today() {
           </div>
         </div>
       </div>
+      <FloatingActionButton />
       <Navigation />
     </>
   );
