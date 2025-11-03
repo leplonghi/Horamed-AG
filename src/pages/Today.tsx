@@ -1,73 +1,48 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Clock, Plus, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format, startOfDay, endOfDay } from "date-fns";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
-import StreakBadge from "@/components/StreakBadge";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
-import { useNavigate } from "react-router-dom";
-import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
-import DoseActionButton from "@/components/DoseActionButton";
-import FloatingActionButton from "@/components/FloatingActionButton";
-import TutorialHint from "@/components/TutorialHint";
-import InfoDialog from "@/components/InfoDialog";
-import DailySummaryModal from "@/components/DailySummaryModal";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
-import ProgressDashboard from "@/components/ProgressDashboard";
-import { TrendingUp, Activity, Calendar } from "lucide-react";
+import DayTimeline from "@/components/DayTimeline";
+import { Card, CardContent } from "@/components/ui/card";
+import StreakBadge from "@/components/StreakBadge";
+import CriticalAlertBanner from "@/components/CriticalAlertBanner";
+import InfoDialog from "@/components/InfoDialog";
 
-interface DoseInstance {
+interface TimelineItem {
   id: string;
-  due_at: string;
-  status: string;
-  item_id: string;
-  items: {
-    name: string;
-    dose_text: string | null;
-    with_food: boolean;
-  };
-}
-
-interface LowStock {
-  id: string;
-  name: string;
-  units_left: number;
-  unit_label: string;
-  projected_days_left: number;
+  time: string;
+  type: "medication" | "appointment" | "exam";
+  title: string;
+  subtitle?: string;
+  status: "pending" | "done" | "missed";
+  onMarkDone?: () => void;
+  onSnooze?: () => void;
+  itemId?: string;
 }
 
 export default function Today() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { scheduleNotificationsForNextDay } = useMedicationAlarm();
   usePushNotifications();
   const streakData = useStreakCalculator();
   const criticalAlerts = useCriticalAlerts();
+  const { showFeedback } = useFeedbackToast();
   
-  const [upcomingDoses, setUpcomingDoses] = useState<DoseInstance[]>([]);
-  const [lowStockItems, setLowStockItems] = useState<LowStock[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
   const [userName, setUserName] = useState("");
-  const [todayStats, setTodayStats] = useState({ total: 0, taken: 0, completed: 0 });
-  const [weekStats, setWeekStats] = useState({ thisWeek: 0, lastWeek: 0 });
-  const [monthStats, setMonthStats] = useState({ current: 0, goal: 90 });
-  const [hasActiveMedications, setHasActiveMedications] = useState(false);
-  const { showFeedback } = useFeedbackToast();
+  const [todayStats, setTodayStats] = useState({ total: 0, taken: 0 });
 
-  const loadData = useCallback(async () => {
-
+  const loadData = useCallback(async (date: Date) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -83,11 +58,10 @@ export default function Today() {
         setUserName(profileData.nickname || profileData.full_name || "");
       }
 
-      // Load today's doses
-      const now = new Date();
-      const endOfDay = new Date(now);
-      endOfDay.setHours(23, 59, 59, 999);
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
 
+      // Load medications for the day
       const { data: doses } = await supabase
         .from("dose_instances")
         .select(`
@@ -97,120 +71,84 @@ export default function Today() {
           item_id,
           items (name, dose_text, with_food)
         `)
-        .gte("due_at", now.toISOString())
-        .lte("due_at", endOfDay.toISOString())
-        .order("due_at", { ascending: true })
-        .limit(10);
+        .gte("due_at", dayStart.toISOString())
+        .lte("due_at", dayEnd.toISOString())
+        .order("due_at", { ascending: true });
 
-      setUpcomingDoses(doses || []);
-
-      // Calculate today stats
-      const startOfDay = new Date(now);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      const { data: todayDoses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startOfDay.toISOString())
-        .lte("due_at", endOfDay.toISOString());
-
-      const total = todayDoses?.length || 0;
-      const taken = todayDoses?.filter(d => d.status === "taken").length || 0;
-      const completed = taken; // taken is the same as completed
-      setTodayStats({ total, taken, completed });
-
-      // Calculate weekly stats
-      const startOfThisWeek = new Date(now);
-      startOfThisWeek.setDate(now.getDate() - now.getDay());
-      startOfThisWeek.setHours(0, 0, 0, 0);
-      
-      const startOfLastWeek = new Date(startOfThisWeek);
-      startOfLastWeek.setDate(startOfLastWeek.getDate() - 7);
-
-      const { data: thisWeekDoses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startOfThisWeek.toISOString())
-        .lte("due_at", now.toISOString());
-
-      const { data: lastWeekDoses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startOfLastWeek.toISOString())
-        .lt("due_at", startOfThisWeek.toISOString());
-
-      const thisWeekTotal = thisWeekDoses?.length || 0;
-      const thisWeekCompleted = thisWeekDoses?.filter(d => d.status === "taken").length || 0;
-      const thisWeekAverage = thisWeekTotal > 0 ? Math.round((thisWeekCompleted / thisWeekTotal) * 100) : 0;
-
-      const lastWeekTotal = lastWeekDoses?.length || 0;
-      const lastWeekCompleted = lastWeekDoses?.filter(d => d.status === "taken").length || 0;
-      const lastWeekAverage = lastWeekTotal > 0 ? Math.round((lastWeekCompleted / lastWeekTotal) * 100) : 0;
-
-      setWeekStats({ thisWeek: thisWeekAverage, lastWeek: lastWeekAverage });
-
-      // Calculate monthly stats
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      
-      const { data: monthDoses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startOfMonth.toISOString())
-        .lte("due_at", now.toISOString());
-
-      const monthTotal = monthDoses?.length || 0;
-      const monthCompleted = monthDoses?.filter(d => d.status === "taken").length || 0;
-      const monthAverage = monthTotal > 0 ? Math.round((monthCompleted / monthTotal) * 100) : 0;
-
-      setMonthStats({ current: monthAverage, goal: 90 });
-
-      // Check if user has active medications
-      const { data: userItems } = await supabase
-        .from("items")
-        .select("id")
+      // Load appointments for the day
+      const { data: appointments } = await supabase
+        .from("consultas_medicas")
+        .select("*")
         .eq("user_id", user.id)
-        .eq("is_active", true);
+        .gte("data_consulta", dayStart.toISOString())
+        .lte("data_consulta", dayEnd.toISOString())
+        .order("data_consulta", { ascending: true });
 
-      setHasActiveMedications((userItems?.length || 0) > 0);
+      // Load health events (exams) for the day
+      const { data: events } = await supabase
+        .from("eventos_saude")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("type", "renovacao_exame")
+        .gte("due_date", format(dayStart, "yyyy-MM-dd"))
+        .lte("due_date", format(dayEnd, "yyyy-MM-dd"))
+        .order("due_date", { ascending: true });
 
-      // Load low stock items
-      const { data: items } = await supabase
-        .from("items")
-        .select(`
-          id,
-          name,
-          stock (units_left, unit_label, projected_end_at)
-        `)
-        .eq("is_active", true);
+      // Transform to timeline items
+      const items: TimelineItem[] = [];
 
-      const lowStock = items
-        ?.filter((item: any) => {
-          if (!item.stock?.[0]) return false;
-          const stock = item.stock[0];
-          if (!stock.projected_end_at) return false;
-          const daysLeft = Math.ceil(
-            (new Date(stock.projected_end_at).getTime() - now.getTime()) /
-              (1000 * 60 * 60 * 24)
-          );
-          return daysLeft <= 7 && daysLeft > 0;
-        })
-        .map((item: any) => ({
-          id: item.id,
-          name: item.name,
-          units_left: item.stock[0].units_left,
-          unit_label: item.stock[0].unit_label,
-          projected_days_left: Math.ceil(
-            (new Date(item.stock[0].projected_end_at).getTime() - now.getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
-        }))
-        .sort((a: LowStock, b: LowStock) => a.projected_days_left - b.projected_days_left);
+      // Add medications
+      doses?.forEach((dose: any) => {
+        items.push({
+          id: dose.id,
+          time: format(new Date(dose.due_at), "HH:mm"),
+          type: "medication",
+          title: dose.items.name,
+          subtitle: dose.items.dose_text || undefined,
+          status: dose.status === "taken" ? "done" : dose.status === "missed" ? "missed" : "pending",
+          itemId: dose.item_id,
+          onMarkDone: () => markAsTaken(dose.id, dose.item_id, dose.items.name),
+          onSnooze: () => snoozeDose(dose.id, dose.items.name),
+        });
+      });
 
-      setLowStockItems(lowStock || []);
+      // Add appointments
+      appointments?.forEach((apt: any) => {
+        items.push({
+          id: apt.id,
+          time: format(new Date(apt.data_consulta), "HH:mm"),
+          type: "appointment",
+          title: apt.especialidade || "Consulta Médica",
+          subtitle: apt.medico_nome ? `Dr(a). ${apt.medico_nome}` : apt.local,
+          status: apt.status === "realizada" ? "done" : "pending",
+        });
+      });
+
+      // Add exams
+      events?.forEach((event: any) => {
+        items.push({
+          id: event.id,
+          time: "09:00", // Default time for exams
+          type: "exam",
+          title: event.title,
+          subtitle: event.notes || undefined,
+          status: event.completed_at ? "done" : "pending",
+        });
+      });
+
+      // Sort by time
+      items.sort((a, b) => a.time.localeCompare(b.time));
+
+      setTimelineItems(items);
+
+      // Calculate today's stats only if viewing today
+      const isToday = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
+      if (isToday && doses) {
+        const total = doses.length;
+        const taken = doses.filter((d: any) => d.status === "taken").length;
+        setTodayStats({ total, taken });
+      }
+
     } catch (error) {
       console.error("Error loading data:", error);
       toast.error("Erro ao carregar dados");
@@ -225,12 +163,12 @@ export default function Today() {
     else if (hour < 18) setGreeting("Boa tarde");
     else setGreeting("Boa noite");
 
-    loadData();
+    loadData(selectedDate);
     scheduleNotificationsForNextDay();
 
-    // Set up realtime subscription for dose updates
+    // Set up realtime subscription
     const channel = supabase
-      .channel('dose-changes')
+      .channel('timeline-changes')
       .on(
         'postgres_changes',
         {
@@ -238,33 +176,32 @@ export default function Today() {
           schema: 'public',
           table: 'dose_instances'
         },
-        () => {
-          console.log('Dose instance changed, reloading data');
-          loadData();
-        }
+        () => loadData(selectedDate)
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'items'
+          table: 'consultas_medicas'
         },
-        () => {
-          console.log('Item changed, reloading data');
-          loadData();
-        }
+        () => loadData(selectedDate)
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'eventos_saude'
+        },
+        () => loadData(selectedDate)
       )
       .subscribe();
 
-    // Auto-refresh every 5 minutes instead of 60 seconds
-    const interval = setInterval(loadData, 300000);
-
     return () => {
       supabase.removeChannel(channel);
-      clearInterval(interval);
     };
-  }, [loadData, scheduleNotificationsForNextDay]);
+  }, [loadData, scheduleNotificationsForNextDay, selectedDate]);
 
   const markAsTaken = async (doseId: string, itemId: string, itemName: string) => {
     try {
@@ -298,7 +235,7 @@ export default function Today() {
       }
 
       showFeedback("dose-taken", { medicationName: itemName });
-      loadData();
+      loadData(selectedDate);
       streakData.refresh();
       criticalAlerts.refresh();
     } catch (error) {
@@ -327,7 +264,7 @@ export default function Today() {
           .eq("id", doseId);
 
         showFeedback("dose-snoozed");
-        loadData();
+        loadData(selectedDate);
       }
     } catch (error) {
       console.error("Error snoozing dose:", error);
@@ -335,23 +272,8 @@ export default function Today() {
     }
   };
 
-  const skipDose = async (doseId: string, itemName: string) => {
-    try {
-      await supabase
-        .from("dose_instances")
-        .update({ status: "skipped" })
-        .eq("id", doseId);
-
-      showFeedback("dose-skipped");
-      loadData();
-    } catch (error) {
-      console.error("Error skipping dose:", error);
-      toast.error("Erro ao pular dose");
-    }
-  };
-
   const adherencePercentage = todayStats.total > 0 
-    ? Math.round((todayStats.completed / todayStats.total) * 100) 
+    ? Math.round((todayStats.taken / todayStats.total) * 100) 
     : 0;
 
   if (loading) {
@@ -368,17 +290,17 @@ export default function Today() {
     <>
       <Header />
       <div className="min-h-screen bg-background pt-20 p-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Greeting */}
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Greeting & Streak */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">
+              <h1 className="text-4xl font-bold">
                 {greeting}{userName && `, ${userName}`}!
               </h1>
-              <p className="text-muted-foreground mt-1">
-                {upcomingDoses.length > 0 
-                  ? `Você tem ${upcomingDoses.length} dose${upcomingDoses.length > 1 ? 's' : ''} para tomar hoje`
-                  : "Nenhuma dose programada para hoje"}
+              <p className="text-lg text-muted-foreground mt-2">
+                {timelineItems.length > 0 
+                  ? `${timelineItems.length} evento${timelineItems.length > 1 ? 's' : ''} hoje`
+                  : "Nenhum evento programado"}
               </p>
             </div>
             {streakData.currentStreak > 0 && (
@@ -386,21 +308,9 @@ export default function Today() {
                 <StreakBadge streak={streakData.currentStreak} type="current" />
                 <InfoDialog
                   title="O que é streak?"
-                  description="Streak são dias seguidos com adesão acima de 80%. Quanto maior seu streak, mais consistente você está sendo com seus medicamentos!"
+                  description="Streak são dias seguidos com adesão acima de 80%. Quanto maior seu streak, mais consistente você está sendo!"
                   triggerClassName="h-5 w-5"
-                >
-                  <div className="text-sm">
-                    <p className="font-semibold mb-2">Benefícios do streak:</p>
-                    <ul className="space-y-1">
-                      <li>🔥 Mostra sua consistência</li>
-                      <li>💪 Motiva você a continuar</li>
-                      <li>📊 Indica boa adesão ao tratamento</li>
-                    </ul>
-                    <p className="mt-3">
-                      <strong>Seu recorde:</strong> {streakData.longestStreak} dias!
-                    </p>
-                  </div>
-                </InfoDialog>
+                />
               </div>
             )}
           </div>
@@ -413,32 +323,23 @@ export default function Today() {
             />
           )}
 
-          {/* Today Summary with more info */}
-          <div className="grid gap-4 md:grid-cols-3">
+          {/* Today Summary */}
+          {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && (
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-              <CardContent className="pt-6">
+              <CardContent className="py-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm text-muted-foreground">Hoje</p>
+                      <p className="text-lg text-muted-foreground">Adesão de Hoje</p>
                       <InfoDialog
                         title="O que é adesão?"
-                        description="Adesão é a proporção de doses tomadas em relação ao total programado. Por exemplo: se você tinha 4 doses hoje e tomou 3, sua adesão é 75%. Acima de 80% é excelente!"
-                      >
-                        <div className="text-sm">
-                          <p className="font-semibold mb-2">Níveis de adesão:</p>
-                          <ul className="space-y-1">
-                            <li>🎉 <strong>80-100%:</strong> Excelente! Continue assim!</li>
-                            <li>💪 <strong>50-79%:</strong> Bom trabalho, mas pode melhorar</li>
-                            <li>⚠️ <strong>Abaixo de 50%:</strong> Atenção necessária</li>
-                          </ul>
-                        </div>
-                      </InfoDialog>
+                        description="Adesão é a proporção de doses tomadas. Acima de 80% é excelente!"
+                      />
                     </div>
-                    <p className="text-3xl font-bold">
-                      {todayStats.completed}/{todayStats.total}
+                    <p className="text-4xl font-bold">
+                      {todayStats.taken}/{todayStats.total}
                     </p>
-                    <p className="text-sm mt-1">
+                    <p className="text-base mt-1">
                       {adherencePercentage >= 80 && "🎉 Excelente!"}
                       {adherencePercentage >= 50 && adherencePercentage < 80 && "💪 Bom trabalho!"}
                       {adherencePercentage < 50 && todayStats.total > 0 && "Vamos lá!"}
@@ -446,217 +347,28 @@ export default function Today() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className="text-4xl font-bold text-primary">{adherencePercentage}%</div>
-                    <p className="text-xs text-muted-foreground">de adesão</p>
+                    <div className="text-5xl font-bold text-primary">{adherencePercentage}%</div>
+                    <p className="text-sm text-muted-foreground">de adesão</p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <TrendingUp className="h-4 w-4 text-blue-600" />
-                      <p className="text-sm text-muted-foreground">Esta Semana</p>
-                    </div>
-                    <p className="text-3xl font-bold text-blue-600">{weekStats.thisWeek}%</p>
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      {weekStats.thisWeek > weekStats.lastWeek ? "↑" : "↓"} 
-                      {" "}vs semana passada
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Calendar className="h-4 w-4 text-green-600" />
-                      <p className="text-sm text-muted-foreground">Este Mês</p>
-                    </div>
-                    <p className="text-3xl font-bold text-green-600">{monthStats.current}%</p>
-                    <p className="text-sm mt-1 text-muted-foreground">
-                      Meta: {monthStats.goal}%
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Progress Dashboard */}
-          {todayStats.total > 0 && (
-            <ProgressDashboard
-              currentStreak={streakData.currentStreak}
-              longestStreak={streakData.longestStreak}
-              thisWeekAverage={weekStats.thisWeek}
-              lastWeekAverage={weekStats.lastWeek}
-              monthlyGoal={monthStats.goal}
-              monthlyProgress={monthStats.current}
-            />
-          )}
-
-          {/* Low Stock Alerts */}
-          {lowStockItems.length > 0 && (
-            <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                      Estoque Baixo
-                    </h3>
-                    {lowStockItems.map((item) => (
-                      <p key={item.id} className="text-sm text-amber-800 dark:text-amber-200">
-                        <strong>{item.name}</strong>: {item.units_left} {item.unit_label} 
-                        ({item.projected_days_left} dias restantes)
-                      </p>
-                    ))}
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => navigate('/estoque')}
-                    className="shrink-0"
-                  >
-                    <Package className="h-4 w-4 mr-1" />
-                    Gerenciar
-                  </Button>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Upcoming Doses */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">Próximas Doses</h2>
-              <InfoDialog
-                title="Como funciona?"
-                description="Aqui aparecem os medicamentos que você deve tomar hoje. Confirme quando tomar, adie por 15 minutos ou pule a dose. Suas doses são organizadas por horário."
-              />
-            </div>
-
-            <TutorialHint
-              id="today_doses"
-              title="Marque suas doses! 💊"
-              message="Clique em '✓ Tomei' quando tomar um medicamento. Use 'Mais tarde' para adiar 15 minutos. Seu progresso diário será atualizado automaticamente!"
-            />
-
-            {!hasActiveMedications ? (
-              <Card className="border-dashed border-2">
-                <CardContent className="py-12 text-center">
-                  <div className="mb-4 bg-primary/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                    <Plus className="h-8 w-8 text-primary" />
-                  </div>
-                  <p className="text-lg font-semibold mb-2">Adicione seu primeiro medicamento</p>
-                  <p className="text-muted-foreground mb-4">
-                    Clique no botão + para começar a organizar sua rotina de medicamentos
-                  </p>
-                  <Button 
-                    onClick={() => navigate('/adicionar')}
-                    size="lg"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Adicionar Medicamento
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : upcomingDoses.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <div className="mb-4 bg-green-500/10 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
-                    <Clock className="h-8 w-8 text-green-600" />
-                  </div>
-                  <p className="text-lg font-semibold mb-2">Tudo em dia! ✨</p>
-                  <p className="text-muted-foreground">
-                    Você não tem doses pendentes para agora
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              upcomingDoses
-                .filter(dose => dose.status === 'scheduled')
-                .map((dose) => (
-                  <Card key={dose.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-semibold">
-                              {format(parseISO(dose.due_at), "HH:mm", { locale: ptBR })}
-                            </span>
-                          </div>
-                          <h3 className="font-semibold text-lg mb-1">
-                            {dose.items.name}
-                          </h3>
-                          {dose.items.dose_text && (
-                            <p className="text-sm text-muted-foreground mb-2">
-                              {dose.items.dose_text}
-                            </p>
-                          )}
-                          {dose.items.with_food && (
-                            <Badge variant="secondary" className="text-xs">
-                              🍽️ Com alimento
-                            </Badge>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <DoseActionButton
-                            variant="taken"
-                            onClick={() => markAsTaken(dose.id, dose.item_id, dose.items.name)}
-                          />
-                          <DoseActionButton
-                            variant="snooze"
-                            onClick={() => snoozeDose(dose.id, dose.items.name)}
-                          />
-                          <DoseActionButton
-                            variant="more"
-                            onClick={() => skipDose(dose.id, dose.items.name)}
-                          />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/historico')}
-              className="h-auto py-4"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Clock className="h-5 w-5" />
-                <span className="text-sm">Ver Histórico</span>
-              </div>
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/medicamentos')}
-              className="h-auto py-4"
-            >
-              <div className="flex flex-col items-center gap-2">
-                <Plus className="h-5 w-5" />
-                <span className="text-sm">Medicamentos</span>
-              </div>
-            </Button>
-          </div>
+          {/* Timeline do Dia */}
+          <DayTimeline
+            date={selectedDate}
+            items={timelineItems}
+            onDateChange={(newDate) => {
+              setSelectedDate(newDate);
+              setLoading(true);
+              loadData(newDate);
+            }}
+          />
         </div>
       </div>
-      <FloatingActionButton />
+
       <Navigation />
-      <DailySummaryModal />
     </>
   );
 }
