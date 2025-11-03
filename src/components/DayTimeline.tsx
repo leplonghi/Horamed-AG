@@ -89,7 +89,7 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
       </div>
 
       {/* Timeline do Dia */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {items.length === 0 ? (
           <Card>
             <CardContent className="py-16 text-center">
@@ -106,16 +106,16 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
             if (!hourItems || hourItems.length === 0) return null;
 
             return (
-              <div key={hour} className="relative pl-8">
+              <div key={hour} className="flex gap-3">
                 {/* Hora */}
-                <div className="absolute left-0 top-0 text-right w-7">
+                <div className="shrink-0 w-12 pt-1">
                   <span className="text-sm font-semibold text-muted-foreground">
                     {hour}:00
                   </span>
                 </div>
 
                 {/* Items */}
-                <div className="space-y-2">
+                <div className="flex-1 space-y-2">
                   {hourItems.map((item) => {
                     const isPast = isCurrentDay && isBefore(
                       parseISO(`${format(date, "yyyy-MM-dd")}T${item.time}`),
@@ -128,7 +128,7 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
                       <Card
                         key={item.id}
                         className={cn(
-                          "border-l-4 transition-all hover:shadow-md overflow-hidden",
+                          "border-l-4 transition-all hover:shadow-md relative",
                           isDone && "bg-success/5 border-success dark:bg-success/10",
                           isMissed && "bg-destructive/5 border-destructive dark:bg-destructive/10",
                           !isDone && !isMissed && "border-primary"
@@ -172,7 +172,7 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-2 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
                                 <Badge variant="outline" className="text-xs">
                                   {getTypeLabel(item.type)}
                                 </Badge>
@@ -195,13 +195,13 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
 
                               {/* Ações - apenas para medicamentos pendentes */}
                               {item.type === "medication" && !isDone && !isMissed && (
-                                <div className="flex gap-2 mt-3">
+                                <div className="flex gap-2 mt-2">
                                   <Button
                                     size="sm"
                                     onClick={item.onMarkDone}
-                                    className="flex-1 h-9"
+                                    className="flex-1 h-8 text-xs"
                                   >
-                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
                                     Tomei
                                   </Button>
                                   {item.onSnooze && (
@@ -209,9 +209,9 @@ export default function DayTimeline({ date, items, onDateChange }: DayTimelinePr
                                       size="sm"
                                       variant="outline"
                                       onClick={item.onSnooze}
-                                      className="h-9"
+                                      className="h-8 text-xs px-2"
                                     >
-                                      <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                      <Clock className="h-3 w-3 mr-1" />
                                       Adiar
                                     </Button>
                                   )}
