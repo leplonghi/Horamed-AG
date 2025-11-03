@@ -321,6 +321,61 @@ export default function Profile() {
             </div>
           </Card>
 
+          {/* Quick Access Section */}
+          <div className="space-y-3">
+            <h2 className="text-xl font-bold text-foreground px-2">Acesso Rápido</h2>
+            
+            <div className="grid grid-cols-1 gap-3">
+              <Card 
+                className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50"
+                onClick={() => navigate('/estoque')}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Package className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base text-foreground">Gerenciar Estoque</h3>
+                    <p className="text-sm text-muted-foreground">Controle de medicamentos</p>
+                  </div>
+                  <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+              </Card>
+
+              <Card 
+                className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50"
+                onClick={() => navigate('/historico')}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <History className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base text-foreground">Histórico de Doses</h3>
+                    <p className="text-sm text-muted-foreground">Veja seu histórico completo</p>
+                  </div>
+                  <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+              </Card>
+
+              <Card 
+                className="p-4 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50"
+                onClick={() => navigate('/relatorios')}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base text-foreground">Relatórios Médicos</h3>
+                    <p className="text-sm text-muted-foreground">Documentos e análises</p>
+                  </div>
+                  <ChevronRight className="h-6 w-6 text-muted-foreground" />
+                </div>
+              </Card>
+            </div>
+          </div>
+
           {/* Settings Section */}
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-foreground px-2">Configurações</h2>
@@ -350,24 +405,6 @@ export default function Profile() {
               >
                 <Bell className="h-5 w-5 text-primary" />
                 <span className="flex-1 text-left text-foreground">Configurações de Alarme</span>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
-
-              <button 
-                onClick={() => navigate('/estoque')}
-                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
-              >
-                <Package className="h-5 w-5 text-primary" />
-                <span className="flex-1 text-left text-foreground">Gerenciar Estoque</span>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
-
-              <button 
-                onClick={() => navigate('/relatorios')}
-                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
-              >
-                <FileText className="h-5 w-5 text-primary" />
-                <span className="flex-1 text-left text-foreground">Relatórios Médicos</span>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
 
@@ -418,21 +455,6 @@ export default function Profile() {
             </Card>
           </div>
 
-          {/* Tools & Features */}
-          <div className="space-y-2">
-            <h2 className="text-lg font-semibold text-foreground px-2">Ferramentas</h2>
-            
-            <Card className="divide-y divide-border">
-              <button 
-                onClick={() => navigate('/historico')}
-                className="flex items-center gap-3 p-4 w-full hover:bg-accent/50 transition-colors"
-              >
-                <History className="h-5 w-5 text-primary" />
-                <span className="flex-1 text-left text-foreground">Histórico de Doses</span>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </Card>
-          </div>
 
           {/* Health Data Section */}
           <div className="space-y-2">
