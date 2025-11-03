@@ -350,8 +350,8 @@ export default function Today() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-background pt-20 p-6 pb-24">
-        <div className="max-w-6xl mx-auto space-y-6">
+      <div className="min-h-screen bg-background pt-20 p-6 pb-24 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto space-y-6 overflow-x-hidden">
           {/* Greeting & Streak */}
           <div className="flex items-center justify-between">
             <div>

@@ -143,11 +143,11 @@ export default function WeekCalendarView({
   }
 
   return (
-      <Card>
-        <CardContent className="p-3">
+      <Card className="overflow-hidden">
+        <CardContent className="p-3 overflow-x-hidden">
         {/* Week Navigation */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-1">
+        <div className="flex items-center justify-between mb-3 gap-2">
+          <div className="flex items-center gap-0.5 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -156,8 +156,8 @@ export default function WeekCalendarView({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h3 className="text-sm font-semibold min-w-[140px] text-center">
-              {format(weekStart, "MMMM yyyy", { locale: ptBR })}
+            <h3 className="text-xs font-semibold min-w-[100px] text-center truncate">
+              {format(weekStart, "MMM yyyy", { locale: ptBR })}
             </h3>
             <Button
               variant="ghost"
@@ -169,13 +169,13 @@ export default function WeekCalendarView({
             </Button>
           </div>
           
-          <div className="flex gap-1">
+          <div className="flex gap-0.5 shrink-0">
             {!isToday(selectedDate) && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={goToToday}
-                className="h-7 text-xs px-2"
+                className="h-7 text-[10px] px-1.5"
               >
                 Hoje
               </Button>
@@ -184,7 +184,7 @@ export default function WeekCalendarView({
               variant="ghost"
               size="sm"
               onClick={() => setView("month")}
-              className="h-7 text-xs px-2"
+              className="h-7 text-[10px] px-1.5"
             >
               Mês
             </Button>
@@ -192,7 +192,7 @@ export default function WeekCalendarView({
         </div>
 
           {/* Week Days */}
-        <div className="grid grid-cols-7 gap-1.5">
+        <div className="grid grid-cols-7 gap-0.5">
           {weekDays.map((day) => {
             const count = getEventCount(day);
             const isDayToday = isToday(day);
@@ -203,24 +203,24 @@ export default function WeekCalendarView({
                 key={day.toISOString()}
                 onClick={() => onDateSelect(day)}
                 className={cn(
-                  "flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all",
+                  "flex flex-col items-center p-1 rounded-lg transition-all min-w-0",
                   "hover:bg-accent",
-                  isSelected && "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md",
-                  isDayToday && !isSelected && "bg-accent ring-2 ring-primary/30"
+                  isSelected && "bg-primary text-primary-foreground hover:bg-primary/90",
+                  isDayToday && !isSelected && "ring-1 ring-primary"
                 )}
               >
-                <span className="text-[10px] font-medium uppercase opacity-70">
-                  {format(day, "EEE", { locale: ptBR })}
+                <span className="text-[9px] font-medium uppercase truncate w-full text-center">
+                  {format(day, "EEE", { locale: ptBR }).slice(0, 3)}
                 </span>
                 <span className={cn(
-                  "text-xl font-bold",
+                  "text-sm font-semibold",
                   isDayToday && !isSelected && "text-primary"
                 )}>
                   {format(day, "d")}
                 </span>
                 {count > 0 && (
                   <div className={cn(
-                    "h-1 w-1 rounded-full mt-0.5",
+                    "h-0.5 w-0.5 rounded-full",
                     isSelected ? "bg-primary-foreground" : "bg-primary"
                   )} />
                 )}
