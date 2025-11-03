@@ -11,6 +11,9 @@ interface OCRResult {
   name: string;
   dose?: string;
   category?: string;
+  duration_days?: number;
+  total_doses?: number;
+  start_date?: string;
 }
 
 interface MedicationOCRProps {
@@ -52,6 +55,9 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           name: data.name,
           dose: data.dose,
           category: data.category || "medicamento",
+          duration_days: data.duration_days,
+          total_doses: data.total_doses,
+          start_date: data.start_date,
         });
         clearImage();
       } else {
@@ -76,10 +82,10 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
       <div className="space-y-2">
         <Label className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          Capturar caixa do medicamento
+          Capturar medicamento ou receita
         </Label>
         <p className="text-sm text-muted-foreground">
-          Tire uma foto ou envie uma imagem da caixa para preencher automaticamente
+          Tire foto da caixa do medicamento ou da receita para preencher automaticamente
         </p>
       </div>
 

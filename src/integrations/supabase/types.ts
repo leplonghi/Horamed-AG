@@ -868,6 +868,10 @@ export type Database = {
           name: string
           notes: string | null
           profile_id: string | null
+          total_doses: number | null
+          treatment_duration_days: number | null
+          treatment_end_date: string | null
+          treatment_start_date: string | null
           updated_at: string | null
           user_id: string
           with_food: boolean | null
@@ -881,6 +885,10 @@ export type Database = {
           name: string
           notes?: string | null
           profile_id?: string | null
+          total_doses?: number | null
+          treatment_duration_days?: number | null
+          treatment_end_date?: string | null
+          treatment_start_date?: string | null
           updated_at?: string | null
           user_id: string
           with_food?: boolean | null
@@ -894,6 +902,10 @@ export type Database = {
           name?: string
           notes?: string | null
           profile_id?: string | null
+          total_doses?: number | null
+          treatment_duration_days?: number | null
+          treatment_end_date?: string | null
+          treatment_start_date?: string | null
           updated_at?: string | null
           user_id?: string
           with_food?: boolean | null

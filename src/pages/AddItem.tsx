@@ -38,6 +38,9 @@ export default function AddItem() {
     category: "medicamento",
     with_food: false,
     notes: "",
+    treatment_duration_days: null as number | null,
+    total_doses: null as number | null,
+    treatment_start_date: "",
   });
 
   const [schedules, setSchedules] = useState([
@@ -120,6 +123,9 @@ export default function AddItem() {
         category: item.category,
         with_food: item.with_food,
         notes: item.notes || "",
+        treatment_duration_days: item.treatment_duration_days || null,
+        total_doses: item.total_doses || null,
+        treatment_start_date: item.treatment_start_date || "",
       });
 
       if (item.schedules && item.schedules.length > 0) {
@@ -209,6 +215,10 @@ export default function AddItem() {
     try {
       if (isEditing) {
         // Update existing item
+        const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
+          ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          : null;
+
         const { error: itemError } = await supabase
           .from("items")
           .update({
@@ -217,6 +227,10 @@ export default function AddItem() {
             category: formData.category,
             with_food: formData.with_food,
             notes: formData.notes || null,
+            treatment_duration_days: formData.treatment_duration_days || null,
+            total_doses: formData.total_doses || null,
+            treatment_start_date: formData.treatment_start_date || null,
+            treatment_end_date: treatmentEndDate,
           })
           .eq("id", isEditing);
 
@@ -285,6 +299,10 @@ export default function AddItem() {
         toast.success("Item atualizado com sucesso! 🎉");
       } else {
         // Create new item
+        const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
+          ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          : null;
+
         const { data: item, error: itemError } = await supabase
           .from("items")
           .insert({
@@ -294,6 +312,10 @@ export default function AddItem() {
             category: formData.category,
             with_food: formData.with_food,
             notes: formData.notes || null,
+            treatment_duration_days: formData.treatment_duration_days || null,
+            total_doses: formData.total_doses || null,
+            treatment_start_date: formData.treatment_start_date || null,
+            treatment_end_date: treatmentEndDate,
           })
           .select()
           .single();
@@ -448,6 +470,9 @@ export default function AddItem() {
                         name: result.name,
                         dose_text: result.dose || "",
                         category: result.category || "medicamento",
+                        treatment_duration_days: result.duration_days || null,
+                        total_doses: result.total_doses || null,
+                        treatment_start_date: result.start_date || "",
                       }));
                       setAddMethod("manual");
                       toast.success("Dados extraídos! Complete as informações abaixo.");
@@ -534,6 +559,79 @@ export default function AddItem() {
                     rows={3}
                   />
                 </div>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t">
+                <Label className="text-base font-semibold">Duração do Tratamento (Opcional)</Label>
+                <p className="text-sm text-muted-foreground -mt-2">
+                  Configure o período de tratamento se for temporário
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-date">Data de Início</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={formData.treatment_start_date}
+                      onChange={(e) =>
+                        setFormData({ ...formData, treatment_start_date: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="duration-days">Duração (dias)</Label>
+                    <Input
+                      id="duration-days"
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 7, 14, 30"
+                      value={formData.treatment_duration_days || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          treatment_duration_days: e.target.value ? parseInt(e.target.value) : null,
+                        })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Quantos dias deve durar o tratamento
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="total-doses">Total de Doses</Label>
+                    <Input
+                      id="total-doses"
+                      type="number"
+                      min="1"
+                      placeholder="Ex: 21, 42"
+                      value={formData.total_doses || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          total_doses: e.target.value ? parseInt(e.target.value) : null,
+                        })
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Número total de doses a tomar
+                    </p>
+                  </div>
+                </div>
+
+                {formData.treatment_start_date && formData.treatment_duration_days && (
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                    <p className="text-sm">
+                      <strong>Data de término:</strong>{" "}
+                      {new Date(
+                        new Date(formData.treatment_start_date).getTime() +
+                          formData.treatment_duration_days * 24 * 60 * 60 * 1000
+                      ).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-4 pt-4 border-t">

@@ -4,7 +4,14 @@ import UpgradeModal from "./UpgradeModal";
 import { useSubscription } from "@/hooks/useSubscription";
 
 interface MedicationOCRWrapperProps {
-  onResult: (result: { name: string; dose?: string; category?: string }) => void;
+  onResult: (result: { 
+    name: string; 
+    dose?: string; 
+    category?: string;
+    duration_days?: number;
+    total_doses?: number;
+    start_date?: string;
+  }) => void;
 }
 
 export default function MedicationOCRWrapper({ onResult }: MedicationOCRWrapperProps) {

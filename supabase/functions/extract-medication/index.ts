@@ -37,24 +37,34 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Você é um assistente especializado em identificar medicamentos, suplementos e vitaminas a partir de imagens de caixas/rótulos.
+            content: `Você é um assistente especializado em identificar medicamentos, suplementos e vitaminas a partir de imagens de caixas/rótulos/receitas.
 Analise a imagem e extraia:
 1. Nome do medicamento/suplemento
 2. Dosagem (mg, g, UI, etc.)
 3. Categoria (medicamento, suplemento, vitamina, ou pet)
+4. Duração do tratamento em dias (se especificado na receita, ex: "por 7 dias", "durante 14 dias")
+5. Número total de doses (se especificado, ex: "21 doses", "tomar 30 comprimidos")
+6. Data de início do tratamento (se especificado, no formato YYYY-MM-DD)
 
 Retorne APENAS um JSON válido no formato:
 {
   "name": "Nome do produto",
   "dose": "Dosagem completa",
-  "category": "medicamento|suplemento|vitamina|pet"
+  "category": "medicamento|suplemento|vitamina|pet",
+  "duration_days": número ou null,
+  "total_doses": número ou null,
+  "start_date": "YYYY-MM-DD" ou null
 }
 
-Se não conseguir identificar, retorne:
+Se não conseguir identificar algum campo, use null para campos numéricos/data e "" para strings.
+Exemplo:
 {
-  "name": "",
-  "dose": "",
-  "category": "medicamento"
+  "name": "Amoxicilina",
+  "dose": "500mg",
+  "category": "medicamento",
+  "duration_days": 7,
+  "total_doses": 21,
+  "start_date": null
 }`
           },
           {
