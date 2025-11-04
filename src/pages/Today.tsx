@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import StreakBadge from "@/components/StreakBadge";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import InfoDialog from "@/components/InfoDialog";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 interface TimelineItem {
   id: string;
@@ -35,6 +36,7 @@ export default function Today() {
   const streakData = useStreakCalculator();
   const criticalAlerts = useCriticalAlerts();
   const { showFeedback } = useFeedbackToast();
+  const { activeProfile } = useUserProfiles();
   
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
@@ -53,25 +55,43 @@ export default function Today() {
       const monthStart = startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
       const monthEnd = endOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0));
 
+      let dosesQuery = supabase
+        .from("dose_instances")
+        .select("due_at, items!inner(profile_id)")
+        .gte("due_at", monthStart.toISOString())
+        .lte("due_at", monthEnd.toISOString());
+
+      if (activeProfile) {
+        dosesQuery = dosesQuery.eq("items.profile_id", activeProfile.id);
+      }
+
+      let appointmentsQuery = supabase
+        .from("consultas_medicas")
+        .select("data_consulta")
+        .eq("user_id", user.id)
+        .gte("data_consulta", monthStart.toISOString())
+        .lte("data_consulta", monthEnd.toISOString());
+
+      if (activeProfile) {
+        appointmentsQuery = appointmentsQuery.eq("profile_id", activeProfile.id);
+      }
+
+      let eventsQuery = supabase
+        .from("eventos_saude")
+        .select("due_date")
+        .eq("user_id", user.id)
+        .eq("type", "renovacao_exame")
+        .gte("due_date", format(monthStart, "yyyy-MM-dd"))
+        .lte("due_date", format(monthEnd, "yyyy-MM-dd"));
+
+      if (activeProfile) {
+        eventsQuery = eventsQuery.eq("profile_id", activeProfile.id);
+      }
+
       const [dosesData, appointmentsData, eventsData] = await Promise.all([
-        supabase
-          .from("dose_instances")
-          .select("due_at")
-          .gte("due_at", monthStart.toISOString())
-          .lte("due_at", monthEnd.toISOString()),
-        supabase
-          .from("consultas_medicas")
-          .select("data_consulta")
-          .eq("user_id", user.id)
-          .gte("data_consulta", monthStart.toISOString())
-          .lte("data_consulta", monthEnd.toISOString()),
-        supabase
-          .from("eventos_saude")
-          .select("due_date")
-          .eq("user_id", user.id)
-          .eq("type", "renovacao_exame")
-          .gte("due_date", format(monthStart, "yyyy-MM-dd"))
-          .lte("due_date", format(monthEnd, "yyyy-MM-dd"))
+        dosesQuery,
+        appointmentsQuery,
+        eventsQuery
       ]);
 
       const counts: Record<string, number> = {};
@@ -117,37 +137,53 @@ export default function Today() {
       const dayEnd = endOfDay(date);
 
       // Load medications for the day
-      const { data: doses } = await supabase
+      let dosesQuery = supabase
         .from("dose_instances")
         .select(`
           id,
           due_at,
           status,
           item_id,
-          items (name, dose_text, with_food)
+          items (name, dose_text, with_food, profile_id)
         `)
         .gte("due_at", dayStart.toISOString())
-        .lte("due_at", dayEnd.toISOString())
-        .order("due_at", { ascending: true });
+        .lte("due_at", dayEnd.toISOString());
+
+      // Filter by profile_id if activeProfile is selected
+      if (activeProfile) {
+        dosesQuery = dosesQuery.eq("items.profile_id", activeProfile.id);
+      }
+
+      const { data: doses } = await dosesQuery.order("due_at", { ascending: true });
 
       // Load appointments for the day
-      const { data: appointments } = await supabase
+      let appointmentsQuery = supabase
         .from("consultas_medicas")
         .select("*")
         .eq("user_id", user.id)
         .gte("data_consulta", dayStart.toISOString())
-        .lte("data_consulta", dayEnd.toISOString())
-        .order("data_consulta", { ascending: true });
+        .lte("data_consulta", dayEnd.toISOString());
+
+      if (activeProfile) {
+        appointmentsQuery = appointmentsQuery.eq("profile_id", activeProfile.id);
+      }
+
+      const { data: appointments } = await appointmentsQuery.order("data_consulta", { ascending: true });
 
       // Load health events (exams) for the day
-      const { data: events } = await supabase
+      let eventsQuery = supabase
         .from("eventos_saude")
         .select("*")
         .eq("user_id", user.id)
         .eq("type", "renovacao_exame")
         .gte("due_date", format(dayStart, "yyyy-MM-dd"))
-        .lte("due_date", format(dayEnd, "yyyy-MM-dd"))
-        .order("due_date", { ascending: true });
+        .lte("due_date", format(dayEnd, "yyyy-MM-dd"));
+
+      if (activeProfile) {
+        eventsQuery = eventsQuery.eq("profile_id", activeProfile.id);
+      }
+
+      const { data: events } = await eventsQuery.order("due_date", { ascending: true });
 
       // Transform to timeline items
       const items: TimelineItem[] = [];
@@ -220,7 +256,7 @@ export default function Today() {
 
     loadData(selectedDate);
     loadEventCounts();
-  }, [loadData, loadEventCounts, selectedDate]);
+  }, [loadData, loadEventCounts, selectedDate, activeProfile]);
 
   // Schedule notifications only once on mount
   useEffect(() => {

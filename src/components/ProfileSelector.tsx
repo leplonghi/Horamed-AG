@@ -53,15 +53,21 @@ export default function ProfileSelector() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={activeProfile.avatar_url} />
-            <AvatarFallback className="text-xs">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5 hover:bg-accent/50 transition-all duration-200 px-2"
+        >
+          <Avatar className="h-6 w-6 md:h-7 md:w-7 border-2 border-primary/20">
+            <AvatarImage src={activeProfile.avatar_url || undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-[10px] md:text-xs font-semibold">
               {getInitials(activeProfile.name)}
             </AvatarFallback>
           </Avatar>
-          <span className="max-w-[80px] truncate">{activeProfile.name}</span>
-          <ChevronDown className="h-4 w-4 opacity-50" />
+          <span className="text-[10px] md:text-xs font-medium max-w-[60px] md:max-w-[80px] truncate">
+            {activeProfile.name}
+          </span>
+          <ChevronDown className="h-3 w-3 md:h-4 md:w-4 opacity-50" />
         </Button>
       </DialogTrigger>
       <DialogContent className="z-50">

@@ -7,11 +7,13 @@ import SubscriptionBadge from "./SubscriptionBadge";
 import { ThemeToggle } from "./ThemeToggle";
 import ProfileSelector from "./ProfileSelector";
 import logo from "@/assets/horamend-logo.png";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 export default function Header() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
   const [userName, setUserName] = useState<string | null>(null);
+  const { profiles } = useUserProfiles();
 
   useEffect(() => {
     loadUserData();
@@ -63,20 +65,22 @@ export default function Header() {
             <ProfileSelector />
             <ThemeToggle />
             
-            <Link to="/perfil" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
+            <Link to="/perfil" className="flex items-center gap-2 hover:opacity-80 transition-opacity group">
               <div className="hidden md:flex flex-col items-end">
                 <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {userName || "Usuário"}
+                  {profiles.length > 1 ? getInitials(userName || userEmail) : (userName || "Usuário")}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {userEmail}
-                </span>
+                {profiles.length <= 1 && (
+                  <span className="text-xs text-muted-foreground">
+                    {userEmail}
+                  </span>
+                )}
               </div>
               
-              <Avatar className="h-10 w-10 ring-2 ring-transparent group-hover:ring-primary transition-all duration-300">
+              <Avatar className="h-8 w-8 md:h-10 md:w-10 ring-2 ring-transparent group-hover:ring-primary transition-all duration-300">
                 <AvatarImage src={avatarUrl || undefined} alt="Avatar" />
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  {userEmail ? getInitials(userEmail) : <User className="h-5 w-5" />}
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                  {userEmail ? getInitials(userEmail) : <User className="h-4 w-4" />}
                 </AvatarFallback>
               </Avatar>
             </Link>

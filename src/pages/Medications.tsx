@@ -16,6 +16,7 @@ import FloatingActionButton from "@/components/FloatingActionButton";
 import TutorialHint from "@/components/TutorialHint";
 import InfoDialog from "@/components/InfoDialog";
 import { cn } from "@/lib/utils";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 interface Item {
   id: string;
@@ -66,14 +67,15 @@ export default function Medications() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { canAddMedication } = useSubscription();
+  const { activeProfile } = useUserProfiles();
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [activeProfile]);
 
   const fetchItems = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("items")
         .select(`
           id,
@@ -81,6 +83,7 @@ export default function Medications() {
           dose_text,
           category,
           is_active,
+          profile_id,
           schedules (
             id,
             times,
@@ -91,8 +94,14 @@ export default function Medications() {
             unit_label
           )
         `)
-        .eq("is_active", true)
-        .order("name");
+        .eq("is_active", true);
+
+      // Filter by profile_id if activeProfile is selected
+      if (activeProfile) {
+        query = query.eq("profile_id", activeProfile.id);
+      }
+
+      const { data, error } = await query.order("name");
 
       if (error) throw error;
       
