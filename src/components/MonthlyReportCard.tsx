@@ -107,7 +107,7 @@ export default function MonthlyReportCard() {
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-4 bg-primary/10 border-primary/20">
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Adesão Geral</p>
+            <p className="text-sm text-muted-foreground">Progresso Geral</p>
             <p className="text-3xl font-bold text-primary">{report.adherenceRate}%</p>
             <div className="flex items-center gap-1 text-sm">
               {report.improvementPercent >= 0 ? (
@@ -143,7 +143,7 @@ export default function MonthlyReportCard() {
 
       {/* Medication Breakdown */}
       <div className="space-y-3">
-        <h4 className="font-semibold text-sm">Adesão por Medicamento</h4>
+        <h4 className="font-semibold text-sm">Progresso por Medicamento</h4>
         {report.medicationBreakdown.map((med) => (
           <div key={med.name} className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -166,7 +166,7 @@ export default function MonthlyReportCard() {
           </p>
           <ul className="text-sm text-muted-foreground space-y-1 pl-6 list-disc">
             {report.adherenceRate >= 90 && (
-              <li>Excelente! Você manteve uma adesão superior a 90%!</li>
+              <li>Excelente! Você manteve um progresso superior a 90%!</li>
             )}
             {report.improvementPercent > 5 && (
               <li>Parabéns! Você melhorou {report.improvementPercent}% comparado ao mês anterior.</li>

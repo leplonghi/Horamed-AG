@@ -117,7 +117,7 @@ export default function AdherenceChart({ doses, weeklyData, period = "week" }: A
           <div className="space-y-1">
             <h3 className="text-xl font-semibold flex items-center gap-2">
               <Calendar className="h-5 w-5 text-primary" />
-              Adesão {period === "today" ? "Diária" : period === "week" ? "Semanal" : "Mensal"}
+              Progresso {period === "today" ? "Diário" : period === "week" ? "Semanal" : "Mensal"}
             </h3>
             <p className="text-sm text-muted-foreground">
               Visualização detalhada das doses tomadas e não tomadas

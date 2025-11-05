@@ -428,7 +428,7 @@ export default function Today() {
                 <StreakBadge streak={streakData.currentStreak} type="current" />
                 <InfoDialog
                   title="O que é streak?"
-                  description="Streak são dias seguidos com adesão acima de 80%. Quanto maior seu streak, mais consistente você está sendo!"
+                  description="Streak são dias seguidos com progresso acima de 80%. Quanto maior seu streak, mais consistente você está sendo!"
                   triggerClassName="h-5 w-5"
                 />
               </div>
@@ -447,13 +447,13 @@ export default function Today() {
           {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && (
             <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
               <CardContent className="py-4">
-                <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between">
                   <div>
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm text-muted-foreground">Adesão de Hoje</p>
+                      <p className="text-sm text-muted-foreground">Progresso de Hoje</p>
                       <InfoDialog
-                        title="O que é adesão?"
-                        description="Adesão é a proporção de doses tomadas. Acima de 80% é excelente!"
+                        title="O que é o progresso?"
+                        description="Progresso é a proporção de doses tomadas. Acima de 80% é excelente!"
                       />
                     </div>
                     <p className="text-2xl font-bold">
@@ -468,7 +468,7 @@ export default function Today() {
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-primary">{adherencePercentage}%</div>
-                    <p className="text-xs text-muted-foreground">de adesão</p>
+                    <p className="text-xs text-muted-foreground">completo</p>
                   </div>
                 </div>
               </CardContent>
