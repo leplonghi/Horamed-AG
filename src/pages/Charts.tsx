@@ -13,6 +13,7 @@ import Header from "@/components/Header";
 import HealthDataChart from "@/components/HealthDataChart";
 import AdherenceChart from "@/components/AdherenceChart";
 import StockChart from "@/components/StockChart";
+import InfoDialog from "@/components/InfoDialog";
 
 interface TimeSlotStats {
   label: string;
@@ -276,7 +277,14 @@ export default function Charts() {
           <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Total de Doses</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-muted-foreground font-medium">Total de Doses</p>
+                  <InfoDialog
+                    title="Total de doses"
+                    description="Número total de doses programadas para o período selecionado. Isso inclui todos os medicamentos e horários configurados."
+                    triggerClassName="h-4 w-4"
+                  />
+                </div>
                 <p className="text-4xl font-bold text-foreground mt-1">{stats.totalDoses}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   {period === "week" ? "últimos 7 dias" : "último mês"}
@@ -291,7 +299,14 @@ export default function Charts() {
           <Card className="p-5 bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Doses Tomadas</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-muted-foreground font-medium">Doses Tomadas</p>
+                  <InfoDialog
+                    title="Doses tomadas"
+                    description="Quantidade de doses que você confirmou como tomadas no período. Cada dose tomada no horário correto contribui para o sucesso do tratamento."
+                    triggerClassName="h-4 w-4"
+                  />
+                </div>
                 <p className="text-4xl font-bold text-foreground mt-1">{stats.takenDoses}</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   {stats.totalDoses - stats.takenDoses} não tomadas
@@ -306,7 +321,14 @@ export default function Charts() {
           <Card className="p-5 bg-gradient-to-br from-accent/30 to-accent/10 border-accent-foreground/20 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Taxa de Adesão</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-muted-foreground font-medium">Taxa de Progresso</p>
+                  <InfoDialog
+                    title="Taxa de progresso"
+                    description="Porcentagem de doses tomadas em relação ao total. Acima de 80% é considerado excelente para manter a eficácia do tratamento!"
+                    triggerClassName="h-4 w-4"
+                  />
+                </div>
                 <p className="text-4xl font-bold text-foreground mt-1">{stats.weeklyAdherence}%</p>
                 <p className={`text-xs mt-2 font-semibold ${
                   stats.weeklyAdherence >= 90 ? 'text-success' : 
@@ -329,11 +351,18 @@ export default function Charts() {
           <Card className="p-5 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground font-medium">Melhor Período</p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm text-muted-foreground font-medium">Melhor Período</p>
+                  <InfoDialog
+                    title="Melhor período do dia"
+                    description="Horário em que você tem o melhor progresso de doses tomadas. Use essa informação para entender seus padrões e otimizar os horários dos medicamentos."
+                    triggerClassName="h-4 w-4"
+                  />
+                </div>
                 <p className="text-2xl font-bold text-foreground mt-1">
                   {timeSlotStats.length > 0 ? timeSlotStats.reduce((prev, curr) => prev.adherence > curr.adherence ? prev : curr).label : '-'}
                 </p>
-                <p className="text-xs text-muted-foreground mt-2">maior adesão</p>
+                <p className="text-xs text-muted-foreground mt-2">maior progresso</p>
               </div>
               <div className="h-14 w-14 rounded-full bg-warning/20 flex items-center justify-center">
                 <Award className="h-7 w-7 text-warning" />

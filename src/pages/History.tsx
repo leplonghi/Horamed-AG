@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import StreakBadge from "@/components/StreakBadge";
 import AdherenceChart from "@/components/AdherenceChart";
 import DoseTimeline from "@/components/DoseTimeline";
+import InfoDialog from "@/components/InfoDialog";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, subDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
@@ -285,7 +286,12 @@ export default function History() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Target className="h-4 w-4" />
-                <span className="text-sm">Adesão</span>
+                <span className="text-sm">Progresso</span>
+                <InfoDialog
+                  title="O que é o progresso?"
+                  description="Progresso é a porcentagem de doses tomadas corretamente no período selecionado. Um bom progresso ajuda a garantir a eficácia do tratamento."
+                  triggerClassName="h-4 w-4"
+                />
               </div>
               <div className="text-3xl font-bold text-primary">
                 {currentStats.adherenceRate}%
@@ -318,6 +324,11 @@ export default function History() {
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Activity className="h-4 w-4" />
                 <span className="text-sm">Sequência</span>
+                <InfoDialog
+                  title="O que é a sequência?"
+                  description="Sequência (streak) são dias consecutivos com progresso acima de 80%. Quanto maior sua sequência, mais consistente você está sendo com seu tratamento!"
+                  triggerClassName="h-4 w-4"
+                />
               </div>
               <div className="text-3xl font-bold text-orange-600">
                 {streak}
@@ -333,6 +344,11 @@ export default function History() {
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm">Tomadas</span>
+                <InfoDialog
+                  title="Doses tomadas"
+                  description="Número de doses que você tomou no período selecionado. Cada dose tomada no horário correto contribui para o sucesso do seu tratamento."
+                  triggerClassName="h-4 w-4"
+                />
               </div>
               <div className="text-3xl font-bold text-success">
                 {currentStats.taken}
@@ -348,6 +364,11 @@ export default function History() {
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <BarChart3 className="h-4 w-4" />
                 <span className="text-sm">Perdidas</span>
+                <InfoDialog
+                  title="Doses perdidas"
+                  description="Doses que não foram tomadas no período. Use os lembretes e configurações do app para reduzir este número e melhorar seu tratamento."
+                  triggerClassName="h-4 w-4"
+                />
               </div>
               <div className="text-3xl font-bold text-destructive">
                 {currentStats.missed + currentStats.skipped}

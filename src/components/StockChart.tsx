@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { differenceInDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import InfoDialog from "./InfoDialog";
 
 interface StockItem {
   id: string;
@@ -125,10 +126,17 @@ export default function StockChart() {
       <Card className="p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold flex items-center gap-2">
-              <Package className="h-6 w-6 text-primary" />
-              Controle de Estoque
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Package className="h-6 w-6 text-primary" />
+                Controle de Estoque
+              </h3>
+              <InfoDialog
+                title="Controle de estoque"
+                description="Acompanhe a quantidade disponível de cada medicamento. O sistema calcula automaticamente quando vai acabar e envia alertas para você não ficar sem remédio."
+                triggerClassName="h-5 w-5"
+              />
+            </div>
             {(lowStock.length > 0 || criticalStock.length > 0) && (
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-warning" />
