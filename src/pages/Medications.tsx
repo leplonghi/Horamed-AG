@@ -71,7 +71,15 @@ export default function Medications() {
 
   useEffect(() => {
     fetchItems();
-  }, [activeProfile]);
+  }, []);
+
+  // Reload items when active profile changes
+  useEffect(() => {
+    if (activeProfile) {
+      setLoading(true);
+      fetchItems();
+    }
+  }, [activeProfile?.id]);
 
   const fetchItems = async () => {
     try {

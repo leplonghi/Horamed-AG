@@ -279,7 +279,16 @@ export default function Today() {
 
     loadData(selectedDate);
     loadEventCounts();
-  }, [loadData, loadEventCounts, selectedDate, activeProfile]);
+  }, [loadData, loadEventCounts, selectedDate]);
+
+  // Reload data when active profile changes
+  useEffect(() => {
+    if (activeProfile) {
+      setLoading(true);
+      loadData(selectedDate);
+      loadEventCounts();
+    }
+  }, [activeProfile?.id]);
 
   // Schedule notifications only once on mount
   useEffect(() => {
