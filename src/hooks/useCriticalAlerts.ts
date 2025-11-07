@@ -255,10 +255,16 @@ export function useCriticalAlerts() {
     setAlerts((prev) => prev.filter((a) => a.id !== alertId));
   };
 
+  const dismissAll = () => {
+    alerts.forEach(alert => saveDismissedAlert(alert.id));
+    setAlerts([]);
+  };
+
   return {
     alerts,
     loading,
     refresh: checkCriticalAlerts,
     dismissAlert,
+    dismissAll,
   };
 }

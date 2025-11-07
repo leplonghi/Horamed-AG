@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 interface CriticalAlertBannerProps {
   alerts: CriticalAlert[];
   onDismiss: (alertId: string) => void;
+  onDismissAll: () => void;
 }
 
 const getActionLink = (alert: CriticalAlert): { label: string; path: string } | null => {
@@ -25,7 +26,7 @@ const getActionLink = (alert: CriticalAlert): { label: string; path: string } | 
   }
 };
 
-export default function CriticalAlertBanner({ alerts, onDismiss }: CriticalAlertBannerProps) {
+export default function CriticalAlertBanner({ alerts, onDismiss, onDismissAll }: CriticalAlertBannerProps) {
   if (alerts.length === 0) return null;
 
   const getSeverityConfig = (severity: CriticalAlert["severity"]) => {
@@ -62,13 +63,23 @@ export default function CriticalAlertBanner({ alerts, onDismiss }: CriticalAlert
 
   return (
     <div className="space-y-1.5 animate-fade-in">
-      <div className="flex items-center gap-1.5 px-0.5">
-        <div className="p-1 rounded bg-gradient-to-br from-destructive/20 to-destructive/10 animate-pulse">
-          <ShieldAlert className="h-3 w-3 text-destructive" />
+      <div className="flex items-center justify-between gap-1.5 px-0.5">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1 rounded bg-gradient-to-br from-destructive/20 to-destructive/10 animate-pulse">
+            <ShieldAlert className="h-3 w-3 text-destructive" />
+          </div>
+          <h2 className="text-xs font-bold text-destructive">
+            {alerts.length} Ação{alerts.length > 1 ? 'ões' : ''} Urgente{alerts.length > 1 ? 's' : ''}
+          </h2>
         </div>
-        <h2 className="text-xs font-bold text-destructive">
-          {alerts.length} Ação{alerts.length > 1 ? 'ões' : ''} Urgente{alerts.length > 1 ? 's' : ''}
-        </h2>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDismissAll}
+          className="h-6 text-[10px] px-2 hover:bg-destructive/10 text-destructive/70 hover:text-destructive"
+        >
+          Limpar tudo
+        </Button>
       </div>
 
       <div className="space-y-1.5">

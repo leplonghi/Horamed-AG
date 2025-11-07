@@ -454,6 +454,7 @@ export default function Today() {
           <CriticalAlertBanner 
             alerts={criticalAlerts.alerts} 
             onDismiss={criticalAlerts.dismissAlert}
+            onDismissAll={criticalAlerts.dismissAll}
           />
 
           {/* Next 3 Doses - Enhanced View */}
