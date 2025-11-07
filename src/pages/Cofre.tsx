@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, Upload, Filter, Calendar } from "lucide-react";
+import { FileText, Upload, Filter, Calendar, Scan, TrendingUp, Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -81,8 +81,8 @@ export default function Cofre() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      <div className="container max-w-4xl mx-auto px-4 pt-20 pb-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="container max-w-4xl mx-auto px-4 pt-20 pb-6 space-y-4">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Cofre de Saúde</h1>
             <p className="text-muted-foreground">
@@ -92,9 +92,37 @@ export default function Cofre() {
             </p>
           </div>
           <Link to="/cofre/upload">
-            <Button>
-              <Upload className="w-4 h-4 mr-2" />
-              Enviar
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Adicionar
+            </Button>
+          </Link>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-3 gap-2">
+          <Link to="/cofre/upload">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <Upload className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Upload</div>
+              </div>
+            </Button>
+          </Link>
+          <Link to="/digitalizar">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <Scan className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Digitalizar</div>
+              </div>
+            </Button>
+          </Link>
+          <Link to="/relatorios">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <FileText className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Relatórios</div>
+              </div>
             </Button>
           </Link>
         </div>

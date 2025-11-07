@@ -150,12 +150,30 @@ export default function HealthDashboard() {
           <div className="space-y-2">
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Activity className="h-8 w-8 text-primary" />
-              Dashboard de Saúde
+              Dados & Insights
             </h1>
             <p className="text-muted-foreground">
-              Acompanhe a evolução dos seus indicadores de saúde
+              Análise completa da sua saúde e adesão aos medicamentos
             </p>
           </div>
+
+          {/* Info Card */}
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold mb-1">Correlação entre Saúde e Adesão</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Esta página mostra a evolução dos seus sinais vitais. Para ver como sua adesão aos medicamentos 
+                    se relaciona com esses dados, acesse também o <strong>Histórico de Doses</strong> e os <strong>Relatórios</strong>.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Exames Alterados */}
           {examesAlterados.length > 0 && (

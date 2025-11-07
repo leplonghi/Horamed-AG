@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Search, Plus, Pill, Package, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, Search, Plus, Pill, Package, AlertTriangle, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -206,6 +206,32 @@ export default function Medications() {
             <Button onClick={handleAddClick} size="sm" className="shrink-0 h-9">
               <Plus className="h-4 w-4 mr-1.5" />
               Adicionar
+            </Button>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/estoque')}
+              className="h-auto py-3"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              <div className="text-left flex-1">
+                <div className="text-sm font-medium">Estoque</div>
+                <div className="text-xs text-muted-foreground">Gerenciar</div>
+              </div>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/evolucao')}
+              className="h-auto py-3"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              <div className="text-left flex-1">
+                <div className="text-sm font-medium">Insights</div>
+                <div className="text-xs text-muted-foreground">Ver análises</div>
+              </div>
             </Button>
           </div>
 

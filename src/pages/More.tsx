@@ -52,17 +52,17 @@ export default function More() {
 
   const menuItems = [
     {
-      title: "Histórico de Doses",
-      description: "Ver suas doses",
-      icon: History,
-      path: "/historico",
-      badge: null,
-    },
-    {
       title: "Cofre de Saúde",
       description: "Documentos e exames",
       icon: FolderHeart,
       path: "/cofre",
+      badge: null,
+    },
+    {
+      title: "Histórico de Doses",
+      description: "Ver suas doses",
+      icon: History,
+      path: "/historico",
       badge: null,
     },
     {
@@ -73,11 +73,18 @@ export default function More() {
       badge: null,
     },
     {
-      title: "Relatórios",
+      title: "Relatórios Médicos",
       description: "Gere relatórios para consultas",
       icon: FileText,
       path: "/relatorios",
       badge: isPremium ? null : <Badge variant="secondary" className="ml-2">Premium</Badge>,
+    },
+    {
+      title: "Digitalizar Documentos",
+      description: "OCR para receitas e exames",
+      icon: QrCode,
+      path: "/digitalizar",
+      badge: null,
     },
     {
       title: "Família & Cuidadores",
@@ -85,13 +92,6 @@ export default function More() {
       icon: Users,
       path: "/perfil",
       badge: isPremium ? <Badge className="ml-2">{profiles.length} perfis</Badge> : <Badge variant="secondary" className="ml-2">Premium</Badge>,
-    },
-    {
-      title: "Cartão de Consulta",
-      description: "Compartilhe seu histórico",
-      icon: QrCode,
-      path: "/perfil",
-      badge: null,
     },
   ];
 

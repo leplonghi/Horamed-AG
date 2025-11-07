@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import StreakBadge from "@/components/StreakBadge";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import InfoDialog from "@/components/InfoDialog";
+import HealthInsightsCard from "@/components/HealthInsightsCard";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 interface TimelineItem {
@@ -492,6 +493,9 @@ export default function Today() {
               onDismissAll={criticalAlerts.dismissAll}
             />
           )}
+
+          {/* Health Insights Card */}
+          <HealthInsightsCard />
 
           {/* Today Summary */}
           {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && (
