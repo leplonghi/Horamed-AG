@@ -14,9 +14,44 @@ export interface CriticalAlert {
   action?: () => void;
 }
 
+const DISMISSED_ALERTS_KEY = "horamed_dismissed_alerts";
+const ALERT_EXPIRY_HOURS = 24; // Alertas dismissed expiram após 24h
+
 export function useCriticalAlerts() {
   const [alerts, setAlerts] = useState<CriticalAlert[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const getDismissedAlerts = (): Record<string, number> => {
+    try {
+      const stored = localStorage.getItem(DISMISSED_ALERTS_KEY);
+      if (!stored) return {};
+      const dismissed = JSON.parse(stored);
+      
+      // Remove alertas expirados
+      const now = Date.now();
+      const filtered: Record<string, number> = {};
+      Object.entries(dismissed).forEach(([id, timestamp]) => {
+        const hoursSince = (now - (timestamp as number)) / (1000 * 60 * 60);
+        if (hoursSince < ALERT_EXPIRY_HOURS) {
+          filtered[id] = timestamp as number;
+        }
+      });
+      
+      return filtered;
+    } catch {
+      return {};
+    }
+  };
+
+  const saveDismissedAlert = (alertId: string) => {
+    try {
+      const dismissed = getDismissedAlerts();
+      dismissed[alertId] = Date.now();
+      localStorage.setItem(DISMISSED_ALERTS_KEY, JSON.stringify(dismissed));
+    } catch (error) {
+      console.error("Error saving dismissed alert:", error);
+    }
+  };
 
   useEffect(() => {
     checkCriticalAlerts();
@@ -203,7 +238,11 @@ export function useCriticalAlerts() {
         }
       }
 
-      setAlerts(newAlerts);
+      // Filtrar alertas dismissed
+      const dismissed = getDismissedAlerts();
+      const filteredAlerts = newAlerts.filter(alert => !dismissed[alert.id]);
+      
+      setAlerts(filteredAlerts);
     } catch (error) {
       console.error("Error checking critical alerts:", error);
     } finally {
@@ -212,6 +251,7 @@ export function useCriticalAlerts() {
   };
 
   const dismissAlert = (alertId: string) => {
+    saveDismissedAlert(alertId);
     setAlerts((prev) => prev.filter((a) => a.id !== alertId));
   };
 

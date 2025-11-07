@@ -1,13 +1,29 @@
-import { AlertTriangle, XCircle, AlertCircle, X, ShieldAlert } from "lucide-react";
+import { AlertTriangle, XCircle, AlertCircle, X, ShieldAlert, ExternalLink } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CriticalAlert } from "@/hooks/useCriticalAlerts";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface CriticalAlertBannerProps {
   alerts: CriticalAlert[];
   onDismiss: (alertId: string) => void;
 }
+
+const getActionLink = (alert: CriticalAlert): { label: string; path: string } | null => {
+  switch (alert.type) {
+    case "zero_stock":
+      return { label: "Gerenciar Estoque", path: "/estoque" };
+    case "missed_essential":
+      return { label: "Ver Medicações", path: "/hoje" };
+    case "duplicate_dose":
+      return { label: "Ver Histórico", path: "/historico" };
+    case "drug_interaction":
+      return { label: "Ver Perfil", path: "/perfil" };
+    default:
+      return null;
+  }
+};
 
 export default function CriticalAlertBanner({ alerts, onDismiss }: CriticalAlertBannerProps) {
   if (alerts.length === 0) return null;
@@ -45,57 +61,68 @@ export default function CriticalAlertBanner({ alerts, onDismiss }: CriticalAlert
   };
 
   return (
-    <div className="space-y-2 animate-fade-in">
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 rounded-lg bg-gradient-to-br from-destructive/20 to-destructive/10 animate-pulse">
-          <ShieldAlert className="h-4 w-4 text-destructive" />
+    <div className="space-y-1.5 animate-fade-in">
+      <div className="flex items-center gap-1.5 px-0.5">
+        <div className="p-1 rounded bg-gradient-to-br from-destructive/20 to-destructive/10 animate-pulse">
+          <ShieldAlert className="h-3 w-3 text-destructive" />
         </div>
-        <div>
-          <h2 className="text-sm font-bold text-destructive">
-            Ações Urgentes
-          </h2>
-        </div>
+        <h2 className="text-xs font-bold text-destructive">
+          {alerts.length} Ação{alerts.length > 1 ? 'ões' : ''} Urgente{alerts.length > 1 ? 's' : ''}
+        </h2>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         {alerts.map((alert, index) => {
           const config = getSeverityConfig(alert.severity);
           const Icon = config.icon;
+          const actionLink = getActionLink(alert);
 
           return (
             <Card
               key={alert.id}
               style={{ animationDelay: `${index * 50}ms` }}
               className={cn(
-                "p-3 border backdrop-blur-sm bg-gradient-to-br transition-all duration-300 hover:scale-[1.01] hover:shadow-md animate-fade-in cursor-pointer",
+                "p-2 border backdrop-blur-sm bg-gradient-to-br transition-all duration-300 animate-fade-in",
                 config.gradient,
                 config.border
               )}
             >
-              <div className="flex gap-2.5">
+              <div className="flex gap-2 items-start">
                 <div className={cn(
-                  "p-1.5 rounded-lg shrink-0 transition-transform duration-300 hover:scale-110",
+                  "p-1 rounded shrink-0",
                   config.iconBg
                 )}>
-                  <Icon className={cn("h-4 w-4", config.text)} />
+                  <Icon className={cn("h-3 w-3", config.text)} />
                 </div>
-                <div className="flex-1 space-y-1 min-w-0">
+                <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className={cn("font-semibold text-sm leading-tight", config.text)}>
+                    <h3 className={cn("font-semibold text-xs leading-tight", config.text)}>
                       {alert.title}
                     </h3>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => onDismiss(alert.id)}
-                      className="shrink-0 h-6 w-6 hover:bg-background/50 transition-all"
+                      className="shrink-0 h-5 w-5 hover:bg-background/50 -mr-1 -mt-0.5"
                     >
-                      <X className="h-3 w-3" />
+                      <X className="h-2.5 w-2.5" />
                     </Button>
                   </div>
-                  <p className="text-xs text-foreground/70 leading-snug">
+                  <p className="text-[11px] text-foreground/70 leading-snug">
                     {alert.message}
                   </p>
+                  {actionLink && (
+                    <Link to={actionLink.path}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[10px] px-2 gap-1 mt-1 border-current/20 hover:bg-background/50"
+                      >
+                        {actionLink.label}
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </Card>
