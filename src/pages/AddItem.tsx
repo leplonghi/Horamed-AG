@@ -53,6 +53,10 @@ export default function AddItem() {
       freq_type: "daily",
       times: ["08:00"],
       days_of_week: [] as number[],
+      mode: "manual" as "manual" | "interval" | "times_per_day",
+      interval_hours: 8,
+      times_per_day: 3,
+      start_time: "08:00",
     },
   ]);
 
@@ -139,6 +143,10 @@ export default function AddItem() {
             freq_type: s.freq_type,
             times: Array.isArray(s.times) ? s.times : [],
             days_of_week: s.days_of_week || [],
+            mode: "manual" as "manual" | "interval" | "times_per_day",
+            interval_hours: 8,
+            times_per_day: 3,
+            start_time: "08:00",
           }))
         );
       }
@@ -164,7 +172,15 @@ export default function AddItem() {
   const addSchedule = () => {
     setSchedules([
       ...schedules,
-      { freq_type: "daily", times: ["08:00"], days_of_week: [] },
+      { 
+        freq_type: "daily", 
+        times: ["08:00"], 
+        days_of_week: [],
+        mode: "manual" as "manual" | "interval" | "times_per_day",
+        interval_hours: 8,
+        times_per_day: 3,
+        start_time: "08:00",
+      },
     ]);
   };
 
@@ -196,6 +212,134 @@ export default function AddItem() {
     const newSchedules = [...schedules];
     newSchedules[scheduleIndex].freq_type = value;
     setSchedules(newSchedules);
+  };
+
+  const updateScheduleMode = (scheduleIndex: number, mode: "manual" | "interval" | "times_per_day") => {
+    const newSchedules = [...schedules];
+    newSchedules[scheduleIndex].mode = mode;
+    
+    // Auto-calculate times based on mode
+    if (mode === "interval") {
+      const times = calculateIntervalTimes(
+        newSchedules[scheduleIndex].start_time,
+        newSchedules[scheduleIndex].interval_hours
+      );
+      newSchedules[scheduleIndex].times = times;
+    } else if (mode === "times_per_day") {
+      const times = calculateTimesPerDay(newSchedules[scheduleIndex].times_per_day);
+      newSchedules[scheduleIndex].times = times;
+    }
+    
+    setSchedules(newSchedules);
+  };
+
+  const updateIntervalHours = (scheduleIndex: number, hours: number) => {
+    const newSchedules = [...schedules];
+    newSchedules[scheduleIndex].interval_hours = hours;
+    
+    // Recalculate times
+    const times = calculateIntervalTimes(
+      newSchedules[scheduleIndex].start_time,
+      hours
+    );
+    newSchedules[scheduleIndex].times = times;
+    setSchedules(newSchedules);
+  };
+
+  const updateTimesPerDay = (scheduleIndex: number, times: number) => {
+    const newSchedules = [...schedules];
+    newSchedules[scheduleIndex].times_per_day = times;
+    
+    // Recalculate times
+    const calculatedTimes = calculateTimesPerDay(times);
+    newSchedules[scheduleIndex].times = calculatedTimes;
+    setSchedules(newSchedules);
+  };
+
+  const updateStartTime = (scheduleIndex: number, time: string) => {
+    const newSchedules = [...schedules];
+    newSchedules[scheduleIndex].start_time = time;
+    
+    // Recalculate times if in interval mode
+    if (newSchedules[scheduleIndex].mode === "interval") {
+      const times = calculateIntervalTimes(
+        time,
+        newSchedules[scheduleIndex].interval_hours
+      );
+      newSchedules[scheduleIndex].times = times;
+    }
+    
+    setSchedules(newSchedules);
+  };
+
+  const calculateIntervalTimes = (startTime: string, intervalHours: number): string[] => {
+    const times: string[] = [];
+    const [startHour, startMinute] = startTime.split(":").map(Number);
+    let currentHour = startHour;
+    let currentMinute = startMinute;
+    
+    const hoursInDay = 24;
+    const dosesPerDay = Math.floor(hoursInDay / intervalHours);
+    
+    for (let i = 0; i < dosesPerDay; i++) {
+      times.push(
+        `${currentHour.toString().padStart(2, "0")}:${currentMinute.toString().padStart(2, "0")}`
+      );
+      currentHour = (currentHour + intervalHours) % 24;
+    }
+    
+    return times;
+  };
+
+  const calculateTimesPerDay = (timesPerDay: number): string[] => {
+    const times: string[] = [];
+    
+    if (timesPerDay === 1) {
+      times.push("08:00");
+    } else if (timesPerDay === 2) {
+      times.push("08:00", "20:00");
+    } else if (timesPerDay === 3) {
+      times.push("08:00", "14:00", "20:00");
+    } else if (timesPerDay === 4) {
+      times.push("08:00", "12:00", "16:00", "20:00");
+    } else {
+      // Distribute evenly throughout the day
+      const intervalHours = 24 / timesPerDay;
+      for (let i = 0; i < timesPerDay; i++) {
+        const hour = Math.floor(8 + (i * intervalHours)) % 24;
+        times.push(`${hour.toString().padStart(2, "0")}:00`);
+      }
+    }
+    
+    return times;
+  };
+
+  // Calculate total doses per day
+  const calculateTotalDosesPerDay = (): number => {
+    return schedules.reduce((total, schedule) => total + schedule.times.length, 0);
+  };
+
+  // Calculate total doses for treatment
+  const calculateTotalTreatmentDoses = (): number | null => {
+    if (!formData.treatment_duration_days) return null;
+    return calculateTotalDosesPerDay() * formData.treatment_duration_days;
+  };
+
+  // Calculate stock consumption and alert
+  const calculateStockConsumption = () => {
+    const dosesPerDay = calculateTotalDosesPerDay();
+    if (!stockData.enabled || stockData.units_total === 0) return null;
+    
+    const daysUntilEmpty = Math.floor(stockData.units_total / dosesPerDay);
+    const alertThresholdUnits = Math.ceil((stockData.units_total * stockData.alert_threshold) / 100);
+    const daysUntilAlert = Math.floor(alertThresholdUnits / dosesPerDay);
+    
+    return {
+      dosesPerDay,
+      daysUntilEmpty,
+      daysUntilAlert,
+      alertThresholdUnits,
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -649,9 +793,9 @@ export default function AddItem() {
 
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2">
-                  <Label>Horários</Label>
+                  <Label className="text-base font-semibold">Horários</Label>
                   <HelpTooltip 
-                    content="Configure os horários que você deve tomar o medicamento. Você pode adicionar vários horários por dia clicando em 'Adicionar horário'."
+                    content="Configure os horários do medicamento. Use 'Automático' para calcular intervalos ou distribuir doses ao longo do dia."
                   />
                 </div>
 
@@ -685,42 +829,182 @@ export default function AddItem() {
                       )}
                     </div>
 
-                    {schedule.times.map((time, timeIndex) => (
-                      <div key={timeIndex} className="flex gap-2">
-                        <Input
-                          type="time"
-                          value={time}
-                          onChange={(e) =>
-                            updateTime(scheduleIndex, timeIndex, e.target.value)
-                          }
-                          className="flex-1"
-                        />
-                        {schedule.times.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeTime(scheduleIndex, timeIndex)}
-                            className="text-destructive"
-                          >
-                            ✕
-                          </Button>
-                        )}
+                    {/* Schedule Mode Selector */}
+                    <div className="space-y-3 p-3 bg-muted/30 rounded-lg">
+                      <Label className="text-sm font-medium">Modo de Configuração</Label>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          type="button"
+                          variant={schedule.mode === "manual" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateScheduleMode(scheduleIndex, "manual")}
+                          className="text-xs"
+                        >
+                          Manual
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={schedule.mode === "interval" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateScheduleMode(scheduleIndex, "interval")}
+                          className="text-xs"
+                        >
+                          A cada X horas
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={schedule.mode === "times_per_day" ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => updateScheduleMode(scheduleIndex, "times_per_day")}
+                          className="text-xs"
+                        >
+                          X vezes/dia
+                        </Button>
                       </div>
-                    ))}
+                    </div>
 
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => addTime(scheduleIndex)}
-                      className="w-full"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar horário
-                    </Button>
+                    {/* Interval Mode */}
+                    {schedule.mode === "interval" && (
+                      <div className="space-y-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label htmlFor={`start-time-${scheduleIndex}`} className="text-sm">
+                              Horário Inicial
+                            </Label>
+                            <Input
+                              id={`start-time-${scheduleIndex}`}
+                              type="time"
+                              value={schedule.start_time}
+                              onChange={(e) => updateStartTime(scheduleIndex, e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`interval-${scheduleIndex}`} className="text-sm">
+                              A cada (horas)
+                            </Label>
+                            <Input
+                              id={`interval-${scheduleIndex}`}
+                              type="number"
+                              min="1"
+                              max="24"
+                              value={schedule.interval_hours}
+                              onChange={(e) =>
+                                updateIntervalHours(scheduleIndex, parseInt(e.target.value) || 8)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          ✅ {schedule.times.length} doses por dia calculadas automaticamente
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Times Per Day Mode */}
+                    {schedule.mode === "times_per_day" && (
+                      <div className="space-y-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                        <div className="space-y-2">
+                          <Label htmlFor={`times-per-day-${scheduleIndex}`} className="text-sm">
+                            Quantas vezes por dia?
+                          </Label>
+                          <Select
+                            value={schedule.times_per_day.toString()}
+                            onValueChange={(value) =>
+                              updateTimesPerDay(scheduleIndex, parseInt(value))
+                            }
+                          >
+                            <SelectTrigger id={`times-per-day-${scheduleIndex}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="1">1 vez (manhã)</SelectItem>
+                              <SelectItem value="2">2 vezes (manhã e noite)</SelectItem>
+                              <SelectItem value="3">3 vezes (manhã, tarde e noite)</SelectItem>
+                              <SelectItem value="4">4 vezes</SelectItem>
+                              <SelectItem value="5">5 vezes</SelectItem>
+                              <SelectItem value="6">6 vezes</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          ✅ Horários distribuídos automaticamente ao longo do dia
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Manual Mode or Show Times */}
+                    {schedule.mode === "manual" ? (
+                      <>
+                        {schedule.times.map((time, timeIndex) => (
+                          <div key={timeIndex} className="flex gap-2">
+                            <Input
+                              type="time"
+                              value={time}
+                              onChange={(e) =>
+                                updateTime(scheduleIndex, timeIndex, e.target.value)
+                              }
+                              className="flex-1"
+                            />
+                            {schedule.times.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeTime(scheduleIndex, timeIndex)}
+                                className="text-destructive"
+                              >
+                                ✕
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addTime(scheduleIndex)}
+                          className="w-full"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar horário
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium">Horários Calculados:</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {schedule.times.map((time, idx) => (
+                            <div
+                              key={idx}
+                              className="p-2 bg-background border border-border rounded text-center text-sm font-medium"
+                            >
+                              {time}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </Card>
                 ))}
+
+                {/* Total Doses Summary */}
+                <div className="p-4 bg-primary/10 border border-primary/30 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold">Total de doses por dia:</span>
+                    <span className="text-lg font-bold text-primary">
+                      {calculateTotalDosesPerDay()}
+                    </span>
+                  </div>
+                  {formData.treatment_duration_days && (
+                    <div className="flex items-center justify-between pt-2 border-t border-primary/20">
+                      <span className="text-sm font-semibold">Total de doses no tratamento:</span>
+                      <span className="text-lg font-bold text-primary">
+                        {calculateTotalTreatmentDoses()}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4 pt-4 border-t">
@@ -831,6 +1115,35 @@ export default function AddItem() {
                         )}
                       </p>
                     </div>
+
+                    {/* Stock Consumption Preview */}
+                    {calculateStockConsumption() && (
+                      <div className="space-y-3 p-3 bg-warning/10 border border-warning/30 rounded-lg">
+                        <Label className="text-sm font-semibold text-warning">
+                          📊 Previsão de Consumo
+                        </Label>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Consumo por dia:</span>
+                            <span className="font-medium">
+                              {calculateStockConsumption()!.dosesPerDay} {stockData.unit_label}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Estoque dura:</span>
+                            <span className="font-medium">
+                              {calculateStockConsumption()!.daysUntilEmpty} dias
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-2 border-t border-warning/20">
+                            <span className="text-muted-foreground">Alerta em:</span>
+                            <span className="font-medium text-warning">
+                              {calculateStockConsumption()!.daysUntilAlert} dias ({calculateStockConsumption()!.alertThresholdUnits} {stockData.unit_label})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
                       <p className="text-xs text-muted-foreground flex items-start gap-2">
