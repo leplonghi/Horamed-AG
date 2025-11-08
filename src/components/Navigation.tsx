@@ -1,14 +1,18 @@
 import { Home, User, Pill, TrendingUp, FileText, MoreHorizontal } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useDocumentos } from "@/hooks/useCofre";
 
 export default function Navigation() {
   const location = useLocation();
+  const { data: docsExpirando } = useDocumentos({ exp: "30" });
+  const expiringCount = docsExpirando?.length || 0;
 
   const navItems = [
     { path: "/hoje", icon: Home, label: "Hoje" },
     { path: "/medicamentos", icon: Pill, label: "Medicamentos" },
-    { path: "/cofre", icon: FileText, label: "Cofre" },
+    { path: "/cofre", icon: FileText, label: "Cofre", badge: expiringCount },
     { path: "/evolucao", icon: TrendingUp, label: "Insights" },
     { path: "/perfil", icon: User, label: "Perfil" },
   ];
@@ -34,13 +38,23 @@ export default function Navigation() {
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl animate-pulse" />
                 )}
-                <item.icon
-                  className={cn(
-                    "h-6 w-6 transition-all duration-300 relative z-10",
-                    isActive && "scale-110 drop-shadow-lg",
-                    !isActive && "group-hover:scale-110"
+                <div className="relative">
+                  <item.icon
+                    className={cn(
+                      "h-6 w-6 transition-all duration-300 relative z-10",
+                      isActive && "scale-110 drop-shadow-lg",
+                      !isActive && "group-hover:scale-110"
+                    )}
+                  />
+                  {item.badge && item.badge > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center z-20 animate-pulse"
+                    >
+                      {item.badge}
+                    </Badge>
                   )}
-                />
+                </div>
                 <span className={cn(
                   "text-[10px] relative z-10 transition-all duration-300",
                   isActive && "font-bold"
