@@ -21,7 +21,7 @@ import {
   XCircle,
   Clock
 } from "lucide-react";
-import { format, subMonths, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subMonths, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import {
@@ -63,6 +63,31 @@ interface CorrelationData {
   glicemia?: number;
 }
 
+interface PeriodComparison {
+  mesAtual: {
+    adesao: number;
+    dosesTomadas: number;
+    dosesTotal: number;
+    medicamentos: number;
+  };
+  mesAnterior: {
+    adesao: number;
+    dosesTomadas: number;
+    dosesTotal: number;
+    medicamentos: number;
+  };
+  tendencias: {
+    adesao: 'up' | 'down' | 'stable';
+    doses: 'up' | 'down' | 'stable';
+    medicamentos: 'up' | 'down' | 'stable';
+  };
+  variacoes: {
+    adesao: number;
+    doses: number;
+    medicamentos: number;
+  };
+}
+
 export default function HealthDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -78,6 +103,7 @@ export default function HealthDashboard() {
     proximosEventos: 0,
     documentosVencendo: 0
   });
+  const [periodComparison, setPeriodComparison] = useState<PeriodComparison | null>(null);
 
   useEffect(() => {
     loadDashboardData();
@@ -291,6 +317,86 @@ export default function HealthDashboard() {
 
       setCorrelationData(correlations);
 
+      // === COMPARAÇÃO DE PERÍODOS: MÊS ATUAL vs MÊS ANTERIOR ===
+      const mesAtualInicio = startOfMonth(new Date());
+      const mesAtualFim = endOfMonth(new Date());
+      const mesAnteriorInicio = startOfMonth(subMonths(new Date(), 1));
+      const mesAnteriorFim = endOfMonth(subMonths(new Date(), 1));
+
+      // Dados do mês atual
+      const { data: dosesCurrentMonth } = await supabase
+        .from("dose_instances")
+        .select("status, item_id, items!inner(user_id)")
+        .eq("items.user_id", user.id)
+        .gte("due_at", mesAtualInicio.toISOString())
+        .lte("due_at", mesAtualFim.toISOString());
+
+      const { count: medsCurrentMonth } = await supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .lte("created_at", mesAtualFim.toISOString());
+
+      const totalCurrentMonth = dosesCurrentMonth?.length || 0;
+      const takenCurrentMonth = dosesCurrentMonth?.filter(d => d.status === "taken").length || 0;
+      const adherenceCurrentMonth = totalCurrentMonth > 0 ? Math.round((takenCurrentMonth / totalCurrentMonth) * 100) : 0;
+
+      // Dados do mês anterior
+      const { data: dosesPreviousMonth } = await supabase
+        .from("dose_instances")
+        .select("status, item_id, items!inner(user_id)")
+        .eq("items.user_id", user.id)
+        .gte("due_at", mesAnteriorInicio.toISOString())
+        .lte("due_at", mesAnteriorFim.toISOString());
+
+      const { count: medsPreviousMonth } = await supabase
+        .from("items")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .lte("created_at", mesAnteriorFim.toISOString());
+
+      const totalPreviousMonth = dosesPreviousMonth?.length || 0;
+      const takenPreviousMonth = dosesPreviousMonth?.filter(d => d.status === "taken").length || 0;
+      const adherencePreviousMonth = totalPreviousMonth > 0 ? Math.round((takenPreviousMonth / totalPreviousMonth) * 100) : 0;
+
+      // Calcular tendências e variações
+      const adesaoDiff = adherenceCurrentMonth - adherencePreviousMonth;
+      const dosesDiff = takenCurrentMonth - takenPreviousMonth;
+      const medsDiff = (medsCurrentMonth || 0) - (medsPreviousMonth || 0);
+
+      const getTrend = (diff: number): 'up' | 'down' | 'stable' => {
+        if (diff > 2) return 'up';
+        if (diff < -2) return 'down';
+        return 'stable';
+      };
+
+      setPeriodComparison({
+        mesAtual: {
+          adesao: adherenceCurrentMonth,
+          dosesTomadas: takenCurrentMonth,
+          dosesTotal: totalCurrentMonth,
+          medicamentos: medsCurrentMonth || 0
+        },
+        mesAnterior: {
+          adesao: adherencePreviousMonth,
+          dosesTomadas: takenPreviousMonth,
+          dosesTotal: totalPreviousMonth,
+          medicamentos: medsPreviousMonth || 0
+        },
+        tendencias: {
+          adesao: getTrend(adesaoDiff),
+          doses: getTrend(dosesDiff),
+          medicamentos: getTrend(medsDiff)
+        },
+        variacoes: {
+          adesao: adesaoDiff,
+          doses: dosesDiff,
+          medicamentos: medsDiff
+        }
+      });
+
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
       toast.error("Erro ao carregar dados");
@@ -436,6 +542,149 @@ export default function HealthDashboard() {
                     </Button>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Comparação de Períodos */}
+          {periodComparison && (
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LineChart className="h-5 w-5 text-blue-600" />
+                  Evolução Mensal
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Comparação: {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR })} vs {format(new Date(), "MMMM", { locale: ptBR })}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {/* Taxa de Adesão */}
+                  <div className="bg-background rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Taxa de Adesão</span>
+                      {periodComparison.tendencias.adesao === 'up' && (
+                        <Badge variant="default" className="bg-green-500">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          +{periodComparison.variacoes.adesao}%
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.adesao === 'down' && (
+                        <Badge variant="destructive">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          {periodComparison.variacoes.adesao}%
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.adesao === 'stable' && (
+                        <Badge variant="secondary">
+                          Estável
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-foreground">
+                          {periodComparison.mesAtual.adesao}%
+                        </span>
+                        <span className="text-sm text-muted-foreground">atual</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Mês anterior: {periodComparison.mesAnterior.adesao}%
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Doses Tomadas */}
+                  <div className="bg-background rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Doses Tomadas</span>
+                      {periodComparison.tendencias.doses === 'up' && (
+                        <Badge variant="default" className="bg-green-500">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          +{periodComparison.variacoes.doses}
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.doses === 'down' && (
+                        <Badge variant="destructive">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          {periodComparison.variacoes.doses}
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.doses === 'stable' && (
+                        <Badge variant="secondary">
+                          Estável
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-foreground">
+                          {periodComparison.mesAtual.dosesTomadas}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          / {periodComparison.mesAtual.dosesTotal}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Mês anterior: {periodComparison.mesAnterior.dosesTomadas} / {periodComparison.mesAnterior.dosesTotal}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Medicamentos */}
+                  <div className="bg-background rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Medicamentos</span>
+                      {periodComparison.tendencias.medicamentos === 'up' && (
+                        <Badge variant="secondary">
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          +{periodComparison.variacoes.medicamentos}
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.medicamentos === 'down' && (
+                        <Badge variant="secondary">
+                          <TrendingDown className="h-3 w-3 mr-1" />
+                          {periodComparison.variacoes.medicamentos}
+                        </Badge>
+                      )}
+                      {periodComparison.tendencias.medicamentos === 'stable' && (
+                        <Badge variant="secondary">
+                          Estável
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-foreground">
+                          {periodComparison.mesAtual.medicamentos}
+                        </span>
+                        <span className="text-sm text-muted-foreground">ativos</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Mês anterior: {periodComparison.mesAnterior.medicamentos}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mensagem de incentivo */}
+                {periodComparison.tendencias.adesao === 'up' && (
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200">
+                    <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                      <span>Parabéns! Sua adesão melhorou {periodComparison.variacoes.adesao}% este mês. Continue assim!</span>
+                    </p>
+                  </div>
+                )}
+                {periodComparison.tendencias.adesao === 'down' && (
+                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                      <span>Sua adesão caiu {Math.abs(periodComparison.variacoes.adesao)}% este mês. Vamos melhorar juntos!</span>
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
