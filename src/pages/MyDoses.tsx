@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import DoseTimeline from "@/components/DoseTimeline";
-import DoseStatusDialog from "@/components/DoseStatusDialog";
-import DoseActionButton from "@/components/DoseActionButton";
+import DoseActionModal from "@/components/DoseActionModal";
+import NextDoseWidget from "@/components/NextDoseWidget";
+import MedicationSummaryCard from "@/components/MedicationSummaryCard";
 import StreakBadge from "@/components/StreakBadge";
+import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { toast } from "sonner";
-import { Calendar as CalendarIcon, TrendingUp, History } from "lucide-react";
+import { Calendar as CalendarIcon, TrendingUp, History, Pill } from "lucide-react";
 
 interface DoseInstance {
   id: string;
@@ -35,8 +36,9 @@ export default function MyDoses() {
   const [doses, setDoses] = useState<DoseInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDose, setSelectedDose] = useState<DoseInstance | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [streak, setStreak] = useState<number>(0);
+  const { showFeedback } = useFeedbackToast();
 
   useEffect(() => {
     loadDoses();
@@ -105,7 +107,7 @@ export default function MyDoses() {
       setDoses(dosesWithStock);
     } catch (error) {
       console.error('Erro ao carregar doses:', error);
-      toast.error('Erro ao carregar doses');
+      showFeedback('dose-missed', { customMessage: 'Erro ao carregar doses' });
     } finally {
       setLoading(false);
     }
@@ -131,11 +133,12 @@ export default function MyDoses() {
 
   const handleQuickTake = async (dose: DoseInstance) => {
     try {
+      const takenTime = new Date();
       const { error } = await supabase
         .from('dose_instances')
         .update({
           status: 'taken',
-          taken_at: new Date().toISOString(),
+          taken_at: takenTime.toISOString(),
         })
         .eq('id', dose.id);
 
@@ -151,22 +154,47 @@ export default function MyDoses() {
         if (stockError) throw stockError;
       }
 
-      toast.success(`✓ ${dose.items.name} marcado como tomado!`);
+      // Check if period is complete
+      const periodDoses = doses.filter(d => {
+        const hour = new Date(d.due_at).getHours();
+        const doseHour = new Date(dose.due_at).getHours();
+        return Math.floor(hour / 6) === Math.floor(doseHour / 6);
+      });
+      const allTaken = periodDoses.every(d => 
+        d.id === dose.id || d.status === 'taken'
+      );
+
+      if (allTaken) {
+        const periodName = new Date(dose.due_at).getHours() < 12 ? 'manhã' : 
+                          new Date(dose.due_at).getHours() < 18 ? 'tarde' : 'noite';
+        showFeedback('period-complete', { periodName });
+      } else {
+        showFeedback('dose-taken', {
+          medicationName: dose.items.name,
+          takenTime: format(takenTime, "HH:mm"),
+        });
+      }
+
       loadDoses();
       loadStreak();
     } catch (error) {
       console.error('Erro ao marcar dose:', error);
-      toast.error('Erro ao marcar dose como tomada');
+      showFeedback('dose-missed', { customMessage: 'Erro ao marcar dose como tomada' });
     }
   };
 
-  const handleStatusUpdate = async (status: 'taken' | 'missed' | 'skipped') => {
+  const handleStatusUpdate = async (action: 'taken' | 'missed' | 'skipped' | 'custom-time') => {
     if (!selectedDose) return;
 
     try {
+      if (action === 'custom-time') {
+        // TODO: Implementar seleção de horário customizado
+        return;
+      }
+
       const updateData: any = {
-        status,
-        ...(status === 'taken' && { taken_at: new Date().toISOString() }),
+        status: action,
+        ...(action === 'taken' && { taken_at: new Date().toISOString() }),
       };
 
       const { error } = await supabase
@@ -176,7 +204,7 @@ export default function MyDoses() {
 
       if (error) throw error;
 
-      if (status === 'taken' && selectedDose.stock && selectedDose.stock.length > 0) {
+      if (action === 'taken' && selectedDose.stock && selectedDose.stock.length > 0) {
         const { error: stockError } = await supabase
           .from('stock')
           .update({ units_left: Math.max(0, selectedDose.stock[0].units_left - 1) })
@@ -185,19 +213,26 @@ export default function MyDoses() {
         if (stockError) throw stockError;
       }
 
-      const messages = {
-        taken: '✓ Dose marcada como tomada!',
-        missed: '⚠️ Dose marcada como esquecida',
-        skipped: '→ Dose pulada',
-      };
+      // Show appropriate feedback
+      if (action === 'taken') {
+        showFeedback('dose-taken', { medicationName: selectedDose.items.name });
+      } else if (action === 'missed') {
+        showFeedback('dose-missed');
+      } else if (action === 'skipped') {
+        showFeedback('dose-skipped');
+      }
 
-      toast.success(messages[status]);
       loadDoses();
       loadStreak();
     } catch (error) {
       console.error('Erro ao atualizar dose:', error);
-      toast.error('Erro ao atualizar status da dose');
+      showFeedback('dose-missed', { customMessage: 'Erro ao atualizar status da dose' });
     }
+  };
+
+  const handleMoreOptions = (dose: DoseInstance) => {
+    setSelectedDose(dose);
+    setModalOpen(true);
   };
 
   const calculateAdherence = () => {
@@ -208,6 +243,21 @@ export default function MyDoses() {
 
   const adherence = calculateAdherence();
   const nextDose = doses.find(d => d.status === 'scheduled' && new Date(d.due_at) > new Date());
+
+  // Group medications for summary cards
+  const medicationGroups = doses.reduce((acc, dose) => {
+    if (!acc[dose.item_id]) {
+      acc[dose.item_id] = {
+        id: dose.item_id,
+        name: dose.items.name,
+        doses: [],
+      };
+    }
+    acc[dose.item_id].doses.push(dose);
+    return acc;
+  }, {} as Record<string, { id: string; name: string; doses: typeof doses }>);
+
+  const medications = Object.values(medicationGroups);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -246,28 +296,27 @@ export default function MyDoses() {
             </CardContent>
           </Card>
 
-          {/* Próxima Dose */}
+          {/* Próxima Dose Widget */}
           {nextDose && activeTab === 'today' && (
-            <Card className="border-primary/20 bg-primary/5">
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-1">Próxima dose</p>
-                      <h3 className="font-semibold text-lg">{nextDose.items.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        ⏰ {format(new Date(nextDose.due_at), "HH:mm", { locale: ptBR })}
-                      </p>
-                    </div>
-                    <DoseActionButton
-                      variant="taken"
-                      onClick={() => handleQuickTake(nextDose)}
-                      className="shrink-0"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <NextDoseWidget
+              dose={nextDose}
+              onTake={() => handleQuickTake(nextDose)}
+            />
+          )}
+
+          {/* Medication Summary Cards */}
+          {activeTab === 'today' && medications.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Pill className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Seus Medicamentos</h2>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {medications.map(med => (
+                  <MedicationSummaryCard key={med.id} medication={med} />
+                ))}
+              </div>
+            </div>
           )}
         </div>
 
@@ -297,6 +346,9 @@ export default function MyDoses() {
               <DoseTimeline
                 doses={doses}
                 period="today"
+                onTake={handleQuickTake}
+                onMore={handleMoreOptions}
+                groupByTime={true}
               />
             )}
           </TabsContent>
@@ -310,6 +362,9 @@ export default function MyDoses() {
               <DoseTimeline
                 doses={doses}
                 period="week"
+                onTake={handleQuickTake}
+                onMore={handleMoreOptions}
+                groupByTime={false}
               />
             )}
           </TabsContent>
@@ -323,17 +378,20 @@ export default function MyDoses() {
               <DoseTimeline
                 doses={doses}
                 period="month"
+                onTake={handleQuickTake}
+                onMore={handleMoreOptions}
+                groupByTime={false}
               />
             )}
           </TabsContent>
         </Tabs>
       </main>
 
-      <DoseStatusDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        doseName={selectedDose?.items.name || ''}
-        onSelectStatus={handleStatusUpdate}
+      <DoseActionModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        dose={selectedDose}
+        onAction={handleStatusUpdate}
       />
     </div>
   );
