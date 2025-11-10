@@ -65,11 +65,25 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Extract the first IP from x-forwarded-for (in case of multiple proxies)
+    // Extract and validate IP address
     const forwardedFor = req.headers.get('x-forwarded-for');
-    const clientIP = forwardedFor 
-      ? forwardedFor.split(',')[0].trim() 
-      : (req.headers.get('x-real-ip') || 'unknown');
+    const realIP = req.headers.get('x-real-ip');
+    
+    console.log('IP headers:', { forwardedFor, realIP });
+    
+    // Get first IP from x-forwarded-for chain
+    let clientIP = 'unknown';
+    if (forwardedFor) {
+      const firstIP = forwardedFor.split(',')[0].trim();
+      // Validate IP format (basic IPv4/IPv6 check)
+      if (/^[\d.:]+$/.test(firstIP)) {
+        clientIP = firstIP;
+      }
+    } else if (realIP && /^[\d.:]+$/.test(realIP)) {
+      clientIP = realIP;
+    }
+    
+    console.log('Using IP:', clientIP);
 
     const { error: insertError } = await supabaseAdmin.from('audit_logs').insert({
       user_id: user.id,
