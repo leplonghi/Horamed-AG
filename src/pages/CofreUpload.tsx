@@ -517,6 +517,7 @@ export default function CofreUpload() {
         extractedData={currentPreviewData || {}}
         onConfirm={handlePreviewConfirm}
         onSkip={handlePreviewSkip}
+        isCached={currentPreviewData?.cached || false}
       />
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} />

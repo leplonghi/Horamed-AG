@@ -757,6 +757,33 @@ export type Database = {
           },
         ]
       }
+      extraction_cache: {
+        Row: {
+          created_at: string
+          extracted_data: Json
+          extraction_type: string
+          id: string
+          image_hash: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          extracted_data: Json
+          extraction_type: string
+          id?: string
+          image_hash: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          extracted_data?: Json
+          extraction_type?: string
+          id?: string
+          image_hash?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feature_flags: {
         Row: {
           config: Json | null

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, Check, Edit3, Pill } from "lucide-react";
+import { Sparkles, Check, Edit3, Pill, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
@@ -43,6 +43,7 @@ interface ExtractedDataPreviewModalProps {
   extractedData: ExtractedData;
   onConfirm: (data: ExtractedData) => void;
   onSkip: () => void;
+  isCached?: boolean;
 }
 
 export default function ExtractedDataPreviewModal({
@@ -52,6 +53,7 @@ export default function ExtractedDataPreviewModal({
   extractedData,
   onConfirm,
   onSkip,
+  isCached = false,
 }: ExtractedDataPreviewModalProps) {
   const [editedData, setEditedData] = useState<ExtractedData>(extractedData);
 
@@ -82,9 +84,16 @@ export default function ExtractedDataPreviewModal({
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
             <DialogTitle>Dados Extraídos pela IA</DialogTitle>
+            {isCached && (
+              <Badge variant="secondary" className="gap-1">
+                <Zap className="w-3 h-3" />
+                Cache
+              </Badge>
+            )}
           </div>
           <DialogDescription>
             Revise e ajuste as informações extraídas antes de salvar
+            {isCached && " • Resultado recuperado instantaneamente do cache"}
           </DialogDescription>
         </DialogHeader>
 

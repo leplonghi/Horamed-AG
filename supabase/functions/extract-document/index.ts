@@ -1,9 +1,20 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Helper function to generate hash from image data
+async function generateImageHash(imageData: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(imageData);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -20,6 +31,47 @@ serve(async (req) => {
       );
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const authHeader = req.headers.get("Authorization");
+    
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: { headers: { Authorization: authHeader! } }
+    });
+
+    // Get authenticated user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      console.error("Authentication error:", authError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Generate hash of the image
+    const imageHash = await generateImageHash(image);
+    console.log("Image hash generated:", imageHash);
+
+    // Check cache for existing extraction
+    const { data: cachedData, error: cacheError } = await supabase
+      .from("extraction_cache")
+      .select("extracted_data")
+      .eq("user_id", user.id)
+      .eq("image_hash", imageHash)
+      .eq("extraction_type", "document")
+      .maybeSingle();
+
+    if (cachedData && !cacheError) {
+      console.log("Cache hit! Returning cached extraction");
+      return new Response(
+        JSON.stringify({ ...cachedData.extracted_data, cached: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Cache miss. Processing document...");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     const prompt = `Você é um assistente médico especializado em extrair informações PRECISAS de documentos de saúde.
@@ -173,8 +225,24 @@ Exemplo de receita médica:
       throw new Error("Failed to parse document information from AI response");
     }
 
+    // Save to cache
+    try {
+      await supabase
+        .from("extraction_cache")
+        .insert({
+          user_id: user.id,
+          image_hash: imageHash,
+          extraction_type: "document",
+          extracted_data: extractedInfo
+        });
+      console.log("Extraction saved to cache");
+    } catch (cacheInsertError) {
+      console.error("Failed to save to cache:", cacheInsertError);
+      // Don't fail the request if cache save fails
+    }
+
     return new Response(
-      JSON.stringify(extractedInfo),
+      JSON.stringify({ ...extractedInfo, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
