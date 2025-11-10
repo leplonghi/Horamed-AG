@@ -15,10 +15,15 @@ export const useAuditLog = () => {
     metadata = {},
   }: AuditLogParams) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Check for valid session first
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        // Silently skip if no valid session
+        return;
+      }
 
-      // Call edge function with proper authentication
+      // Call edge function - session is automatically included
       const { error } = await supabase.functions.invoke('audit-log', {
         body: {
           action,
@@ -29,11 +34,12 @@ export const useAuditLog = () => {
       });
 
       if (error) {
-        console.error("Failed to log audit action:", error);
+        // Silent error logging
+        console.debug("Audit log skipped:", error.message);
       }
     } catch (error) {
-      // Log silencioso - não mostrar erro ao usuário
-      console.error("Failed to log audit action:", error);
+      // Silent error handling - não afetar a experiência do usuário
+      console.debug("Audit log skipped due to error");
     }
   };
 
