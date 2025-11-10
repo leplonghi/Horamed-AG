@@ -198,6 +198,18 @@ Exemplo:
       );
     }
 
+    // Calculate confidence score
+    const totalFields = 3; // medications array, doctor, issue_date
+    let filledFields = 0;
+    if (result.medications && result.medications.length > 0) filledFields++;
+    if (result.doctor && result.doctor.trim().length > 0) filledFields++;
+    if (result.issue_date) filledFields++;
+    
+    const confidence = filledFields / totalFields;
+    const status = confidence >= 0.6 ? 'pending_review' : 'failed';
+
+    console.log(`Medication extraction confidence: ${confidence.toFixed(2)} (${filledFields}/${totalFields} fields)`);
+
     // Save to cache
     try {
       await supabase
@@ -206,7 +218,7 @@ Exemplo:
           user_id: user.id,
           image_hash: imageHash,
           extraction_type: "medication",
-          extracted_data: result
+          extracted_data: { ...result, confidence, status }
         });
       console.log("Extraction saved to cache");
     } catch (cacheInsertError) {
@@ -215,7 +227,7 @@ Exemplo:
     }
 
     return new Response(
-      JSON.stringify({ ...result, cached: false }),
+      JSON.stringify({ ...result, confidence, status, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

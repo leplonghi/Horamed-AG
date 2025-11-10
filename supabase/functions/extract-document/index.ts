@@ -225,6 +225,23 @@ Exemplo de receita médica:
       throw new Error("Failed to parse document information from AI response");
     }
 
+    // Calculate confidence score based on filled fields
+    const totalFields = 8; // title, issued_at, expires_at, provider, category, extracted_values, medications, ocr_text
+    let filledFields = 0;
+    if (extractedInfo.title && extractedInfo.title.trim().length > 0) filledFields++;
+    if (extractedInfo.issued_at) filledFields++;
+    if (extractedInfo.expires_at) filledFields++;
+    if (extractedInfo.provider) filledFields++;
+    if (extractedInfo.category) filledFields++;
+    if (extractedInfo.extracted_values && extractedInfo.extracted_values.length > 0) filledFields++;
+    if (extractedInfo.medications && extractedInfo.medications.length > 0) filledFields++;
+    if (extractedInfo.ocr_text && extractedInfo.ocr_text.length > 10) filledFields++;
+    
+    const confidence = filledFields / totalFields;
+    const status = confidence >= 0.7 ? 'pending_review' : 'failed';
+
+    console.log(`Extraction confidence: ${confidence.toFixed(2)} (${filledFields}/${totalFields} fields)`);
+
     // Save to cache
     try {
       await supabase
@@ -233,7 +250,7 @@ Exemplo de receita médica:
           user_id: user.id,
           image_hash: imageHash,
           extraction_type: "document",
-          extracted_data: extractedInfo
+          extracted_data: { ...extractedInfo, confidence, status }
         });
       console.log("Extraction saved to cache");
     } catch (cacheInsertError) {
@@ -242,7 +259,7 @@ Exemplo de receita médica:
     }
 
     return new Response(
-      JSON.stringify({ ...extractedInfo, cached: false }),
+      JSON.stringify({ ...extractedInfo, confidence, status, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

@@ -44,6 +44,8 @@ interface ExtractedDataPreviewModalProps {
   onConfirm: (data: ExtractedData) => void;
   onSkip: () => void;
   isCached?: boolean;
+  confidence?: number;
+  status?: string;
 }
 
 export default function ExtractedDataPreviewModal({
@@ -54,6 +56,8 @@ export default function ExtractedDataPreviewModal({
   onConfirm,
   onSkip,
   isCached = false,
+  confidence = 0,
+  status = 'pending_review',
 }: ExtractedDataPreviewModalProps) {
   const [editedData, setEditedData] = useState<ExtractedData>(extractedData);
 

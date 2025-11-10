@@ -38,6 +38,8 @@ export default function Cofre() {
 
   const renderDocumentoCard = (doc: DocumentoSaude) => {
     const isExpiringSoon = doc.expires_at && new Date(doc.expires_at) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const needsReview = doc.status_extraction === 'pending_review';
+    const extractionFailed = doc.status_extraction === 'failed';
 
     return (
       <Link key={doc.id} to={`/cofre/${doc.id}`}>
@@ -55,9 +57,19 @@ export default function Cofre() {
                       {doc.categorias_saude.label}
                     </Badge>
                   )}
+                  {needsReview && (
+                    <Badge variant="secondary" className="text-[10px] h-5 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400">
+                      📝 Revisar
+                    </Badge>
+                  )}
+                  {extractionFailed && (
+                    <Badge variant="destructive" className="text-[10px] h-5">
+                      ⚠️ Erro
+                    </Badge>
+                  )}
                   {isExpiringSoon && (
                     <Badge variant="destructive" className="text-[10px] h-5">
-                      Vence em breve
+                      ⏰ Vence em breve
                     </Badge>
                   )}
                 </div>

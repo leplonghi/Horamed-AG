@@ -170,6 +170,19 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
       );
     }
 
+    // Calculate confidence score
+    const totalFields = 4; // exam_type, exam_date, results, notes
+    let filledFields = 0;
+    if (result.exam_type && result.exam_type.trim().length > 0) filledFields++;
+    if (result.exam_date) filledFields++;
+    if (result.results && result.results.length > 0) filledFields++;
+    if (result.notes && result.notes.trim().length > 0) filledFields++;
+    
+    const confidence = filledFields / totalFields;
+    const status = confidence >= 0.6 ? 'pending_review' : 'failed';
+
+    console.log(`Exam extraction confidence: ${confidence.toFixed(2)} (${filledFields}/${totalFields} fields)`);
+
     // Save to cache
     try {
       await supabase
@@ -178,7 +191,7 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
           user_id: user.id,
           image_hash: imageHash,
           extraction_type: "exam",
-          extracted_data: result
+          extracted_data: { ...result, confidence, status }
         });
       console.log("Extraction saved to cache");
     } catch (cacheInsertError) {
@@ -187,7 +200,7 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
     }
 
     return new Response(
-      JSON.stringify({ ...result, cached: false }),
+      JSON.stringify({ ...result, confidence, status, cached: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

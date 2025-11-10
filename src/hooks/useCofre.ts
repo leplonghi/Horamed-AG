@@ -24,6 +24,11 @@ export interface DocumentoSaude {
   meta?: any;
   created_at: string;
   updated_at: string;
+  status_extraction?: string;
+  confidence_score?: number;
+  reviewed_at?: string;
+  extraction_attempted_at?: string;
+  extraction_error?: string;
   categorias_saude?: Categoria;
   user_profiles?: { name: string };
 }

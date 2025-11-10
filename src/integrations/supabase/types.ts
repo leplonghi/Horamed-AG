@@ -485,8 +485,11 @@ export type Database = {
       documentos_saude: {
         Row: {
           categoria_id: string | null
+          confidence_score: number | null
           created_at: string | null
           expires_at: string | null
+          extraction_attempted_at: string | null
+          extraction_error: string | null
           file_path: string
           id: string
           issued_at: string | null
@@ -496,14 +499,19 @@ export type Database = {
           ocr_text: string | null
           profile_id: string | null
           provider: string | null
+          reviewed_at: string | null
+          status_extraction: string | null
           title: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           categoria_id?: string | null
+          confidence_score?: number | null
           created_at?: string | null
           expires_at?: string | null
+          extraction_attempted_at?: string | null
+          extraction_error?: string | null
           file_path: string
           id?: string
           issued_at?: string | null
@@ -513,14 +521,19 @@ export type Database = {
           ocr_text?: string | null
           profile_id?: string | null
           provider?: string | null
+          reviewed_at?: string | null
+          status_extraction?: string | null
           title?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           categoria_id?: string | null
+          confidence_score?: number | null
           created_at?: string | null
           expires_at?: string | null
+          extraction_attempted_at?: string | null
+          extraction_error?: string | null
           file_path?: string
           id?: string
           issued_at?: string | null
@@ -530,6 +543,8 @@ export type Database = {
           ocr_text?: string | null
           profile_id?: string | null
           provider?: string | null
+          reviewed_at?: string | null
+          status_extraction?: string | null
           title?: string | null
           updated_at?: string | null
           user_id?: string

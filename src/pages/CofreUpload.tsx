@@ -62,12 +62,22 @@ export default function CofreUpload() {
               if (error) throw error;
 
               if (data) {
+                console.log('Extraction result:', data);
+                
                 // Se for o primeiro arquivo, mostrar modal de prévia
                 if (newFiles[0] === file) {
                   setCurrentPreviewFile(file.name);
                   setCurrentPreviewData(data);
                   setShowPreviewModal(true);
                   setIsExtracting(false);
+                  
+                  // Mostrar aviso se confiança baixa
+                  if (data.confidence < 0.7) {
+                    toast.warning(
+                      "Extração com baixa confiança. Revise os campos cuidadosamente.",
+                      { duration: 5000 }
+                    );
+                  }
                   return;
                 }
                 
@@ -518,6 +528,8 @@ export default function CofreUpload() {
         onConfirm={handlePreviewConfirm}
         onSkip={handlePreviewSkip}
         isCached={currentPreviewData?.cached || false}
+        confidence={currentPreviewData?.confidence}
+        status={currentPreviewData?.status}
       />
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} />
