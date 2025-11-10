@@ -6,7 +6,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to generate hash from image data
+function isValidDocumentFormat(s: string): boolean {
+  return /^data:(image\/(png|jpeg|jpg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/i.test(s);
+}
+
+function maybeNormalizeBase64(s: string): string {
+  if (/^[A-Za-z0-9+/=]+$/.test(s)) return `data:image/jpeg;base64,${s}`;
+  return s;
+}
+
 async function generateImageHash(imageData: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(imageData);
@@ -24,9 +32,18 @@ serve(async (req) => {
   try {
     const { image } = await req.json();
 
-    if (!image) {
+    if (!image || typeof image !== "string") {
       return new Response(
-        JSON.stringify({ error: "Image is required" }),
+        JSON.stringify({ error: "Envie { image: string }." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const normalized = maybeNormalizeBase64(image);
+    if (!isValidDocumentFormat(normalized)) {
+      console.error("Invalid format:", normalized.substring(0, 50));
+      return new Response(
+        JSON.stringify({ error: "Formato inválido. Envie data URI base64: data:image/(png|jpeg|jpg|webp);base64,... ou data:application/pdf;base64,..." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -50,9 +67,8 @@ serve(async (req) => {
       );
     }
 
-    // Generate hash of the image
-    const imageHash = await generateImageHash(image);
-    console.log("Image hash generated:", imageHash);
+    const imageHash = await generateImageHash(normalized);
+    console.log("Document hash generated:", imageHash);
 
     // Check cache for existing extraction
     const { data: cachedData, error: cacheError } = await supabase
@@ -164,7 +180,7 @@ Exemplo de receita médica:
                 type: "text", 
                 text: "Analise este documento de saúde COM ATENÇÃO e extraia TODAS as informações com PRECISÃO. Leia o documento TODO antes de responder:" 
               },
-              { type: "image_url", image_url: { url: image } },
+              { type: "image_url", image_url: { url: normalized } },
             ],
           },
         ],

@@ -15,6 +15,7 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
 import ExtractedDataPreviewModal from "@/components/ExtractedDataPreviewModal";
+import { fileToDataURL } from "@/lib/fileToDataURL";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
@@ -51,48 +52,44 @@ export default function CofreUpload() {
         if (file.type.startsWith('image/') || file.type === 'application/pdf') {
           setIsExtracting(true);
           try {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-              const base64 = reader.result as string;
+            const base64 = await fileToDataURL(file);
+            
+            const { data, error } = await supabase.functions.invoke('extract-document', {
+              body: { image: base64 }
+            });
+
+            if (error) throw error;
+
+            if (data) {
+              console.log('Extraction result:', data);
               
-              const { data, error } = await supabase.functions.invoke('extract-document', {
-                body: { image: base64 }
-              });
-
-              if (error) throw error;
-
-              if (data) {
-                console.log('Extraction result:', data);
+              // Se for o primeiro arquivo, mostrar modal de prévia
+              if (newFiles[0] === file) {
+                setCurrentPreviewFile(file.name);
+                setCurrentPreviewData(data);
+                setShowPreviewModal(true);
+                setIsExtracting(false);
                 
-                // Se for o primeiro arquivo, mostrar modal de prévia
-                if (newFiles[0] === file) {
-                  setCurrentPreviewFile(file.name);
-                  setCurrentPreviewData(data);
-                  setShowPreviewModal(true);
-                  setIsExtracting(false);
-                  
-                  // Mostrar aviso se confiança baixa
-                  if (data.confidence < 0.7) {
-                    toast.warning(
-                      "Extração com baixa confiança. Revise os campos cuidadosamente.",
-                      { duration: 5000 }
-                    );
-                  }
-                  return;
+                // Mostrar aviso se confiança baixa
+                if (data.confidence < 0.7) {
+                  toast.warning(
+                    "Extração com baixa confiança. Revise os campos cuidadosamente.",
+                    { duration: 5000 }
+                  );
                 }
-                
-                // Para arquivos subsequentes, salvar dados extraídos silenciosamente
-                setExtractedDataMap((prev) => {
-                  const newMap = new Map(prev);
-                  newMap.set(file.name, data);
-                  return newMap;
-                });
+                return;
               }
-            };
-            reader.readAsDataURL(file);
-          } catch (error) {
+              
+              // Para arquivos subsequentes, salvar dados extraídos silenciosamente
+              setExtractedDataMap((prev) => {
+                const newMap = new Map(prev);
+                newMap.set(file.name, data);
+                return newMap;
+              });
+            }
+          } catch (error: any) {
             console.error('Erro ao extrair informações:', error);
-            // Não mostrar erro para não irritar o usuário, apenas log
+            toast.error(error.message ?? "Erro ao processar arquivo");
           } finally {
             setIsExtracting(false);
           }

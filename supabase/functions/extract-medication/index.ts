@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 function isDataUriImage(s: string): boolean {
-  return /^data:image\/(png|jpeg|jpg|webp);base64,[A-Za-z0-9+/=]+$/i.test(s);
+  return /^data:(image\/(png|jpeg|jpg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/i.test(s);
 }
 
 function maybeNormalizeBase64(s: string): string {
@@ -41,9 +41,9 @@ serve(async (req) => {
 
     const normalized = maybeNormalizeBase64(image);
     if (!isDataUriImage(normalized)) {
-      console.error("Invalid image format:", normalized.substring(0, 50));
+      console.error("Invalid format:", normalized.substring(0, 50));
       return new Response(
-        JSON.stringify({ error: "Formato inválido. Envie data URI base64: data:image/(png|jpeg|jpg|webp);base64,..." }),
+        JSON.stringify({ error: "Formato inválido. Envie data URI base64: data:image/(png|jpeg|jpg|webp);base64,... ou data:application/pdf;base64,..." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
