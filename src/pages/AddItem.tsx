@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Pill, Package } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
+import { MedicationCombobox } from "@/components/MedicationCombobox";
 import HealthProfileSetup from "@/components/HealthProfileSetup";
 import HelpTooltip from "@/components/HelpTooltip";
 import logo from "@/assets/horamed-logo.png";
@@ -733,15 +734,16 @@ export default function AddItem() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome do item *</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex: Paracetamol, Vitamina D"
+                  <MedicationCombobox
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                    onChange={(value) =>
+                      setFormData({ ...formData, name: value })
                     }
-                    required
+                    placeholder="Buscar medicamento ou cadastrar novo"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Busque na base de medicamentos registrados ou cadastre um novo
+                  </p>
                 </div>
 
                 <div className="space-y-2">
