@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 export default function AddItem() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isEditing = searchParams.get("edit");
   const [loading, setLoading] = useState(false);
@@ -96,6 +97,65 @@ export default function AddItem() {
 
     initUser();
 
+    // Auto-preencher com dados do OCR da página de digitalização
+    const ocrData = location.state?.ocrData;
+    if (ocrData && Array.isArray(ocrData)) {
+      console.log('Medicamentos extraídos da digitalização:', ocrData);
+      
+      // Preencher primeiro medicamento
+      if (ocrData[0]) {
+        const firstMed = ocrData[0];
+        setFormData(prev => ({
+          ...prev,
+          name: firstMed.name || '',
+          dose_text: firstMed.dosage || firstMed.dose || '',
+          category: firstMed.category || 'medicamento',
+          treatment_duration_days: firstMed.duration_days || null,
+          total_doses: firstMed.total_doses || null,
+          treatment_start_date: firstMed.start_date || '',
+          notes: firstMed.instructions || ''
+        }));
+        
+        // Se houver frequência, atualizar horários
+        if (firstMed.frequency) {
+          // Tentar extrair número de vezes por dia da frequência (ex: "3x ao dia", "de 8 em 8 horas")
+          const timesMatch = firstMed.frequency.match(/(\d+)\s*(?:x|vezes)/i);
+          const intervalMatch = firstMed.frequency.match(/(\d+)\s*em\s*(\d+)/i);
+          
+          if (timesMatch) {
+            const times = parseInt(timesMatch[1]);
+            setSchedules([{
+              freq_type: "daily",
+              times: ["08:00"],
+              days_of_week: [],
+              mode: "times_per_day",
+              interval_hours: 8,
+              times_per_day: times,
+              start_time: "08:00",
+            }]);
+          } else if (intervalMatch) {
+            const interval = parseInt(intervalMatch[2]);
+            setSchedules([{
+              freq_type: "daily",
+              times: ["08:00"],
+              days_of_week: [],
+              mode: "interval",
+              interval_hours: interval,
+              times_per_day: 3,
+              start_time: "08:00",
+            }]);
+          }
+        }
+      }
+      
+      toast.success(`✨ ${ocrData.length} medicamento(s) extraído(s)! Revise os dados antes de salvar.`, {
+        duration: 5000
+      });
+      
+      // Limpar o state para não reaplicar em re-renders
+      window.history.replaceState({}, document.title);
+    }
+
     if (isEditing) {
       loadItemData(isEditing);
     } else {
@@ -113,7 +173,7 @@ export default function AddItem() {
         }));
       }
     }
-  }, [isEditing, searchParams]);
+  }, [isEditing, searchParams, location.state]);
 
   const loadItemData = async (itemId: string) => {
     try {

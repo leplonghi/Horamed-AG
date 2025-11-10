@@ -115,7 +115,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.pdf"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
@@ -124,7 +124,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.pdf"
             onChange={handleFileSelect}
             className="hidden"
           />

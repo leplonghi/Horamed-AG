@@ -133,7 +133,7 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.pdf"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
@@ -142,7 +142,7 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.pdf"
             onChange={handleFileSelect}
             className="hidden"
           />

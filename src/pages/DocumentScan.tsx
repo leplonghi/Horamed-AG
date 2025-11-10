@@ -65,7 +65,28 @@ export default function DocumentScan() {
       setScanResult(data);
       toast.success('Documento processado com sucesso!');
 
-      if (activeTab === 'medication' && data.medications) {
+      // Auto-redirecionar baseado no tipo de documento detectado
+      if (data.category === 'receita' && data.medications && data.medications.length > 0) {
+        toast.success(`${data.medications.length} medicamento(s) encontrado(s)`, {
+          action: {
+            label: 'Adicionar',
+            onClick: () => navigate('/adicionar', { state: { ocrData: data.medications } })
+          },
+          duration: 5000
+        });
+        // Auto-navegar após 2 segundos
+        setTimeout(() => {
+          navigate('/adicionar', { state: { ocrData: data.medications } });
+        }, 2000);
+      } else if (data.category === 'exame' || data.title) {
+        // Auto-navegar para o cofre para salvar o documento
+        toast.success('Documento extraído! Salvando no Cofre de Saúde...', {
+          duration: 3000
+        });
+        setTimeout(() => {
+          navigate('/cofre/upload', { state: { ocrData: data } });
+        }, 2000);
+      } else if (activeTab === 'medication' && data.medications) {
         toast.success(`${data.medications.length} medicamento(s) encontrado(s)`, {
           action: {
             label: 'Adicionar',

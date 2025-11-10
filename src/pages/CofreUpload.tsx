@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Upload, FileText, ArrowLeft, Loader2, Camera, FileUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import { fileToDataURL } from "@/lib/fileToDataURL";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [addMethod, setAddMethod] = useState<"manual" | "ocr">("manual");
   const [files, setFiles] = useState<File[]>([]);
   const [categoria, setCategoria] = useState<string>("");
@@ -43,6 +44,35 @@ export default function CofreUpload() {
 
   const { profiles, activeProfile } = useUserProfiles();
   const uploadDocumento = useUploadDocumento();
+
+  // Auto-preencher com dados do OCR da página de digitalização
+  useEffect(() => {
+    const ocrData = location.state?.ocrData;
+    if (ocrData) {
+      console.log('Dados OCR recebidos da digitalização:', ocrData);
+      
+      // Preencher formulário com dados extraídos
+      if (ocrData.title) setTitulo(ocrData.title);
+      if (ocrData.issued_at) setDataEmissao(ocrData.issued_at);
+      if (ocrData.expires_at) setDataValidade(ocrData.expires_at);
+      if (ocrData.provider) setPrestador(ocrData.provider);
+      if (ocrData.category) setCategoria(ocrData.category);
+      
+      // Campos específicos por categoria
+      if (ocrData.doctor) setMedico(ocrData.doctor);
+      if (ocrData.specialty) setEspecialidade(ocrData.specialty);
+      if (ocrData.exam_type) setTipoExame(ocrData.exam_type);
+      if (ocrData.dose) setDose(ocrData.dose);
+      if (ocrData.next_dose) setProximaDose(ocrData.next_dose);
+      
+      toast.success("✨ Documento extraído automaticamente! Revise os campos antes de salvar.", {
+        duration: 5000
+      });
+      
+      // Limpar o state para não reaplicar em re-renders
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
