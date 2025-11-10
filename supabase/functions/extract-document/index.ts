@@ -54,6 +54,11 @@ Analise CUIDADOSAMENTE este documento e extraia as seguintes informações em fo
    - Extraia TODOS os parâmetros do exame com seus valores, unidades e faixas de referência
    - Para exames de sangue, sempre haverá múltiplos valores
 
+7. **medications**: Array de medicamentos (OBRIGATÓRIO para receitas):
+   - Formato: {"name": "Nome do Medicamento", "dosage": "500mg", "frequency": "1 vez ao dia", "duration": "10 dias"}
+   - Extraia TODOS os medicamentos prescritos com dosagem e frequência
+   - Inclua instruções de uso se presentes
+
 REGRAS CRÍTICAS:
 - Leia TODO o documento antes de responder
 - NÃO confunda tipos de documentos (exame ≠ atestado ≠ receita)
@@ -74,6 +79,19 @@ Exemplo de exame laboratorial:
     {"parameter": "Hemoglobina", "value": 14.5, "unit": "g/dL", "reference_range": "12-16"},
     {"parameter": "Leucócitos", "value": 7500, "unit": "/mm³", "reference_range": "4000-11000"},
     {"parameter": "Plaquetas", "value": 250000, "unit": "/mm³", "reference_range": "150000-400000"}
+  ]
+}
+
+Exemplo de receita médica:
+{
+  "title": "Receita Médica",
+  "issued_at": "2024-01-15",
+  "expires_at": "2024-04-15",
+  "provider": "Dr. João Silva - CRM 12345",
+  "category": "receita",
+  "medications": [
+    {"name": "Amoxicilina 500mg", "dosage": "500mg", "frequency": "8 em 8 horas", "duration": "7 dias"},
+    {"name": "Paracetamol 750mg", "dosage": "750mg", "frequency": "Se necessário", "duration": "Enquanto houver dor"}
   ]
 }`;
 
@@ -98,7 +116,6 @@ Exemplo de exame laboratorial:
             ],
           },
         ],
-        temperature: 0.1, // Baixa temperatura para respostas mais precisas
       }),
     });
 
