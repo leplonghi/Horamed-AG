@@ -44,12 +44,10 @@ serve(async (req) => {
     const normalized = maybeNormalizeBase64(image);
     if (!isValidDocumentFormat(normalized)) {
       console.error("Invalid format:", normalized.substring(0, 50));
-      
       return new Response(
         JSON.stringify({ 
           error: "Formato inválido. Envie uma imagem nítida (JPEG, PNG, WEBP) ou PDF de 1 página.",
-          details: "O arquivo deve ser legível e conter os dados da receita completos.",
-          suggestion: "Verifique: 1) Formato do arquivo, 2) Qualidade da imagem, 3) Documento completo"
+          details: "O arquivo deve ser legível e conter os dados da receita completos."
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -58,9 +56,7 @@ serve(async (req) => {
     // Check if PDF
     const isPDF = normalized.startsWith('data:application/pdf');
     if (isPDF) {
-      console.warn("⚠️ PDF detected - PDF should be converted to image on frontend first");
-      console.log("Note: PDFs may not be processed correctly by the AI model");
-      console.log("Recommendation: Convert PDF to high-resolution image before sending");
+      console.log("PDF detected - will process first page");
     }
 
     // Initialize Supabase client
@@ -105,165 +101,62 @@ serve(async (req) => {
     console.log("Cache miss. Processing document...");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    // Specialized prompt for prescription documents - Expert AI extraction
-    const prescriptionPrompt = `Você é um ESPECIALISTA MÉDICO em análise de RECEITAS MÉDICAS brasileiras.
-Sua tarefa é extrair TODOS os dados da receita com PRECISÃO MÁXIMA, palavra por palavra.
+    // Specialized prompt for prescription documents
+    const prescriptionPrompt = `Você é um especialista em análise de RECEITAS MÉDICAS. Analise este documento e extraia TODOS os dados estruturados.
 
-═══════════════════════════════════════════════════════════════
-📋 INSTRUÇÕES DE EXTRAÇÃO
-═══════════════════════════════════════════════════════════════
+**CAMPOS ESSENCIAIS DA RECEITA**:
+1. **prescriber_name**: Nome COMPLETO do médico prescritor
+2. **prescriber_registration**: CRM completo com UF (ex: "CRM 12345/SP")
+3. **patient_name**: Nome COMPLETO do paciente
+4. **issued_at**: Data de emissão da receita (formato: YYYY-MM-DD)
+5. **expires_at**: Data de validade (se não houver, calcule: issued_at + 30 dias)
+6. **category**: SEMPRE "receita"
+7. **title**: "Receita Médica - [Nome do Médico]"
+8. **provider**: Nome da clínica/hospital (se houver)
 
-**COMPORTAMENTO OBRIGATÓRIO**:
-✓ Extrair LITERALMENTE o que está escrito no documento
-✓ Se um campo não existir ou não for legível, retornar null
-✓ NUNCA inventar, adivinhar ou inferir dados que não estão no documento
-✓ Para PDFs: analisar APENAS a primeira página
-✓ Manter acentuação, pontuação e formatação originais dos nomes
+**MEDICAMENTOS PRESCRITOS** (array "prescriptions"):
+Para CADA medicamento, extraia:
+- **name_commercial**: Nome comercial do medicamento (obrigatório)
+- **generic_name**: Princípio ativo (se mencionado)
+- **dose_text**: Dosagem completa (ex: "500mg", "20mg/ml")
+- **form**: Forma farmacêutica (comprimido, cápsula, xarope, pomada, etc)
+- **frequency**: Posologia exata (ex: "8 em 8 horas", "2x ao dia", "1x pela manhã")
+- **duration_days**: Duração do tratamento em dias inteiros
+- **instructions**: Instruções específicas (tomar com água, em jejum, após refeições, etc)
 
-═══════════════════════════════════════════════════════════════
-📝 CAMPOS OBRIGATÓRIOS DA RECEITA
-═══════════════════════════════════════════════════════════════
-
-1. **prescriber_name** (string): 
-   - Nome COMPLETO do médico prescritor exatamente como aparece
-   - Incluir título (Dr., Dra.) se presente
-   - Exemplo: "Dr. João Silva Santos"
-
-2. **prescriber_registration** (string):
-   - CRM COMPLETO com número E sigla do estado
-   - Formato: "CRM 12345/SP" ou "CRM-SP 12345"
-   - Se não houver estado, marcar como null
-
-3. **patient_name** (string):
-   - Nome COMPLETO do paciente
-   - Exatamente como está escrito na receita
-   - Se não estiver legível ou ausente: null
-
-4. **issued_at** (string YYYY-MM-DD):
-   - Data de emissão da receita
-   - Converter para formato ISO: ano-mês-dia
-   - Exemplos: "15/03/2024" → "2024-03-15"
-   - Se ausente ou ilegível: usar data atual
-
-5. **expires_at** (string YYYY-MM-DD):
-   - Data de validade explícita OU calcular issued_at + 30 dias
-   - Para receitas controladas: issued_at + 30 dias
-   - Para receitas simples: issued_at + 180 dias (6 meses)
-   - Formato ISO: "YYYY-MM-DD"
-
-6. **category** (string):
-   - SEMPRE: "receita"
-
-7. **title** (string):
-   - Formato: "Receita Médica - [Nome do Médico]"
-   - Exemplo: "Receita Médica - Dr. João Silva"
-
-8. **provider** (string ou null):
-   - Nome da clínica, hospital ou consultório
-   - Extrair do cabeçalho do documento
-   - Se não houver: null
-
-═══════════════════════════════════════════════════════════════
-💊 MEDICAMENTOS PRESCRITOS (array "prescriptions")
-═══════════════════════════════════════════════════════════════
-
-Para CADA medicamento prescrito, criar um objeto com:
-
-- **name_commercial** (string, OBRIGATÓRIO):
-  → Nome comercial do medicamento EXATAMENTE como escrito
-  → Manter maiúsculas/minúsculas originais
-  → Exemplo: "Dipirona Sódica", "Amoxicilina", "RIVOTRIL"
-
-- **generic_name** (string ou null):
-  → Princípio ativo se mencionado entre parênteses
-  → Exemplo: se escrito "Dipirona (dipirona sódica)", extrair "dipirona sódica"
-  → Se não mencionado: null
-
-- **dose_text** (string):
-  → Dosagem COMPLETA com unidade
-  → Exemplos: "500mg", "20mg/ml", "25mg", "1g"
-  → Se não especificada: null
-
-- **form** (string):
-  → Forma farmacêutica do medicamento
-  → Valores comuns: "comprimido", "cápsula", "xarope", "solução oral", 
-    "pomada", "creme", "gotas", "injetável", "supositório"
-  → Usar sempre minúsculas
-  → Se não especificada: null
-
-- **frequency** (string):
-  → Posologia EXATA como prescrita
-  → Exemplos: "8 em 8 horas", "2x ao dia", "1 comprimido pela manhã",
-    "1 colher de chá a cada 6 horas", "aplicar 2x ao dia", "se necessário"
-  → Manter formato original
-  → Se não especificada: null
-
-- **duration_days** (number ou null):
-  → Duração do tratamento convertida para DIAS INTEIROS
-  → Exemplos de conversão:
-    • "por 7 dias" → 7
-    • "durante 2 semanas" → 14
-    • "por 1 mês" → 30
-    • "uso contínuo" → null
-    • "se necessário" → null
-  → Se não especificada: null
-
-- **instructions** (string ou null):
-  → Instruções ESPECÍFICAS deste medicamento
-  → Exemplos: "tomar com água", "em jejum", "após as refeições",
-    "evitar exposição ao sol", "não consumir álcool"
-  → Se não houver: null
-
-═══════════════════════════════════════════════════════════════
-📌 INSTRUÇÕES GERAIS DO MÉDICO
-═══════════════════════════════════════════════════════════════
-
-9. **instructions** (string ou null):
-   - Observações gerais do médico que não são específicas de um medicamento
-   - Recomendações adicionais, retornos, exames
-   - Se não houver: null
-
-═══════════════════════════════════════════════════════════════
-✅ VALIDAÇÃO E QUALIDADE
-═══════════════════════════════════════════════════════════════
+**INSTRUÇÕES GERAIS**:
+9. **instructions**: Observações gerais do médico (se houver)
 
 **REGRAS CRÍTICAS**:
-1. ❌ NUNCA retornar dados inventados ou assumidos
-2. ✅ Usar null para campos ausentes ou ilegíveis  
-3. ✅ Extrair TODOS os medicamentos prescritos (não apenas o primeiro)
-4. ✅ Manter formato EXATO dos textos (acentos, maiúsculas)
-5. ✅ Para CRM: OBRIGATÓRIO incluir número + UF
-6. ✅ Para datas: converter sempre para formato ISO (YYYY-MM-DD)
-7. ✅ Para duration_days: converter texto para número de dias
-8. ✅ Se encontrar abreviações: manter como está (ex: "comp." = comprimido)
+- Se for PDF, analise APENAS a primeira página
+- Extraia TODOS os medicamentos prescritos
+- Para duration_days: se diz "por 10 dias", retorne 10
+- Se frequency for "se necessário" ou "SOS", mantenha como está
+- Seja PRECISO com CRM (deve incluir número E estado)
+- NUNCA invente dados - use null se não encontrar
 
-═══════════════════════════════════════════════════════════════
-📤 FORMATO DE RETORNO (JSON)
-═══════════════════════════════════════════════════════════════
-
-Retornar APENAS JSON puro (sem markdown, sem \`\`\`json):
-
+Retorne APENAS JSON puro, sem markdown:
 {
   "category": "receita",
-  "title": "Receita Médica - Dr. [Nome]",
+  "title": "Receita Médica - Dr. Nome",
   "issued_at": "YYYY-MM-DD",
   "expires_at": "YYYY-MM-DD",
-  "prescriber_name": "Nome completo do médico",
+  "prescriber_name": "Nome completo",
   "prescriber_registration": "CRM XXXXX/UF",
-  "patient_name": "Nome completo do paciente",
-  "provider": "Nome da clínica/hospital ou null",
+  "patient_name": "Nome do paciente",
+  "provider": "Nome da clínica ou null",
   "prescriptions": [
     {
       "name_commercial": "Nome do medicamento",
       "generic_name": "Princípio ativo ou null",
-      "dose_text": "Dosagem com unidade",
-      "form": "forma farmacêutica",
-      "frequency": "Posologia exata",
-      "duration_days": 10,
+      "dose_text": "Dosagem",
+      "form": "Forma farmacêutica",
+      "frequency": "Frequência de uso",
+      "duration_days": número ou null,
       "instructions": "Instruções específicas ou null"
     }
   ],
-  "instructions": "Observações gerais do médico ou null"
+  "instructions": "Observações gerais ou null"
 }`;
 
     // General document prompt (for non-prescription documents)
@@ -314,24 +207,7 @@ Retorne APENAS JSON puro, sem markdown.`;
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ AI API Error:", response.status, errorText);
-      
-      // Log API error
-      try {
-        await supabase.from('document_extraction_logs').insert({
-          user_id: user.id,
-          file_path: 'inline_extraction',
-          mime_type: isPDF ? 'application/pdf' : 'image/jpeg',
-          pages_count: 1,
-          confidence_score: 0,
-          extraction_type: 'api_error',
-          status: 'failed',
-          error_message: `AI API ${response.status}: ${errorText.substring(0, 200)}`,
-          processing_time_ms: Date.now() - startTime
-        });
-      } catch (logErr) {
-        console.error('Failed to log API error:', logErr);
-      }
+      console.error("AI API Error:", errorText);
       
       if (response.status === 429) {
         return new Response(
@@ -343,33 +219,13 @@ Retorne APENAS JSON puro, sem markdown.`;
         );
       }
 
-      if (response.status === 400 && errorText.includes('extract')) {
-        return new Response(
-          JSON.stringify({ 
-            error: "Falha ao extrair imagem do documento",
-            message: "O modelo de IA não conseguiu processar este arquivo.",
-            details: "Tente converter o PDF para imagem de alta qualidade antes de enviar.",
-            suggestion: "Use um scanner ou aplicativo de foto com boa iluminação"
-          }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
       throw new Error(`AI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("✅ AI Response received successfully");
-    console.log("Response size:", JSON.stringify(data).length, "bytes");
+    console.log("AI Response received");
 
     const content = data.choices?.[0]?.message?.content || "";
-    
-    if (!content) {
-      console.error("❌ Empty response from AI");
-      throw new Error("Resposta vazia da IA. Tente novamente.");
-    }
-    
-    console.log("Content length:", content.length, "characters");
     
     // Parse JSON from response
     let extractedInfo;
@@ -378,35 +234,22 @@ Retorne APENAS JSON puro, sem markdown.`;
       const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
       
       if (!jsonMatch) {
-        console.error("❌ No JSON found in AI response");
-        console.error("Response content:", content.substring(0, 500));
         throw new Error("No JSON found in AI response");
       }
       
       extractedInfo = JSON.parse(jsonMatch[0]);
-      console.log("✅ JSON parsed successfully");
       
       // Validate required fields
       if (!extractedInfo.title) {
-        console.warn("⚠️ Missing title, using default");
         extractedInfo.title = "Documento de Saúde";
       }
       if (!extractedInfo.category) {
-        console.warn("⚠️ Missing category, using default");
         extractedInfo.category = "outro";
       }
       
-      console.log("📊 Extracted data:", {
-        category: extractedInfo.category,
-        title: extractedInfo.title,
-        hasPrescriptions: !!extractedInfo.prescriptions,
-        prescriptionCount: extractedInfo.prescriptions?.length || 0,
-        hasPatientName: !!extractedInfo.patient_name,
-        hasPrescriberName: !!extractedInfo.prescriber_name
-      });
+      console.log("Extracted data:", JSON.stringify(extractedInfo, null, 2));
     } catch (e) {
-      console.error("❌ Failed to parse AI response:", e);
-      console.error("Raw content:", content.substring(0, 1000));
+      console.error("Failed to parse AI response:", e);
       throw new Error("Erro ao processar resposta da IA. Tente novamente com imagem mais nítida.");
     }
 
@@ -430,13 +273,7 @@ Retorne APENAS JSON puro, sem markdown.`;
     const status = confidence >= 0.7 ? 'pending_review' : 'failed';
     const processingTime = Date.now() - startTime;
 
-    console.log(`📈 Extraction metrics:`, {
-      confidence: confidence.toFixed(2),
-      status,
-      processingTime: `${processingTime}ms`,
-      category: extractedInfo.category,
-      isPDF: isPDF ? 'yes' : 'no'
-    });
+    console.log(`Confidence: ${confidence.toFixed(2)}, Status: ${status}, Time: ${processingTime}ms`);
 
     // Log extraction attempt
     const logData = {
