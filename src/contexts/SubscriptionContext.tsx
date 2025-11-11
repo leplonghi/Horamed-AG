@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export interface Subscription {
   id: string;
@@ -39,7 +39,6 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   const loadSubscription = async () => {
     try {
@@ -91,17 +90,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       
       if (data?.synced) {
         await loadSubscription();
-        toast({
-          title: 'Assinatura sincronizada',
-          description: data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
-        });
+        toast.success(
+          data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
+          { description: 'Assinatura sincronizada' }
+        );
       }
     } catch (error) {
       console.error('Sync error:', error);
-      toast({
-        title: 'Erro ao sincronizar',
-        description: 'Não foi possível sincronizar com o Stripe',
-        variant: 'destructive',
+      toast.error('Não foi possível sincronizar com o Stripe', {
+        description: 'Erro ao sincronizar'
       });
     } finally {
       setLoading(false);
