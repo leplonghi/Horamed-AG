@@ -41,6 +41,7 @@ import ConsultationCardView from './pages/ConsultationCardView';
 import Admin from './pages/Admin';
 import NotificationSettings from "./pages/NotificationSettings";
 import Tutorial from "./pages/Tutorial";
+import HealthTimeline from "./pages/HealthTimeline";
 import OnboardingScreens from "./components/OnboardingScreens";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 
@@ -77,6 +78,7 @@ function AppContent() {
         <Route path="/graficos" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
         <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /></ProtectedRoute>} />
         <Route path="/evolucao" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
+        <Route path="/timeline" element={<ProtectedRoute><HealthTimeline /></ProtectedRoute>} />
         <Route path="/medicamentos/:id/historico" element={<ProtectedRoute><MedicationHistory /></ProtectedRoute>} />
         
         {/* Settings & Account */}
