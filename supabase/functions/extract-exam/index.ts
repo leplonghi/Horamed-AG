@@ -1,28 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-function isValidDocumentFormat(s: string): boolean {
-  return /^data:(image\/(png|jpeg|jpg|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/i.test(s);
-}
-
-function maybeNormalizeBase64(s: string): string {
-  if (/^[A-Za-z0-9+/=]+$/.test(s)) return `data:image/jpeg;base64,${s}`;
-  return s;
-}
-
-async function generateImageHash(imageData: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(imageData);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  return hashHex;
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -32,62 +13,13 @@ serve(async (req) => {
   try {
     const { image } = await req.json();
     
-    if (!image || typeof image !== "string") {
+    if (!image) {
       return new Response(
-        JSON.stringify({ error: "Envie { image: string }." }),
+        JSON.stringify({ error: "Image is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const normalized = maybeNormalizeBase64(image);
-    if (!isValidDocumentFormat(normalized)) {
-      console.error("Invalid format:", normalized.substring(0, 50));
-      return new Response(
-        JSON.stringify({ error: "Formato inválido. Envie data URI base64: data:image/(png|jpeg|jpg|webp);base64,... ou data:application/pdf;base64,..." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const authHeader = req.headers.get("Authorization");
-    
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader! } }
-    });
-
-    // Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error("Authentication error:", authError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const imageHash = await generateImageHash(normalized);
-    console.log("Exam hash generated:", imageHash);
-
-    // Check cache for existing extraction
-    const { data: cachedData, error: cacheError } = await supabase
-      .from("extraction_cache")
-      .select("extracted_data")
-      .eq("user_id", user.id)
-      .eq("image_hash", imageHash)
-      .eq("extraction_type", "exam")
-      .maybeSingle();
-
-    if (cachedData && !cacheError) {
-      console.log("Cache hit! Returning cached extraction");
-      return new Response(
-        JSON.stringify({ ...cachedData.extracted_data, cached: true }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("Cache miss. Processing exam...");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured");
@@ -139,12 +71,13 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
               {
                 type: "image_url",
                 image_url: {
-                  url: normalized
+                  url: image
                 }
               }
             ]
           }
         ],
+        temperature: 0.3,
       }),
     });
 
@@ -186,37 +119,8 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
       );
     }
 
-    // Calculate confidence score
-    const totalFields = 4; // exam_type, exam_date, results, notes
-    let filledFields = 0;
-    if (result.exam_type && result.exam_type.trim().length > 0) filledFields++;
-    if (result.exam_date) filledFields++;
-    if (result.results && result.results.length > 0) filledFields++;
-    if (result.notes && result.notes.trim().length > 0) filledFields++;
-    
-    const confidence = filledFields / totalFields;
-    const status = confidence >= 0.6 ? 'pending_review' : 'failed';
-
-    console.log(`Exam extraction confidence: ${confidence.toFixed(2)} (${filledFields}/${totalFields} fields)`);
-
-    // Save to cache
-    try {
-      await supabase
-        .from("extraction_cache")
-        .insert({
-          user_id: user.id,
-          image_hash: imageHash,
-          extraction_type: "exam",
-          extracted_data: { ...result, confidence, status }
-        });
-      console.log("Extraction saved to cache");
-    } catch (cacheInsertError) {
-      console.error("Failed to save to cache:", cacheInsertError);
-      // Don't fail the request if cache save fails
-    }
-
     return new Response(
-      JSON.stringify({ ...result, confidence, status, cached: false }),
+      JSON.stringify(result),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

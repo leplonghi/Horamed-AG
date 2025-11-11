@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Share2, Download, Trash2, Calendar, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, Share2, Download, Trash2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +30,6 @@ export default function CofreDocumento() {
   const [signedUrl, setSignedUrl] = useState<string>("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [extracted, setExtracted] = useState<any>(null);
 
   const { data: documento, isLoading } = useDocumento(id);
   const { data: compartilhamentos } = useCompartilhamentos(id);
@@ -47,11 +45,6 @@ export default function CofreDocumento() {
       }
     };
     loadUrl();
-
-    // Check if already extracted
-    if (documento?.meta?.extracted) {
-      setExtracted(documento.meta.extracted);
-    }
   }, [documento]);
 
   const handleCompartilhar = async () => {
@@ -73,86 +66,6 @@ export default function CofreDocumento() {
       }
     } catch (error: any) {
       toast.error("Erro ao gerar link de compartilhamento");
-    }
-  };
-
-  const handleExtrairDados = async () => {
-    if (!signedUrl) {
-      toast.error("Aguarde o carregamento do documento");
-      return;
-    }
-
-    setExtracting(true);
-    try {
-      // Convert PDF to image if needed
-      let imageUrl = signedUrl;
-      
-      // If PDF, we need to convert first page to image
-      if (documento?.mime_type === "application/pdf") {
-        // For now, just use the PDF URL directly
-        // The AI can handle PDF URLs
-        imageUrl = signedUrl;
-      }
-
-      // Step 1: Extract data using AI
-      toast.loading("Analisando documento com IA...");
-      const { data: extractedData, error: extractError } = await supabase.functions.invoke(
-        "extract-document",
-        {
-          body: { image: imageUrl },
-        }
-      );
-
-      if (extractError) throw extractError;
-
-      toast.dismiss();
-      toast.loading("Salvando dados extraídos...");
-
-      // Step 2: Process and save extracted data
-      const { data: processedData, error: processError } = await supabase.functions.invoke(
-        "process-extracted-document",
-        {
-          body: {
-            documentId: id,
-            extractedData: extractedData,
-          },
-        }
-      );
-
-      if (processError) throw processError;
-
-      setExtracted(extractedData);
-      toast.dismiss();
-      
-      // Show success message with details
-      const messages = [];
-      if (processedData.savedRecords?.exame) {
-        messages.push(`✓ Exame criado${processedData.savedRecords.valores_count ? ` com ${processedData.savedRecords.valores_count} valores` : ''}`);
-      }
-      if (processedData.savedRecords?.consulta) {
-        messages.push("✓ Consulta registrada");
-      }
-      if (processedData.savedRecords?.evento) {
-        messages.push("✓ Vacinação registrada");
-      }
-      if (processedData.savedRecords?.medications_count) {
-        messages.push(`✓ ${processedData.savedRecords.medications_count} medicamento(s) adicionado(s)`);
-      }
-
-      toast.success(
-        messages.length > 0 
-          ? `Dados extraídos com sucesso!\n${messages.join('\n')}`
-          : "Dados extraídos e documento atualizado!"
-      );
-
-      // Reload document to get updated data
-      window.location.reload();
-    } catch (error: any) {
-      console.error("Erro ao extrair dados:", error);
-      toast.dismiss();
-      toast.error(error.message || "Erro ao extrair dados do documento");
-    } finally {
-      setExtracting(false);
     }
   };
 
@@ -249,18 +162,6 @@ export default function CofreDocumento() {
             )}
 
             <div className="flex flex-wrap gap-2 pt-4">
-              <Button 
-                onClick={handleExtrairDados} 
-                variant={extracted ? "outline" : "default"}
-                disabled={extracting || !signedUrl}
-              >
-                {extracting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="w-4 h-4 mr-2" />
-                )}
-                {extracted ? "Reprocessar Dados" : "Extrair Dados"}
-              </Button>
               <Button onClick={handleCompartilhar} variant="outline">
                 <Share2 className="w-4 h-4 mr-2" />
                 Compartilhar
@@ -284,60 +185,6 @@ export default function CofreDocumento() {
             </div>
           </CardContent>
         </Card>
-
-        {extracted && (
-          <Card className="mb-6 border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Dados Extraídos pela IA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {extracted.extracted_values && extracted.extracted_values.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Resultados do Exame:</h4>
-                  <div className="space-y-2">
-                    {extracted.extracted_values.map((val: any, idx: number) => (
-                      <div key={idx} className="flex justify-between items-center p-2 bg-background rounded text-sm">
-                        <span className="font-medium">{val.parameter}</span>
-                        <div className="text-right">
-                          <span className="font-semibold text-primary">
-                            {val.value} {val.unit}
-                          </span>
-                          {val.reference_range && (
-                            <div className="text-xs text-muted-foreground">
-                              Ref: {val.reference_range}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {extracted.medications && extracted.medications.length > 0 && (
-                <div>
-                  <h4 className="font-semibold mb-2">Medicamentos Prescritos:</h4>
-                  <div className="space-y-2">
-                    {extracted.medications.map((med: any, idx: number) => (
-                      <div key={idx} className="p-2 bg-background rounded text-sm">
-                        <div className="font-medium">{med.name}</div>
-                        <div className="text-xs text-muted-foreground">{med.dosage}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {extracted.category && (
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Tipo: </span>
-                  <Badge variant="secondary">{extracted.category}</Badge>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {signedUrl && (
           <Card>

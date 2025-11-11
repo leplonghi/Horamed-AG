@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Trash2, Pill, Package } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
-import { MedicationCombobox } from "@/components/MedicationCombobox";
 import HealthProfileSetup from "@/components/HealthProfileSetup";
 import HelpTooltip from "@/components/HelpTooltip";
 import logo from "@/assets/horamed-logo.png";
@@ -28,7 +27,6 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 export default function AddItem() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
   const isEditing = searchParams.get("edit");
   const [loading, setLoading] = useState(false);
@@ -98,65 +96,6 @@ export default function AddItem() {
 
     initUser();
 
-    // Auto-preencher com dados do OCR da página de digitalização
-    const ocrData = location.state?.ocrData;
-    if (ocrData && Array.isArray(ocrData)) {
-      console.log('Medicamentos extraídos da digitalização:', ocrData);
-      
-      // Preencher primeiro medicamento
-      if (ocrData[0]) {
-        const firstMed = ocrData[0];
-        setFormData(prev => ({
-          ...prev,
-          name: firstMed.name || '',
-          dose_text: firstMed.dosage || firstMed.dose || '',
-          category: firstMed.category || 'medicamento',
-          treatment_duration_days: firstMed.duration_days || null,
-          total_doses: firstMed.total_doses || null,
-          treatment_start_date: firstMed.start_date || '',
-          notes: firstMed.instructions || ''
-        }));
-        
-        // Se houver frequência, atualizar horários
-        if (firstMed.frequency) {
-          // Tentar extrair número de vezes por dia da frequência (ex: "3x ao dia", "de 8 em 8 horas")
-          const timesMatch = firstMed.frequency.match(/(\d+)\s*(?:x|vezes)/i);
-          const intervalMatch = firstMed.frequency.match(/(\d+)\s*em\s*(\d+)/i);
-          
-          if (timesMatch) {
-            const times = parseInt(timesMatch[1]);
-            setSchedules([{
-              freq_type: "daily",
-              times: ["08:00"],
-              days_of_week: [],
-              mode: "times_per_day",
-              interval_hours: 8,
-              times_per_day: times,
-              start_time: "08:00",
-            }]);
-          } else if (intervalMatch) {
-            const interval = parseInt(intervalMatch[2]);
-            setSchedules([{
-              freq_type: "daily",
-              times: ["08:00"],
-              days_of_week: [],
-              mode: "interval",
-              interval_hours: interval,
-              times_per_day: 3,
-              start_time: "08:00",
-            }]);
-          }
-        }
-      }
-      
-      toast.success(`✨ ${ocrData.length} medicamento(s) extraído(s)! Revise os dados antes de salvar.`, {
-        duration: 5000
-      });
-      
-      // Limpar o state para não reaplicar em re-renders
-      window.history.replaceState({}, document.title);
-    }
-
     if (isEditing) {
       loadItemData(isEditing);
     } else {
@@ -174,7 +113,7 @@ export default function AddItem() {
         }));
       }
     }
-  }, [isEditing, searchParams, location.state]);
+  }, [isEditing, searchParams]);
 
   const loadItemData = async (itemId: string) => {
     try {
@@ -734,16 +673,15 @@ export default function AddItem() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome do item *</Label>
-                  <MedicationCombobox
+                  <Input
+                    id="name"
+                    placeholder="Ex: Paracetamol, Vitamina D"
                     value={formData.name}
-                    onChange={(value) =>
-                      setFormData({ ...formData, name: value })
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
                     }
-                    placeholder="Buscar medicamento ou cadastrar novo"
+                    required
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Busque na base de medicamentos registrados ou cadastre um novo
-                  </p>
                 </div>
 
                 <div className="space-y-2">

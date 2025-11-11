@@ -4,20 +4,22 @@ import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, FileText, Upload, CheckCircle2, Sparkles, Camera } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, FileText, Pill, Stethoscope, Upload, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { fileToDataURL } from '@/lib/fileToDataURL';
+
+type ScanType = 'medication' | 'exam' | 'document';
 
 export default function DocumentScan() {
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<ScanType>('medication');
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       // Check file size (max 10MB)
@@ -25,139 +27,139 @@ export default function DocumentScan() {
         toast.error('Arquivo muito grande. Máximo 10MB');
         return;
       }
-      
-      try {
-        const dataURL = await fileToDataURL(file);
-        setPreview(dataURL);
-        setSelectedFile(file);
-        setScanResult(null);
-      } catch (error: any) {
-        toast.error(error.message ?? 'Erro ao carregar arquivo');
-      }
+      setSelectedFile(file);
+      setScanResult(null);
     }
   };
 
   const scanDocument = async () => {
-    if (!selectedFile || !preview) {
+    if (!selectedFile) {
       toast.error('Selecione um arquivo primeiro');
       return;
     }
 
     setScanning(true);
-    toast.loading('Analisando documento com IA...', { id: 'scan' });
-    
-    let retries = 0;
-    const maxRetries = 2;
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedFile);
+      
+      await new Promise((resolve) => {
+        reader.onloadend = resolve;
+      });
 
-    while (retries <= maxRetries) {
-      try {
-        const { data, error } = await supabase.functions.invoke('extract-document', {
-          body: { image: preview }
-        });
+      const base64 = (reader.result as string).split(',')[1];
 
-        if (error) {
-          // Retry on timeout/network errors
-          if (error.message?.includes('timeout') || error.message?.includes('network') || error.message?.includes('FunctionsRelayError')) {
-            retries++;
-            if (retries <= maxRetries) {
-              toast.loading(`Tentando novamente (${retries}/${maxRetries})...`, { id: 'scan' });
-              await new Promise(resolve => setTimeout(resolve, 1500 * retries));
-              continue;
-            }
-          }
-          throw error;
-        }
-
-        toast.dismiss('scan');
-        setScanResult(data);
-        
-        // Auto-redirect based on detected document type
-        if (data.category === 'receita' && data.medications && data.medications.length > 0) {
-          toast.success(`✨ Receita médica detectada! ${data.medications.length} medicamento(s) encontrado(s)`, {
-            duration: 3000
-          });
-          setTimeout(() => {
-            navigate('/adicionar', { state: { ocrData: data.medications } });
-          }, 2000);
-        } else if (data.category === 'exame' || data.title) {
-          toast.success(`✨ ${data.category === 'exame' ? 'Exame' : 'Documento'} detectado! Redirecionando...`, {
-            duration: 3000
-          });
-          setTimeout(() => {
-            navigate('/cofre/upload', { state: { ocrData: data } });
-          }, 2000);
-        } else {
-          toast.success('Documento processado com sucesso!');
-        }
-        return;
-
-      } catch (error: any) {
-        console.error('Scan error:', error);
-        
-        if (retries < maxRetries && (error.message?.includes('timeout') || error.message?.includes('network') || error.message?.includes('FunctionsRelayError'))) {
-          retries++;
-          toast.loading(`Tentando novamente (${retries}/${maxRetries})...`, { id: 'scan' });
-          await new Promise(resolve => setTimeout(resolve, 1500 * retries));
-          continue;
-        }
-        
-        toast.dismiss('scan');
-        const errorMsg = error.message?.includes('timeout')
-          ? 'A análise está demorando muito. Verifique sua conexão.'
-          : error.message ?? 'Erro ao processar documento. Tente novamente.';
-        toast.error(errorMsg);
-        return;
-      } finally {
-        if (retries > maxRetries) {
-          setScanning(false);
-        }
+      // Select the appropriate edge function
+      let functionName = '';
+      switch (activeTab) {
+        case 'medication':
+          functionName = 'extract-medication';
+          break;
+        case 'exam':
+          functionName = 'extract-exam';
+          break;
+        case 'document':
+          functionName = 'extract-document';
+          break;
       }
+
+      const { data, error } = await supabase.functions.invoke(functionName, {
+        body: { image: base64 }
+      });
+
+      if (error) throw error;
+
+      setScanResult(data);
+      toast.success('Documento processado com sucesso!');
+
+      // If medication, offer to add to list
+      if (activeTab === 'medication' && data.medications) {
+        toast.success(`${data.medications.length} medicamento(s) encontrado(s)`, {
+          action: {
+            label: 'Adicionar',
+            onClick: () => navigate('/adicionar', { state: { ocrData: data.medications } })
+          }
+        });
+      }
+
+    } catch (error: any) {
+      console.error('Scan error:', error);
+      toast.error('Erro ao processar documento: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setScanning(false);
     }
-    
-    setScanning(false);
   };
 
-  const clearFile = () => {
-    setSelectedFile(null);
-    setPreview(null);
-    setScanResult(null);
+  const getTabIcon = (tab: ScanType) => {
+    switch (tab) {
+      case 'medication':
+        return <Pill className="h-4 w-4" />;
+      case 'exam':
+        return <Stethoscope className="h-4 w-4" />;
+      case 'document':
+        return <FileText className="h-4 w-4" />;
+    }
   };
 
+  const getTabDescription = (tab: ScanType) => {
+    switch (tab) {
+      case 'medication':
+        return 'Extraia informações de receitas médicas e bulas';
+      case 'exam':
+        return 'Extraia resultados de exames laboratoriais';
+      case 'document':
+        return 'Extraia texto de documentos médicos gerais';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="container max-w-4xl mx-auto px-4 py-6 space-y-6">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
-            Digitalizar Documento
+            <FileText className="h-8 w-8 text-primary" />
+            Digitalizar Documentos
           </h1>
           <p className="text-muted-foreground mt-1">
-            A IA detecta automaticamente o tipo de documento (receita, exame, atestado, etc)
+            Use IA para extrair informações de documentos médicos
           </p>
         </div>
 
-        <Card className="border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Camera className="h-5 w-5 text-primary" />
-              Enviar Documento Médico
-            </CardTitle>
-            <CardDescription>
-              Formatos aceitos: PDF, PNG, JPG, WEBP (máximo 10MB)
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!preview ? (
-              <>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as ScanType)}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="medication" className="flex items-center gap-2">
+              {getTabIcon('medication')}
+              <span className="hidden sm:inline">Receitas</span>
+            </TabsTrigger>
+            <TabsTrigger value="exam" className="flex items-center gap-2">
+              {getTabIcon('exam')}
+              <span className="hidden sm:inline">Exames</span>
+            </TabsTrigger>
+            <TabsTrigger value="document" className="flex items-center gap-2">
+              {getTabIcon('document')}
+              <span className="hidden sm:inline">Documentos</span>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="medication" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Pill className="h-5 w-5" />
+                  Receitas Médicas
+                </CardTitle>
+                <CardDescription>
+                  {getTabDescription('medication')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="file-input" className="text-base font-medium">
-                    Selecione ou arraste o arquivo
-                  </Label>
+                  <Label htmlFor="med-file">Selecione a receita (PDF, imagem)</Label>
                   <Input
-                    id="file-input"
+                    id="med-file"
                     type="file"
                     accept="image/*,.pdf"
                     onChange={handleFileSelect}
@@ -165,101 +167,161 @@ export default function DocumentScan() {
                   />
                 </div>
                 {selectedFile && (
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">{selectedFile.name}</span>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={clearFile}>
-                      Remover
-                    </Button>
+                  <div className="text-sm text-muted-foreground">
+                    Arquivo selecionado: {selectedFile.name}
                   </div>
                 )}
-              </>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative rounded-lg overflow-hidden border-2 border-primary/20">
-                  {preview.startsWith('data:application/pdf') ? (
-                    <div className="h-48 bg-muted flex items-center justify-center">
-                      <div className="text-center space-y-2">
-                        <FileText className="h-12 w-12 mx-auto text-muted-foreground" />
-                        <p className="text-sm font-medium">{selectedFile?.name}</p>
-                      </div>
-                    </div>
+                <Button 
+                  onClick={scanDocument}
+                  disabled={!selectedFile || scanning}
+                  className="w-full"
+                  size="lg"
+                >
+                  {scanning ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
                   ) : (
-                    <img src={preview} alt="Preview" className="w-full h-auto max-h-64 object-contain bg-muted" />
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Digitalizar Receita
+                    </>
                   )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="exam" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5" />
+                  Exames Laboratoriais
+                </CardTitle>
+                <CardDescription>
+                  {getTabDescription('exam')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="exam-file">Selecione o exame (PDF, imagem)</Label>
+                  <Input
+                    id="exam-file"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileSelect}
+                    className="mt-2"
+                  />
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={clearFile} className="flex-1">
-                    Trocar arquivo
-                  </Button>
-                  <Button 
-                    onClick={scanDocument}
-                    disabled={scanning}
-                    className="flex-1"
-                    size="lg"
-                  >
-                    {scanning ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processando...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Extrair com IA
-                      </>
-                    )}
-                  </Button>
+                {selectedFile && (
+                  <div className="text-sm text-muted-foreground">
+                    Arquivo selecionado: {selectedFile.name}
+                  </div>
+                )}
+                <Button 
+                  onClick={scanDocument}
+                  disabled={!selectedFile || scanning}
+                  className="w-full"
+                  size="lg"
+                >
+                  {scanning ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Digitalizar Exame
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="document" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Documentos Médicos
+                </CardTitle>
+                <CardDescription>
+                  {getTabDescription('document')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="doc-file">Selecione o documento (PDF, imagem)</Label>
+                  <Input
+                    id="doc-file"
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleFileSelect}
+                    className="mt-2"
+                  />
                 </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                {selectedFile && (
+                  <div className="text-sm text-muted-foreground">
+                    Arquivo selecionado: {selectedFile.name}
+                  </div>
+                )}
+                <Button 
+                  onClick={scanDocument}
+                  disabled={!selectedFile || scanning}
+                  className="w-full"
+                  size="lg"
+                >
+                  {scanning ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Digitalizar Documento
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {scanResult && (
           <Card className="border-success">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-success">
                 <CheckCircle2 className="h-5 w-5" />
-                ✨ Documento processado com sucesso!
+                Resultado da Digitalização
               </CardTitle>
-              <CardDescription>
-                Tipo detectado: <strong>{scanResult.category || 'documento'}</strong>
-              </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2 text-sm">
-                {scanResult.title && (
-                  <div>
-                    <span className="text-muted-foreground">Título:</span>
-                    <span className="ml-2 font-medium">{scanResult.title}</span>
-                  </div>
-                )}
-                {scanResult.issued_at && (
-                  <div>
-                    <span className="text-muted-foreground">Data de emissão:</span>
-                    <span className="ml-2 font-medium">{new Date(scanResult.issued_at).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                )}
-                {scanResult.provider && (
-                  <div>
-                    <span className="text-muted-foreground">Prestador:</span>
-                    <span className="ml-2 font-medium">{scanResult.provider}</span>
-                  </div>
-                )}
-                {scanResult.medications && scanResult.medications.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">Medicamentos:</span>
-                    <span className="ml-2 font-medium">{scanResult.medications.length} encontrado(s)</span>
-                  </div>
-                )}
-              </div>
+            <CardContent>
+              <pre className="text-sm bg-muted p-4 rounded-md overflow-auto max-h-96">
+                {JSON.stringify(scanResult, null, 2)}
+              </pre>
               
-              <p className="text-xs text-muted-foreground">
-                Redirecionando automaticamente...
-              </p>
+              {activeTab === 'medication' && scanResult.medications && (
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => navigate('/adicionar', { state: { ocrData: scanResult.medications } })}
+                >
+                  Adicionar Medicamentos à Lista
+                </Button>
+              )}
+
+              {activeTab === 'exam' && (
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => navigate('/cofre/upload', { state: { ocrData: scanResult } })}
+                >
+                  Salvar no Cofre de Saúde
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}

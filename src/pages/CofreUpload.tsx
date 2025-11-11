@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Upload, FileText, ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,9 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
-import ExtractedDataPreviewModal from "@/components/ExtractedDataPreviewModal";
-import { fileToDataURL } from "@/lib/fileToDataURL";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [files, setFiles] = useState<File[]>([]);
   const [categoria, setCategoria] = useState<string>("");
   const [titulo, setTitulo] = useState<string>("");
@@ -35,54 +32,23 @@ export default function CofreUpload() {
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [extractedDataMap, setExtractedDataMap] = useState<Map<string, any>>(new Map());
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [currentPreviewFile, setCurrentPreviewFile] = useState<string>("");
-  const [currentPreviewData, setCurrentPreviewData] = useState<any>(null);
 
   const { profiles, activeProfile } = useUserProfiles();
   const uploadDocumento = useUploadDocumento();
-
-  // Auto-preencher com dados do OCR da página de digitalização
-  useEffect(() => {
-    const ocrData = location.state?.ocrData;
-    if (ocrData) {
-      console.log('Dados OCR recebidos da digitalização:', ocrData);
-      
-      // Preencher formulário com dados extraídos
-      if (ocrData.title) setTitulo(ocrData.title);
-      if (ocrData.issued_at) setDataEmissao(ocrData.issued_at);
-      if (ocrData.expires_at) setDataValidade(ocrData.expires_at);
-      if (ocrData.provider) setPrestador(ocrData.provider);
-      if (ocrData.category) setCategoria(ocrData.category);
-      
-      // Campos específicos por categoria
-      if (ocrData.doctor) setMedico(ocrData.doctor);
-      if (ocrData.specialty) setEspecialidade(ocrData.specialty);
-      if (ocrData.exam_type) setTipoExame(ocrData.exam_type);
-      if (ocrData.dose) setDose(ocrData.dose);
-      if (ocrData.next_dose) setProximaDose(ocrData.next_dose);
-      
-      toast.success("✨ Documento extraído automaticamente! Revise os campos antes de salvar.", {
-        duration: 5000
-      });
-      
-      // Limpar o state para não reaplicar em re-renders
-      window.history.replaceState({}, document.title);
-    }
-  }, [location.state]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setFiles((prev) => [...prev, ...newFiles]);
 
-      // Extrai automaticamente de cada arquivo
-      for (const file of newFiles) {
-        if (file.type.startsWith('image/') || file.type === 'application/pdf') {
-          setIsExtracting(true);
-          try {
-            const base64 = await fileToDataURL(file);
+      // Extrai automaticamente do primeiro arquivo se for imagem
+      const firstFile = newFiles[0];
+      if (firstFile && firstFile.type.startsWith('image/')) {
+        setIsExtracting(true);
+        try {
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64 = reader.result as string;
             
             const { data, error } = await supabase.functions.invoke('extract-document', {
               body: { image: base64 }
@@ -91,82 +57,35 @@ export default function CofreUpload() {
             if (error) throw error;
 
             if (data) {
-              console.log('Extraction result:', data);
+              setTitulo(data.title || '');
+              if (data.issued_at) setDataEmissao(data.issued_at);
+              if (data.expires_at) setDataValidade(data.expires_at);
+              if (data.provider) setPrestador(data.provider);
+              if (data.category) setCategoria(data.category);
               
-              // Se for o primeiro arquivo, mostrar modal de prévia
-              if (newFiles[0] === file) {
-                setCurrentPreviewFile(file.name);
-                setCurrentPreviewData(data);
-                setShowPreviewModal(true);
-                setIsExtracting(false);
-                
-                // Mostrar aviso se confiança baixa
-                if (data.confidence < 0.7) {
-                  toast.warning(
-                    "Extração com baixa confiança. Revise os campos cuidadosamente.",
-                    { duration: 5000 }
-                  );
-                }
-                return;
-              }
-              
-              // Para arquivos subsequentes, salvar dados extraídos silenciosamente
-              setExtractedDataMap((prev) => {
-                const newMap = new Map(prev);
-                newMap.set(file.name, data);
-                return newMap;
-              });
+              // Campos específicos por categoria
+              if (data.doctor) setMedico(data.doctor);
+              if (data.specialty) setEspecialidade(data.specialty);
+              if (data.exam_type) setTipoExame(data.exam_type);
+              if (data.dose) setDose(data.dose);
+              if (data.next_dose) setProximaDose(data.next_dose);
+
+              toast.success("Informações extraídas automaticamente! Você pode editá-las se necessário.");
             }
-          } catch (error: any) {
-            console.error('Erro ao extrair informações:', error);
-            toast.error(error.message ?? "Erro ao processar arquivo");
-          } finally {
-            setIsExtracting(false);
-          }
+          };
+          reader.readAsDataURL(firstFile);
+        } catch (error) {
+          console.error('Erro ao extrair informações:', error);
+          toast.error("Não foi possível extrair informações automaticamente. Preencha os campos manualmente.");
+        } finally {
+          setIsExtracting(false);
         }
       }
     }
   };
 
-  const handlePreviewConfirm = (data: any) => {
-    // Salvar dados editados
-    setExtractedDataMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(currentPreviewFile, data);
-      return newMap;
-    });
-
-    // Preencher campos do formulário
-    setTitulo(data.title || '');
-    if (data.issued_at) setDataEmissao(data.issued_at);
-    if (data.expires_at) setDataValidade(data.expires_at);
-    if (data.provider) setPrestador(data.provider);
-    if (data.category) setCategoria(data.category);
-    
-    // Campos específicos por categoria
-    if (data.doctor) setMedico(data.doctor);
-    if (data.specialty) setEspecialidade(data.specialty);
-    if (data.exam_type) setTipoExame(data.exam_type);
-    if (data.dose) setDose(data.dose);
-    if (data.next_dose) setProximaDose(data.next_dose);
-
-    toast.success("✨ Informações confirmadas e aplicadas!");
-  };
-
-  const handlePreviewSkip = () => {
-    toast.info("Preencha os campos manualmente");
-  };
-
   const removeFile = (index: number) => {
-    const file = files[index];
     setFiles((prev) => prev.filter((_, i) => i !== index));
-    
-    // Remover dados extraídos deste arquivo
-    setExtractedDataMap((prev) => {
-      const newMap = new Map(prev);
-      newMap.delete(file.name);
-      return newMap;
-    });
   };
 
   const handleUpload = async () => {
@@ -189,22 +108,11 @@ export default function CofreUpload() {
 
     try {
       for (const file of files) {
-        // Pegar dados extraídos deste arquivo, se houver
-        const extractedData = extractedDataMap.get(file.name);
-        
         await uploadDocumento.mutateAsync({
           file,
-      profileId: activeProfile?.id,
-      categoriaSlug: categoria || undefined,
-      criarLembrete,
-      extractedData: extractedData ? {
-        title: titulo || extractedData.title,
-        issued_at: dataEmissao || extractedData.issued_at,
-        expires_at: dataValidade || extractedData.expires_at,
-        provider: prestador || extractedData.provider,
-        category: categoria || extractedData.category,
-        medications: extractedData.medications || [],
-      } : undefined,
+          profileId: activeProfile?.id,
+          categoriaSlug: categoria || undefined,
+          criarLembrete,
         });
       }
 
@@ -232,7 +140,7 @@ export default function CofreUpload() {
 
         <h1 className="text-3xl font-bold mb-2">Enviar Documentos</h1>
         <p className="text-muted-foreground mb-6">
-          A IA extrai informações automaticamente. Revise os campos antes de salvar.
+          Selecione a categoria primeiro para ver os campos específicos
         </p>
 
         {isExtracting && (
@@ -530,34 +438,12 @@ export default function CofreUpload() {
             className="w-full"
             size="lg"
             onClick={handleUpload}
-            disabled={uploading || isExtracting}
+            disabled={uploading || files.length === 0 || !categoria || !titulo}
           >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4 mr-2" />
-                Enviar Documentos
-              </>
-            )}
+            {uploading ? "Enviando..." : "Enviar Documentos"}
           </Button>
         </div>
       </div>
-
-      <ExtractedDataPreviewModal
-        open={showPreviewModal}
-        onOpenChange={setShowPreviewModal}
-        fileName={currentPreviewFile}
-        extractedData={currentPreviewData || {}}
-        onConfirm={handlePreviewConfirm}
-        onSkip={handlePreviewSkip}
-        isCached={currentPreviewData?.cached || false}
-        confidence={currentPreviewData?.confidence}
-        status={currentPreviewData?.status}
-      />
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} />
       <Navigation />

@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Camera, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fileToDataURL } from "@/lib/fileToDataURL";
 
 interface OCRResult {
   name: string;
@@ -27,15 +26,14 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      try {
-        const dataURL = await fileToDataURL(file);
-        setPreview(dataURL);
-      } catch (error: any) {
-        toast.error(error.message ?? "Erro ao carregar imagem");
-      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -44,6 +42,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
 
     setProcessing(true);
     try {
+      // Call Lovable AI for OCR and extraction
       const { data, error } = await supabase.functions.invoke("extract-medication", {
         body: { image: preview },
       });
@@ -64,9 +63,9 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
       } else {
         toast.error("Não foi possível identificar o medicamento");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error processing image:", error);
-      toast.error(error.message ?? "Erro ao processar imagem");
+      toast.error("Erro ao processar imagem");
     } finally {
       setProcessing(false);
     }
@@ -115,7 +114,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           <input
             ref={cameraInputRef}
             type="file"
-            accept="image/*,.pdf"
+            accept="image/*"
             capture="environment"
             onChange={handleFileSelect}
             className="hidden"
@@ -124,7 +123,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,.pdf"
+            accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
           />

@@ -24,11 +24,6 @@ export interface DocumentoSaude {
   meta?: any;
   created_at: string;
   updated_at: string;
-  status_extraction?: string;
-  confidence_score?: number;
-  reviewed_at?: string;
-  extraction_attempted_at?: string;
-  extraction_error?: string;
   categorias_saude?: Categoria;
   user_profiles?: { name: string };
 }
@@ -76,8 +71,7 @@ export function useDocumentos(filters: ListaDocumentosFilters = {}) {
           categorias_saude(id, slug, label),
           user_profiles(name)
         `)
-        .order("created_at", { ascending: false })
-        .limit(100);
+        .order("created_at", { ascending: false });
 
       if (filters.profileId) {
         query = query.eq("profile_id", filters.profileId);
@@ -103,7 +97,7 @@ export function useDocumentos(filters: ListaDocumentosFilters = {}) {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Client-side full-text filter
+      // Filtro de busca full-text (client-side por simplicidade)
       let result = data || [];
       if (filters.q) {
         const q = filters.q.toLowerCase();
@@ -117,8 +111,6 @@ export function useDocumentos(filters: ListaDocumentosFilters = {}) {
 
       return result as DocumentoSaude[];
     },
-    staleTime: 60000, // Cache for 1 minute
-    gcTime: 300000, // Keep in cache for 5 minutes
   });
 }
 
@@ -142,8 +134,6 @@ export function useDocumento(id?: string) {
       return data as DocumentoSaude;
     },
     enabled: !!id,
-    staleTime: 120000, // Cache for 2 minutes
-    gcTime: 600000, // Keep in cache for 10 minutes
   });
 }
 
@@ -157,16 +147,8 @@ export function useUploadDocumento() {
       profileId?: string;
       categoriaSlug?: string;
       criarLembrete?: boolean;
-    extractedData?: {
-      title?: string;
-      issued_at?: string;
-      expires_at?: string;
-      provider?: string;
-      category?: string;
-      medications?: any[];
-    };
     }) => {
-      const { file, profileId, categoriaSlug, criarLembrete, extractedData } = params;
+      const { file, profileId, categoriaSlug, criarLembrete } = params;
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Não autenticado");
@@ -205,63 +187,20 @@ export function useUploadDocumento() {
 
       if (uploadError) throw uploadError;
 
-      // Buscar categoria_id se fornecida
-      let categoria_id = undefined;
-      if (categoriaSlug || extractedData?.category) {
-        const slug = categoriaSlug || extractedData?.category;
-        const { data: cat } = await supabase
-          .from("categorias_saude")
-          .select("id")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (cat) categoria_id = cat.id;
-      }
-
-      // Criar registro do documento com dados extraídos
+      // Criar registro do documento
       const { data: documento, error: docError } = await supabase
         .from("documentos_saude")
         .insert({
           user_id: user.id,
           profile_id: profileId,
-          categoria_id,
           file_path: filePath,
           mime_type: file.type,
-          title: extractedData?.title || file.name,
-          issued_at: extractedData?.issued_at,
-          expires_at: extractedData?.expires_at,
-          provider: extractedData?.provider,
-          meta: extractedData ? { extracted: extractedData } : undefined,
+          title: file.name,
         })
         .select()
         .single();
 
       if (docError) throw docError;
-
-      // Process extracted data including medications for prescriptions
-      if (extractedData) {
-        try {
-          const { error: processError } = await supabase.functions.invoke(
-            "process-extracted-document",
-            {
-              body: {
-                documentId: documento.id,
-                extractedData: {
-                  ...extractedData,
-                  medications: extractedData.medications || [],
-                },
-              },
-            }
-          );
-
-          if (processError) {
-            console.error("Erro ao processar dados extraídos:", processError);
-          } else {
-            console.log("Dados extraídos processados com sucesso");
-          }
-        } catch (e) {
-          console.warn("Erro ao processar dados extraídos:", e);
-        }
-      }
 
       // Chamar Edge Function para extrair metadados
       try {
@@ -281,8 +220,7 @@ export function useUploadDocumento() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cofre", "lista"] });
-      queryClient.invalidateQueries({ queryKey: ["items"] });
-      toast.success("Documento enviado e medicamentos criados com sucesso");
+      toast.success("Documento enviado com sucesso");
     },
     onError: (error: any) => {
       if (error.message === "LIMIT_REACHED") {

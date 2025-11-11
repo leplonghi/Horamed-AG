@@ -15,7 +15,6 @@ import WeekCalendarView from "@/components/WeekCalendarView";
 import { Card, CardContent } from "@/components/ui/card";
 import StreakBadge from "@/components/StreakBadge";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
-import DocumentReviewAlert from "@/components/DocumentReviewAlert";
 import InfoDialog from "@/components/InfoDialog";
 import HealthInsightsCard from "@/components/HealthInsightsCard";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -500,9 +499,6 @@ export default function Today() {
               onDismissAll={criticalAlerts.dismissAll}
             />
           )}
-
-          {/* Document Review Alerts */}
-          <DocumentReviewAlert />
 
           {/* Health Insights Card */}
           <HealthInsightsCard />

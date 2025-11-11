@@ -19,8 +19,7 @@ import {
   ArrowRight,
   CheckCircle2,
   XCircle,
-  Clock,
-  Sparkles
+  Clock
 } from "lucide-react";
 import { format, subMonths, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -39,9 +38,6 @@ import {
   ComposedChart,
   Area
 } from 'recharts';
-import HealthInsights from "@/components/HealthInsights";
-import SmartInsightsCard from "@/components/SmartInsightsCard";
-import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 interface ExamValue {
   parametro: string;
@@ -94,7 +90,6 @@ interface PeriodComparison {
 
 export default function HealthDashboard() {
   const navigate = useNavigate();
-  const { activeProfile } = useUserProfiles();
   const [loading, setLoading] = useState(true);
   const [pesoData, setPesoData] = useState<any[]>([]);
   const [pressaoData, setPressaoData] = useState<any[]>([]);
@@ -113,14 +108,6 @@ export default function HealthDashboard() {
   useEffect(() => {
     loadDashboardData();
   }, []);
-
-  // Reload when profile changes
-  useEffect(() => {
-    if (activeProfile) {
-      setLoading(true);
-      loadDashboardData();
-    }
-  }, [activeProfile?.id]);
 
   const loadDashboardData = async () => {
     try {
@@ -439,19 +426,13 @@ export default function HealthDashboard() {
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-primary" />
-              Dashboard & Insights
+              <TrendingUp className="h-8 w-8 text-primary" />
+              Dados & Insights
             </h1>
             <p className="text-muted-foreground">
-              Análise inteligente da sua saúde e adesão ao tratamento
+              Análise completa da sua saúde e correlação com adesão aos medicamentos
             </p>
           </div>
-
-          {/* Smart Insights */}
-          <SmartInsightsCard />
-
-          {/* AI-Powered Health Insights */}
-          <HealthInsights />
 
           {/* Estatísticas Principais */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

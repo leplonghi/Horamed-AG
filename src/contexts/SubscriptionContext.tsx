@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Subscription {
   id: string;
@@ -39,6 +39,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   const loadSubscription = async () => {
     try {
@@ -70,19 +71,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     loadSubscription();
     
-    // Refresh only when window regains focus or every 10 minutes
-    const interval = setInterval(loadSubscription, 600000);
-    
-    const handleFocus = () => {
-      loadSubscription();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    
-    return () => {
-      clearInterval(interval);
-      window.removeEventListener('focus', handleFocus);
-    };
+    // Refresh every 5 minutes instead of 30 seconds
+    const interval = setInterval(loadSubscription, 300000);
+    return () => clearInterval(interval);
   }, []);
 
   const syncWithStripe = async () => {
@@ -100,15 +91,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       
       if (data?.synced) {
         await loadSubscription();
-        toast.success(
-          data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
-          { description: 'Assinatura sincronizada' }
-        );
+        toast({
+          title: 'Assinatura sincronizada',
+          description: data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
+        });
       }
     } catch (error) {
       console.error('Sync error:', error);
-      toast.error('Não foi possível sincronizar com o Stripe', {
-        description: 'Erro ao sincronizar'
+      toast({
+        title: 'Erro ao sincronizar',
+        description: 'Não foi possível sincronizar com o Stripe',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);

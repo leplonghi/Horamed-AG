@@ -1,222 +1,190 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, HelpCircle, FolderOpen } from "lucide-react";
+import { Link } from "react-router-dom";
+import { FileText, Upload, Filter, Calendar, Scan, TrendingUp, Plus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDocumentos, DocumentoSaude } from "@/hooks/useCofre";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useDocumentos, useDeletarDocumento } from "@/hooks/useCofre";
-import { useUserProfiles } from "@/hooks/useUserProfiles";
-import { AddDocumentModal } from "@/components/AddDocumentModal";
-import { DocumentCard } from "@/components/DocumentCard";
-import { CofreHelpDialog } from "@/components/CofreHelpDialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import TutorialHint from "@/components/TutorialHint";
 
-const Cofre = () => {
-  const navigate = useNavigate();
+export default function Cofre() {
+  const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
+  const [busca, setBusca] = useState("");
+  const [filtroExp, setFiltroExp] = useState<"30" | "all">("all");
   const { activeProfile } = useUserProfiles();
-  const [activeTab, setActiveTab] = useState("todos");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showHelpDialog, setShowHelpDialog] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<string | null>(null);
-
-  const categoria = activeTab === "todos" ? undefined : activeTab;
-  const { data: documentos = [], isLoading } = useDocumentos({
+  
+  const { data: documentos, isLoading } = useDocumentos({
     profileId: activeProfile?.id,
-    categoria,
+    categoria: categoriaAtiva === "todos" ? undefined : categoriaAtiva,
+    q: busca,
+    exp: filtroExp,
   });
 
-  const deleteMutation = useDeletarDocumento();
-
-  const handleView = (id: string) => {
-    navigate(`/cofre/documento/${id}`);
+  const getSignedUrl = async (path: string) => {
+    const { data } = await supabase.storage
+      .from("cofre-saude")
+      .createSignedUrl(path, 3600);
+    return data?.signedUrl;
   };
 
-  const handleShare = (id: string) => {
-    navigate(`/compartilhar-documento/${id}`);
-  };
+  const renderDocumentoCard = (doc: DocumentoSaude) => {
+    const isExpiringSoon = doc.expires_at && new Date(doc.expires_at) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
-  const handleEdit = (id: string) => {
-    navigate(`/cofre/documento/${id}`);
-  };
-
-  const handleDelete = (id: string) => {
-    setDocumentToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (documentToDelete) {
-      await deleteMutation.mutateAsync(documentToDelete);
-      setDeleteDialogOpen(false);
-      setDocumentToDelete(null);
-    }
-  };
-
-  const getCategoryCount = (slug: string) => {
-    if (slug === "todos") return documentos.length;
-    return documentos.filter((doc) => doc.categorias_saude?.slug === slug).length;
+    return (
+      <Link key={doc.id} to={`/cofre/${doc.id}`}>
+        <Card className="hover:shadow-lg transition-all cursor-pointer">
+          <CardContent className="p-3">
+            <div className="flex gap-2.5">
+              <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                <FileText className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm truncate">{doc.title || "Sem título"}</h3>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {doc.categorias_saude && (
+                    <Badge variant="outline" className="text-[10px] h-5">
+                      {doc.categorias_saude.label}
+                    </Badge>
+                  )}
+                  {isExpiringSoon && (
+                    <Badge variant="destructive" className="text-[10px] h-5">
+                      Vence em breve
+                    </Badge>
+                  )}
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-1.5 space-y-0.5">
+                  {doc.issued_at && (
+                    <div>Emissão: {format(new Date(doc.issued_at), "dd/MM/yyyy", { locale: ptBR })}</div>
+                  )}
+                  {doc.expires_at && (
+                    <div>Validade: {format(new Date(doc.expires_at), "dd/MM/yyyy", { locale: ptBR })}</div>
+                  )}
+                  {doc.provider && <div className="truncate">Prestador: {doc.provider}</div>}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Link>
+    );
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-6 pb-24 max-w-7xl">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Cofre de Saúde</h1>
-              <p className="text-muted-foreground max-w-2xl">
-                Guarde receitas, exames, vacinas e relatórios em um só lugar.
-                O HoraMed identifica automaticamente o tipo e preenche os dados pra você.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowHelpDialog(true)}
-              className="flex-shrink-0"
-            >
-              <HelpCircle className="h-4 w-4 mr-2" />
-              Como funciona?
-            </Button>
+      <div className="container max-w-4xl mx-auto px-4 pt-20 pb-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Cofre de Saúde</h1>
+            <p className="text-muted-foreground">
+              {documentos && documentos.length > 0 
+                ? `${documentos.length} documento${documentos.length > 1 ? 's' : ''} guardado${documentos.length > 1 ? 's' : ''}`
+                : "Seus documentos médicos em um só lugar"}
+            </p>
           </div>
+          <Link to="/cofre/upload">
+            <Button size="sm">
+              <Plus className="w-4 h-4 mr-1.5" />
+              Adicionar
+            </Button>
+          </Link>
         </div>
 
-        {/* Main Action Button */}
-        <div className="mb-8">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-3 gap-2">
+          <Link to="/cofre/upload">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <Upload className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Upload</div>
+              </div>
+            </Button>
+          </Link>
+          <Link to="/digitalizar">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <Scan className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Digitalizar</div>
+              </div>
+            </Button>
+          </Link>
+          <Link to="/relatorios">
+            <Button variant="outline" className="w-full h-auto py-3">
+              <FileText className="h-4 w-4 mr-1.5" />
+              <div className="text-left flex-1">
+                <div className="text-xs font-medium">Relatórios</div>
+              </div>
+            </Button>
+          </Link>
+        </div>
+
+        <TutorialHint
+          id="cofre_page"
+          title="Seu cofre digital seguro 🔒"
+          message="Guarde exames, receitas, vacinas e consultas aqui. Compartilhe facilmente com médicos quando precisar! Tudo com segurança e privacidade."
+        />
+
+        <div className="flex gap-2 mb-4">
+          <Input
+            placeholder="Buscar documentos..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="flex-1"
+          />
           <Button
-            onClick={() => setShowAddModal(true)}
-            size="lg"
-            className="w-full sm:w-auto h-auto py-6 px-8 text-lg gap-3 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+            variant={filtroExp === "30" ? "default" : "outline"}
+            size="icon"
+            onClick={() => setFiltroExp(filtroExp === "30" ? "all" : "30")}
           >
-            <Plus className="h-6 w-6" />
-            Adicionar Documento
+            <Calendar className="w-4 h-4" />
           </Button>
         </div>
 
-        {/* Filters Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto p-1">
-            <TabsTrigger value="todos" className="gap-2">
-              Todos
-              {!isLoading && <span className="text-xs opacity-70">({getCategoryCount("todos")})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="receitas" className="gap-2">
-              Receitas
-              {!isLoading && <span className="text-xs opacity-70">({getCategoryCount("receitas")})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="exames" className="gap-2">
-              Exames
-              {!isLoading && <span className="text-xs opacity-70">({getCategoryCount("exames")})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="vacinas" className="gap-2">
-              Vacinas
-              {!isLoading && <span className="text-xs opacity-70">({getCategoryCount("vacinas")})</span>}
-            </TabsTrigger>
-            <TabsTrigger value="consultas" className="gap-2">
-              Consultas
-              {!isLoading && <span className="text-xs opacity-70">({getCategoryCount("consultas")})</span>}
-            </TabsTrigger>
+        <Tabs value={categoriaAtiva} onValueChange={setCategoriaAtiva}>
+          <TabsList className="w-full justify-start overflow-x-auto">
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="vacinacao">Vacinas</TabsTrigger>
+            <TabsTrigger value="exame">Exames</TabsTrigger>
+            <TabsTrigger value="receita">Receitas</TabsTrigger>
+            <TabsTrigger value="consulta">Consultas</TabsTrigger>
           </TabsList>
 
-          <TabsContent value={activeTab} className="mt-6">
-            {/* Loading State */}
-            {isLoading && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Skeleton key={i} className="h-40 rounded-lg" />
-                ))}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!isLoading && documentos.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="p-6 rounded-full bg-muted/50 mb-6">
-                  <FolderOpen className="h-16 w-16 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Nenhum documento adicionado ainda</h3>
-                <p className="text-muted-foreground text-center mb-6 max-w-md">
-                  Envie uma receita, exame ou relatório para começar a organizar seus documentos de saúde.
-                </p>
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <Plus className="h-5 w-5" />
-                  Adicionar Documento
-                </Button>
-              </div>
-            )}
-
-            {/* Documents Grid */}
-            {!isLoading && documentos.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {documentos.map((doc) => (
-                  <DocumentCard
-                    key={doc.id}
-                    document={doc}
-                    onView={handleView}
-                    onShare={handleShare}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
+          <TabsContent value={categoriaAtiva} className="space-y-3 mt-6">
+            {isLoading ? (
+              <>
+                <Skeleton className="h-20" />
+                <Skeleton className="h-20" />
+                <Skeleton className="h-20" />
+              </>
+            ) : documentos && documentos.length > 0 ? (
+              documentos.map(renderDocumentoCard)
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">Nenhum documento encontrado</p>
+                  <Link to="/cofre/upload">
+                    <Button className="mt-4">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Enviar primeiro documento
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
             )}
           </TabsContent>
         </Tabs>
-      </main>
-
+      </div>
       <Navigation />
-
-      {/* Modals */}
-      <AddDocumentModal open={showAddModal} onOpenChange={setShowAddModal} />
-      <CofreHelpDialog open={showHelpDialog} onOpenChange={setShowHelpDialog} />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. O documento será removido permanentemente do seu cofre.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Floating Action Button (Mobile) */}
-      <Button
-        onClick={() => setShowAddModal(true)}
-        size="icon"
-        className="fixed bottom-20 right-6 h-14 w-14 rounded-full shadow-lg sm:hidden z-40"
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
     </div>
   );
-};
-
-export default Cofre;
+}
