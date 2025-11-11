@@ -105,62 +105,165 @@ serve(async (req) => {
     console.log("Cache miss. Processing document...");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    // Specialized prompt for prescription documents
-    const prescriptionPrompt = `Você é um especialista em análise de RECEITAS MÉDICAS. Analise este documento e extraia TODOS os dados estruturados.
+    // Specialized prompt for prescription documents - Expert AI extraction
+    const prescriptionPrompt = `Você é um ESPECIALISTA MÉDICO em análise de RECEITAS MÉDICAS brasileiras.
+Sua tarefa é extrair TODOS os dados da receita com PRECISÃO MÁXIMA, palavra por palavra.
 
-**CAMPOS ESSENCIAIS DA RECEITA**:
-1. **prescriber_name**: Nome COMPLETO do médico prescritor
-2. **prescriber_registration**: CRM completo com UF (ex: "CRM 12345/SP")
-3. **patient_name**: Nome COMPLETO do paciente
-4. **issued_at**: Data de emissão da receita (formato: YYYY-MM-DD)
-5. **expires_at**: Data de validade (se não houver, calcule: issued_at + 30 dias)
-6. **category**: SEMPRE "receita"
-7. **title**: "Receita Médica - [Nome do Médico]"
-8. **provider**: Nome da clínica/hospital (se houver)
+═══════════════════════════════════════════════════════════════
+📋 INSTRUÇÕES DE EXTRAÇÃO
+═══════════════════════════════════════════════════════════════
 
-**MEDICAMENTOS PRESCRITOS** (array "prescriptions"):
-Para CADA medicamento, extraia:
-- **name_commercial**: Nome comercial do medicamento (obrigatório)
-- **generic_name**: Princípio ativo (se mencionado)
-- **dose_text**: Dosagem completa (ex: "500mg", "20mg/ml")
-- **form**: Forma farmacêutica (comprimido, cápsula, xarope, pomada, etc)
-- **frequency**: Posologia exata (ex: "8 em 8 horas", "2x ao dia", "1x pela manhã")
-- **duration_days**: Duração do tratamento em dias inteiros
-- **instructions**: Instruções específicas (tomar com água, em jejum, após refeições, etc)
+**COMPORTAMENTO OBRIGATÓRIO**:
+✓ Extrair LITERALMENTE o que está escrito no documento
+✓ Se um campo não existir ou não for legível, retornar null
+✓ NUNCA inventar, adivinhar ou inferir dados que não estão no documento
+✓ Para PDFs: analisar APENAS a primeira página
+✓ Manter acentuação, pontuação e formatação originais dos nomes
 
-**INSTRUÇÕES GERAIS**:
-9. **instructions**: Observações gerais do médico (se houver)
+═══════════════════════════════════════════════════════════════
+📝 CAMPOS OBRIGATÓRIOS DA RECEITA
+═══════════════════════════════════════════════════════════════
+
+1. **prescriber_name** (string): 
+   - Nome COMPLETO do médico prescritor exatamente como aparece
+   - Incluir título (Dr., Dra.) se presente
+   - Exemplo: "Dr. João Silva Santos"
+
+2. **prescriber_registration** (string):
+   - CRM COMPLETO com número E sigla do estado
+   - Formato: "CRM 12345/SP" ou "CRM-SP 12345"
+   - Se não houver estado, marcar como null
+
+3. **patient_name** (string):
+   - Nome COMPLETO do paciente
+   - Exatamente como está escrito na receita
+   - Se não estiver legível ou ausente: null
+
+4. **issued_at** (string YYYY-MM-DD):
+   - Data de emissão da receita
+   - Converter para formato ISO: ano-mês-dia
+   - Exemplos: "15/03/2024" → "2024-03-15"
+   - Se ausente ou ilegível: usar data atual
+
+5. **expires_at** (string YYYY-MM-DD):
+   - Data de validade explícita OU calcular issued_at + 30 dias
+   - Para receitas controladas: issued_at + 30 dias
+   - Para receitas simples: issued_at + 180 dias (6 meses)
+   - Formato ISO: "YYYY-MM-DD"
+
+6. **category** (string):
+   - SEMPRE: "receita"
+
+7. **title** (string):
+   - Formato: "Receita Médica - [Nome do Médico]"
+   - Exemplo: "Receita Médica - Dr. João Silva"
+
+8. **provider** (string ou null):
+   - Nome da clínica, hospital ou consultório
+   - Extrair do cabeçalho do documento
+   - Se não houver: null
+
+═══════════════════════════════════════════════════════════════
+💊 MEDICAMENTOS PRESCRITOS (array "prescriptions")
+═══════════════════════════════════════════════════════════════
+
+Para CADA medicamento prescrito, criar um objeto com:
+
+- **name_commercial** (string, OBRIGATÓRIO):
+  → Nome comercial do medicamento EXATAMENTE como escrito
+  → Manter maiúsculas/minúsculas originais
+  → Exemplo: "Dipirona Sódica", "Amoxicilina", "RIVOTRIL"
+
+- **generic_name** (string ou null):
+  → Princípio ativo se mencionado entre parênteses
+  → Exemplo: se escrito "Dipirona (dipirona sódica)", extrair "dipirona sódica"
+  → Se não mencionado: null
+
+- **dose_text** (string):
+  → Dosagem COMPLETA com unidade
+  → Exemplos: "500mg", "20mg/ml", "25mg", "1g"
+  → Se não especificada: null
+
+- **form** (string):
+  → Forma farmacêutica do medicamento
+  → Valores comuns: "comprimido", "cápsula", "xarope", "solução oral", 
+    "pomada", "creme", "gotas", "injetável", "supositório"
+  → Usar sempre minúsculas
+  → Se não especificada: null
+
+- **frequency** (string):
+  → Posologia EXATA como prescrita
+  → Exemplos: "8 em 8 horas", "2x ao dia", "1 comprimido pela manhã",
+    "1 colher de chá a cada 6 horas", "aplicar 2x ao dia", "se necessário"
+  → Manter formato original
+  → Se não especificada: null
+
+- **duration_days** (number ou null):
+  → Duração do tratamento convertida para DIAS INTEIROS
+  → Exemplos de conversão:
+    • "por 7 dias" → 7
+    • "durante 2 semanas" → 14
+    • "por 1 mês" → 30
+    • "uso contínuo" → null
+    • "se necessário" → null
+  → Se não especificada: null
+
+- **instructions** (string ou null):
+  → Instruções ESPECÍFICAS deste medicamento
+  → Exemplos: "tomar com água", "em jejum", "após as refeições",
+    "evitar exposição ao sol", "não consumir álcool"
+  → Se não houver: null
+
+═══════════════════════════════════════════════════════════════
+📌 INSTRUÇÕES GERAIS DO MÉDICO
+═══════════════════════════════════════════════════════════════
+
+9. **instructions** (string ou null):
+   - Observações gerais do médico que não são específicas de um medicamento
+   - Recomendações adicionais, retornos, exames
+   - Se não houver: null
+
+═══════════════════════════════════════════════════════════════
+✅ VALIDAÇÃO E QUALIDADE
+═══════════════════════════════════════════════════════════════
 
 **REGRAS CRÍTICAS**:
-- Se for PDF, analise APENAS a primeira página
-- Extraia TODOS os medicamentos prescritos
-- Para duration_days: se diz "por 10 dias", retorne 10
-- Se frequency for "se necessário" ou "SOS", mantenha como está
-- Seja PRECISO com CRM (deve incluir número E estado)
-- NUNCA invente dados - use null se não encontrar
+1. ❌ NUNCA retornar dados inventados ou assumidos
+2. ✅ Usar null para campos ausentes ou ilegíveis  
+3. ✅ Extrair TODOS os medicamentos prescritos (não apenas o primeiro)
+4. ✅ Manter formato EXATO dos textos (acentos, maiúsculas)
+5. ✅ Para CRM: OBRIGATÓRIO incluir número + UF
+6. ✅ Para datas: converter sempre para formato ISO (YYYY-MM-DD)
+7. ✅ Para duration_days: converter texto para número de dias
+8. ✅ Se encontrar abreviações: manter como está (ex: "comp." = comprimido)
 
-Retorne APENAS JSON puro, sem markdown:
+═══════════════════════════════════════════════════════════════
+📤 FORMATO DE RETORNO (JSON)
+═══════════════════════════════════════════════════════════════
+
+Retornar APENAS JSON puro (sem markdown, sem \`\`\`json):
+
 {
   "category": "receita",
-  "title": "Receita Médica - Dr. Nome",
+  "title": "Receita Médica - Dr. [Nome]",
   "issued_at": "YYYY-MM-DD",
   "expires_at": "YYYY-MM-DD",
-  "prescriber_name": "Nome completo",
+  "prescriber_name": "Nome completo do médico",
   "prescriber_registration": "CRM XXXXX/UF",
-  "patient_name": "Nome do paciente",
-  "provider": "Nome da clínica ou null",
+  "patient_name": "Nome completo do paciente",
+  "provider": "Nome da clínica/hospital ou null",
   "prescriptions": [
     {
       "name_commercial": "Nome do medicamento",
       "generic_name": "Princípio ativo ou null",
-      "dose_text": "Dosagem",
-      "form": "Forma farmacêutica",
-      "frequency": "Frequência de uso",
-      "duration_days": número ou null,
+      "dose_text": "Dosagem com unidade",
+      "form": "forma farmacêutica",
+      "frequency": "Posologia exata",
+      "duration_days": 10,
       "instructions": "Instruções específicas ou null"
     }
   ],
-  "instructions": "Observações gerais ou null"
+  "instructions": "Observações gerais do médico ou null"
 }`;
 
     // General document prompt (for non-prescription documents)
