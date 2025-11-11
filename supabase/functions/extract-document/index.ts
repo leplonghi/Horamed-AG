@@ -58,7 +58,9 @@ serve(async (req) => {
     // Check if PDF
     const isPDF = normalized.startsWith('data:application/pdf');
     if (isPDF) {
-      console.log("📄 PDF detected - will be processed directly by AI model");
+      console.warn("⚠️ PDF detected - PDF should be converted to image on frontend first");
+      console.log("Note: PDFs may not be processed correctly by the AI model");
+      console.log("Recommendation: Convert PDF to high-resolution image before sending");
     }
 
     // Initialize Supabase client
@@ -104,8 +106,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
     // Specialized prompt for prescription documents - Expert AI extraction
-    const prescriptionPrompt = `Você é um ESPECIALISTA MÉDICO em análise de DOCUMENTOS DE SAÚDE brasileiros (receitas, exames, vacinas, consultas).
-${isPDF ? '⚠️ IMPORTANTE: Este é um arquivo PDF. Leia TODO o conteúdo do documento com máxima atenção.' : ''}
+    const prescriptionPrompt = `Você é um ESPECIALISTA MÉDICO em análise de RECEITAS MÉDICAS brasileiras.
 Sua tarefa é extrair TODOS os dados da receita com PRECISÃO MÁXIMA, palavra por palavra.
 
 ═══════════════════════════════════════════════════════════════
@@ -267,7 +268,6 @@ Retornar APENAS JSON puro (sem markdown, sem \`\`\`json):
 
     // General document prompt (for non-prescription documents)
     const generalPrompt = `Você é um assistente médico especializado em extrair informações PRECISAS de documentos de saúde.
-${isPDF ? '⚠️ IMPORTANTE: Este é um arquivo PDF. Leia TODO o conteúdo do documento com máxima atenção, palavra por palavra.' : ''}
 
 Analise CUIDADOSAMENTE este documento e extraia as seguintes informações em formato JSON:
 
