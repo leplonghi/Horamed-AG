@@ -50,36 +50,82 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
     toast.loading("Analisando documento com IA...", { id: "doc-ocr" });
 
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke("extract-document", {
-        body: { image: preview },
-      });
+      let attempts = 0;
+      let success = false;
+      let lastError: any = null;
+      
+      while (attempts < 3 && !success) {
+        try {
+          console.log(`Tentativa ${attempts + 1} de extração...`);
+          
+          const { data, error: invokeError } = await supabase.functions.invoke("extract-document", {
+            body: { image: preview },
+          });
 
-      if (invokeError) throw invokeError;
+          if (invokeError) {
+            lastError = invokeError;
+            console.error(`Tentativa ${attempts + 1} falhou:`, invokeError);
+            
+            // Se for erro 400, não tentar novamente
+            if (invokeError.message?.includes('400') || invokeError.message?.includes('Invalid')) {
+              throw invokeError;
+            }
+            
+            if (attempts === 2) throw invokeError;
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            continue;
+          }
 
-      if (data?.title) {
-        toast.dismiss("doc-ocr");
-        toast.success("✓ Documento identificado com sucesso!", { duration: 3000 });
-        
-        onResult({
-          title: data.title,
-          issued_at: data.issued_at,
-          expires_at: data.expires_at,
-          provider: data.provider,
-          category: data.category || "outro",
-          extracted_values: data.extracted_values || [],
-        });
-        
-        clearImage();
-      } else {
-        toast.dismiss("doc-ocr");
-        setError("Não foi possível identificar informações no documento");
-        toast.error("Não foi possível identificar o documento");
+          if (data?.title) {
+            success = true;
+            toast.dismiss("doc-ocr");
+            toast.success("✓ Documento identificado com sucesso!", { duration: 3000 });
+            
+            onResult({
+              title: data.title,
+              issued_at: data.issued_at,
+              expires_at: data.expires_at,
+              provider: data.provider,
+              category: data.category || "outro",
+              extracted_values: data.extracted_values || [],
+            });
+            
+            clearImage();
+          } else {
+            toast.dismiss("doc-ocr");
+            setError("Não foi possível identificar informações no documento");
+            toast.error("Não foi possível identificar o documento");
+          }
+          break;
+        } catch (err: any) {
+          lastError = err;
+          if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
+            throw err;
+          }
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error processing image:", error);
       toast.dismiss("doc-ocr");
-      setError("Erro ao processar documento. Tente novamente.");
-      toast.error("Erro ao processar imagem");
+      
+      // Mensagens de erro mais específicas
+      let errorMessage = "Erro ao processar documento. ";
+      
+      if (error.message?.includes('Invalid') || error.message?.includes('formato')) {
+        errorMessage = "Formato de imagem inválido. Use PNG ou JPEG.";
+      } else if (error.message?.includes('large') || error.message?.includes('size')) {
+        errorMessage = "Imagem muito grande. Use uma imagem menor que 20MB.";
+      } else if (error.message?.includes('nítida') || error.message?.includes('processar')) {
+        errorMessage = "Imagem de baixa qualidade. Tire uma foto mais nítida e bem iluminada.";
+      } else {
+        errorMessage += "Tente novamente.";
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }

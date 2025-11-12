@@ -5,6 +5,59 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Validate and clean base64 image
+function validateAndCleanBase64(image: string): string {
+  try {
+    // Remove any whitespace
+    let cleaned = image.trim();
+    
+    // Check if it's already a data URL
+    if (cleaned.startsWith('data:')) {
+      // Validate it has the correct format
+      const match = cleaned.match(/^data:image\/(png|jpeg|jpg|webp);base64,(.+)$/);
+      if (!match) {
+        throw new Error("Invalid data URL format");
+      }
+      return cleaned;
+    }
+    
+    // If it's raw base64, add the data URL prefix
+    // Try to detect if it's valid base64
+    const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
+    if (!base64Regex.test(cleaned.substring(0, 100))) {
+      throw new Error("Invalid base64 format");
+    }
+    
+    // Default to JPEG if no prefix
+    return `data:image/jpeg;base64,${cleaned}`;
+  } catch (error) {
+    console.error("Base64 validation error:", error);
+    throw new Error("Invalid image format");
+  }
+}
+
+// Check image size (base64 length as proxy for size)
+function checkImageSize(base64String: string): void {
+  // Remove data URL prefix to get actual base64
+  const base64Data = base64String.split(',')[1] || base64String;
+  
+  // Rough estimate: base64 is ~1.33x the original size
+  const estimatedSizeInBytes = (base64Data.length * 3) / 4;
+  const estimatedSizeInMB = estimatedSizeInBytes / (1024 * 1024);
+  
+  console.log(`Estimated image size: ${estimatedSizeInMB.toFixed(2)} MB`);
+  
+  // Warn if image is large (over 10MB)
+  if (estimatedSizeInMB > 10) {
+    console.warn(`Large image detected: ${estimatedSizeInMB.toFixed(2)} MB - may cause processing issues`);
+  }
+  
+  // Reject if over 20MB
+  if (estimatedSizeInMB > 20) {
+    throw new Error(`Image too large: ${estimatedSizeInMB.toFixed(2)} MB. Maximum size is 20MB.`);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -16,6 +69,24 @@ serve(async (req) => {
     if (!image) {
       return new Response(
         JSON.stringify({ error: "Image is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Validating image format...");
+    
+    // Validate and clean the image
+    let processedImage: string;
+    try {
+      processedImage = validateAndCleanBase64(image);
+      checkImageSize(processedImage);
+    } catch (validationError: any) {
+      console.error("Image validation failed:", validationError.message);
+      return new Response(
+        JSON.stringify({ 
+          error: `Formato de imagem inválido: ${validationError.message}`,
+          hint: "Envie uma imagem PNG ou JPEG válida com menos de 20MB"
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -77,6 +148,8 @@ Exemplo de exame laboratorial:
   ]
 }`;
 
+    console.log("Sending request to AI API...");
+    
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -94,7 +167,7 @@ Exemplo de exame laboratorial:
                 type: "text", 
                 text: "Analise este documento de saúde COM ATENÇÃO e extraia TODAS as informações com PRECISÃO. Leia o documento TODO antes de responder:" 
               },
-              { type: "image_url", image_url: { url: image } },
+              { type: "image_url", image_url: { url: processedImage } },
             ],
           },
         ],
@@ -108,8 +181,22 @@ Exemplo de exame laboratorial:
       
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          JSON.stringify({ 
+            error: "Muitas requisições. Aguarde alguns segundos e tente novamente.",
+            retryable: true
+          }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (response.status === 400) {
+        // More user-friendly error for bad requests
+        return new Response(
+          JSON.stringify({ 
+            error: "Não foi possível processar esta imagem. Tente tirar uma foto mais nítida ou usar outra imagem.",
+            hint: "Certifique-se de que a imagem está bem iluminada e o documento está completamente visível."
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 

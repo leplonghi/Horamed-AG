@@ -55,18 +55,28 @@ export default function CofreUpload() {
             // Tentar com retry
             let attempts = 0;
             let success = false;
+            let lastError: any = null;
             
             while (attempts < 3 && !success) {
               try {
+                console.log(`Tentativa ${attempts + 1} de extração...`);
+                
                 const { data, error } = await supabase.functions.invoke('extract-document', {
                   body: { image: base64 }
                 });
 
                 if (error) {
+                  lastError = error;
                   console.error(`Tentativa ${attempts + 1} falhou:`, error);
+                  
+                  // Se for erro 400, não tentar novamente
+                  if (error.message?.includes('400') || error.message?.includes('Invalid')) {
+                    throw error;
+                  }
+                  
                   if (attempts === 2) throw error;
                   attempts++;
-                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  await new Promise(resolve => setTimeout(resolve, 1500));
                   continue;
                 }
 
@@ -82,10 +92,13 @@ export default function CofreUpload() {
                   toast.success("✓ Documento identificado! Revise os dados extraídos.", { duration: 4000 });
                 }
                 break;
-              } catch (err) {
-                if (attempts === 2) throw err;
+              } catch (err: any) {
+                lastError = err;
+                if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
+                  throw err;
+                }
                 attempts++;
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
               }
             }
           };
@@ -93,7 +106,21 @@ export default function CofreUpload() {
         } catch (error: any) {
           console.error('Erro ao extrair informações:', error);
           toast.dismiss("extract");
-          toast.error("Não conseguimos ler este documento. Preencha os dados manualmente.", { duration: 5000 });
+          
+          // Mensagens de erro mais específicas
+          let errorMessage = "Não conseguimos ler este documento. ";
+          
+          if (error.message?.includes('Invalid') || error.message?.includes('formato')) {
+            errorMessage = "Formato de imagem inválido. Use PNG ou JPEG.";
+          } else if (error.message?.includes('large') || error.message?.includes('size')) {
+            errorMessage = "Imagem muito grande. Envie uma imagem menor que 20MB.";
+          } else if (error.message?.includes('nítida') || error.message?.includes('processar')) {
+            errorMessage = "Imagem de baixa qualidade. Tire uma foto mais nítida.";
+          } else {
+            errorMessage += "Preencha os dados manualmente.";
+          }
+          
+          toast.error(errorMessage, { duration: 6000 });
         } finally {
           setIsExtracting(false);
         }
