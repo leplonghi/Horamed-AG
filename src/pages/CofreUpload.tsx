@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, ArrowLeft, Loader2 } from "lucide-react";
+import { Upload, FileText, ArrowLeft, Loader2, FileCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
+import { convertPDFToImages, isPDF } from "@/lib/pdfProcessor";
+import { Progress } from "@/components/ui/progress";
 
 export default function CofreUpload() {
   const navigate = useNavigate();
@@ -32,9 +34,48 @@ export default function CofreUpload() {
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   const { profiles, activeProfile } = useUserProfiles();
   const uploadDocumento = useUploadDocumento();
+
+  const extractFromImage = async (base64: string) => {
+    let attempts = 0;
+    let success = false;
+    
+    while (attempts < 3 && !success) {
+      try {
+        const { data, error } = await supabase.functions.invoke('extract-document', {
+          body: { image: base64 }
+        });
+
+        if (error) {
+          if (error.message?.includes('400') || error.message?.includes('Invalid')) {
+            throw error;
+          }
+          if (attempts === 2) throw error;
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          continue;
+        }
+
+        if (data) {
+          success = true;
+          return data;
+        }
+        break;
+      } catch (err: any) {
+        if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
+          throw err;
+        }
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+    return null;
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -48,40 +89,58 @@ export default function CofreUpload() {
         toast.loading("Analisando documento...", { id: "extract" });
         
         try {
-          const reader = new FileReader();
-          reader.onloadend = async () => {
-            const base64 = reader.result as string;
+          // Se for PDF, processar múltiplas páginas
+          if (isPDF(firstFile)) {
+            console.log('Processando PDF multipágina...');
             
-            // Tentar com retry
-            let attempts = 0;
-            let success = false;
-            let lastError: any = null;
+            // Converter PDF em imagens
+            const pages = await convertPDFToImages(firstFile, 5); // Máximo 5 páginas
+            setTotalPages(pages.length);
             
-            while (attempts < 3 && !success) {
+            toast.dismiss("extract");
+            toast.loading(`Analisando página 1 de ${pages.length}...`, { id: "extract" });
+            
+            // Processar cada página e agregar resultados
+            const allData: any[] = [];
+            
+            for (let i = 0; i < pages.length; i++) {
+              setCurrentPage(i + 1);
+              setExtractionProgress(((i + 1) / pages.length) * 100);
+              
+              toast.dismiss("extract");
+              toast.loading(`Analisando página ${i + 1} de ${pages.length}...`, { id: "extract" });
+              
+              const pageData = await extractFromImage(pages[i].imageData);
+              if (pageData) {
+                allData.push(pageData);
+              }
+            }
+            
+            // Usar dados da primeira página válida como padrão
+            const firstValidData = allData.find(d => d.title);
+            if (firstValidData) {
+              setTitulo(firstValidData.title || '');
+              if (firstValidData.issued_at) setDataEmissao(firstValidData.issued_at);
+              if (firstValidData.expires_at) setDataValidade(firstValidData.expires_at);
+              if (firstValidData.provider) setPrestador(firstValidData.provider);
+              if (firstValidData.category) setCategoria(firstValidData.category);
+              
+              toast.dismiss("extract");
+              toast.success(`✓ PDF processado! ${allData.length} página(s) analisada(s). Revise os dados.`, { duration: 5000 });
+            } else {
+              toast.dismiss("extract");
+              toast.warning("Não foi possível extrair informações do PDF. Preencha manualmente.", { duration: 5000 });
+            }
+          } else {
+            // Processar imagem única
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+              const base64 = reader.result as string;
+              
               try {
-                console.log(`Tentativa ${attempts + 1} de extração...`);
+                const data = await extractFromImage(base64);
                 
-                const { data, error } = await supabase.functions.invoke('extract-document', {
-                  body: { image: base64 }
-                });
-
-                if (error) {
-                  lastError = error;
-                  console.error(`Tentativa ${attempts + 1} falhou:`, error);
-                  
-                  // Se for erro 400, não tentar novamente
-                  if (error.message?.includes('400') || error.message?.includes('Invalid')) {
-                    throw error;
-                  }
-                  
-                  if (attempts === 2) throw error;
-                  attempts++;
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  continue;
-                }
-
                 if (data) {
-                  success = true;
                   setTitulo(data.title || '');
                   if (data.issued_at) setDataEmissao(data.issued_at);
                   if (data.expires_at) setDataValidade(data.expires_at);
@@ -91,18 +150,12 @@ export default function CofreUpload() {
                   toast.dismiss("extract");
                   toast.success("✓ Documento identificado! Revise os dados extraídos.", { duration: 4000 });
                 }
-                break;
               } catch (err: any) {
-                lastError = err;
-                if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
-                  throw err;
-                }
-                attempts++;
-                await new Promise(resolve => setTimeout(resolve, 1500));
+                throw err;
               }
-            }
-          };
-          reader.readAsDataURL(firstFile);
+            };
+            reader.readAsDataURL(firstFile);
+          }
         } catch (error: any) {
           console.error('Erro ao extrair informações:', error);
           toast.dismiss("extract");
@@ -111,11 +164,13 @@ export default function CofreUpload() {
           let errorMessage = "Não conseguimos ler este documento. ";
           
           if (error.message?.includes('Invalid') || error.message?.includes('formato')) {
-            errorMessage = "Formato de imagem inválido. Use PNG ou JPEG.";
+            errorMessage = "Formato de arquivo inválido. Use PDF, PNG ou JPEG.";
           } else if (error.message?.includes('large') || error.message?.includes('size')) {
-            errorMessage = "Imagem muito grande. Envie uma imagem menor que 20MB.";
+            errorMessage = "Arquivo muito grande. Envie um arquivo menor que 20MB.";
           } else if (error.message?.includes('nítida') || error.message?.includes('processar')) {
-            errorMessage = "Imagem de baixa qualidade. Tire uma foto mais nítida.";
+            errorMessage = "Qualidade baixa. Use imagens mais nítidas ou PDFs com texto selecionável.";
+          } else if (error.message?.includes('PDF')) {
+            errorMessage = "Erro ao processar PDF. " + error.message;
           } else {
             errorMessage += "Preencha os dados manualmente.";
           }
@@ -123,6 +178,9 @@ export default function CofreUpload() {
           toast.error(errorMessage, { duration: 6000 });
         } finally {
           setIsExtracting(false);
+          setExtractionProgress(0);
+          setCurrentPage(0);
+          setTotalPages(0);
         }
       }
     }
@@ -188,10 +246,28 @@ export default function CofreUpload() {
         </p>
 
         {isExtracting && (
-          <div className="mb-4 p-4 bg-primary/10 rounded-lg flex items-center gap-3">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm font-medium">Extraindo informações do documento automaticamente...</span>
-          </div>
+          <Card className="mb-4 bg-primary/10 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Loader2 className="w-5 h-5 animate-spin text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex-1 space-y-2">
+                  <p className="text-sm font-medium">
+                    {totalPages > 0 
+                      ? `Analisando página ${currentPage} de ${totalPages}...` 
+                      : "Extraindo informações do documento automaticamente..."}
+                  </p>
+                  {totalPages > 0 && (
+                    <>
+                      <Progress value={extractionProgress} className="h-2" />
+                      <p className="text-xs text-muted-foreground">
+                        PDFs com múltiplas páginas podem levar alguns segundos
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         <div className="space-y-6">
@@ -204,10 +280,10 @@ export default function CofreUpload() {
                     Clique ou arraste arquivos aqui
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">
-                    PDF, JPG ou PNG até 10MB
+                    PDF, JPG ou PNG até 20MB
                   </p>
                   <p className="text-xs text-primary mt-2 font-medium">
-                    ✨ Imagens serão processadas automaticamente
+                    ✨ PDFs e imagens processados automaticamente (até 5 páginas)
                   </p>
                 </div>
                 <input

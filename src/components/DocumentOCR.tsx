@@ -1,10 +1,12 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, X, Sparkles, AlertCircle } from "lucide-react";
+import { Camera, Upload, X, Sparkles, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { convertPDFToImages, isPDF } from "@/lib/pdfProcessor";
+import { Progress } from "@/components/ui/progress";
 
 interface OCRResult {
   title: string;
@@ -28,98 +30,153 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
   const [preview, setPreview] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [extractionProgress, setExtractionProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setCurrentFile(file);
+      
+      // Se for PDF, mostrar ícone de PDF
+      if (isPDF(file)) {
+        setPreview("PDF_FILE");
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 
+  const extractFromImage = async (base64: string) => {
+    let attempts = 0;
+    
+    while (attempts < 3) {
+      try {
+        const { data, error: invokeError } = await supabase.functions.invoke("extract-document", {
+          body: { image: base64 },
+        });
+
+        if (invokeError) {
+          if (invokeError.message?.includes('400') || invokeError.message?.includes('Invalid')) {
+            throw invokeError;
+          }
+          if (attempts === 2) throw invokeError;
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          continue;
+        }
+
+        if (data?.title) {
+          return data;
+        }
+        break;
+      } catch (err: any) {
+        if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
+          throw err;
+        }
+        attempts++;
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    }
+    return null;
+  };
+
   const processImage = async () => {
-    if (!preview) return;
+    if (!preview || !currentFile) return;
 
     setProcessing(true);
     setError(null);
     toast.loading("Analisando documento com IA...", { id: "doc-ocr" });
 
     try {
-      let attempts = 0;
-      let success = false;
-      let lastError: any = null;
-      
-      while (attempts < 3 && !success) {
-        try {
-          console.log(`Tentativa ${attempts + 1} de extração...`);
+      // Se for PDF, processar múltiplas páginas
+      if (isPDF(currentFile)) {
+        console.log('Processando PDF multipágina...');
+        
+        const pages = await convertPDFToImages(currentFile, 5);
+        setTotalPages(pages.length);
+        
+        const allData: any[] = [];
+        
+        for (let i = 0; i < pages.length; i++) {
+          setCurrentPage(i + 1);
+          setExtractionProgress(((i + 1) / pages.length) * 100);
           
-          const { data, error: invokeError } = await supabase.functions.invoke("extract-document", {
-            body: { image: preview },
+          toast.dismiss("doc-ocr");
+          toast.loading(`Analisando página ${i + 1} de ${pages.length}...`, { id: "doc-ocr" });
+          
+          const pageData = await extractFromImage(pages[i].imageData);
+          if (pageData) {
+            allData.push(pageData);
+          }
+        }
+        
+        const firstValidData = allData.find(d => d.title);
+        if (firstValidData) {
+          toast.dismiss("doc-ocr");
+          toast.success(`✓ PDF processado! ${allData.length} página(s) analisada(s).`, { duration: 4000 });
+          
+          onResult({
+            title: firstValidData.title,
+            issued_at: firstValidData.issued_at,
+            expires_at: firstValidData.expires_at,
+            provider: firstValidData.provider,
+            category: firstValidData.category || "outro",
+            extracted_values: firstValidData.extracted_values || [],
           });
-
-          if (invokeError) {
-            lastError = invokeError;
-            console.error(`Tentativa ${attempts + 1} falhou:`, invokeError);
-            
-            // Se for erro 400, não tentar novamente
-            if (invokeError.message?.includes('400') || invokeError.message?.includes('Invalid')) {
-              throw invokeError;
-            }
-            
-            if (attempts === 2) throw invokeError;
-            attempts++;
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            continue;
-          }
-
-          if (data?.title) {
-            success = true;
-            toast.dismiss("doc-ocr");
-            toast.success("✓ Documento identificado com sucesso!", { duration: 3000 });
-            
-            onResult({
-              title: data.title,
-              issued_at: data.issued_at,
-              expires_at: data.expires_at,
-              provider: data.provider,
-              category: data.category || "outro",
-              extracted_values: data.extracted_values || [],
-            });
-            
-            clearImage();
-          } else {
-            toast.dismiss("doc-ocr");
-            setError("Não foi possível identificar informações no documento");
-            toast.error("Não foi possível identificar o documento");
-          }
-          break;
-        } catch (err: any) {
-          lastError = err;
-          if (attempts === 2 || err.message?.includes('400') || err.message?.includes('Invalid')) {
-            throw err;
-          }
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          clearImage();
+        } else {
+          toast.dismiss("doc-ocr");
+          setError("Não foi possível extrair informações do PDF");
+          toast.error("Não foi possível processar o PDF");
+        }
+      } else {
+        // Processar imagem única
+        const data = await extractFromImage(preview);
+        
+        if (data?.title) {
+          toast.dismiss("doc-ocr");
+          toast.success("✓ Documento identificado com sucesso!", { duration: 3000 });
+          
+          onResult({
+            title: data.title,
+            issued_at: data.issued_at,
+            expires_at: data.expires_at,
+            provider: data.provider,
+            category: data.category || "outro",
+            extracted_values: data.extracted_values || [],
+          });
+          
+          clearImage();
+        } else {
+          toast.dismiss("doc-ocr");
+          setError("Não foi possível identificar informações no documento");
+          toast.error("Não foi possível identificar o documento");
         }
       }
     } catch (error: any) {
-      console.error("Error processing image:", error);
+      console.error("Error processing document:", error);
       toast.dismiss("doc-ocr");
       
-      // Mensagens de erro mais específicas
       let errorMessage = "Erro ao processar documento. ";
       
       if (error.message?.includes('Invalid') || error.message?.includes('formato')) {
-        errorMessage = "Formato de imagem inválido. Use PNG ou JPEG.";
+        errorMessage = "Formato inválido. Use PDF, PNG ou JPEG.";
       } else if (error.message?.includes('large') || error.message?.includes('size')) {
-        errorMessage = "Imagem muito grande. Use uma imagem menor que 20MB.";
+        errorMessage = "Arquivo muito grande. Use arquivos menores que 20MB.";
       } else if (error.message?.includes('nítida') || error.message?.includes('processar')) {
-        errorMessage = "Imagem de baixa qualidade. Tire uma foto mais nítida e bem iluminada.";
+        errorMessage = "Qualidade baixa. Use imagens nítidas ou PDFs com texto selecionável.";
+      } else if (error.message?.includes('PDF')) {
+        errorMessage = "Erro ao processar PDF. " + error.message;
       } else {
         errorMessage += "Tente novamente.";
       }
@@ -128,11 +185,15 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
       toast.error(errorMessage);
     } finally {
       setProcessing(false);
+      setExtractionProgress(0);
+      setCurrentPage(0);
+      setTotalPages(0);
     }
   };
 
   const clearImage = () => {
     setPreview(null);
+    setCurrentFile(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (cameraInputRef.current) cameraInputRef.current.value = "";
@@ -146,7 +207,7 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
           📄 Capturar documento com IA
         </Label>
         <p className="text-sm text-muted-foreground">
-          Tire uma foto ou envie uma imagem do documento para preencher automaticamente os dados
+          Tire uma foto, envie uma imagem ou PDF para preencher automaticamente os dados
         </p>
       </div>
 
@@ -184,7 +245,7 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -192,11 +253,24 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
       ) : (
         <div className="space-y-3">
           <div className="relative rounded-lg overflow-hidden border-2 border-primary/30 shadow-lg">
-            <img
-              src={preview}
-              alt="Preview do documento"
-              className="w-full h-auto max-h-64 object-contain bg-muted"
-            />
+            {preview === "PDF_FILE" ? (
+              <div className="w-full h-64 bg-muted flex flex-col items-center justify-center gap-3">
+                <FileText className="w-16 h-16 text-primary" />
+                <div className="text-center">
+                  <p className="font-medium">PDF Selecionado</p>
+                  <p className="text-sm text-muted-foreground">{currentFile?.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {(currentFile?.size ?? 0 / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <img
+                src={preview}
+                alt="Preview do documento"
+                className="w-full h-auto max-h-64 object-contain bg-muted"
+              />
+            )}
             <Button
               type="button"
               variant="ghost"
@@ -211,14 +285,23 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
 
           {processing && (
             <Card className="p-6 bg-primary/5 border-primary/20">
-              <div className="flex items-center gap-4">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
-                <div className="space-y-1">
-                  <p className="font-semibold text-foreground">Analisando documento...</p>
-                  <p className="text-sm text-muted-foreground">
-                    Extraindo informações com Inteligência Artificial
-                  </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <p className="font-semibold text-foreground">
+                      {totalPages > 0 
+                        ? `Analisando página ${currentPage} de ${totalPages}` 
+                        : "Analisando documento..."}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Extraindo informações com Inteligência Artificial
+                    </p>
+                  </div>
                 </div>
+                {totalPages > 0 && (
+                  <Progress value={extractionProgress} className="h-2" />
+                )}
               </div>
             </Card>
           )}
