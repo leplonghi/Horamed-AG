@@ -8,8 +8,9 @@ const corsHeaders = {
 
 interface DoseActionRequest {
   doseId: string;
-  action: 'taken' | 'snooze';
+  action: 'taken' | 'snooze' | 'skip';
   userId?: string;
+  timestamp?: string;
 }
 
 serve(async (req) => {
@@ -24,9 +25,9 @@ serve(async (req) => {
     );
 
     const body: DoseActionRequest = await req.json();
-    const { doseId, action, userId } = body;
+    const { doseId, action, userId, timestamp } = body;
 
-    console.log('Processing dose action:', { doseId, action, userId });
+    console.log('Processing dose action:', { doseId, action, userId, timestamp });
 
     // Get dose details
     const { data: dose, error: doseError } = await supabaseAdmin
@@ -57,11 +58,16 @@ serve(async (req) => {
 
     if (action === 'taken') {
       // Mark dose as taken
+      const takenAt = timestamp ? new Date(timestamp) : new Date();
+      const dueAt = new Date(dose.due_at);
+      const delayMinutes = Math.round((takenAt.getTime() - dueAt.getTime()) / 60000);
+      
       const { error: updateError } = await supabaseAdmin
         .from('dose_instances')
         .update({
           status: 'taken',
-          taken_at: new Date().toISOString(),
+          taken_at: takenAt.toISOString(),
+          delay_minutes: delayMinutes,
         })
         .eq('id', doseId);
 
@@ -105,6 +111,35 @@ serve(async (req) => {
           success: true, 
           message: `✅ ${itemData.name} tomado!`,
           streak: currentStreak,
+          medicationName: itemData.name
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+      
+    } else if (action === 'skip') {
+      // Skip dose
+      const { error: updateError } = await supabaseAdmin
+        .from('dose_instances')
+        .update({
+          status: 'skipped',
+          skip_reason: 'user_skip',
+        })
+        .eq('id', doseId);
+
+      if (updateError) {
+        console.error('Error skipping dose:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to skip dose' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('Dose skipped');
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: `→ ${itemData.name} pulado`,
           medicationName: itemData.name
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

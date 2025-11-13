@@ -219,7 +219,7 @@ Exemplo de receita:
     console.log("Raw content:", content);
     
     // Parse JSON from response, handling markdown code blocks
-    let extractedInfo;
+    let extractedInfo: any;
     try {
       // Remove markdown code blocks if present
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
