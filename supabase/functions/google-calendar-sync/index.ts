@@ -30,7 +30,9 @@ serve(async (req) => {
       });
     }
 
-    const { action, accessToken, refreshToken } = await req.json();
+    // Read body once at the beginning
+    const body = await req.json();
+    const { action, accessToken, refreshToken, startDate, endDate } = body;
 
     // Store tokens if connecting
     if (action === 'connect' && accessToken) {
@@ -119,7 +121,12 @@ serve(async (req) => {
 
     // Fetch calendar events for display
     if (action === 'fetch') {
-      const { startDate, endDate } = await req.json();
+      if (!startDate || !endDate) {
+        return new Response(
+          JSON.stringify({ error: 'startDate and endDate are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
       const events: any[] = [];
 
