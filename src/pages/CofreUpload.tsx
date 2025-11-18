@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, ArrowLeft, Loader2, Camera } from "lucide-react";
+import { Upload, FileText, ArrowLeft, Loader2, Camera, Edit3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -365,6 +365,33 @@ export default function CofreUpload() {
                       <p className="text-lg font-semibold">Tirar Foto</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         Fotografar documento direto
+                      </p>
+                    </div>
+                  </div>
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  </div>
+                </div>
+
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full h-auto py-8"
+                  onClick={() => navigate('/cofre/criar-manual')}
+                  disabled={isExtracting}
+                >
+                  <div className="flex flex-col items-center gap-3">
+                    <Edit3 className="w-12 h-12 text-primary" />
+                    <div>
+                      <p className="text-lg font-semibold">Adicionar Manualmente</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Preencher informações sem arquivo
                       </p>
                     </div>
                   </div>
