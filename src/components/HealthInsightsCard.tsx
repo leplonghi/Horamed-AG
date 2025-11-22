@@ -45,7 +45,7 @@ export default function HealthInsightsCard() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Veja como sua adesão aos medicamentos impacta sua saúde ao longo do tempo
+          Veja como seu compromisso com os medicamentos impacta sua saúde ao longo do tempo
         </p>
       </CardContent>
     </Card>

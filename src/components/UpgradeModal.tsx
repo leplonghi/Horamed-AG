@@ -62,7 +62,7 @@ export default function UpgradeModal({ open, onOpenChange, feature }: UpgradeMod
               <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Relatórios mensais</p>
-                <p className="text-sm text-muted-foreground">PDF com análise de adesão e alertas</p>
+                <p className="text-sm text-muted-foreground">PDF com análise de progresso e alertas</p>
               </div>
             </div>
             <div className="flex items-start gap-3">

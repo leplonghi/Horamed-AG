@@ -12,13 +12,13 @@ interface MonthlyReport {
   totalDoses: number;
   takenDoses: number;
   skippedDoses: number;
-  adherenceRate: number;
-  previousAdherence: number;
+  progressRate: number;
+  previousProgress: number;
   improvementPercent: number;
   avgDelayMinutes: number;
   medicationBreakdown: Array<{
     name: string;
-    adherence: number;
+    progress: number;
     total: number;
     taken: number;
   }>;
@@ -108,7 +108,7 @@ export default function MonthlyReportCard() {
         <Card className="p-4 bg-primary/10 border-primary/20">
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">Progresso Geral</p>
-            <p className="text-3xl font-bold text-primary">{report.adherenceRate}%</p>
+            <p className="text-3xl font-bold text-primary">{report.progressRate}%</p>
             <div className="flex items-center gap-1 text-sm">
               {report.improvementPercent >= 0 ? (
                 <>
@@ -149,10 +149,10 @@ export default function MonthlyReportCard() {
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">{med.name}</span>
               <span className="text-muted-foreground">
-                {med.adherence}% ({med.taken}/{med.total})
+                {med.progress}% ({med.taken}/{med.total})
               </span>
             </div>
-            <Progress value={med.adherence} className="h-2" />
+            <Progress value={med.progress} className="h-2" />
           </div>
         ))}
       </div>
@@ -165,7 +165,7 @@ export default function MonthlyReportCard() {
             Insights do Mês
           </p>
           <ul className="text-sm text-muted-foreground space-y-1 pl-6 list-disc">
-            {report.adherenceRate >= 90 && (
+            {report.progressRate >= 90 && (
               <li>Excelente! Você manteve um progresso superior a 90%!</li>
             )}
             {report.improvementPercent > 5 && (

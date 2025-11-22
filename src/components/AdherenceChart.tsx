@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-interface AdherenceChartProps {
+interface ProgressChartProps {
   doses?: Array<{
     id: string;
     item_id: string;
@@ -20,7 +20,7 @@ interface AdherenceChartProps {
   period?: "today" | "week" | "month";
 }
 
-export default function AdherenceChart({ doses, weeklyData, period = "week" }: AdherenceChartProps) {
+export default function ProgressChart({ doses, weeklyData, period = "week" }: ProgressChartProps) {
   // Generate chart data based on period or use provided weeklyData
   const generateChartData = () => {
     // If weeklyData is provided, use it directly (legacy support)
@@ -97,7 +97,7 @@ export default function AdherenceChart({ doses, weeklyData, period = "week" }: A
     Tomadas: day.taken,
     "Não Tomadas": day.total - day.taken,
     total: day.total,
-    adherence: day.total > 0 ? Math.round((day.taken / day.total) * 100) : 0,
+    progress: day.total > 0 ? Math.round((day.taken / day.total) * 100) : 0,
   }));
 
   if (data.length === 0) {
@@ -143,7 +143,7 @@ export default function AdherenceChart({ doses, weeklyData, period = "week" }: A
                 borderRadius: '8px',
               }}
               formatter={(value: any, name: string, props: any) => {
-                const percentage = props.payload.adherence;
+                const percentage = props.payload.progress;
                 return [
                   `${value} doses ${name === "Tomadas" ? `(${percentage}%)` : ''}`,
                   name

@@ -405,7 +405,7 @@ export const usePushNotifications = () => {
         notifications: [{
           id: 999999,
           title: "📊 Resumo do Dia",
-          body: "Veja seu resumo de adesão e doses pendentes",
+          body: "Veja seu resumo de progresso e doses pendentes",
           schedule: { at: summaryTime, repeats: true, every: "day" },
           extra: { type: "daily_summary" },
         }]

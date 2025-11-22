@@ -172,7 +172,7 @@ export default function MedicalReports() {
           await pdfModule.generateMedicationReport(exportData, logoImage);
           break;
         case 'adherence':
-          await pdfModule.generateAdherenceReport(exportData, logoImage);
+          await pdfModule.generateProgressReport(exportData, logoImage);
           break;
         case 'health':
           await pdfModule.generateHealthReport(exportData, logoImage);

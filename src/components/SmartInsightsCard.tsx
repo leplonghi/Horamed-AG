@@ -81,8 +81,8 @@ export default function SmartInsightsCard() {
           newInsights.push({
             id: "weekend-drop",
             type: "warning",
-            title: "Adesão Menor nos Fins de Semana",
-            description: `Sua adesão cai ${Math.round(weekdayAdherence - weekendAdherence)}% nos fins de semana. Ative lembretes especiais para sábados e domingos!`,
+            title: "Compromisso Menor nos Fins de Semana",
+            description: `Seu compromisso cai ${Math.round(weekdayAdherence - weekendAdherence)}% nos fins de semana. Ative lembretes especiais para sábados e domingos!`,
             priority: "high",
           });
         }
@@ -149,10 +149,10 @@ export default function SmartInsightsCard() {
 
       if (recentAdherence >= 95) {
         newInsights.push({
-          id: "excellent-adherence",
+          id: "excellent-progress",
           type: "achievement",
-          title: "Adesão Excepcional!",
-          description: `Incrível! Você manteve ${Math.round(recentAdherence)}% de adesão esta semana. Continue assim! 🎉`,
+          title: "Progresso Excepcional!",
+          description: `Incrível! Você manteve ${Math.round(recentAdherence)}% de compromisso esta semana. Continue assim! 🎉`,
           priority: "low",
         });
       }
