@@ -59,7 +59,7 @@ export default function ConsultationCardGenerator() {
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
-          Gere um QR code temporário com seus medicamentos e adesão para mostrar ao médico.
+          Gere um QR code temporário com seus medicamentos e progresso para mostrar ao médico.
         </p>
 
         <div className="space-y-4">

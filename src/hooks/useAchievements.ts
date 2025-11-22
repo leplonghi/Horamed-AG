@@ -119,9 +119,9 @@ export function useAchievements() {
           maxProgress: 100,
         },
         {
-          id: "perfect_adherence",
+          id: "perfect_progress",
           title: "Perfeição Total",
-          description: "Atinja 95% de adesão",
+          description: "Atinja 95% de progresso",
           icon: "💎",
           level: "diamond",
           unlocked: adherenceRate >= 95,

@@ -18,7 +18,7 @@ export default function HealthAssistantChat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Olá! 👋 Sou seu assistente de saúde. Posso te ajudar com dúvidas sobre seus medicamentos, interações medicamentosas e dicas para melhorar sua adesão ao tratamento. Como posso ajudar?",
+      content: "Olá! 👋 Sou seu assistente de saúde. Posso te ajudar com dúvidas sobre seus medicamentos, interações medicamentosas e dicas para melhorar seu compromisso com o tratamento. Como posso ajudar?",
     },
   ]);
   const [input, setInput] = useState("");

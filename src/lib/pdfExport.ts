@@ -472,11 +472,11 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
   doc.save(fileName);
 }
 
-export async function generateAdherenceReport(data: ExportData, logoImage?: string) {
+export async function generateProgressReport(data: ExportData, logoImage?: string) {
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak } = await import('./pdfReportTypes');
   
-  let yPos = addHeader(doc, 'Relatório de Aderência', `Análise dos últimos ${data.period || 30} dias`, 20, logoImage);
+  let yPos = addHeader(doc, 'Relatório de Progresso', `Análise dos últimos ${data.period || 30} dias`, 20, logoImage);
 
   // Summary Statistics
   yPos = addSectionHeader(doc, 'Estatísticas Gerais', yPos);
@@ -485,7 +485,7 @@ export async function generateAdherenceReport(data: ExportData, logoImage?: stri
     const taken = data.doseInstances.filter(d => d.status === 'taken').length;
     const missed = data.doseInstances.filter(d => d.status === 'missed' || d.status === 'skipped').length;
     const total = data.doseInstances.length;
-    const adherenceRate = total > 0 ? ((taken / total) * 100).toFixed(1) : '0';
+    const progressRate = total > 0 ? ((taken / total) * 100).toFixed(1) : '0';
 
     doc.setFontSize(12);
     doc.setTextColor(60, 60, 60);
@@ -493,7 +493,7 @@ export async function generateAdherenceReport(data: ExportData, logoImage?: stri
     yPos += 8;
     
     doc.setTextColor(...COLORS.success);
-    doc.text(`Doses tomadas: ${taken} (${adherenceRate}%)`, 20, yPos);
+    doc.text(`Doses tomadas: ${taken} (${progressRate}%)`, 20, yPos);
     yPos += 8;
     
     doc.setTextColor(...COLORS.warning);

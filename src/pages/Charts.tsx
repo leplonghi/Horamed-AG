@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import HealthDataChart from "@/components/HealthDataChart";
-import AdherenceChart from "@/components/AdherenceChart";
+import ProgressChart from "@/components/AdherenceChart";
 import StockChart from "@/components/StockChart";
 import InfoDialog from "@/components/InfoDialog";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -249,7 +249,7 @@ export default function Charts() {
             </div>
             <h2 className="text-2xl font-bold">Gráficos Avançados</h2>
             <p className="text-muted-foreground max-w-md mx-auto">
-              Os gráficos avançados de adesão e estatísticas detalhadas estão disponíveis apenas no Plano Premium.
+              Os gráficos avançados de progresso e estatísticas detalhadas estão disponíveis apenas no Plano Premium.
             </p>
             <Button onClick={() => navigate('/planos')} size="lg">
               Ver Planos Premium
@@ -277,7 +277,7 @@ export default function Charts() {
                 Análise e Estatísticas
               </h2>
               <p className="text-muted-foreground">
-                Acompanhe sua adesão ao tratamento e gerencie seu estoque
+                Acompanhe seu compromisso com o tratamento e gerencie seu estoque
               </p>
             </div>
             
@@ -390,7 +390,7 @@ export default function Charts() {
 
         {/* Adherence Chart */}
         {weeklyData.length > 0 && (
-          <AdherenceChart 
+          <ProgressChart 
             weeklyData={weeklyData} 
             period={period}
           />
