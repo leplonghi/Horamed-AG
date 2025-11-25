@@ -5,7 +5,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ChevronLeft, 
   ChevronRight, 
-  Calendar as CalendarIcon 
+  Calendar as CalendarIcon,
+  Clock,
+  Pill
 } from "lucide-react";
 import { 
   format, 
@@ -20,25 +22,43 @@ import {
   eachDayOfInterval,
   subWeeks,
   subMonths,
-  addMonths
+  addMonths,
+  startOfDay,
+  endOfDay
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ImprovedCalendarProps {
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   eventCounts?: Record<string, number>;
+  profileId?: string;
 }
 
 type ViewMode = "day" | "week" | "month";
 
+interface DosePreview {
+  time: string;
+  medication: string;
+  status: string;
+}
+
 export default function ImprovedCalendar({ 
   selectedDate, 
   onDateSelect,
-  eventCounts = {}
+  eventCounts = {},
+  profileId
 }: ImprovedCalendarProps) {
   const [viewMode, setViewMode] = useState<ViewMode>("week");
   const [weekStart, setWeekStart] = useState(startOfWeek(selectedDate, { weekStartsOn: 0 }));
@@ -92,6 +112,122 @@ export default function ImprovedCalendar({
     onDateSelect(date);
     setWeekStart(startOfWeek(date, { weekStartsOn: 0 }));
     setMonthDate(date);
+  };
+
+  // Hook to fetch dose previews for a specific date
+  const useDosePreview = (date: Date) => {
+    return useQuery({
+      queryKey: ["dose-preview", format(date, "yyyy-MM-dd"), profileId],
+      queryFn: async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const dayStart = startOfDay(date);
+        const dayEnd = endOfDay(date);
+
+        // Get items for the profile
+        let itemsQuery = supabase
+          .from("items")
+          .select("id");
+
+        if (profileId) {
+          itemsQuery = itemsQuery.eq("profile_id", profileId);
+        }
+
+        const { data: profileItems } = await itemsQuery;
+        const itemIds = profileItems?.map(item => item.id) || [];
+
+        if (itemIds.length === 0) return [];
+
+        // Get doses for the day
+        const { data: doses } = await supabase
+          .from("dose_instances")
+          .select(`
+            id,
+            due_at,
+            status,
+            items (name)
+          `)
+          .in("item_id", itemIds)
+          .gte("due_at", dayStart.toISOString())
+          .lte("due_at", dayEnd.toISOString())
+          .order("due_at", { ascending: true })
+          .limit(5);
+
+        if (!doses) return [];
+
+        return doses.map((dose: any) => ({
+          time: format(new Date(dose.due_at), "HH:mm"),
+          medication: dose.items.name,
+          status: dose.status
+        })) as DosePreview[];
+      },
+      enabled: eventCounts[format(date, "yyyy-MM-dd")] > 0,
+      staleTime: 30000, // Cache for 30 seconds
+    });
+  };
+
+  // Component for dose preview
+  const DosePreviewCard = ({ date }: { date: Date }) => {
+    const { data: doses, isLoading } = useDosePreview(date);
+    const count = getEventCount(date);
+
+    if (count === 0) return null;
+
+    return (
+      <HoverCard openDelay={200}>
+        <HoverCardTrigger asChild>
+          <div className="absolute inset-0 cursor-pointer" />
+        </HoverCardTrigger>
+        <HoverCardContent className="w-64 p-3" side="top" align="center">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold">
+                {format(date, "d 'de' MMMM", { locale: ptBR })}
+              </h4>
+              <span className="text-xs text-muted-foreground">
+                {count} {count === 1 ? "evento" : "eventos"}
+              </span>
+            </div>
+            
+            {isLoading ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : doses && doses.length > 0 ? (
+              <div className="space-y-1.5">
+                {doses.map((dose, idx) => (
+                  <div 
+                    key={idx}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-md text-xs",
+                      dose.status === "taken" && "bg-green-500/10",
+                      dose.status === "scheduled" && "bg-blue-500/10",
+                      dose.status === "missed" && "bg-red-500/10"
+                    )}
+                  >
+                    <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span className="font-medium">{dose.time}</span>
+                    <Pill className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{dose.medication}</span>
+                  </div>
+                ))}
+                {count > 5 && (
+                  <p className="text-xs text-muted-foreground text-center pt-1">
+                    +{count - 5} mais
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Clique para ver detalhes
+              </p>
+            )}
+          </div>
+        </HoverCardContent>
+      </HoverCard>
+    );
   };
 
   const renderHeader = () => {
@@ -207,36 +343,38 @@ export default function ImprovedCalendar({
           const isSelected = isSameDay(day, selectedDate);
 
           return (
-            <button
-              key={day.toISOString()}
-              onClick={() => handleDateClick(day)}
-              className={cn(
-                "flex flex-col items-center justify-center p-3 rounded-xl transition-all",
-                "hover:bg-accent hover:scale-105",
-                isSelected && "bg-primary text-primary-foreground shadow-md",
-                isDayToday && !isSelected && "ring-2 ring-primary"
-              )}
-            >
-              <span className="text-xs font-medium uppercase opacity-70 mb-1">
-                {format(day, "EEEEEE", { locale: ptBR })}
-              </span>
-              <span className={cn(
-                "text-2xl font-bold",
-                isDayToday && !isSelected && "text-primary"
-              )}>
-                {format(day, "d")}
-              </span>
-              {count > 0 && (
-                <div className={cn(
-                  "mt-2 px-2 py-0.5 rounded-full text-xs font-medium",
-                  isSelected 
-                    ? "bg-primary-foreground/20 text-primary-foreground" 
-                    : "bg-primary/10 text-primary"
+            <div key={day.toISOString()} className="relative">
+              <button
+                onClick={() => handleDateClick(day)}
+                className={cn(
+                  "w-full flex flex-col items-center justify-center p-3 rounded-xl transition-all",
+                  "hover:bg-accent hover:scale-105",
+                  isSelected && "bg-primary text-primary-foreground shadow-md",
+                  isDayToday && !isSelected && "ring-2 ring-primary"
+                )}
+              >
+                <span className="text-xs font-medium uppercase opacity-70 mb-1">
+                  {format(day, "EEEEEE", { locale: ptBR })}
+                </span>
+                <span className={cn(
+                  "text-2xl font-bold",
+                  isDayToday && !isSelected && "text-primary"
                 )}>
-                  {count}
-                </div>
-              )}
-            </button>
+                  {format(day, "d")}
+                </span>
+                {count > 0 && (
+                  <div className={cn(
+                    "mt-2 px-2 py-0.5 rounded-full text-xs font-medium",
+                    isSelected 
+                      ? "bg-primary-foreground/20 text-primary-foreground" 
+                      : "bg-primary/10 text-primary"
+                  )}>
+                    {count}
+                  </div>
+                )}
+              </button>
+              <DosePreviewCard date={day} />
+            </div>
           );
         })}
       </div>
@@ -264,32 +402,34 @@ export default function ImprovedCalendar({
             const isSelected = isSameDay(day, selectedDate);
 
             return (
-              <button
-                key={day.toISOString()}
-                onClick={() => handleDateClick(day)}
-                className={cn(
-                  "relative aspect-square p-2 rounded-lg transition-all",
-                  "hover:bg-accent hover:scale-105",
-                  isSelected && "bg-primary text-primary-foreground shadow-md",
-                  isDayToday && !isSelected && "ring-2 ring-primary",
-                  !isCurrentMonth && "opacity-40"
-                )}
-              >
-                <span className={cn(
-                  "text-sm font-medium",
-                  isDayToday && !isSelected && "text-primary font-bold"
-                )}>
-                  {format(day, "d")}
-                </span>
-                {count > 0 && (
-                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-                    <div className={cn(
-                      "h-1.5 w-1.5 rounded-full",
-                      isSelected ? "bg-primary-foreground" : "bg-primary"
-                    )} />
-                  </div>
-                )}
-              </button>
+              <div key={day.toISOString()} className="relative">
+                <button
+                  onClick={() => handleDateClick(day)}
+                  className={cn(
+                    "w-full aspect-square p-2 rounded-lg transition-all",
+                    "hover:bg-accent hover:scale-105",
+                    isSelected && "bg-primary text-primary-foreground shadow-md",
+                    isDayToday && !isSelected && "ring-2 ring-primary",
+                    !isCurrentMonth && "opacity-40"
+                  )}
+                >
+                  <span className={cn(
+                    "text-sm font-medium",
+                    isDayToday && !isSelected && "text-primary font-bold"
+                  )}>
+                    {format(day, "d")}
+                  </span>
+                  {count > 0 && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
+                      <div className={cn(
+                        "h-1.5 w-1.5 rounded-full",
+                        isSelected ? "bg-primary-foreground" : "bg-primary"
+                      )} />
+                    </div>
+                  )}
+                </button>
+                <DosePreviewCard date={day} />
+              </div>
             );
           })}
         </div>
