@@ -79,13 +79,35 @@ serve(async (req) => {
         );
       }
 
-      // Update stock if needed
-      if (itemData.current_stock !== null && itemData.dose_per_take) {
-        const newStock = Math.max(0, itemData.current_stock - itemData.dose_per_take);
+      // AUTOMATIC STOCK DEDUCTION
+      // Get stock for this item
+      const { data: stockData, error: stockError } = await supabaseAdmin
+        .from('stock')
+        .select('id, units_left, consumption_history')
+        .eq('item_id', dose.item_id)
+        .maybeSingle();
+
+      if (!stockError && stockData && stockData.units_left > 0) {
+        const newUnitsLeft = Math.max(0, stockData.units_left - 1);
+        
+        // Add to consumption history
+        const consumptionHistory = stockData.consumption_history || [];
+        consumptionHistory.push({
+          date: takenAt.toISOString(),
+          amount: 1,
+          reason: 'taken'
+        });
+
+        // Update stock with new values
         await supabaseAdmin
-          .from('items')
-          .update({ current_stock: newStock })
-          .eq('id', dose.item_id);
+          .from('stock')
+          .update({
+            units_left: newUnitsLeft,
+            consumption_history: consumptionHistory,
+          })
+          .eq('id', stockData.id);
+
+        console.log(`Stock updated: ${stockData.units_left} -> ${newUnitsLeft}`);
       }
 
       // Calculate streak

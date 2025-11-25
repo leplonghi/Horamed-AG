@@ -145,6 +145,13 @@ export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, o
                 item_id: item.id,
                 units_total: parseInt(med.stockTotal),
                 units_left: parseInt(med.stockTotal),
+                created_from_prescription_id: prescriptionId,
+                last_refill_at: new Date().toISOString(),
+                consumption_history: [{
+                  date: new Date().toISOString(),
+                  amount: parseInt(med.stockTotal),
+                  reason: 'refill'
+                }],
               });
 
             if (stockError) console.error("Stock error:", stockError);
