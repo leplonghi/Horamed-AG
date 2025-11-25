@@ -21,6 +21,8 @@ export default function CofreUpload() {
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractedMedications, setExtractedMedications] = useState<any[]>([]);
+  const [showMedicationModal, setShowMedicationModal] = useState(false);
 
   const { activeProfile } = useUserProfiles();
 
@@ -240,6 +242,7 @@ export default function CofreUpload() {
             vaccine_name: extractedData.vaccine_name,
             dose_number: extractedData.dose_number,
             doctor_name: extractedData.doctor_name,
+            doctor_registration: extractedData.doctor_registration,
             specialty: extractedData.specialty,
           },
           ocr_text: JSON.stringify(extractedData),
@@ -256,13 +259,21 @@ export default function CofreUpload() {
       const summary = [];
       if (extractedData.title) summary.push(`📄 ${extractedData.title}`);
       if (extractedData.provider) summary.push(`🏥 ${extractedData.provider}`);
+      if (extractedData.doctor_name) summary.push(`👨‍⚕️ Dr(a). ${extractedData.doctor_name}`);
+      if (extractedData.doctor_registration) summary.push(`📋 CRM ${extractedData.doctor_registration}`);
       if (extractedData.issued_at) summary.push(`📅 ${new Date(extractedData.issued_at).toLocaleDateString('pt-BR')}`);
       
       if (summary.length > 0) {
         toast.info(summary.join(' • '), { duration: 5000 });
       }
 
-      navigate(`/cofre/${newDoc.id}`);
+      // Check for medications to add
+      if (extractedData.prescriptions && extractedData.prescriptions.length > 0) {
+        setExtractedMedications(extractedData.prescriptions);
+        setShowMedicationModal(true);
+      } else {
+        navigate(`/cofre/${newDoc.id}`);
+      }
     } catch (error: any) {
       console.error("Erro ao salvar:", error);
       toast.dismiss("extract");
@@ -272,6 +283,86 @@ export default function CofreUpload() {
       setIsExtracting(false);
       setUploading(false);
     }
+  };
+
+  const addMedicationsFromPrescription = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      toast.loading("Adicionando medicamentos...", { id: "add-meds" });
+
+      for (const med of extractedMedications) {
+        // Create medication item
+        const { data: newItem, error: itemError } = await supabase
+          .from('items')
+          .insert({
+            user_id: user.id,
+            profile_id: activeProfile?.id,
+            name: med.drug_name,
+            dose_text: med.dose,
+            category: 'medicamento',
+            notes: med.duration_days ? `Duração: ${med.duration_days} dias` : null,
+            treatment_duration_days: med.duration_days || null,
+            treatment_start_date: new Date().toISOString().split('T')[0],
+          })
+          .select()
+          .single();
+
+        if (itemError) {
+          console.error("Error creating medication:", itemError);
+          continue;
+        }
+
+        // Parse frequency and create schedule
+        if (med.frequency && newItem) {
+          const times = parseFrequencyToTimes(med.frequency);
+          if (times.length > 0) {
+            await supabase.from('schedules').insert({
+              item_id: newItem.id,
+              freq_type: 'daily',
+              times: times,
+              days_of_week: [0, 1, 2, 3, 4, 5, 6],
+            });
+          }
+        }
+      }
+
+      toast.dismiss("add-meds");
+      toast.success(`✓ ${extractedMedications.length} medicamento(s) adicionado(s)!`);
+      setShowMedicationModal(false);
+      navigate('/rotina');
+    } catch (error) {
+      console.error("Error adding medications:", error);
+      toast.dismiss("add-meds");
+      toast.error("Erro ao adicionar medicamentos");
+    }
+  };
+
+  const parseFrequencyToTimes = (frequency: string): string[] => {
+    // Parse common frequency patterns like "8/8h", "12/12h", "3x ao dia"
+    const times: string[] = [];
+    
+    if (frequency.includes('8/8') || frequency.includes('8h')) {
+      times.push('08:00', '16:00', '00:00');
+    } else if (frequency.includes('12/12') || frequency.includes('12h')) {
+      times.push('08:00', '20:00');
+    } else if (frequency.includes('24/24') || frequency.includes('24h') || frequency.includes('1x')) {
+      times.push('08:00');
+    } else if (frequency.includes('6/6') || frequency.includes('6h')) {
+      times.push('06:00', '12:00', '18:00', '00:00');
+    } else if (frequency.includes('4/4') || frequency.includes('4h')) {
+      times.push('06:00', '10:00', '14:00', '18:00', '22:00', '02:00');
+    } else if (frequency.includes('3x')) {
+      times.push('08:00', '14:00', '20:00');
+    } else if (frequency.includes('2x')) {
+      times.push('08:00', '20:00');
+    } else {
+      // Default to 3 times a day
+      times.push('08:00', '14:00', '20:00');
+    }
+    
+    return times;
   };
 
 
@@ -438,6 +529,53 @@ export default function CofreUpload() {
       </div>
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} feature="Cofre de documentos" />
+      
+      {/* Medication suggestion modal */}
+      {showMedicationModal && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg">
+            <CardContent className="p-6">
+              <h2 className="text-xl font-bold mb-2">💊 Medicamentos Encontrados</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Detectamos {extractedMedications.length} medicamento(s) na receita. Deseja adicioná-los à sua rotina?
+              </p>
+              
+              <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                {extractedMedications.map((med, idx) => (
+                  <div key={idx} className="p-3 bg-muted rounded-lg">
+                    <p className="font-semibold">{med.drug_name}</p>
+                    <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                      {med.dose && <p>💊 Dose: {med.dose}</p>}
+                      {med.frequency && <p>⏰ Frequência: {med.frequency}</p>}
+                      {med.duration_days && <p>📅 Duração: {med.duration_days} dias</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setShowMedicationModal(false);
+                    navigate('/cofre');
+                  }}
+                >
+                  Agora Não
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={addMedicationsFromPrescription}
+                >
+                  Adicionar Medicamentos
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
       <Navigation />
     </div>
   );
