@@ -5,9 +5,12 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar as CalendarIcon, Stethoscope, Activity, Pill, CheckCircle2, Clock, Link as LinkIcon } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Calendar as CalendarIcon, Stethoscope, Activity, Pill, CheckCircle2, Clock, Link as LinkIcon, Plus, Filter, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, isSameMonth, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface CalendarEvent {
   id: string;
@@ -27,10 +30,14 @@ interface HealthCalendarProps {
 
 export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [filterType, setFilterType] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvents(selectedDate);
@@ -134,133 +141,406 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
     return colors[color] || 'bg-gray-500/10 text-gray-700 border-gray-200';
   };
 
-  const selectedDateEvents = events.filter(event => 
+  const filteredEvents = filterType === "all" 
+    ? events 
+    : events.filter(e => e.type === filterType);
+
+  const selectedDateEvents = filteredEvents.filter(event => 
     format(new Date(event.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   );
 
-  const eventDates = events.map(e => new Date(e.date));
+  const eventDates = filteredEvents.map(e => new Date(e.date));
+
+  const getEventCountByType = (type: string) => {
+    return events.filter(e => e.type === type).length;
+  };
+
+  const handlePreviousMonth = () => {
+    setCurrentMonth(subMonths(currentMonth, 1));
+    setSelectedDate(subMonths(currentMonth, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(addMonths(currentMonth, 1));
+    setSelectedDate(addMonths(currentMonth, 1));
+  };
+
+  const handleToday = () => {
+    const today = new Date();
+    setCurrentMonth(today);
+    setSelectedDate(today);
+  };
+
+  const weekDays = viewMode === "week" 
+    ? eachDayOfInterval({
+        start: startOfWeek(selectedDate, { locale: ptBR }),
+        end: endOfWeek(selectedDate, { locale: ptBR })
+      })
+    : [];
+
+  const getEventsForDay = (day: Date) => {
+    return filteredEvents.filter(event => 
+      isSameDay(new Date(event.date), day)
+    );
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header com estatísticas e ações */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Consultas</p>
+                <p className="text-2xl font-bold">{getEventCountByType('consulta')}</p>
+              </div>
+              <Stethoscope className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Exames</p>
+                <p className="text-2xl font-bold">{getEventCountByType('exame')}</p>
+              </div>
+              <Activity className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Medicamentos</p>
+                <p className="text-2xl font-bold">{getEventCountByType('medicamento')}</p>
+              </div>
+              <Pill className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Eventos</p>
+                <p className="text-2xl font-bold">{events.filter(e => ['checkup', 'reforco_vacina', 'renovacao_exame'].includes(e.type)).length}</p>
+              </div>
+              <CalendarIcon className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Calendário principal */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Calendário de Saúde</CardTitle>
-          <div className="flex gap-2">
-            {!isConnected ? (
+        <CardHeader>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <CardTitle>Calendário de Saúde</CardTitle>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={connectGoogleCalendar}
+                onClick={() => fetchEvents(selectedDate)}
               >
-                <LinkIcon className="h-4 w-4 mr-2" />
-                Conectar Google Agenda
+                <RefreshCw className="h-4 w-4" />
               </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={syncWithGoogle}
-              >
-                Sincronizar
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDateSelect}
-                className="rounded-md border"
-                locale={ptBR}
-                modifiers={{
-                  hasEvent: eventDates
-                }}
-                modifiersClassNames={{
-                  hasEvent: "bg-primary/10 font-bold"
-                }}
-              />
             </div>
 
-            <div className="space-y-3">
-              <h3 className="font-semibold text-lg">
-                {format(selectedDate, "d 'de' MMMM, yyyy", { locale: ptBR })}
-              </h3>
-              
-              {loading ? (
-                <p className="text-muted-foreground">Carregando eventos...</p>
-              ) : selectedDateEvents.length === 0 ? (
-                <p className="text-muted-foreground">Nenhum evento neste dia.</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "month" | "week")} className="w-auto">
+                <TabsList>
+                  <TabsTrigger value="month">Mês</TabsTrigger>
+                  <TabsTrigger value="week">Semana</TabsTrigger>
+                </TabsList>
+              </Tabs>
+
+              {!isConnected ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={connectGoogleCalendar}
+                >
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Google Agenda
+                </Button>
               ) : (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {selectedDateEvents.map(event => (
-                    <Card 
-                      key={event.id}
-                      className={`border ${getEventColor(event.color)}`}
-                    >
-                      <CardContent className="p-3">
-                        <div className="flex items-start gap-3">
-                          <div className="mt-1">
-                            {getEventIcon(event.type)}
-                          </div>
-                          <div className="flex-1 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium">{event.title}</p>
-                              {event.status === 'taken' || event.completed ? (
-                                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                              ) : event.status === 'scheduled' ? (
-                                <Clock className="h-4 w-4 text-blue-600" />
-                              ) : null}
-                            </div>
-                            {event.description && (
-                              <p className="text-sm text-muted-foreground">
-                                {event.description}
-                              </p>
-                            )}
-                            {event.location && (
-                              <p className="text-xs text-muted-foreground">
-                                📍 {event.location}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground">
-                              {format(new Date(event.date), "HH:mm", { locale: ptBR })}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={syncWithGoogle}
+                >
+                  Sincronizar
+                </Button>
               )}
             </div>
           </div>
+        </CardHeader>
+
+        <CardContent>
+          {/* Navegação do mês */}
+          <div className="flex items-center justify-between mb-6">
+            <Button variant="outline" size="sm" onClick={handlePreviousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-4">
+              <h3 className="text-lg font-semibold">
+                {format(currentMonth, "MMMM 'de' yyyy", { locale: ptBR })}
+              </h3>
+              <Button variant="outline" size="sm" onClick={handleToday}>
+                Hoje
+              </Button>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleNextMonth}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Filtros */}
+          <div className="flex flex-wrap gap-2 mb-6">
+            <Button
+              variant={filterType === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterType("all")}
+            >
+              <Filter className="h-3 w-3 mr-2" />
+              Todos
+            </Button>
+            <Button
+              variant={filterType === "consulta" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterType("consulta")}
+            >
+              <Stethoscope className="h-3 w-3 mr-2" />
+              Consultas
+            </Button>
+            <Button
+              variant={filterType === "exame" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterType("exame")}
+            >
+              <Activity className="h-3 w-3 mr-2" />
+              Exames
+            </Button>
+            <Button
+              variant={filterType === "medicamento" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterType("medicamento")}
+            >
+              <Pill className="h-3 w-3 mr-2" />
+              Medicamentos
+            </Button>
+          </div>
+
+          {viewMode === "month" ? (
+            <div className="grid md:grid-cols-[2fr,1fr] gap-6">
+              <div>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  month={currentMonth}
+                  onMonthChange={setCurrentMonth}
+                  className="rounded-md border w-full"
+                  locale={ptBR}
+                  modifiers={{
+                    hasEvent: eventDates,
+                    isToday: [new Date()]
+                  }}
+                  modifiersClassNames={{
+                    hasEvent: "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:w-1 after:h-1 after:bg-primary after:rounded-full",
+                    isToday: "bg-primary text-primary-foreground font-bold"
+                  }}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">
+                    {format(selectedDate, "d 'de' MMMM", { locale: ptBR })}
+                  </h3>
+                  <Badge variant="secondary">
+                    {selectedDateEvents.length} {selectedDateEvents.length === 1 ? 'evento' : 'eventos'}
+                  </Badge>
+                </div>
+                
+                <ScrollArea className="h-[400px] pr-4">
+                  {loading ? (
+                    <p className="text-muted-foreground text-center py-8">Carregando eventos...</p>
+                  ) : selectedDateEvents.length === 0 ? (
+                    <div className="text-center py-8 space-y-3">
+                      <p className="text-muted-foreground">Nenhum evento neste dia.</p>
+                      <Button size="sm" onClick={() => navigate('/saude/consultas')}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Evento
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedDateEvents.map(event => (
+                        <Card 
+                          key={event.id}
+                          className={`border-l-4 ${
+                            event.color === 'blue' ? 'border-l-blue-500' :
+                            event.color === 'green' ? 'border-l-green-500' :
+                            event.color === 'orange' ? 'border-l-orange-500' :
+                            'border-l-purple-500'
+                          } hover:shadow-md transition-shadow cursor-pointer`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1">
+                                {getEventIcon(event.type)}
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium">{event.title}</p>
+                                  {event.status === 'taken' || event.completed ? (
+                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                  ) : event.status === 'scheduled' ? (
+                                    <Clock className="h-4 w-4 text-blue-600" />
+                                  ) : null}
+                                </div>
+                                {event.description && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {event.description}
+                                  </p>
+                                )}
+                                {event.location && (
+                                  <p className="text-xs text-muted-foreground">
+                                    📍 {event.location}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {format(new Date(event.date), "HH:mm", { locale: ptBR })}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-7 gap-2">
+                {weekDays.map((day) => {
+                  const dayEvents = getEventsForDay(day);
+                  return (
+                    <Card 
+                      key={day.toISOString()}
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        isSameDay(day, selectedDate) ? 'ring-2 ring-primary' : ''
+                      } ${isToday(day) ? 'bg-primary/5' : ''}`}
+                      onClick={() => handleDateSelect(day)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="text-center space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            {format(day, "EEE", { locale: ptBR })}
+                          </p>
+                          <p className={`text-lg font-bold ${isToday(day) ? 'text-primary' : ''}`}>
+                            {format(day, "d")}
+                          </p>
+                          {dayEvents.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {dayEvents.length}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    Eventos de {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[300px]">
+                    {selectedDateEvents.length === 0 ? (
+                      <p className="text-muted-foreground text-center py-8">Nenhum evento neste dia.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {selectedDateEvents.map(event => (
+                          <Card key={event.id} className="border-l-4 border-l-primary">
+                            <CardContent className="p-4">
+                              <div className="flex items-start gap-3">
+                                <div className="mt-1">{getEventIcon(event.type)}</div>
+                                <div className="flex-1">
+                                  <p className="font-medium">{event.title}</p>
+                                  <p className="text-sm text-muted-foreground">{event.description}</p>
+                                  <Badge variant="outline" className="text-xs mt-2">
+                                    {format(new Date(event.date), "HH:mm", { locale: ptBR })}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </CardContent>
       </Card>
 
+      {/* Ações rápidas */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Legenda</CardTitle>
+          <CardTitle className="text-base">Ações Rápidas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-sm">Consultas</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-500"></div>
-              <span className="text-sm">Exames</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-sm">Medicamentos</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-sm">Eventos</span>
-            </div>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={() => navigate('/saude/consultas')}
+            >
+              <Stethoscope className="h-5 w-5" />
+              <span className="text-sm">Nova Consulta</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={() => navigate('/saude/exames')}
+            >
+              <Activity className="h-5 w-5" />
+              <span className="text-sm">Novo Exame</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={() => navigate('/medicamentos')}
+            >
+              <Pill className="h-5 w-5" />
+              <span className="text-sm">Medicamento</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              className="h-auto py-4 flex flex-col gap-2"
+              onClick={() => navigate('/agenda')}
+            >
+              <CalendarIcon className="h-5 w-5" />
+              <span className="text-sm">Evento</span>
+            </Button>
           </div>
         </CardContent>
       </Card>
