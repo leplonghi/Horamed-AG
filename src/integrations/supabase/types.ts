@@ -1507,8 +1507,11 @@ export type Database = {
       }
       stock: {
         Row: {
+          consumption_history: Json | null
+          created_from_prescription_id: string | null
           id: string
           item_id: string
+          last_refill_at: string | null
           projected_end_at: string | null
           unit_label: string | null
           units_left: number
@@ -1516,8 +1519,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          consumption_history?: Json | null
+          created_from_prescription_id?: string | null
           id?: string
           item_id: string
+          last_refill_at?: string | null
           projected_end_at?: string | null
           unit_label?: string | null
           units_left?: number
@@ -1525,8 +1531,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          consumption_history?: Json | null
+          created_from_prescription_id?: string | null
           id?: string
           item_id?: string
+          last_refill_at?: string | null
           projected_end_at?: string | null
           unit_label?: string | null
           units_left?: number
@@ -1534,6 +1543,20 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_created_from_prescription_id_fkey"
+            columns: ["created_from_prescription_id"]
+            isOneToOne: false
+            referencedRelation: "documentos_saude"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_created_from_prescription_id_fkey"
+            columns: ["created_from_prescription_id"]
+            isOneToOne: false
+            referencedRelation: "medical_exams_v"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_item_id_fkey"
             columns: ["item_id"]
@@ -1809,6 +1832,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_projected_end_at: {
+        Args: { p_stock_id: string }
+        Returns: string
+      }
       has_consent: {
         Args: {
           p_purpose: Database["public"]["Enums"]["consent_purpose"]
