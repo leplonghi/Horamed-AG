@@ -675,6 +675,7 @@ export default function Today() {
               loadData(newDate);
             }}
             eventCounts={eventCounts}
+            profileId={activeProfile?.id}
           />
 
           {/* Timeline do Dia */}
