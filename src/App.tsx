@@ -40,6 +40,7 @@ import Cofre from "./pages/Cofre";
 import CofreUpload from "./pages/CofreUpload";
 import CofreDocumento from "./pages/CofreDocumento";
 import CofreDocumentoEdit from "./pages/CofreDocumentoEdit";
+import CofreDocumentReview from "./pages/CofreDocumentReview";
 import CofreManualCreate from "./pages/CofreManualCreate";
 import CompartilharDocumento from "./pages/CompartilharDocumento";
 import DataExport from './pages/DataExport';
@@ -138,8 +139,9 @@ function AppContent() {
         {/* Cofre subroutes */}
         <Route path="/cofre/upload" element={<ProtectedRoute><CofreUpload /></ProtectedRoute>} />
         <Route path="/cofre/criar-manual" element={<ProtectedRoute><CofreManualCreate /></ProtectedRoute>} />
-        <Route path="/cofre/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
+        <Route path="/cofre/:id/review" element={<ProtectedRoute><CofreDocumentReview /></ProtectedRoute>} />
         <Route path="/cofre/:id/editar" element={<ProtectedRoute><CofreDocumentoEdit /></ProtectedRoute>} />
+        <Route path="/cofre/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
         <Route path="/cofre/documento/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
         <Route path="/compartilhar/:token" element={<CompartilharDocumento />} />
         <Route path="/scan" element={<ProtectedRoute><DocumentScan /></ProtectedRoute>} />
