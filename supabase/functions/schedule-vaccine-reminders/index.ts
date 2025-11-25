@@ -1,0 +1,135 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    const now = new Date();
+    const thirtyDaysFromNow = new Date(now);
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+
+    // Buscar vacinas com próximas doses nos próximos 30 dias
+    const { data: vaccines, error: vaccinesError } = await supabaseAdmin
+      .from('vaccination_records')
+      .select('id, user_id, profile_id, vaccine_name, dose_description, next_dose_date')
+      .not('next_dose_date', 'is', null)
+      .gte('next_dose_date', now.toISOString().split('T')[0])
+      .lte('next_dose_date', thirtyDaysFromNow.toISOString().split('T')[0]);
+
+    if (vaccinesError) {
+      console.error('Error fetching vaccines:', vaccinesError);
+      throw vaccinesError;
+    }
+
+    console.log(`Found ${vaccines?.length || 0} vaccines with upcoming doses`);
+
+    const notificationsToCreate = [];
+    const now_timestamp = now.getTime();
+
+    for (const vaccine of vaccines || []) {
+      const nextDoseDate = new Date(vaccine.next_dose_date);
+      const daysUntilDose = Math.ceil((nextDoseDate.getTime() - now_timestamp) / (1000 * 60 * 60 * 24));
+
+      // Criar notificações para 30, 15 e 7 dias antes
+      const reminderDays = [30, 15, 7];
+      
+      for (const reminderDay of reminderDays) {
+        if (daysUntilDose <= reminderDay && daysUntilDose > (reminderDay - 1)) {
+          // Verificar se já existe notificação para este lembrete
+          const { data: existingNotif } = await supabaseAdmin
+            .from('notification_logs')
+            .select('id')
+            .eq('user_id', vaccine.user_id)
+            .eq('notification_type', 'vaccine_reminder')
+            .eq('metadata->>vaccine_id', vaccine.id)
+            .eq('metadata->>reminder_days', reminderDay.toString())
+            .single();
+
+          if (!existingNotif) {
+            let title = '';
+            let body = '';
+
+            if (reminderDay === 30) {
+              title = '📅 Lembrete: Próxima dose em 30 dias';
+              body = `A próxima dose de ${vaccine.vaccine_name} está agendada para ${nextDoseDate.toLocaleDateString('pt-BR')}`;
+            } else if (reminderDay === 15) {
+              title = '⏰ Lembrete: Próxima dose em 15 dias';
+              body = `Não esqueça: próxima dose de ${vaccine.vaccine_name} em ${nextDoseDate.toLocaleDateString('pt-BR')}`;
+            } else if (reminderDay === 7) {
+              title = '🚨 Atenção: Próxima dose em 7 dias!';
+              body = `Importante: próxima dose de ${vaccine.vaccine_name} está próxima - ${nextDoseDate.toLocaleDateString('pt-BR')}`;
+            }
+
+            notificationsToCreate.push({
+              user_id: vaccine.user_id,
+              notification_type: 'vaccine_reminder',
+              title,
+              body,
+              scheduled_at: now.toISOString(),
+              delivery_status: 'pending',
+              metadata: {
+                vaccine_id: vaccine.id,
+                profile_id: vaccine.profile_id,
+                vaccine_name: vaccine.vaccine_name,
+                next_dose_date: vaccine.next_dose_date,
+                reminder_days: reminderDay
+              }
+            });
+          }
+        }
+      }
+    }
+
+    // Inserir notificações em batch
+    if (notificationsToCreate.length > 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from('notification_logs')
+        .insert(notificationsToCreate);
+
+      if (insertError) {
+        console.error('Error inserting notifications:', insertError);
+        throw insertError;
+      }
+
+      console.log(`Created ${notificationsToCreate.length} vaccine reminder notifications`);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        vaccines_checked: vaccines?.length || 0,
+        notifications_created: notificationsToCreate.length
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in schedule-vaccine-reminders:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+});
