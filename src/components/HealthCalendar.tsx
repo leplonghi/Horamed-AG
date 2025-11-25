@@ -185,58 +185,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header com estatísticas e ações */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Consultas</p>
-                <p className="text-2xl font-bold">{getEventCountByType('consulta')}</p>
-              </div>
-              <Stethoscope className="h-8 w-8 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Exames</p>
-                <p className="text-2xl font-bold">{getEventCountByType('exame')}</p>
-              </div>
-              <Activity className="h-8 w-8 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Medicamentos</p>
-                <p className="text-2xl font-bold">{getEventCountByType('medicamento')}</p>
-              </div>
-              <Pill className="h-8 w-8 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Eventos</p>
-                <p className="text-2xl font-bold">{events.filter(e => ['checkup', 'reforco_vacina', 'renovacao_exame'].includes(e.type)).length}</p>
-              </div>
-              <CalendarIcon className="h-8 w-8 text-purple-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
+    <div className="space-y-4">
       {/* Calendário principal */}
       <Card>
         <CardHeader>
@@ -502,48 +451,6 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
         </CardContent>
       </Card>
 
-      {/* Ações rápidas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Ações Rápidas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col gap-2"
-              onClick={() => navigate('/saude/consultas')}
-            >
-              <Stethoscope className="h-5 w-5" />
-              <span className="text-sm">Nova Consulta</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col gap-2"
-              onClick={() => navigate('/saude/exames')}
-            >
-              <Activity className="h-5 w-5" />
-              <span className="text-sm">Novo Exame</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col gap-2"
-              onClick={() => navigate('/medicamentos')}
-            >
-              <Pill className="h-5 w-5" />
-              <span className="text-sm">Medicamento</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-auto py-4 flex flex-col gap-2"
-              onClick={() => navigate('/agenda')}
-            >
-              <CalendarIcon className="h-5 w-5" />
-              <span className="text-sm">Evento</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
