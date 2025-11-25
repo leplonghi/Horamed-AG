@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Pill, AlertCircle, Crown } from "lucide-react";
+import { Pill, AlertCircle, Crown, Check } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
 interface Props {
   value: string;
@@ -15,6 +16,13 @@ const options = [
 ];
 
 export default function OnboardingStep2({ value, onChange }: Props) {
+  const { triggerLight } = useHapticFeedback();
+
+  const handleSelect = (optionValue: string) => {
+    triggerLight();
+    onChange(optionValue);
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-2">
@@ -50,13 +58,23 @@ export default function OnboardingStep2({ value, onChange }: Props) {
               transition={{ delay: 0.1 * index }}
             >
               <Card
-                className={`p-6 cursor-pointer transition-all hover:scale-105 relative ${
+                className={`p-6 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98] relative ${
                   isSelected
-                    ? "border-primary border-2 bg-primary/5"
+                    ? "border-primary border-2 bg-primary/5 shadow-lg"
                     : "border-border hover:border-primary/50"
                 }`}
-                onClick={() => onChange(option.value)}
+                onClick={() => handleSelect(option.value)}
               >
+                {isSelected && !isPremium && (
+                  <motion.div
+                    className="absolute -top-2 -right-2 h-8 w-8 rounded-full bg-primary flex items-center justify-center shadow-lg"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Check className="h-4 w-4 text-primary-foreground" />
+                  </motion.div>
+                )}
                 {isPremium && (
                   <div className="absolute -top-2 -right-2">
                     <Badge className="gap-1 bg-gradient-to-r from-amber-500 to-orange-500">

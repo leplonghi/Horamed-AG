@@ -1,13 +1,22 @@
 import { motion } from "framer-motion";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   onComplete: () => void;
+  onShowDemo: () => void;
 }
 
-export default function OnboardingStep4({ onComplete }: Props) {
+export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
+  const navigate = useNavigate();
+
+  const handleAddItem = () => {
+    onComplete(); // Save preferences
+    navigate("/adicionar-medicamento");
+  };
+
   return (
     <div className="space-y-8">
       <div className="text-center space-y-4">
@@ -42,44 +51,70 @@ export default function OnboardingStep4({ onComplete }: Props) {
       </div>
 
       <motion.div
-        className="space-y-4 max-w-md mx-auto"
+        className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+        <Card className="p-6 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg transition-shadow">
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <div className="p-2 rounded-full bg-primary/20">
-                <Plus className="h-5 w-5 text-primary" />
+              <div className="p-3 rounded-full bg-primary/20">
+                <Plus className="h-6 w-6 text-primary" />
               </div>
-              <div>
-                <h3 className="font-semibold">Adicione agora</h3>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">Adicionar Agora</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Configure seu primeiro remédio em 3 passos simples
+                  Configure seu primeiro item em 3 passos simples
                 </p>
               </div>
             </div>
             <Button
+              size="lg"
               className="w-full"
-              onClick={() => {
-                onComplete();
-                // Após navegar, abre o wizard
-                setTimeout(() => {
-                  window.location.href = "/adicionar-medicamento";
-                }, 100);
-              }}
+              onClick={handleAddItem}
             >
+              <Plus className="h-4 w-4 mr-2" />
               Adicionar Primeiro Item
             </Button>
           </div>
         </Card>
 
-        <div className="text-center">
-          <Button variant="ghost" onClick={onComplete}>
-            Explorar o app primeiro
-          </Button>
-        </div>
+        <Card className="p-6 bg-gradient-to-br from-muted/30 to-muted/50 border-border hover:shadow-lg transition-shadow">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="p-3 rounded-full bg-muted">
+                <Eye className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">Ver Como Funciona</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Demonstração interativa de 15 segundos
+                </p>
+              </div>
+            </div>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full"
+              onClick={onShowDemo}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Ver Demonstração
+            </Button>
+          </div>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        className="text-center mt-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.6 }}
+      >
+        <Button variant="ghost" onClick={onComplete}>
+          Explorar o app
+        </Button>
       </motion.div>
     </div>
   );

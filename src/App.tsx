@@ -53,7 +53,6 @@ import HealthTimeline from "./pages/HealthTimeline";
 import HealthAnalysis from "./pages/HealthAnalysis";
 import Emergency from "./pages/Emergency";
 import Notifications from "./pages/Notifications";
-import OnboardingScreens from "./components/OnboardingScreens";
 import SmartOnboarding from "./components/onboarding/SmartOnboarding";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProfileCacheProvider } from "./contexts/ProfileCacheContext";
@@ -64,7 +63,6 @@ function AppContent() {
 
   return (
     <>
-      <OnboardingScreens />
       <Toaster />
       <Sonner />
       <Routes>
@@ -114,7 +112,7 @@ function AppContent() {
         <Route path="/terms" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
         <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
         <Route path="/progresso" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
-        <Route path="/onboarding-smart" element={<SmartOnboarding />} />
+        <Route path="/onboarding" element={<SmartOnboarding />} />
         <Route path="/ajuda" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
         <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
         <Route path="/alarmes" element={<ProtectedRoute><AlarmSettings /></ProtectedRoute>} />
