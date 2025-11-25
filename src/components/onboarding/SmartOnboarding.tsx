@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import OnboardingWelcome from "./OnboardingWelcome";
 import OnboardingStep1 from "./OnboardingStep1";
 import OnboardingStep2 from "./OnboardingStep2";
 import OnboardingStep3 from "./OnboardingStep3";
 import OnboardingStep4 from "./OnboardingStep4";
-import { useNavigate } from "react-router-dom";
+import OnboardingDemo from "./OnboardingDemo";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
 interface OnboardingData {
   userType: string;
@@ -15,141 +20,211 @@ interface OnboardingData {
 }
 
 export default function SmartOnboarding() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const navigate = useNavigate();
+  const { triggerLight, triggerSuccess } = useHapticFeedback();
+  const [currentStep, setCurrentStep] = useState(0); // Start at welcome screen
+  const [showDemo, setShowDemo] = useState(false);
   const [data, setData] = useState<OnboardingData>({
     userType: "",
     medicationCount: "",
     mainConcern: "",
   });
-  const navigate = useNavigate();
-
-  const totalSteps = 4;
 
   const updateData = (field: keyof OnboardingData, value: string) => {
     setData((prev) => ({ ...prev, [field]: value }));
+    triggerLight();
+    
+    // Auto-advance for steps 1-3 after 300ms
+    if (currentStep >= 1 && currentStep <= 3) {
+      setTimeout(() => {
+        setCurrentStep(currentStep + 1);
+      }, 300);
+    }
   };
 
   const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((prev) => prev + 1);
+    if (currentStep < 4) {
+      triggerLight();
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
+    if (currentStep > 0) {
+      triggerLight();
+      setCurrentStep(currentStep - 1);
     }
   };
 
-  const handleComplete = () => {
+  const savePreferences = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Save to profiles.tutorial_flags
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          tutorial_flags: {
+            userType: data.userType,
+            medicationCount: data.medicationCount,
+            mainConcern: data.mainConcern,
+            completedAt: new Date().toISOString(),
+          },
+          onboarding_completed: true,
+        })
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      triggerSuccess();
+    } catch (error) {
+      console.error("Error saving onboarding preferences:", error);
+    }
+  };
+
+  const handleComplete = async () => {
+    await savePreferences();
+    navigate("/hoje");
+  };
+
+  const handleSkip = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Mark as completed but don't save preferences
+      await supabase
+        .from("profiles")
+        .update({ onboarding_completed: true })
+        .eq("user_id", user.id);
+
+      navigate("/hoje");
+    } catch (error) {
+      console.error("Error skipping onboarding:", error);
+      navigate("/hoje");
+    }
+  };
+
+  const handleShowDemo = () => {
+    setShowDemo(true);
+  };
+
+  const handleDemoComplete = async () => {
+    await savePreferences();
     navigate("/hoje");
   };
 
   const canProceed = () => {
+    if (currentStep === 0) return true; // Welcome screen
     switch (currentStep) {
       case 1:
-        return data.userType !== "";
+        return !!data.userType;
       case 2:
-        return data.medicationCount !== "";
+        return !!data.medicationCount;
       case 3:
-        return data.mainConcern !== "";
-      case 4:
-        return true;
+        return !!data.mainConcern;
       default:
-        return false;
+        return true;
     }
   };
 
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Progress bar */}
-      <div className="w-full h-1 bg-muted">
-        <motion.div
-          className="h-full bg-primary"
-          initial={{ width: "0%" }}
-          animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
-          transition={{ duration: 0.3 }}
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-6">
+  if (showDemo) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="w-full max-w-2xl">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentStep}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-            >
-              {currentStep === 1 && (
-                <OnboardingStep1
-                  value={data.userType}
-                  onChange={(value) => updateData("userType", value)}
-                />
-              )}
-              {currentStep === 2 && (
-                <OnboardingStep2
-                  value={data.medicationCount}
-                  onChange={(value) => updateData("medicationCount", value)}
-                />
-              )}
-              {currentStep === 3 && (
-                <OnboardingStep3
-                  value={data.mainConcern}
-                  onChange={(value) => updateData("mainConcern", value)}
-                />
-              )}
-              {currentStep === 4 && (
-                <OnboardingStep4 onComplete={handleComplete} />
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <OnboardingDemo onComplete={handleDemoComplete} />
         </div>
       </div>
+    );
+  }
 
-      {/* Navigation */}
-      <div className="p-6 flex items-center justify-between max-w-2xl mx-auto w-full">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          disabled={currentStep === 1}
-          className="gap-2"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Voltar
-        </Button>
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <div className="w-full max-w-3xl space-y-8">
+        {/* Progress bar - hide on welcome and final steps */}
+        {currentStep > 0 && currentStep < 4 && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>Passo {currentStep} de 3</span>
+              <span>{Math.round((currentStep / 3) * 100)}%</span>
+            </div>
+            <Progress value={(currentStep / 3) * 100} className="h-2" />
+          </div>
+        )}
 
-        <div className="flex gap-2">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-2 w-2 rounded-full transition-all ${
-                i + 1 === currentStep
-                  ? "bg-primary w-8"
-                  : i + 1 < currentStep
-                  ? "bg-primary"
-                  : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-
-        {currentStep < totalSteps ? (
-          <Button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className="gap-2"
+        {/* Step content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
           >
-            Próximo
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        ) : (
-          <Button onClick={handleComplete} className="gap-2">
-            Começar
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+            {currentStep === 0 && (
+              <OnboardingWelcome onStart={handleNext} onSkip={handleSkip} />
+            )}
+            {currentStep === 1 && (
+              <OnboardingStep1
+                value={data.userType}
+                onChange={(value) => updateData("userType", value)}
+              />
+            )}
+            {currentStep === 2 && (
+              <OnboardingStep2
+                value={data.medicationCount}
+                onChange={(value) => updateData("medicationCount", value)}
+              />
+            )}
+            {currentStep === 3 && (
+              <OnboardingStep3
+                value={data.mainConcern}
+                onChange={(value) => updateData("mainConcern", value)}
+              />
+            )}
+            {currentStep === 4 && (
+              <OnboardingStep4
+                onComplete={handleComplete}
+                onShowDemo={handleShowDemo}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Navigation buttons - hide on welcome and step 4 */}
+        {currentStep > 0 && currentStep < 4 && (
+          <div className="flex gap-4">
+            {currentStep > 1 && (
+              <Button variant="outline" onClick={handleBack} className="flex-1">
+                Voltar
+              </Button>
+            )}
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+              className="flex-1"
+            >
+              Próximo
+            </Button>
+          </div>
+        )}
+
+        {/* Step indicators - hide on welcome screen */}
+        {currentStep > 0 && (
+          <div className="flex justify-center gap-2">
+            {[1, 2, 3, 4].map((step) => (
+              <div
+                key={step}
+                className={`h-2 rounded-full transition-all ${
+                  step === currentStep
+                    ? "w-8 bg-primary"
+                    : step < currentStep
+                    ? "w-2 bg-primary/50"
+                    : "w-2 bg-muted"
+                }`}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

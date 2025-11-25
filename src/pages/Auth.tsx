@@ -83,7 +83,7 @@ export default function Auth() {
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -92,6 +92,22 @@ export default function Auth() {
       });
 
       if (error) throw error;
+      
+      // Check if user needs onboarding
+      if (data.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("user_id", data.user.id)
+          .single();
+
+        if (!profile?.onboarding_completed) {
+          toast.success("Conta criada! 🎉");
+          navigate("/onboarding");
+          return;
+        }
+      }
+      
       toast.success("Conta criada! Você já pode fazer login 🎉");
     } catch (error: any) {
       console.error("Error:", error);
