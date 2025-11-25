@@ -7,6 +7,12 @@ import { Scale, Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { format, subDays } from "date-fns";
 import WeightRegistrationModal from "./WeightRegistrationModal";
+import { Info } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface WeightBMICardProps {
   userId: string;
@@ -15,6 +21,7 @@ interface WeightBMICardProps {
 
 export default function WeightBMICard({ userId, profileId }: WeightBMICardProps) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
 
   // Get user height for BMI calculation
   const { data: profileData } = useQuery({
@@ -96,10 +103,30 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
 
   const getBMIDescription = (bmiStr: string) => {
     const bmi = parseFloat(bmiStr);
-    if (bmi < 18.5) return { text: "abaixo do peso", color: "text-blue-600" };
-    if (bmi < 25) return { text: "peso normal", color: "text-green-600" };
-    if (bmi < 30) return { text: "sobrepeso", color: "text-yellow-600" };
-    return { text: "obesidade", color: "text-red-600" };
+    if (bmi < 18.5) return { 
+      text: "abaixo do peso", 
+      color: "text-blue-600",
+      description: "Pode indicar desnutrição ou perda de massa muscular",
+      recommendation: "Considere consultar um nutricionista para orientação adequada"
+    };
+    if (bmi < 25) return { 
+      text: "peso normal", 
+      color: "text-green-600",
+      description: "Faixa considerada saudável pela OMS",
+      recommendation: "Continue mantendo hábitos saudáveis de alimentação e exercícios"
+    };
+    if (bmi < 30) return { 
+      text: "sobrepeso", 
+      color: "text-yellow-600",
+      description: "Acima do peso ideal, mas ainda não obesidade",
+      recommendation: "Atenção à alimentação e atividade física pode ajudar"
+    };
+    return { 
+      text: "obesidade", 
+      color: "text-red-600",
+      description: "Pode aumentar riscos de problemas de saúde",
+      recommendation: "Importante acompanhamento médico e nutricional"
+    };
   };
 
   const bmi = calculateBMI();
@@ -177,12 +204,24 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
             </div>
 
             <div className="text-center p-4 bg-background/60 rounded-lg border">
-              <p className="text-sm text-muted-foreground mb-1">IMC</p>
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <p className="text-sm text-muted-foreground">IMC</p>
+                <button
+                  onClick={() => setInfoOpen(!infoOpen)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Informações sobre IMC"
+                >
+                  <Info className="h-4 w-4" />
+                </button>
+              </div>
               {bmi && bmiDesc ? (
                 <>
                   <p className="text-4xl font-bold">{bmi}</p>
                   <p className={`text-sm font-medium mt-2 ${bmiDesc.color}`}>
                     {bmiDesc.text}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {bmiDesc.description}
                   </p>
                 </>
               ) : (
@@ -211,6 +250,63 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
               </p>
             </div>
           )}
+
+          <Collapsible open={infoOpen} onOpenChange={setInfoOpen}>
+            <CollapsibleContent className="mt-4 space-y-3">
+              <div className="p-4 bg-muted/50 rounded-lg border space-y-3">
+                <div>
+                  <h4 className="font-semibold text-sm mb-1">O que é IMC?</h4>
+                  <p className="text-xs text-muted-foreground">
+                    O Índice de Massa Corporal (IMC) é uma medida internacional usada para identificar se uma pessoa está no peso ideal. É calculado dividindo o peso (kg) pela altura ao quadrado (m²).
+                  </p>
+                </div>
+
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Faixas de referência (OMS):</h4>
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">Abaixo de 18,5:</span> Abaixo do peso
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">18,5 a 24,9:</span> Peso normal
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 rounded-full bg-yellow-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">25,0 a 29,9:</span> Sobrepeso
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <div className="w-2 h-2 rounded-full bg-red-600 mt-1 flex-shrink-0" />
+                      <div>
+                        <span className="font-medium">30,0 ou mais:</span> Obesidade
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {bmi && bmiDesc && (
+                  <div className="pt-2 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium">Orientação:</span> {bmiDesc.recommendation}
+                    </p>
+                  </div>
+                )}
+
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground italic">
+                    Fontes: Organização Mundial da Saúde (OMS) e Ministério da Saúde. O IMC é uma referência geral e não substitui avaliação médica individualizada.
+                  </p>
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </CardContent>
       </Card>
 
