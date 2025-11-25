@@ -29,6 +29,7 @@ import { useSmartRedirect } from "@/hooks/useSmartRedirect";
 import { useAdaptiveSuggestions } from "@/hooks/useAdaptiveSuggestions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { SideEffectQuickLog } from "@/components/SideEffectQuickLog";
+import { VaccineRemindersWidget } from "@/components/VaccineRemindersWidget";
 
 interface TimelineItem {
   id: string;
@@ -603,6 +604,9 @@ export default function Today() {
 
           {/* Health Insights Card */}
           <HealthInsightsCard />
+
+          {/* Vaccine Reminders Widget */}
+          <VaccineRemindersWidget />
 
           {/* Quick Dose Widget */}
           <QuickDoseWidget />
