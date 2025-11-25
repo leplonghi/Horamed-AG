@@ -19,6 +19,7 @@ import StockManagement from "./pages/StockManagement";
 import MedicalReports from "./pages/MedicalReports";
 import Charts from "./pages/Charts";
 import WeeklyCalendar from "./pages/WeeklyCalendar";
+import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import HealthDashboard from "./pages/HealthDashboard";
 import MedicationHistory from "./pages/MedicationHistory";
@@ -53,6 +54,7 @@ import HealthAnalysis from "./pages/HealthAnalysis";
 import Emergency from "./pages/Emergency";
 import Notifications from "./pages/Notifications";
 import OnboardingScreens from "./components/OnboardingScreens";
+import SmartOnboarding from "./components/onboarding/SmartOnboarding";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProfileCacheProvider } from "./contexts/ProfileCacheContext";
 
@@ -111,6 +113,8 @@ function AppContent() {
         <Route path="/termos" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
         <Route path="/terms" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
         <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
+        <Route path="/progresso" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+        <Route path="/onboarding-smart" element={<SmartOnboarding />} />
         <Route path="/ajuda" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
         <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
         <Route path="/alarmes" element={<ProtectedRoute><AlarmSettings /></ProtectedRoute>} />
@@ -131,7 +135,6 @@ function AppContent() {
         {/* Legacy/deprecated routes (mantidos para compatibilidade) */}
         <Route path="/historico" element={<ProtectedRoute><History /></ProtectedRoute>} />
         <Route path="/mais" element={<ProtectedRoute><More /></ProtectedRoute>} />
-        <Route path="/rotina" element={<ProtectedRoute><Today /></ProtectedRoute>} />
         <Route path="/evolucao" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
         <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /></ProtectedRoute>} />
         
