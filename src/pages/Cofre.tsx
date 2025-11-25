@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FileText, Calendar, Plus, Clock, AlertTriangle, FolderOpen, Edit } from "lucide-react";
+import AddHealthDocumentModal from "@/components/cofre/AddHealthDocumentModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,16 @@ export default function Cofre() {
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
   const [busca, setBusca] = useState("");
   const [filtroExp, setFiltroExp] = useState<"30" | "all">("all");
+  const [showAddModal, setShowAddModal] = useState(false);
   const { activeProfile } = useUserProfiles();
   const navigate = useNavigate();
+
+  const handleDocumentSuccess = (documentId: string, type: string, extractedData: any) => {
+    // Navigate to appropriate review screen based on type
+    navigate(`/cofre/${documentId}/review`, { 
+      state: { type, extractedData } 
+    });
+  };
   
   const { data: allDocumentos } = useDocumentos({
     profileId: activeProfile?.id,
@@ -76,10 +85,18 @@ export default function Cofre() {
   const renderDocumentoCard = (doc: DocumentoSaude) => {
     const isExpiringSoon = doc.expires_at && new Date(doc.expires_at) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const needsReview = doc.status_extraction === "pending_review";
+    const isReviewed = doc.status_extraction === "reviewed";
     
     // Buscar status da receita
     const prescStatus = prescriptionStatus?.find(ps => ps.id === doc.id);
     const isPrescription = doc.categorias_saude?.slug === "receita";
+    
+    // Friendly status label
+    const getStatusLabel = () => {
+      if (needsReview) return "Aguardando sua revisão";
+      if (isReviewed) return "Revisado";
+      return "Lendo documento...";
+    };
     
     const getCategoryIcon = (categorySlug?: string) => {
       switch (categorySlug) {
@@ -126,7 +143,12 @@ export default function Cofre() {
                   </Badge>
                   {needsReview && (
                     <Badge variant="secondary" className="text-tiny h-5 bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30">
-                      ⚠️ Revisar
+                      👁️ Pronto para revisar
+                    </Badge>
+                  )}
+                  {isReviewed && (
+                    <Badge variant="secondary" className="text-tiny h-5 bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
+                      ✓ Revisado
                     </Badge>
                   )}
                   {isExpiringSoon && (
@@ -184,12 +206,11 @@ export default function Cofre() {
               Seus documentos médicos organizados e seguros
             </p>
           </div>
-          <Link to="/cofre/upload">
-            <Button size="lg" className="gap-2">
-              <Plus className="w-5 h-5" />
-              <span className="hidden sm:inline">Adicionar</span>
-            </Button>
-          </Link>
+          <Button size="lg" className="gap-2" onClick={() => setShowAddModal(true)}>
+            <Plus className="w-5 h-5" />
+            <span className="hidden sm:inline">Adicionar documento de saúde</span>
+            <span className="sm:hidden">Adicionar</span>
+          </Button>
         </div>
 
         {/* Dashboard Stats */}
@@ -309,14 +330,20 @@ export default function Cofre() {
       </div>
 
       {/* Botão flutuante mobile */}
-      <Link to="/cofre/upload" className="md:hidden">
-        <Button
-          size="lg"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
-      </Link>
+      <Button
+        size="lg"
+        onClick={() => setShowAddModal(true)}
+        className="md:hidden fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+      >
+        <Plus className="w-6 h-6" />
+      </Button>
+
+      {/* Add Document Modal */}
+      <AddHealthDocumentModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onSuccess={handleDocumentSuccess}
+      />
 
       <Navigation />
     </div>
