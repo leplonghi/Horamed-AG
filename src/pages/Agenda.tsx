@@ -32,41 +32,6 @@ export default function Agenda() {
 
           <HealthCalendar onDateSelect={setSelectedDate} />
 
-          <Card className="bg-gradient-to-br from-primary/5 to-primary/10">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                <CardTitle>Sincronização com Google Agenda</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <p className="text-muted-foreground">
-                Mantenha todos os seus compromissos de saúde sincronizados automaticamente:
-              </p>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Stethoscope className="h-4 w-4 text-blue-600" />
-                    <span>Consultas médicas</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Activity className="h-4 w-4 text-green-600" />
-                    <span>Exames laboratoriais</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4 text-orange-600" />
-                    <span>Lembretes de medicamentos</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-purple-600" />
-                    <span>Eventos de saúde</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </main>
 
