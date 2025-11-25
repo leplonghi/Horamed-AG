@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay } from "date-fns";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
@@ -13,6 +14,7 @@ import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import DayTimeline from "@/components/DayTimeline";
 import WeekCalendarView from "@/components/WeekCalendarView";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import StreakBadge from "@/components/StreakBadge";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import InfoDialog from "@/components/InfoDialog";
@@ -36,6 +38,7 @@ interface TimelineItem {
 }
 
 export default function Today() {
+  const navigate = useNavigate();
   const { scheduleNotificationsForNextDay } = useMedicationAlarm();
   usePushNotifications();
   const streakData = useStreakCalculator();
@@ -490,6 +493,37 @@ export default function Today() {
               </div>
             )}
           </div>
+
+          {/* Empty State */}
+          {timelineItems.length === 0 && (
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <CardContent className="p-6 text-center space-y-4">
+                <div className="text-4xl mb-2">🌟</div>
+                <h3 className="text-lg font-semibold">Comece adicionando seu primeiro medicamento!</h3>
+                <p className="text-sm text-muted-foreground">
+                  É rápido e fácil. Configure seus horários e nunca mais esqueça de tomar seus remédios.
+                </p>
+                <Button 
+                  onClick={() => navigate("/adicionar-medicamento")} 
+                  size="lg"
+                  className="mt-4"
+                >
+                  + Adicionar Medicamento
+                </Button>
+                <div className="pt-4 border-t mt-6">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    📄 Você também pode guardar seus documentos médicos no Cofre
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate("/cofre")}
+                  >
+                    📄 Ir para o Cofre
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Critical Alerts */}
           {criticalAlerts.alerts.length > 0 && (

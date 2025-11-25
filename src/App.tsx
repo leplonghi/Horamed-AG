@@ -14,6 +14,7 @@ import Agenda from "./pages/Agenda";
 import History from "./pages/History";
 import More from "./pages/More";
 import AddItem from "./pages/AddItem";
+import AddMedicationWizard from "./pages/AddMedicationWizard";
 import StockManagement from "./pages/StockManagement";
 import MedicalReports from "./pages/MedicalReports";
 import Charts from "./pages/Charts";
@@ -77,6 +78,7 @@ function AppContent() {
         
         {/* Medicamentos subroutes */}
         <Route path="/adicionar" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
+        <Route path="/adicionar-medicamento" element={<ProtectedRoute><AddMedicationWizard /></ProtectedRoute>} />
         <Route path="/add" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
         <Route path="/edit/:id" element={<ProtectedRoute><AddItem /></ProtectedRoute>} />
         <Route path="/estoque" element={<ProtectedRoute><StockManagement /></ProtectedRoute>} />
