@@ -57,6 +57,38 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        doc: {
+          prescription: {
+            DEFAULT: "hsl(var(--doc-prescription))",
+            foreground: "hsl(var(--doc-prescription-fg))",
+            background: "hsl(var(--doc-prescription-bg))",
+            border: "hsl(var(--doc-prescription-border))",
+          },
+          exam: {
+            DEFAULT: "hsl(var(--doc-exam))",
+            foreground: "hsl(var(--doc-exam-fg))",
+            background: "hsl(var(--doc-exam-bg))",
+            border: "hsl(var(--doc-exam-border))",
+          },
+          vaccine: {
+            DEFAULT: "hsl(var(--doc-vaccine))",
+            foreground: "hsl(var(--doc-vaccine-fg))",
+            background: "hsl(var(--doc-vaccine-bg))",
+            border: "hsl(var(--doc-vaccine-border))",
+          },
+          consultation: {
+            DEFAULT: "hsl(var(--doc-consultation))",
+            foreground: "hsl(var(--doc-consultation-fg))",
+            background: "hsl(var(--doc-consultation-bg))",
+            border: "hsl(var(--doc-consultation-border))",
+          },
+          other: {
+            DEFAULT: "hsl(var(--doc-other))",
+            foreground: "hsl(var(--doc-other-fg))",
+            background: "hsl(var(--doc-other-bg))",
+            border: "hsl(var(--doc-other-border))",
+          },
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
