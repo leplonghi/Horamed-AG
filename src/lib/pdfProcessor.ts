@@ -1,8 +1,10 @@
 import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
-// Configure worker para Vite
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+// Configure worker usando URL relativo que funciona com Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
 
 export interface PDFPageData {
   pageNumber: number;
