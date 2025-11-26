@@ -40,6 +40,32 @@ All colors MUST be HSL.
     --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --nav-height: 4rem;
     --header-height: 4rem;
+    
+    /* Document Type Colors */
+    --doc-prescription: 217 91% 60%;
+    --doc-prescription-fg: 217 91% 20%;
+    --doc-prescription-bg: 217 91% 97%;
+    --doc-prescription-border: 217 91% 60%;
+    
+    --doc-exam: 142 71% 45%;
+    --doc-exam-fg: 142 71% 25%;
+    --doc-exam-bg: 142 71% 97%;
+    --doc-exam-border: 142 71% 45%;
+    
+    --doc-vaccine: 271 81% 56%;
+    --doc-vaccine-fg: 271 81% 26%;
+    --doc-vaccine-bg: 271 81% 97%;
+    --doc-vaccine-border: 271 81% 56%;
+    
+    --doc-consultation: 25 95% 53%;
+    --doc-consultation-fg: 25 95% 23%;
+    --doc-consultation-bg: 25 95% 97%;
+    --doc-consultation-border: 25 95% 53%;
+    
+    --doc-other: 210 10% 50%;
+    --doc-other-fg: 210 10% 30%;
+    --doc-other-bg: 210 10% 97%;
+    --doc-other-border: 210 10% 50%;
   }
 
   .dark {
@@ -70,6 +96,32 @@ All colors MUST be HSL.
     --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.4);
     --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5);
+    
+    /* Document Type Colors - Dark Mode */
+    --doc-prescription: 217 91% 65%;
+    --doc-prescription-fg: 217 91% 85%;
+    --doc-prescription-bg: 217 91% 15%;
+    --doc-prescription-border: 217 91% 65%;
+    
+    --doc-exam: 142 71% 50%;
+    --doc-exam-fg: 142 71% 80%;
+    --doc-exam-bg: 142 71% 15%;
+    --doc-exam-border: 142 71% 50%;
+    
+    --doc-vaccine: 271 81% 65%;
+    --doc-vaccine-fg: 271 81% 85%;
+    --doc-vaccine-bg: 271 81% 15%;
+    --doc-vaccine-border: 271 81% 65%;
+    
+    --doc-consultation: 25 95% 60%;
+    --doc-consultation-fg: 25 95% 80%;
+    --doc-consultation-bg: 25 95% 15%;
+    --doc-consultation-border: 25 95% 60%;
+    
+    --doc-other: 210 10% 55%;
+    --doc-other-fg: 210 10% 75%;
+    --doc-other-bg: 210 10% 15%;
+    --doc-other-border: 210 10% 55%;
   }
 }
 

@@ -101,15 +101,50 @@ export default function Cofre() {
     const getCategoryIcon = (categorySlug?: string) => {
       switch (categorySlug) {
         case "receita":
-          return { emoji: "💊", label: "Receita", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/30" };
+          return { 
+            emoji: "💊", 
+            label: "Receita", 
+            type: "prescription",
+            color: "text-doc-prescription-foreground", 
+            bg: "bg-doc-prescription-background",
+            border: "border-doc-prescription-border"
+          };
         case "exame":
-          return { emoji: "🧪", label: "Exame", color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-900/30" };
+          return { 
+            emoji: "🧪", 
+            label: "Exame", 
+            type: "exam",
+            color: "text-doc-exam-foreground", 
+            bg: "bg-doc-exam-background",
+            border: "border-doc-exam-border"
+          };
         case "vacinacao":
-          return { emoji: "💉", label: "Vacina", color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-900/30" };
+          return { 
+            emoji: "💉", 
+            label: "Vacina", 
+            type: "vaccine",
+            color: "text-doc-vaccine-foreground", 
+            bg: "bg-doc-vaccine-background",
+            border: "border-doc-vaccine-border"
+          };
         case "consulta":
-          return { emoji: "🩺", label: "Consulta", color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-900/30" };
+          return { 
+            emoji: "🩺", 
+            label: "Consulta", 
+            type: "consultation",
+            color: "text-doc-consultation-foreground", 
+            bg: "bg-doc-consultation-background",
+            border: "border-doc-consultation-border"
+          };
         default:
-          return { emoji: "📋", label: "Documento", color: "text-gray-600 dark:text-gray-400", bg: "bg-gray-50 dark:bg-gray-900/30" };
+          return { 
+            emoji: "📋", 
+            label: "Documento", 
+            type: "other",
+            color: "text-doc-other-foreground", 
+            bg: "bg-doc-other-background",
+            border: "border-doc-other-border"
+          };
       }
     };
 
@@ -117,7 +152,7 @@ export default function Cofre() {
 
     return (
       <Link key={doc.id} to={`/cofre/${doc.id}`}>
-        <Card className="hover:shadow-lg transition-all cursor-pointer relative group border-l-4" style={{ borderLeftColor: category.color.includes('blue') ? '#2563eb' : category.color.includes('green') ? '#16a34a' : category.color.includes('purple') ? '#9333ea' : category.color.includes('orange') ? '#ea580c' : '#6b7280' }}>
+        <Card className={`hover:shadow-lg transition-all cursor-pointer relative group border-l-4 ${category.border}`}>
           <Button
             variant="ghost"
             size="sm"
@@ -132,13 +167,13 @@ export default function Cofre() {
           </Button>
           <CardContent className="p-4">
             <div className="flex gap-3">
-              <div className={`w-14 h-14 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0`}>
+              <div className={`w-14 h-14 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 border ${category.border}`}>
                 <span className="text-2xl">{category.emoji}</span>
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="heading-card truncate mb-2">{doc.title || "Sem título"}</h3>
                 <div className="flex flex-wrap gap-1.5 mb-2">
-                  <Badge variant="outline" className={`text-tiny h-5 ${category.color}`}>
+                  <Badge variant="outline" className={`text-tiny h-5 ${category.color} ${category.border}`}>
                     {category.label}
                   </Badge>
                   {needsReview && (
