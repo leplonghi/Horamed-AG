@@ -136,10 +136,10 @@ function AppContent() {
         <Route path="/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
         <Route path="/exportar" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
         <Route path="/exportar-dados" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
-        <Route path="/privacidade" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
-        <Route path="/privacy" element={<ProtectedRoute><Privacy /></ProtectedRoute>} />
-        <Route path="/termos" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
-        <Route path="/terms" element={<ProtectedRoute><Terms /></ProtectedRoute>} />
+        <Route path="/privacidade" element={<Privacy />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/termos" element={<Terms />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
         <Route path="/progresso" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/onboarding" element={<SmartOnboarding />} />
