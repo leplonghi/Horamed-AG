@@ -430,8 +430,8 @@ export default function TodayRedesign() {
     <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 pt-20 pb-24 max-w-4xl">
-        {/* Dismissable Alerts with Swipe */}
+      <main className="container mx-auto px-3 pt-16 pb-20 max-w-6xl">
+        {/* Dismissable Alerts with Swipe - Compact */}
         {criticalAlerts.alerts.length > 0 && (
           <motion.div
             drag="x"
@@ -441,7 +441,7 @@ export default function TodayRedesign() {
                 criticalAlerts.dismissAll();
               }
             }}
-            className="mb-4"
+            className="mb-3"
           >
             <CriticalAlertBanner 
               alerts={criticalAlerts.alerts} 
@@ -451,57 +451,72 @@ export default function TodayRedesign() {
           </motion.div>
         )}
 
-        <ExpiredPrescriptionsAlert />
-        <VaccineRemindersWidget />
-
-        {/* Header with greeting */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-1">
-            {greeting}{userName && `, ${userName}`}!
-          </h1>
-          <p className="text-muted-foreground text-sm">{motivationalQuote}</p>
+        <div className="space-y-3">
+          <ExpiredPrescriptionsAlert />
+          <VaccineRemindersWidget />
         </div>
 
-        {/* Top Section: Streak, Adherence and Insights - Three columns side by side */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
-          {/* Column 1: Streak */}
+        {/* Header with greeting - Compact */}
+        <div className="mb-4">
+          <h1 className="text-xl font-bold mb-0.5">
+            {greeting}{userName && `, ${userName}`}!
+          </h1>
+          <p className="text-muted-foreground text-xs">{motivationalQuote}</p>
+        </div>
+
+        {/* Compact Grid: Stats and Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-4">
+          {/* Streak Badge */}
           {streakData.currentStreak > 0 && (
-            <StreakBadge streak={streakData.currentStreak} type="current" />
+            <div className="transition-transform hover:scale-105">
+              <StreakBadge streak={streakData.currentStreak} type="current" />
+            </div>
           )}
           
-          {/* Column 2: Adherence */}
-          <SimpleAdherenceSummary 
-            taken={todayStats.taken} 
-            total={todayStats.total}
-            period="Hoje"
-          />
+          {/* Adherence Summary */}
+          <div className="transition-transform hover:scale-105">
+            <SimpleAdherenceSummary 
+              taken={todayStats.taken} 
+              total={todayStats.total}
+              period="Hoje"
+            />
+          </div>
           
-          {/* Column 3: Insights and Quick Actions */}
-          <div className="space-y-3">
+          {/* Health Insights - Compact */}
+          <div className="transition-transform hover:scale-105">
             <HealthInsightsCard />
+          </div>
+          
+          {/* Quick Dose Widget - Compact */}
+          <div className="transition-transform hover:scale-105">
             <QuickDoseWidget />
           </div>
         </div>
 
-        {/* Essential Shortcuts */}
-        <EssentialShortcuts />
-
-        {/* Calendar - Full width */}
-        <div className="mb-6">
-          <ImprovedCalendar
-            selectedDate={selectedDate}
-            onDateSelect={setSelectedDate}
-            eventCounts={eventCounts}
-          />
+        {/* Essential Shortcuts - Compact */}
+        <div className="mb-4">
+          <EssentialShortcuts />
         </div>
 
-        {/* Timeline */}
-        <div className="mb-6">
-          <DayTimeline 
-            date={selectedDate}
-            items={timelineItems}
-            onDateChange={setSelectedDate}
-          />
+        {/* Two Column Layout: Calendar + Timeline */}
+        <div className="grid md:grid-cols-2 gap-3 mb-4">
+          {/* Calendar - Compact */}
+          <div className="transition-transform hover:scale-[1.02]">
+            <ImprovedCalendar
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              eventCounts={eventCounts}
+            />
+          </div>
+
+          {/* Timeline - Compact */}
+          <div className="transition-transform hover:scale-[1.02]">
+            <DayTimeline 
+              date={selectedDate}
+              items={timelineItems}
+              onDateChange={setSelectedDate}
+            />
+          </div>
         </div>
 
         {/* Milestone Reward Modal */}
