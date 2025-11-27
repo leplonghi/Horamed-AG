@@ -462,8 +462,8 @@ export default function TodayRedesign() {
           <p className="text-muted-foreground text-sm">{motivationalQuote}</p>
         </div>
 
-        {/* Top Section: Streak, Adherence and Insights - Three columns on larger screens */}
-        <div className="grid md:grid-cols-3 gap-3 mb-6">
+        {/* Top Section: Streak, Adherence and Insights - Three columns side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
           {/* Column 1: Streak */}
           {streakData.currentStreak > 0 && (
             <StreakBadge streak={streakData.currentStreak} type="current" />
@@ -477,7 +477,7 @@ export default function TodayRedesign() {
           />
           
           {/* Column 3: Insights and Quick Actions */}
-          <div className="space-y-3 md:col-span-1 col-span-2">
+          <div className="space-y-3">
             <HealthInsightsCard />
             <QuickDoseWidget />
           </div>
