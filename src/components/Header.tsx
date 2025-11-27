@@ -59,9 +59,9 @@ export default function Header() {
             <SubscriptionBadge />
           </div>
 
-          <div className="flex items-center gap-1 md:gap-2 animate-fade-in" style={{
+          <div style={{
           animationDelay: '100ms'
-        }}>
+        }} className="gap-1 md:gap-2 animate-fade-in flex items-end justify-center">
             <ProfileSelector />
             
             <ThemeToggle />

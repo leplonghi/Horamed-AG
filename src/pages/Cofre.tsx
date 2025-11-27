@@ -151,7 +151,7 @@ export default function Cofre() {
         }}>
             <Edit className="h-3.5 w-3.5" />
           </Button>
-          <CardContent className="p-4">
+          <CardContent className="p-4 bg-accent">
             <div className="flex gap-3">
               <div className={`w-14 h-14 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 border ${category.border}`}>
                 <span className="text-2xl">{category.emoji}</span>
@@ -216,7 +216,7 @@ export default function Cofre() {
         </div>
 
         {/* Dashboard Stats */}
-        {stats && <div className="grid grid-cols-4 md:grid-cols-4 gap-2 px-0">
+        {stats && <div className="grid grid-cols-4 md:grid-cols-1 gap-2 px-0 py-0">
             <Card className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2 text-center">
@@ -298,7 +298,7 @@ export default function Cofre() {
                 <Skeleton className="h-20" />
                 <Skeleton className="h-20" />
               </> : documentos && documentos.length > 0 ? documentos.map(renderDocumentoCard) : <Card>
-                <CardContent className="py-12 text-center">
+                <CardContent className="text-center py-[30px]">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground mb-2">Nenhum documento encontrado</p>
                   <p className="text-xs text-muted-foreground">
