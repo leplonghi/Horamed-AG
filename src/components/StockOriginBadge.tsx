@@ -23,7 +23,7 @@ export function StockOriginBadge({ prescriptionId, prescriptionTitle, lastRefill
   if (prescriptionId && prescriptionTitle) {
     return (
       <button
-        onClick={() => navigate(`/cofre/${prescriptionId}`)}
+        onClick={() => navigate(`/carteira/${prescriptionId}`)}
         className="inline-flex"
       >
         <Badge variant="secondary" className="gap-1.5 cursor-pointer hover:bg-secondary/80 transition-colors">

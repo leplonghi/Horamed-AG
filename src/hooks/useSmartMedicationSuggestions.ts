@@ -67,7 +67,7 @@ export function useSmartMedicationSuggestions(profileId?: string) {
               : '💊 Adicionar remédios da receita',
             description: `${missingMeds.length} ${missingMeds.length === 1 ? 'remédio' : 'remédios'} da receita "${prescription.title || 'Sem título'}" ${isExpired ? 'vencida' : 'não foram adicionados'}`,
             actionLabel: isExpired ? 'Renovar receita' : 'Adicionar remédios',
-            actionPath: `/cofre/${prescription.id}`,
+            actionPath: `/carteira/${prescription.id}`,
             data: { prescriptionId: prescription.id, medications: missingMeds }
           });
         }
@@ -112,7 +112,7 @@ export function useSmartMedicationSuggestions(profileId?: string) {
           title: '⚠️ Receitas antigas não usadas',
           description: `${veryOldPrescriptions.length} ${veryOldPrescriptions.length === 1 ? 'receita venceu' : 'receitas venceram'} há mais de 30 dias. Peça nova receita ao médico.`,
           actionLabel: 'Ver receitas',
-          actionPath: '/cofre?filtro=receita',
+          actionPath: '/carteira?filtro=receita',
           data: { prescriptions: veryOldPrescriptions }
         });
       }

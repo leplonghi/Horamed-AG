@@ -86,7 +86,7 @@ function AppContent() {
         <Route path="/rotina" element={<ProtectedRoute><Medications /></ProtectedRoute>} />
         <Route path="/progresso" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         <Route path="/conquistas" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
-        <Route path="/cofre" element={<ProtectedRoute><Cofre /></ProtectedRoute>} />
+        <Route path="/carteira" element={<ProtectedRoute><Cofre /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         
         {/* Legacy routes */}
@@ -150,13 +150,13 @@ function AppContent() {
         <Route path="/emergencia" element={<ProtectedRoute><Emergency /></ProtectedRoute>} />
         <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
         
-        {/* Cofre subroutes */}
-        <Route path="/cofre/upload" element={<ProtectedRoute><CofreUpload /></ProtectedRoute>} />
-        <Route path="/cofre/criar-manual" element={<ProtectedRoute><CofreManualCreate /></ProtectedRoute>} />
-        <Route path="/cofre/:id/review" element={<ProtectedRoute><CofreDocumentReview /></ProtectedRoute>} />
-        <Route path="/cofre/:id/editar" element={<ProtectedRoute><CofreDocumentoEdit /></ProtectedRoute>} />
-        <Route path="/cofre/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
-        <Route path="/cofre/documento/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
+        {/* Carteira subroutes */}
+        <Route path="/carteira/upload" element={<ProtectedRoute><CofreUpload /></ProtectedRoute>} />
+        <Route path="/carteira/criar-manual" element={<ProtectedRoute><CofreManualCreate /></ProtectedRoute>} />
+        <Route path="/carteira/:id/review" element={<ProtectedRoute><CofreDocumentReview /></ProtectedRoute>} />
+        <Route path="/carteira/:id/editar" element={<ProtectedRoute><CofreDocumentoEdit /></ProtectedRoute>} />
+        <Route path="/carteira/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
+        <Route path="/carteira/documento/:id" element={<ProtectedRoute><CofreDocumento /></ProtectedRoute>} />
         <Route path="/compartilhar/:token" element={<CompartilharDocumento />} />
         <Route path="/scan" element={<ProtectedRoute><DocumentScan /></ProtectedRoute>} />
         <Route path="/digitalizar" element={<ProtectedRoute><DocumentScan /></ProtectedRoute>} />

@@ -40,7 +40,7 @@ export default function CarteiraVacina() {
   const isLoading = activeTab === 'adulto' ? loadingAdult : loadingChild;
 
   const handleUploadDocument = () => {
-    navigate('/cofre/upload');
+    navigate('/carteira/upload');
   };
 
   const handleDelete = (id: string) => {

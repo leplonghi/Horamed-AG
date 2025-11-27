@@ -154,7 +154,7 @@ export default function CofreDocumentoEdit() {
       queryClient.invalidateQueries({ queryKey: ["documento", id] });
       queryClient.invalidateQueries({ queryKey: ["documentos"] });
       toast.success("Documento atualizado com sucesso!");
-      navigate(`/cofre/${id}`);
+      navigate(`/carteira/${id}`);
     },
     onError: () => {
       toast.error("Erro ao atualizar documento");
@@ -734,7 +734,7 @@ export default function CofreDocumentoEdit() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate(`/cofre/${id}`)}
+          onClick={() => navigate(`/carteira/${id}`)}
                 >
                   Cancelar
                 </Button>

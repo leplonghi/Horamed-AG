@@ -91,7 +91,7 @@ export function ExpiredPrescriptionsAlert() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => navigate("/cofre")}
+            onClick={() => navigate("/carteira")}
             className="flex-1"
           >
             <FileText className="h-4 w-4 mr-2" />

@@ -34,7 +34,7 @@ export default function QuickDocumentUpload({ open, onOpenChange }: QuickDocumen
       description: "PDF, JPG ou PNG",
       onClick: () => {
         onOpenChange(false);
-        navigate("/cofre/upload");
+        navigate("/carteira/upload");
       },
     },
     {
@@ -43,7 +43,7 @@ export default function QuickDocumentUpload({ open, onOpenChange }: QuickDocumen
       description: "Adicionar sem arquivo",
       onClick: () => {
         onOpenChange(false);
-        navigate("/cofre/criar-manual");
+        navigate("/carteira/criar-manual");
       },
     },
   ];

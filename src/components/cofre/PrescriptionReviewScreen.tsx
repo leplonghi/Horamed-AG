@@ -76,7 +76,7 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
   const handleFinish = async () => {
     if (selectedMeds.size === 0) {
       toast.info("Nenhum medicamento selecionado");
-      navigate(`/cofre/${documentId}`);
+      navigate(`/carteira/${documentId}`);
       return;
     }
 

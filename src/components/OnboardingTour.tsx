@@ -35,7 +35,7 @@ const steps: OnboardingStep[] = [
   {
     title: "Carteira de Saúde - Documentos seguros",
     description: "Guarde receitas, exames e vacinas em um só lugar. Tire foto e o app lê automaticamente! Compartilhe com médicos quando precisar.",
-    action: () => window.location.href = "/cofre",
+    action: () => window.location.href = "/carteira",
   },
   {
     title: "Está pronto! 🎉",

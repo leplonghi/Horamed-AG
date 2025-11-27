@@ -29,7 +29,7 @@ export default function Cofre() {
   const navigate = useNavigate();
   const handleDocumentSuccess = (documentId: string, type: string, extractedData: any) => {
     // Navigate to appropriate review screen based on type
-    navigate(`/cofre/${documentId}/review`, {
+    navigate(`/carteira/${documentId}/review`, {
       state: {
         type,
         extractedData
@@ -74,7 +74,7 @@ export default function Cofre() {
   const getSignedUrl = async (path: string) => {
     const {
       data
-    } = await supabase.storage.from("cofre-saude").createSignedUrl(path, 3600);
+    } = await supabase.storage.from("carteira-saude").createSignedUrl(path, 3600);
     return data?.signedUrl;
   };
   const renderDocumentoCard = (doc: DocumentoSaude) => {
@@ -142,12 +142,12 @@ export default function Cofre() {
       }
     };
     const category = getCategoryIcon(doc.categorias_saude?.slug);
-    return <Link key={doc.id} to={`/cofre/${doc.id}`}>
+    return <Link key={doc.id} to={`/carteira/${doc.id}`}>
         <Card className={`hover:shadow-lg transition-all cursor-pointer relative group border-l-4 ${category.border}`}>
           <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => {
           e.preventDefault();
           e.stopPropagation();
-          navigate(`/cofre/${doc.id}/editar`);
+          navigate(`/carteira/${doc.id}/editar`);
         }}>
             <Edit className="h-3.5 w-3.5" />
           </Button>
@@ -274,7 +274,7 @@ export default function Cofre() {
             </Card>
           </div>}
 
-        <TutorialHint id="cofre_page" title="Sua carteira de saúde digital 🏥" message="Guarde exames, receitas, vacinas e consultas aqui. Compartilhe facilmente com médicos quando precisar! Tudo com segurança e privacidade." />
+        <TutorialHint id="carteira_page" title="Sua carteira de saúde digital 🏥" message="Guarde exames, receitas, vacinas e consultas aqui. Compartilhe facilmente com médicos quando precisar! Tudo com segurança e privacidade." />
 
         <div className="flex gap-2 mb-4">
           <Input placeholder="Buscar documentos..." value={busca} onChange={e => setBusca(e.target.value)} className="flex-1" />
