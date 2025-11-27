@@ -503,7 +503,7 @@ export default function TodayRedesign() {
         )}
 
         {/* Compact Grid: Stats and Quick Actions - Equal Height Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
           {/* Streak Badge */}
           {streakData.currentStreak > 0 && (
             <div className="transition-transform hover:scale-105">
