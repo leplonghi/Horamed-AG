@@ -31,11 +31,12 @@ import { VaccineRemindersWidget } from "@/components/VaccineRemindersWidget";
 import { ExpiredPrescriptionsAlert } from "@/components/ExpiredPrescriptionsAlert";
 import EssentialShortcuts from "@/components/EssentialShortcuts";
 import SimpleAdherenceSummary from "@/components/SimpleAdherenceSummary";
-import { X } from "lucide-react";
+import { X, Settings } from "lucide-react";
 import HydrationWidget from "@/components/fitness/HydrationWidget";
 import EnergyHintWidget from "@/components/fitness/EnergyHintWidget";
 import SupplementConsistencyWidget from "@/components/fitness/SupplementConsistencyWidget";
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
+import TutorialHint from "@/components/TutorialHint";
 interface TimelineItem {
   id: string;
   time: string;
@@ -92,6 +93,50 @@ export default function TodayRedesign() {
   const {
     preferences
   } = useFitnessPreferences();
+  const [tutorialsEnabled, setTutorialsEnabled] = useState(true);
+
+  useEffect(() => {
+    const loadTutorialPreference = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tutorial_flags")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (profile?.tutorial_flags) {
+        const flags = profile.tutorial_flags as Record<string, boolean>;
+        setTutorialsEnabled(!flags['tutorials_disabled']);
+      }
+    };
+    loadTutorialPreference();
+  }, []);
+
+  const toggleTutorials = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const newState = !tutorialsEnabled;
+    setTutorialsEnabled(newState);
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("tutorial_flags")
+      .eq("user_id", user.id)
+      .single();
+
+    const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
+    const newFlags = { ...currentFlags, tutorials_disabled: !newState };
+
+    await supabase
+      .from("profiles")
+      .update({ tutorial_flags: newFlags })
+      .eq("user_id", user.id);
+
+    toast.success(newState ? "Tutoriais ativados" : "Tutoriais desativados");
+  };
 
   // Check if user has supplements
   useEffect(() => {
@@ -426,34 +471,70 @@ export default function TodayRedesign() {
 
         {/* Header with greeting - Visible and Styled */}
         <div className="mb-3">
-          <h1 className="text-3xl md:text-4xl font-bold mb-1 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-            {greeting}{userName && `, ${userName}`}!
-          </h1>
-          <p className="text-muted-foreground text-base">{motivationalQuote}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold mb-1 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                {greeting}{userName && `, ${userName}`}!
+              </h1>
+              <p className="text-muted-foreground text-base">{motivationalQuote}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTutorials}
+              className="shrink-0"
+              title={tutorialsEnabled ? "Desativar tutoriais" : "Ativar tutoriais"}
+            >
+              <Settings className={`h-5 w-5 ${tutorialsEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+            </Button>
+          </div>
         </div>
 
+        {/* Tutorial Hints */}
+        {tutorialsEnabled && (
+          <>
+            <TutorialHint
+              id="today_overview"
+              title="📅 Bem-vindo à sua rotina de hoje"
+              message="Aqui você vê todas as suas doses, consultas e compromissos de saúde organizados por horário. Marque como tomado quando completar cada dose."
+              placement="bottom"
+            />
+          </>
+        )}
+
         {/* Compact Grid: Stats and Quick Actions - Equal Height Cards */}
-        <div className="grid grid-cols-3 md:grid-cols-1 lg:grid-cols-4 gap-2 mb-2 items-stretch pl-0 pt-0 my-0 mx-0">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
           {/* Streak Badge */}
-          {streakData.currentStreak > 0 && <div className="transition-transform hover:scale-105 h-full">
+          {streakData.currentStreak > 0 && (
+            <div className="transition-transform hover:scale-105">
               <StreakBadge streak={streakData.currentStreak} type="current" />
-            </div>}
+            </div>
+          )}
           
           {/* Adherence Summary */}
-          <div className="transition-transform hover:scale-105 h-full my-0">
+          <div className="transition-transform hover:scale-105">
             <SimpleAdherenceSummary taken={todayStats.taken} total={todayStats.total} period="Hoje" />
           </div>
           
           {/* Health Insights - Compact */}
-          <div className="transition-transform hover:scale-105 h-full">
+          <div className="transition-transform hover:scale-105">
             <HealthInsightsCard />
           </div>
           
           {/* Quick Dose Widget - Compact */}
-          <div className="transition-transform hover:scale-105 h-full">
+          <div className="transition-transform hover:scale-105">
             <QuickDoseWidget />
           </div>
         </div>
+
+        {tutorialsEnabled && (
+          <TutorialHint
+            id="today_widgets"
+            title="📊 Seus indicadores de saúde"
+            message="Estes cards mostram seu progresso diário: sequência de dias seguidos, doses tomadas hoje, insights importantes e ações rápidas. Toque em cada um para ver mais detalhes."
+            placement="bottom"
+          />
+        )}
 
         {/* Essential Shortcuts - Compact */}
         <div className="mb-2">
@@ -468,14 +549,23 @@ export default function TodayRedesign() {
           </div>}
 
         {/* Two Column Layout: Calendar + Timeline */}
-        <div className="grid md:grid-cols-2 gap-2">
+        {tutorialsEnabled && (
+          <TutorialHint
+            id="today_calendar_timeline"
+            title="📆 Calendário e Linha do Tempo"
+            message="À esquerda, veja todos os dias do mês com seus compromissos marcados. À direita, a linha do tempo detalhada do dia selecionado com horários de cada dose e consulta."
+            placement="bottom"
+          />
+        )}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           {/* Calendar - Compact */}
-          <div className="transition-transform hover:scale-[1.02]">
+          <div className="w-full">
             <ImprovedCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} eventCounts={eventCounts} />
           </div>
 
           {/* Timeline - Compact */}
-          <div className="transition-transform hover:scale-[1.02]">
+          <div className="w-full">
             <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
           </div>
         </div>

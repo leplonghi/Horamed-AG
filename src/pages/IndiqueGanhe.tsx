@@ -66,24 +66,40 @@ export default function IndiqueGanhe() {
   };
 
   const copyReferralCode = () => {
+    if (!referralCode) {
+      toast.error('Código de indicação não disponível');
+      return;
+    }
     navigator.clipboard.writeText(referralCode);
     toast.success('Código copiado!');
   };
 
   const shareReferral = async () => {
+    if (!referralCode) {
+      toast.error('Código de indicação não disponível');
+      return;
+    }
+
+    const shareText = `Use meu código ${referralCode} no HoraMed e ganhe acesso ao melhor app de organização de saúde! ${window.location.origin}/auth?ref=${referralCode}`;
+    
     const shareData = {
-      title: 'HoraMed',
-      text: `Use meu código ${referralCode} e ganhe acesso ao melhor app de organização de saúde!`,
+      title: 'HoraMed - Indique e Ganhe',
+      text: shareText,
       url: `${window.location.origin}/auth?ref=${referralCode}`
     };
 
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch (error) {
-        copyReferralCode();
+        toast.success('Compartilhado com sucesso!');
+      } catch (error: any) {
+        // User cancelled or error occurred
+        if (error.name !== 'AbortError') {
+          copyReferralCode();
+        }
       }
     } else {
+      // Fallback: copy to clipboard
       copyReferralCode();
     }
   };
