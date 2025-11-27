@@ -89,6 +89,12 @@ export default {
             border: "hsl(var(--doc-other-border))",
           },
         },
+        performance: {
+          DEFAULT: "hsl(var(--performance))",
+          foreground: "hsl(var(--performance-foreground))",
+          background: "hsl(var(--performance-bg))",
+          border: "hsl(var(--performance-border))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

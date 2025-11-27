@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import TutorialHint from "@/components/TutorialHint";
 import HelpTooltip from "@/components/HelpTooltip";
 import WeightBMICard from "@/components/WeightBMICard";
+import FitnessProgressWidgets from "@/components/fitness/FitnessProgressWidgets";
 
 export default function Progress() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export default function Progress() {
   const currentProfile = getProfileCache("current");
   const navigate = useNavigate();
   const [selectedPeriod, setSelectedPeriod] = useState<"week" | "month" | "all">("week");
+  const [hasSupplements, setHasSupplements] = useState(false);
 
   // Get streak data
   const { data: streakData } = useQuery({
@@ -39,6 +41,36 @@ export default function Progress() {
     },
     enabled: !!user?.id,
   });
+
+  // Check if user has supplements
+  const { data: supplementsData } = useQuery({
+    queryKey: ["supplements-check", user?.id, currentProfile?.id],
+    queryFn: async () => {
+      if (!user?.id) return { hasSupplements: false };
+
+      let query = supabase
+        .from("items")
+        .select("id", { count: "exact", head: true })
+        .in("category", ["suplemento", "vitamina"])
+        .eq("is_active", true)
+        .eq("user_id", user.id);
+
+      if (currentProfile?.id) {
+        query = query.eq("profile_id", currentProfile.id);
+      }
+
+      const { count } = await query;
+      return { hasSupplements: (count || 0) > 0 };
+    },
+    enabled: !!user?.id,
+  });
+
+  // Update hasSupplements state
+  useEffect(() => {
+    if (supplementsData) {
+      setHasSupplements(supplementsData.hasSupplements);
+    }
+  }, [supplementsData]);
 
   // Get doses statistics
   const { data: doseStats } = useQuery({
@@ -370,6 +402,21 @@ export default function Progress() {
             </CardHeader>
           </Card>
         </motion.div>
+
+        {/* Fitness Widgets - Only show if user has supplements */}
+        {hasSupplements && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55 }}
+          >
+            <FitnessProgressWidgets 
+              supplementAdherence7Days={doseStats?.adherence || 0}
+              consistencyRate={doseStats?.onTimeRate || 0}
+              hasPreWorkoutSupplements={true}
+            />
+          </motion.div>
+        )}
       </main>
 
       <Navigation />

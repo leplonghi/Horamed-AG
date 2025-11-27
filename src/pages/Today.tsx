@@ -40,6 +40,9 @@ import AIChatUI from "@/components/AIChatUI";
 import EssentialShortcuts from "@/components/EssentialShortcuts";
 import SimpleDoseCard from "@/components/SimpleDoseCard";
 import SimpleAdherenceSummary from "@/components/SimpleAdherenceSummary";
+import HydrationWidget from "@/components/fitness/HydrationWidget";
+import SupplementConsistencyWidget from "@/components/fitness/SupplementConsistencyWidget";
+import EnergyHintWidget from "@/components/fitness/EnergyHintWidget";
 
 interface TimelineItem {
   id: string;
@@ -75,6 +78,7 @@ export default function Today() {
   const [todayStats, setTodayStats] = useState({ total: 0, taken: 0 });
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
   const [hasAnyItems, setHasAnyItems] = useState(true);
+  const [hasSupplements, setHasSupplements] = useState(false);
   const [showMilestoneReward, setShowMilestoneReward] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
@@ -230,6 +234,20 @@ export default function Today() {
 
       const { count: itemCount } = await allItemsQuery;
       setHasAnyItems((itemCount || 0) > 0);
+
+      // Check if user has supplements or vitamins
+      let supplementsQuery = supabase
+        .from("items")
+        .select("id", { count: "exact", head: true })
+        .in("category", ["suplemento", "vitamina"])
+        .eq("is_active", true);
+
+      if (activeProfile) {
+        supplementsQuery = supplementsQuery.eq("profile_id", activeProfile.id);
+      }
+
+      const { count: supplementCount } = await supplementsQuery;
+      setHasSupplements((supplementCount || 0) > 0);
 
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
@@ -624,6 +642,15 @@ export default function Today() {
 
           {/* AI Health Assistant */}
           <AIChatUI />
+
+          {/* Fitness Widgets - Only show if user has supplements */}
+          {hasSupplements && (
+            <div className="space-y-3">
+              <HydrationWidget />
+              <SupplementConsistencyWidget last7Days={[75, 80, 90, 85, 100, 95, 85]} />
+              <EnergyHintWidget />
+            </div>
+          )}
 
           {/* Health Insights Card */}
           <HealthInsightsCard />
