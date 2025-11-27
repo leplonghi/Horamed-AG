@@ -8,9 +8,10 @@ import UpgradeModal from "@/components/UpgradeModal";
 
 interface AIAssistantInputProps {
   onResponse?: (response: string) => void;
+  onUserMessage?: (message: string) => void;
 }
 
-export default function AIAssistantInput({ onResponse }: AIAssistantInputProps) {
+export default function AIAssistantInput({ onResponse, onUserMessage }: AIAssistantInputProps) {
   const [query, setQuery] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { processQuery, isProcessing } = useHealthAgent();
@@ -21,6 +22,11 @@ export default function AIAssistantInput({ onResponse }: AIAssistantInputProps) 
 
     const userQuery = query.trim();
     setQuery("");
+    
+    // Notify parent of user message
+    if (onUserMessage) {
+      onUserMessage(userQuery);
+    }
 
     try {
       const response = await processQuery(userQuery);
