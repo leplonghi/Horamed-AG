@@ -563,60 +563,67 @@ export default function Today() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-background pt-20 px-3 py-4 pb-24 overflow-x-hidden">
-        <div className="max-w-6xl mx-auto space-y-4 overflow-x-hidden">
-          {/* Greeting & Streak */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">
-                {greeting}{userName && `, ${userName}`}!
-              </h1>
-              <p className="text-sm text-primary/80 font-medium mt-1.5 italic">
-                {motivationalQuote}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {timelineItems.length > 0 
-                  ? `${timelineItems.length} evento${timelineItems.length > 1 ? 's' : ''} hoje`
-                  : "Nenhum evento programado"}
-              </p>
-            </div>
-            {streakData.currentStreak > 0 && (
-              <div className="flex items-center gap-2">
-                <StreakBadge streak={streakData.currentStreak} type="current" />
-                <InfoDialog
-                  title="O que é streak?"
-                  description="Streak são dias seguidos com progresso acima de 80%. Quanto maior seu streak, mais consistente você está sendo!"
-                  triggerClassName="h-5 w-5"
-                />
+      <div className="min-h-screen bg-background pt-20 px-4 py-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Greeting & Streak Section */}
+          <div className="animate-fade-in">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {greeting}{userName && `, ${userName}`}!
+                </h1>
+                <p className="text-base text-primary/90 font-medium mt-2 leading-relaxed">
+                  {motivationalQuote}
+                </p>
+                <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/60" />
+                  {timelineItems.length > 0 
+                    ? `${timelineItems.length} evento${timelineItems.length > 1 ? 's' : ''} hoje`
+                    : "Nenhum evento programado"}
+                </p>
               </div>
-            )}
+              {streakData.currentStreak > 0 && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <StreakBadge streak={streakData.currentStreak} type="current" />
+                  <InfoDialog
+                    title="O que é streak?"
+                    description="Streak são dias seguidos com progresso acima de 80%. Quanto maior seu streak, mais consistente você está sendo!"
+                    triggerClassName="h-5 w-5"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Empty State - only show when user has NO items at all */}
           {!hasAnyItems && timelineItems.length === 0 && (
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="text-4xl mb-2">🌟</div>
-                <h3 className="text-lg font-semibold">Comece a organizar seus tratamentos!</h3>
-                <p className="text-sm text-muted-foreground">
-                  Adicione remédios, suplementos e vitaminas. Configure horários e nunca mais esqueça.
-                </p>
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 animate-scale-in">
+              <CardContent className="p-8 text-center space-y-5">
+                <div className="text-5xl mb-3 animate-[pulse_2s_ease-in-out_infinite]">🌟</div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-bold">Comece a organizar seus tratamentos!</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+                    Adicione remédios, suplementos e vitaminas. Configure horários e nunca mais esqueça.
+                  </p>
+                </div>
                 <Button 
                   onClick={() => navigate("/adicionar-medicamento")} 
                   size="lg"
-                  className="mt-4"
+                  className="mt-6 hover-scale"
                 >
                   + Adicionar Primeiro Item
                 </Button>
-                <div className="pt-4 border-t mt-6">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    📄 Você também pode guardar seus documentos médicos no Cofre
+                <div className="pt-6 border-t mt-8">
+                  <p className="text-sm text-muted-foreground mb-4 flex items-center justify-center gap-2">
+                    <span>📄</span>
+                    <span>Você também pode guardar seus documentos médicos</span>
                   </p>
                   <Button 
                     variant="outline" 
-                    onClick={() => navigate("/cofre")}
+                    onClick={() => navigate("/carteira")}
+                    className="hover-scale"
                   >
-                    📄 Ir para o Cofre
+                    Ir para a Carteira de Saúde
                   </Button>
                 </div>
               </CardContent>
@@ -625,15 +632,20 @@ export default function Today() {
 
           {/* Critical Alerts */}
           {criticalAlerts.alerts.length > 0 && (
-            <CriticalAlertBanner 
-              alerts={criticalAlerts.alerts}
-              onDismiss={criticalAlerts.dismissAlert}
-              onDismissAll={criticalAlerts.dismissAll}
-            />
+            <div className="animate-fade-in">
+              <CriticalAlertBanner 
+                alerts={criticalAlerts.alerts}
+                onDismiss={criticalAlerts.dismissAlert}
+                onDismissAll={criticalAlerts.dismissAll}
+              />
+            </div>
           )}
 
-          {/* Smart Action Cards */}
-          <SmartActionCards />
+          {/* Smart Actions & Quick Access */}
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <SmartActionCards />
+            <EssentialShortcuts />
+          </div>
 
           {/* Tutorial Hint */}
           <TutorialHint
@@ -643,120 +655,128 @@ export default function Today() {
           />
 
           {/* AI Health Assistant */}
-          <AIChatUI />
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <AIChatUI />
+          </div>
 
-          {/* Fitness Widgets - Only show if user has supplements AND preference is enabled */}
-          {hasSupplements && preferences.showFitnessWidgets && (
-            <div className="space-y-3">
-              <HydrationWidget />
-              <SupplementConsistencyWidget last7Days={[75, 80, 90, 85, 100, 95, 85]} />
-              <EnergyHintWidget />
-            </div>
-          )}
+          {/* Health Monitoring Section */}
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            {/* Fitness Widgets - Only show if user has supplements AND preference is enabled */}
+            {hasSupplements && preferences.showFitnessWidgets && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-semibold text-muted-foreground px-1">Acompanhamento Fitness</h2>
+                <HydrationWidget />
+                <SupplementConsistencyWidget last7Days={[75, 80, 90, 85, 100, 95, 85]} />
+                <EnergyHintWidget />
+              </div>
+            )}
 
-          {/* Health Insights Card */}
-          <HealthInsightsCard />
+            {/* Health Insights */}
+            <HealthInsightsCard />
 
-          {/* Expired Prescriptions Alert */}
-          <ExpiredPrescriptionsAlert />
+            {/* Quick Dose Widget */}
+            <QuickDoseWidget />
+          </div>
 
-          {/* Vaccine Reminders Widget */}
-          <VaccineRemindersWidget />
-
-          {/* Caregiver Vaccine Reminders */}
-          <CaregiverVaccineReminders />
-
-          {/* Quick Dose Widget */}
-          <QuickDoseWidget />
+          {/* Alerts & Reminders Section */}
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <ExpiredPrescriptionsAlert />
+            <VaccineRemindersWidget />
+            <CaregiverVaccineReminders />
+          </div>
 
           {/* Adaptive Suggestions */}
           {suggestions.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 animate-fade-in">
               {suggestions.map((suggestion, idx) => (
-                <Alert key={idx} className="border-primary/20 bg-primary/5">
-                  <AlertDescription>{suggestion.message}</AlertDescription>
+                <Alert key={idx} className="border-primary/20 bg-primary/5 animate-scale-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                  <AlertDescription className="text-sm">{suggestion.message}</AlertDescription>
                 </Alert>
               ))}
             </div>
           )}
 
-          {/* Today Summary */}
-          {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && (
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
-              <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="text-sm text-muted-foreground">Progresso de Hoje</p>
+          {/* Today Summary & Progress */}
+          {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && todayStats.total > 0 && (
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 animate-scale-in">
+              <CardContent className="py-6">
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-sm font-semibold text-muted-foreground">Progresso de Hoje</p>
                       <InfoDialog
                         title="O que é o progresso?"
                         description="Progresso é a proporção de doses tomadas. Acima de 80% é excelente!"
                       />
                     </div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-3xl font-bold tracking-tight">
                       {todayStats.taken}/{todayStats.total}
                     </p>
-                    <p className="text-sm mt-0.5">
-                      {adherencePercentage >= 80 && "🎉 Excelente!"}
+                    <p className="text-sm mt-2 font-medium">
+                      {adherencePercentage >= 80 && "🎉 Excelente progresso!"}
                       {adherencePercentage >= 50 && adherencePercentage < 80 && "💪 Bom trabalho!"}
-                      {adherencePercentage < 50 && todayStats.total > 0 && "Vamos lá!"}
-                      {todayStats.total === 0 && "Nenhuma dose hoje"}
+                      {adherencePercentage < 50 && todayStats.total > 0 && "💫 Vamos lá!"}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-primary">{adherencePercentage}%</div>
-                    <p className="text-xs text-muted-foreground">completo</p>
+                  <div className="text-right shrink-0">
+                    <div className="text-4xl font-bold text-primary">{adherencePercentage}%</div>
+                    <p className="text-xs text-muted-foreground mt-1">completo</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Export Card */}
-          <Card 
-            className="border-muted hover:border-primary/30 transition-colors cursor-pointer group"
-            onClick={() => navigate('/exportar')}
-          >
-            <CardContent className="pt-6 pb-6 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
-                    <FileDown className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+          {/* Schedule & Timeline Section */}
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <h2 className="text-sm font-semibold text-muted-foreground px-1">Agenda & Calendário</h2>
+            
+            {/* Export Card */}
+            <Card 
+              className="border-muted hover:border-primary/30 transition-all cursor-pointer group hover-scale"
+              onClick={() => navigate('/exportar')}
+            >
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                      <FileDown className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold group-hover:text-primary transition-colors">Exportar Dados</p>
+                      <p className="text-xs text-muted-foreground">
+                        Baixe seus dados de saúde em PDF (LGPD)
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold group-hover:text-primary transition-colors">Exportar Dados</p>
-                    <p className="text-xs text-muted-foreground">
-                      Baixe seus dados de saúde em PDF (LGPD)
-                    </p>
-                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Calendário Melhorado */}
-          <ImprovedCalendar
-            selectedDate={selectedDate}
-            onDateSelect={(newDate) => {
-              setSelectedDate(newDate);
-              setLoading(true);
-              loadData(newDate);
-            }}
-            eventCounts={eventCounts}
-            profileId={activeProfile?.id}
-          />
+            {/* Calendário Melhorado */}
+            <ImprovedCalendar
+              selectedDate={selectedDate}
+              onDateSelect={(newDate) => {
+                setSelectedDate(newDate);
+                setLoading(true);
+                loadData(newDate);
+              }}
+              eventCounts={eventCounts}
+              profileId={activeProfile?.id}
+            />
 
-          {/* Timeline do Dia */}
-          <DayTimeline
-            date={selectedDate}
-            items={timelineItems}
-            onDateChange={(newDate) => {
-              setSelectedDate(newDate);
-              setLoading(true);
-              loadData(newDate);
-            }}
-          />
+            {/* Timeline do Dia */}
+            <DayTimeline
+              date={selectedDate}
+              items={timelineItems}
+              onDateChange={(newDate) => {
+                setSelectedDate(newDate);
+                setLoading(true);
+                loadData(newDate);
+              }}
+            />
+          </div>
         </div>
       </div>
 
