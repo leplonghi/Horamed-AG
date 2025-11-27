@@ -104,9 +104,9 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
               />
               <CommandList className="max-h-[300px]">
                 <CommandEmpty>
-                  {loading ? "Carregando..." : searchTerm.length < 3 ? "Digite ao menos 3 caracteres para buscar" : "Nenhum medicamento encontrado"}
+                  {loading ? "Carregando..." : "Nenhum medicamento encontrado"}
                 </CommandEmpty>
-                {searchTerm.length >= 3 && (
+                {searchTerm.length >= 1 && (
                   <CommandGroup>
                     {medicamentos.map((med) => (
                       <CommandItem

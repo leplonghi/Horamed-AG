@@ -72,7 +72,7 @@ export function useFilteredMedicamentos(searchTerm: string, limit: number = 100)
   const { medicamentos, loading } = useMedicamentosBrasileiros();
 
   const filtered = useMemo(() => {
-    if (!searchTerm || searchTerm.length < 3) return [];
+    if (!searchTerm || searchTerm.length < 1) return [];
     
     const search = searchTerm.toLowerCase().trim();
     return medicamentos
