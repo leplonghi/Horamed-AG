@@ -29,7 +29,7 @@ export default function SimpleAdherenceSummary({
     opacity: 1,
     y: 0
   }}>
-      <Card className="bg-gradient-to-br from-primary/5 to-background border-2 border-primary/20">
+      <Card className="bg-gradient-to-br from-primary/5 to-background border-2 border-primary/20 mr-0 px-[10px]">
         <CardContent className="p-5 px-0 py-0">
           <div className="flex items-center justify-between">
             <div className="flex-1 mt-px">

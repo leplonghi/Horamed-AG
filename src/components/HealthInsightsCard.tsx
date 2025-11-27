@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function HealthInsightsCard() {
   const navigate = useNavigate();
   return <Card className="h-full bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-      <CardContent className="h-full p-6 space-y-4 px-[24px] gap-0 mx-0 my-0 pb-[15px] pr-[5px] pt-0 pl-[5px] shadow-sm flex-row py-[10px] flex items-start justify-between">
+      <CardContent className="h-full p-6 space-y-4 gap-0 mx-0 my-0 pb-[15px] pr-[5px] pt-0 pl-[5px] shadow-sm flex-col flex items-center justify-between px-0 py-[10x]">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">

@@ -433,7 +433,7 @@ export default function TodayRedesign() {
         </div>
 
         {/* Compact Grid: Stats and Quick Actions - Equal Height Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2 items-stretch pl-0 pt-0 my-0 mx-0">
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-4 gap-2 mb-2 items-stretch pl-0 pt-0 my-0 mx-0">
           {/* Streak Badge */}
           {streakData.currentStreak > 0 && <div className="transition-transform hover:scale-105 h-full">
               <StreakBadge streak={streakData.currentStreak} type="current" />
