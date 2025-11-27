@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function HealthInsightsCard() {
   const navigate = useNavigate();
   return <Card className="h-full bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-      <CardContent className="h-full p-6 justify-between space-y-4 px-[24px] flex flex-col gap-0 mx-0 my-0 pb-[15px] pr-[5px] pt-0 pl-[5px] shadow-sm">
+      <CardContent className="h-full p-6 space-y-4 px-[24px] gap-0 mx-0 my-0 pb-[15px] pr-[5px] pt-0 pl-[5px] shadow-sm flex-row py-[10px] flex items-start justify-between">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -21,17 +21,17 @@ export default function HealthInsightsCard() {
         </div>
         
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" size="default" className="w-full h-auto py-3" onClick={() => navigate('/evolucao')}>
+          <Button variant="outline" size="default" onClick={() => navigate('/evolucao')} className="w-full h-auto py-[15px] px-0 bg-blue-100">
             <Activity className="h-4 w-4 mr-2" />
             <span className="text-sm">Dashboard</span>
           </Button>
-          <Button variant="outline" size="default" className="w-full h-auto py-3" onClick={() => navigate('/timeline')}>
+          <Button variant="outline" size="default" onClick={() => navigate('/timeline')} className="w-full h-auto py-0 bg-blue-100">
             <LineChart className="h-4 w-4 mr-2" />
             <span className="text-sm">Linha do Tempo</span>
           </Button>
         </div>
 
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-sm text-muted-foreground leading-relaxed px-[10px] mx-[10px] pr-0 text-left pt-0 pl-0">
           Veja como seu compromisso com os medicamentos impacta sua saúde ao longo do tempo
         </p>
       </CardContent>
