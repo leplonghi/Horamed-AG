@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { 
   User, Bell, Shield, CreditCard, HelpCircle, LogOut, FileDown, 
   Crown, Users, Plus, Trash2, Settings, BookOpen, Mail,
-  Download, FileText, AlertCircle, Smartphone
+  Download, FileText, AlertCircle, Smartphone, Gift
 } from "lucide-react";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";
@@ -443,6 +443,41 @@ export default function Profile() {
                       Gerenciar
                     </Button>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Indique e Ganhe Card */}
+            <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  <CardTitle>Indique e Ganhe</CardTitle>
+                </div>
+                <CardDescription>
+                  Compartilhe o HoraMed e ganhe benefícios exclusivos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="bg-background/50 rounded-lg p-4 space-y-2">
+                    <p className="text-sm font-medium">
+                      {isPremium ? '💎 Descontos na sua assinatura' : '🎁 Medicamentos extras grátis'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isPremium 
+                        ? 'Cada amigo que assinar o Premium reduz sua mensalidade. Você pode chegar a 100% de desconto!'
+                        : 'Cada amigo que assinar o Premium libera mais 1 medicamento ativo para você (máx. 3/mês).'}
+                    </p>
+                  </div>
+                  <Button
+                    className="w-full"
+                    variant="default"
+                    onClick={() => navigate('/perfil/indique-e-ganhe')}
+                  >
+                    <Gift className="h-4 w-4 mr-2" />
+                    Ver Meu Código e Benefícios
+                  </Button>
                 </div>
               </CardContent>
             </Card>

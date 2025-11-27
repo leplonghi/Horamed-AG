@@ -27,7 +27,17 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
   const { isAvailable, isLoading: biometricLoading, loginWithBiometric, isBiometricEnabled, setupBiometricLogin } = useBiometricAuth();
+
+  // Capturar código de referral da URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      setReferralCode(refCode);
+    }
+  }, []);
 
   useEffect(() => {
     // Auto-redirect if already logged in
@@ -99,6 +109,32 @@ export default function Auth() {
       });
 
       if (error) throw error;
+      
+      // Processar referral se houver código
+      if (data.user && referralCode) {
+        try {
+          const { data: referrerProfile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('referral_code', referralCode)
+            .single();
+
+          if (referrerProfile) {
+            await supabase
+              .from('referrals')
+              .insert({
+                referrer_user_id: referrerProfile.user_id,
+                referred_user_id: data.user.id,
+                referral_code_used: referralCode,
+                plan_type: 'free',
+                status: 'pending'
+              });
+          }
+        } catch (refError) {
+          console.error('Error processing referral:', refError);
+          // Não bloquear o signup se falhar o referral
+        }
+      }
       
       // Check if user needs onboarding
       if (data.user) {
@@ -276,6 +312,21 @@ export default function Auth() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Mínimo de 8 caracteres, com letras maiúsculas, minúsculas e números
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="referral-code">Código de Indicação (opcional)</Label>
+                <Input
+                  id="referral-code"
+                  type="text"
+                  placeholder="HR-XXXXXX"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                  maxLength={9}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Tem um código de indicação? Cole aqui para desbloquear benefícios!
                 </p>
               </div>
 

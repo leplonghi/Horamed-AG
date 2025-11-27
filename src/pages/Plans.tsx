@@ -8,6 +8,7 @@ import { ArrowLeft, CheckCircle2, Crown, Shield, Sparkles, Coffee, Candy, Star, 
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { activateReferralOnUpgrade } from "@/lib/referralProcessor";
 
 const testimonials = [
   {
@@ -45,8 +46,15 @@ export default function Plans() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Processar referral se houver pendente
+      const planType = billingCycle === "monthly" ? "premium_monthly" : "premium_annual";
+      await activateReferralOnUpgrade(user.id, planType);
+
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { userId: user.id }
+        body: { 
+          userId: user.id,
+          planType: billingCycle
+        }
       });
 
       if (error) throw error;
