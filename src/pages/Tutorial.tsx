@@ -2,10 +2,19 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { 
-  Plus, Clock, Pill, Package, FolderHeart, Calendar, 
-  Bell, Camera, Share2, AlertCircle, CheckCircle2,
-  ArrowRight
+import {
+  Plus,
+  Clock,
+  Pill,
+  Package,
+  FolderHeart,
+  Calendar,
+  Bell,
+  Camera,
+  Share2,
+  AlertCircle,
+  CheckCircle2,
+  ArrowRight,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
@@ -96,7 +105,7 @@ export default function Tutorial() {
           title: "Como adicionar documentos?",
           icon: Camera,
           steps: [
-            "Acesse 'Cofre' no menu inferior",
+            "Acesse 'Carteira' no menu inferior",
             "Clique em 'Adicionar Documento'",
             "Use OCR para escanear ou selecione arquivo",
             "Preencha título, categoria e datas",
@@ -108,7 +117,7 @@ export default function Tutorial() {
           title: "Como compartilhar com médico?",
           icon: Share2,
           steps: [
-            "Abra o documento no Cofre",
+            "Abra o documento na Carteira",
             "Clique em 'Compartilhar'",
             "Defina o prazo de expiração do link",
             "Permita ou não o download",
@@ -147,9 +156,7 @@ export default function Tutorial() {
         <div className="max-w-4xl mx-auto space-y-6">
           <div>
             <h1 className="text-3xl font-bold">Central de Ajuda</h1>
-            <p className="text-muted-foreground mt-2">
-              Aprenda a usar todos os recursos do HoraMed
-            </p>
+            <p className="text-muted-foreground mt-2">Aprenda a usar todos os recursos do HoraMed</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -204,9 +211,7 @@ export default function Tutorial() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold mb-1">Ainda tem dúvidas?</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Visite nossa central de ajuda completa
-                  </p>
+                  <p className="text-sm text-muted-foreground">Visite nossa central de ajuda completa</p>
                 </div>
                 <Button onClick={() => navigate("/ajuda")}>
                   Ajuda
