@@ -66,6 +66,7 @@ import CarteiraVacina from "./pages/CarteiraVacina";
 import WeightHistory from "./pages/WeightHistory";
 import StockDetails from "./pages/StockDetails";
 import AnalyticsDetails from "./pages/AnalyticsDetails";
+import IndiqueGanhe from "./pages/IndiqueGanhe";
 import HealthAIButton from "./components/HealthAIButton";
 
 function AppContent() {
@@ -127,6 +128,8 @@ function AppContent() {
         <Route path="/perfis/novo" element={<ProtectedRoute><ProfileCreate /></ProtectedRoute>} />
         <Route path="/perfil/editar/:id" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
         <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
+        <Route path="/perfil/indique-e-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
+        <Route path="/indique-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
         <Route path="/peso/historico" element={<ProtectedRoute><WeightHistory /></ProtectedRoute>} />
         <Route path="/assinatura" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
         <Route path="/notificacoes-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />

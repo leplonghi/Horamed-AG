@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Share2, Gift, Crown, Users } from "lucide-react";
+import { Copy, Share2, Gift, Crown, Users, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { getReferralDiscountForUser, getFreeExtraSlotsForUser } from "@/lib/referrals";
@@ -98,19 +98,23 @@ export default function IndiqueGanhe() {
 
       <div className="container max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* Referral Code Card */}
-        <Card className="p-6">
+        <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <div className="text-center space-y-4">
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center relative">
               <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full">
                 <Gift className="h-8 w-8 text-white" />
               </div>
+              <Sparkles className="h-5 w-5 text-primary absolute -top-1 -right-1 animate-pulse" />
             </div>
             
             <div>
               <h3 className="font-semibold text-lg mb-2">Seu código de indicação</h3>
-              <div className="inline-flex items-center gap-2 bg-muted px-6 py-3 rounded-lg text-2xl font-mono font-bold">
+              <div className="inline-flex items-center gap-2 bg-background px-6 py-3 rounded-lg text-2xl font-mono font-bold border-2 border-primary/20">
                 {referralCode || 'Carregando...'}
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                📲 Compartilhe por WhatsApp, email ou redes sociais
+              </p>
             </div>
 
             <div className="flex gap-2">
@@ -118,7 +122,7 @@ export default function IndiqueGanhe() {
                 <Copy className="h-4 w-4 mr-2" />
                 Copiar código
               </Button>
-              <Button onClick={shareReferral} className="flex-1">
+              <Button onClick={shareReferral} className="flex-1 bg-primary">
                 <Share2 className="h-4 w-4 mr-2" />
                 Compartilhar
               </Button>
