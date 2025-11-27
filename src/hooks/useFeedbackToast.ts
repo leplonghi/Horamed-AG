@@ -79,7 +79,7 @@ export const useFeedbackToast = () => {
       },
       "document-uploaded": {
         title: "📄 Documento salvo",
-        description: "Seu documento foi guardado com segurança no Cofre.",
+        description: "Seu documento foi guardado com segurança na Carteira.",
         duration: 3000,
       },
       "reminder-set": {

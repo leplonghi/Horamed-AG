@@ -64,7 +64,7 @@ interface ListaDocumentosFilters {
 // Listar documentos
 export function useDocumentos(filters: ListaDocumentosFilters = {}) {
   return useQuery({
-    queryKey: ["cofre", "lista", filters],
+    queryKey: ["carteira", "lista", filters],
     queryFn: async () => {
       let query = supabase
         .from("documentos_saude")
@@ -119,7 +119,7 @@ export function useDocumentos(filters: ListaDocumentosFilters = {}) {
 // Obter documento por ID
 export function useDocumento(id?: string) {
   return useQuery({
-    queryKey: ["cofre", "doc", id],
+    queryKey: ["carteira", "doc", id],
     queryFn: async () => {
       if (!id) return null;
       const { data, error } = await supabase
@@ -181,7 +181,7 @@ export function useUploadDocumento() {
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from("cofre-saude")
+        .from("carteira-saude")
         .upload(filePath, file, {
           contentType: file.type,
           upsert: false,
@@ -221,7 +221,7 @@ export function useUploadDocumento() {
       return documento;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cofre", "lista"] });
+      queryClient.invalidateQueries({ queryKey: ["carteira", "lista"] });
       toast.success("Documento enviado com sucesso");
     },
     onError: (error: any) => {
@@ -247,14 +247,14 @@ export function useDeletarDocumento() {
         .maybeSingle();
 
       if (doc?.file_path) {
-        await supabase.storage.from("cofre-saude").remove([doc.file_path]);
+        await supabase.storage.from("carteira-saude").remove([doc.file_path]);
       }
 
       const { error } = await supabase.from("documentos_saude").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cofre"] });
+      queryClient.invalidateQueries({ queryKey: ["carteira"] });
       toast.success("Documento removido");
     },
   });
@@ -263,7 +263,7 @@ export function useDeletarDocumento() {
 // Compartilhamentos
 export function useCompartilhamentos(documentId?: string) {
   return useQuery({
-    queryKey: ["cofre", "shares", documentId],
+    queryKey: ["carteira", "shares", documentId],
     queryFn: async () => {
       if (!documentId) return [];
       const { data, error } = await supabase

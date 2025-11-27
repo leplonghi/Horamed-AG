@@ -15,7 +15,7 @@ export default function EssentialShortcuts() {
     icon: FileText,
     label: "Adicionar documento",
     description: "Faça upload de receita ou exame",
-    onClick: () => navigate("/cofre"),
+    onClick: () => navigate("/carteira"),
     color: "from-green-500 to-emerald-500"
   }, {
     icon: FileDown,
