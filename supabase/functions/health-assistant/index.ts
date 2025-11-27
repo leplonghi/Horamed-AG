@@ -133,7 +133,8 @@ Responda em português brasileiro.`;
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        stream: true,
+        temperature: 0.7,
+        max_tokens: 1000,
       }),
     });
 
@@ -167,9 +168,15 @@ Responda em português brasileiro.`;
       );
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    const data = await response.json();
+    const aiResponse = data.choices?.[0]?.message?.content || "Desculpe, não consegui gerar uma resposta.";
+
+    return new Response(
+      JSON.stringify({ response: aiResponse }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("Health assistant error:", error);
     return new Response(

@@ -37,6 +37,7 @@ import TutorialHint from "@/components/TutorialHint";
 import HelpTooltip from "@/components/HelpTooltip";
 import { FileDown, ArrowRight } from "lucide-react";
 import AIAssistantInput from "@/components/AIAssistantInput";
+import AIResponseCard from "@/components/AIResponseCard";
 import EssentialShortcuts from "@/components/EssentialShortcuts";
 import SimpleDoseCard from "@/components/SimpleDoseCard";
 import SimpleAdherenceSummary from "@/components/SimpleAdherenceSummary";
@@ -84,6 +85,7 @@ export default function Today() {
   const [loggedDoseId, setLoggedDoseId] = useState<string>("");
   const [loggedItemId, setLoggedItemId] = useState<string>("");
   const [loggedItemName, setLoggedItemName] = useState<string>("");
+  const [aiResponse, setAiResponse] = useState<string>("");
 
   // Show milestone reward when detected
   useEffect(() => {
@@ -621,6 +623,19 @@ export default function Today() {
             title="Sua rotina diária de saúde 📅"
             message="Aqui você vê todas as suas doses do dia. Toque em ✓ para marcar como tomada, ⏰ para adiar 15 minutos, ou → para pular. Acompanhe seu progresso e mantenha sua sequência de dias!"
           />
+
+          {/* AI Health Assistant */}
+          <AIAssistantInput 
+            onResponse={(response) => setAiResponse(response)}
+          />
+
+          {/* AI Response */}
+          {aiResponse && (
+            <AIResponseCard 
+              response={aiResponse}
+              onClose={() => setAiResponse("")}
+            />
+          )}
 
           {/* Health Insights Card */}
           <HealthInsightsCard />

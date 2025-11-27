@@ -1,30 +1,33 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Send } from "lucide-react";
-import { toast } from "sonner";
+import { Sparkles, Send, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useHealthAgent } from "@/hooks/useHealthAgent";
+import { toast } from "sonner";
 
 interface AIAssistantInputProps {
-  onSubmit: (query: string) => void;
+  onResponse?: (response: string) => void;
 }
 
-export default function AIAssistantInput({ onSubmit }: AIAssistantInputProps) {
+export default function AIAssistantInput({ onResponse }: AIAssistantInputProps) {
   const [query, setQuery] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { processQuery, isProcessing } = useHealthAgent();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isProcessing) return;
 
-    setIsProcessing(true);
+    const userQuery = query.trim();
+    setQuery("");
+
     try {
-      await onSubmit(query.trim());
-      setQuery("");
+      const response = await processQuery(userQuery);
+      if (response && onResponse) {
+        onResponse(response);
+      }
     } catch (error) {
-      toast.error("Erro ao processar solicitação");
-    } finally {
-      setIsProcessing(false);
+      console.error('AI Assistant error:', error);
     }
   };
 
@@ -47,7 +50,7 @@ export default function AIAssistantInput({ onSubmit }: AIAssistantInputProps) {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Pergunte ao HoraMed (ex.: quero adicionar os remédios desta receita)"
+                placeholder="Como posso ajudar? (ex.: organize meus horários de medicamentos)"
                 className="flex-1 bg-background"
                 disabled={isProcessing}
               />
@@ -57,11 +60,15 @@ export default function AIAssistantInput({ onSubmit }: AIAssistantInputProps) {
                 disabled={!query.trim() || isProcessing}
                 className="flex-shrink-0"
               >
-                <Send className="h-4 w-4" />
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Use o assistente para adicionar remédios, gerar relatórios ou consultar informações
+              Organize horários, consulte estoque, interprete documentos ou tire dúvidas sobre sua rotina
             </p>
           </div>
         </div>
