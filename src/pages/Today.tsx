@@ -672,7 +672,9 @@ export default function Today() {
             )}
 
             {/* Health Insights */}
-            <HealthInsightsCard />
+            <div className="max-w-md">
+              <HealthInsightsCard />
+            </div>
 
             {/* Quick Dose Widget */}
             <QuickDoseWidget />
