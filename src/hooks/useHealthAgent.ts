@@ -1,208 +1,21 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-// Intent types
-type Intent = 
-  | 'MEDICATION_INTENT'
-  | 'STOCK_INTENT'
-  | 'DOCUMENT_INTENT'
-  | 'GLP1_INTENT'
-  | 'BARIATRIC_INTENT'
-  | 'NAVIGATION_INTENT'
-  | 'INSIGHT_INTENT'
-  | 'GENERIC_INTENT';
-
-type PersonaType = 'elderly' | 'young' | 'bariatric' | 'athlete' | 'default';
-
-interface UserContext {
-  age?: number;
-  personaType: PersonaType;
-  activeMedications: any[];
-  stockData: any[];
-  documents: any[];
-  planType: 'free' | 'premium';
-  aiUsageToday: number;
-}
+import { classifyIntent } from '@/ai/intentEngine';
+import { getPersonaFromAge, PersonaType } from '@/ai/personaEngine';
+import { buildSystemPrompt, UserContext } from '@/ai/healthAgent';
+import { detectNavigationIntent } from '@/ai/handlers/navigationHandler';
 
 export function useHealthAgent() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Classify message intent
-  const classifyIntent = (message: string): Intent => {
-    const msg = message.toLowerCase();
-
-    // GLP-1 keywords
-    if (msg.includes('ozempic') || msg.includes('mounjaro') || msg.includes('semaglutida') || 
-        msg.includes('glp-1') || msg.includes('glp1') || msg.includes('tireoide') ||
-        msg.includes('aplicação') || msg.includes('caneta')) {
-      return 'GLP1_INTENT';
-    }
-
-    // Bariatric keywords
-    if (msg.includes('bariátrica') || msg.includes('bariatrica') || msg.includes('cirurgia') ||
-        msg.includes('proteína') || msg.includes('proteina') || msg.includes('náusea') ||
-        msg.includes('bypass') || msg.includes('gastrectomia')) {
-      return 'BARIATRIC_INTENT';
-    }
-
-    // Stock keywords
-    if (msg.includes('estoque') || msg.includes('acabar') || msg.includes('comprar') ||
-        msg.includes('farmácia') || msg.includes('farmacia') || msg.includes('falta') ||
-        msg.includes('quanto tempo') || msg.includes('dias restantes')) {
-      return 'STOCK_INTENT';
-    }
-
-    // Document keywords
-    if (msg.includes('receita') || msg.includes('exame') || msg.includes('carteira') ||
-        msg.includes('documento') || msg.includes('pdf') || msg.includes('validade') ||
-        msg.includes('resultado')) {
-      return 'DOCUMENT_INTENT';
-    }
-
-    // Medication keywords
-    if (msg.includes('medicamento') || msg.includes('remédio') || msg.includes('remedio') ||
-        msg.includes('dose') || msg.includes('horário') || msg.includes('horario') ||
-        msg.includes('tomar') || msg.includes('suplemento') || msg.includes('vitamina')) {
-      return 'MEDICATION_INTENT';
-    }
-
-    // Navigation keywords
-    if (msg.includes('como faço') || msg.includes('onde') || msg.includes('encontrar') ||
-        msg.includes('adicionar') || msg.includes('ver') || msg.includes('página') ||
-        msg.includes('pagina') || msg.includes('menu')) {
-      return 'NAVIGATION_INTENT';
-    }
-
-    // Insight keywords
-    if (msg.includes('insight') || msg.includes('análise') || msg.includes('analise') ||
-        msg.includes('progresso') || msg.includes('relatório') || msg.includes('relatorio') ||
-        msg.includes('estatística') || msg.includes('estatistica')) {
-      return 'INSIGHT_INTENT';
-    }
-
-    return 'GENERIC_INTENT';
-  };
-
-  // Build system prompt based on intent and persona
-  const buildSystemPrompt = (intent: Intent, persona: PersonaType, context: UserContext): string => {
-    const basePrompt = `Você é o HoraMed Health Agent, um assistente de saúde especializado em organização de rotinas, medicamentos, suplementos e documentos de saúde.
-
-REGRAS GLOBAIS:
-- Sempre responda em português brasileiro natural e humano
-- Nunca prescreva medicamentos
-- Seja acolhedor, empático e simples
-- Foque em organização, educação e segurança
-- Use frases curtas e diretas
-
-PERSONA DO USUÁRIO: ${persona}`;
-
-    let personaGuidance = '';
-    switch (persona) {
-      case 'elderly':
-        personaGuidance = '\n- Use frases MUITO curtas\n- Passos simples\n- Ritmo calmo\n- Evite termos técnicos\n- Seja extremamente paciente';
-        break;
-      case 'young':
-        personaGuidance = '\n- Resposta rápida e direta\n- Poucas frases\n- Motivacional\n- Emoji ocasional';
-        break;
-      case 'bariatric':
-        personaGuidance = '\n- Foco em rotina + hidratação + proteínas\n- Cuidado com GLP-1\n- Zero julgamento\n- Reforçar refeições pequenas';
-        break;
-      case 'athlete':
-        personaGuidance = '\n- Foco em performance + segurança\n- Horários otimizados\n- Interações medicamentosas';
-        break;
-      default:
-        personaGuidance = '\n- Tom neutro e acolhedor\n- Direto ao ponto';
-    }
-
-    let intentGuidance = '';
-    switch (intent) {
-      case 'MEDICATION_INTENT':
-        intentGuidance = `\n\nTAREFA: Organizar medicamentos e horários
-- Organize doses por horário
-- Sugira rotina mais simples
-- Explique como tomar ("com comida", "em jejum")
-- Identifique possíveis conflitos
-- Ajude a reorganizar quando solicitado
-
-MEDICAMENTOS ATIVOS: ${context.activeMedications.length > 0 ? context.activeMedications.map(m => m.name).join(', ') : 'Nenhum ainda'}`;
-        break;
-
-      case 'STOCK_INTENT':
-        intentGuidance = `\n\nTAREFA: Prever estoque e sugerir compra
-- Calcule dias restantes com base no estoque
-- Sugira melhor dia para comprar
-- Frases modelo: "Seu estoque dura cerca de X dias" / "O ideal é comprar até [dia] para evitar falhas"
-
-ESTOQUE ATUAL: ${context.stockData.length > 0 ? context.stockData.map(s => `${s.item_name}: ${s.units_left} unidades`).join(', ') : 'Sem dados de estoque'}`;
-        break;
-
-      case 'DOCUMENT_INTENT':
-        intentGuidance = `\n\nTAREFA: Interpretar documentos da Carteira de Saúde
-- Extrair validade, tipo, conteúdo
-- Sugerir ações ("quer gerar um lembrete?")
-- Ajudar a organizar documentos
-
-DOCUMENTOS: ${context.documents.length} documentos na Carteira de Saúde`;
-        break;
-
-      case 'GLP1_INTENT':
-        intentGuidance = `\n\nTAREFA: Orientar sobre GLP-1 (Ozempic/Mounjaro)
-- Cuidados com aplicação semanal
-- Hidratação e náuseas
-- Hábitos compatíveis
-- Tom orientativo, NUNCA prescritivo
-- Lembrar: "Sempre siga orientação do seu médico"`;
-        break;
-
-      case 'BARIATRIC_INTENT':
-        intentGuidance = `\n\nTAREFA: Apoiar rotina pós-bariátrica
-- Reforçar proteína, hidratação
-- Lembretes de refeições pequenas
-- Organizar rotina pós-op levemente
-- Tom de apoio, zero julgamento`;
-        break;
-
-      case 'NAVIGATION_INTENT':
-        intentGuidance = `\n\nTAREFA: Ajudar a navegar no app
-- Explicar onde encontrar cada recurso
-- Guiar passo a passo
-- Oferecer abrir a página diretamente quando apropriado
-- Páginas principais:
-  • Hoje (/hoje) - doses do dia e timeline
-  • Rotina (/rotina) - medicamentos e suplementos
-  • Progresso (/progresso) - métricas e relatórios
-  • Carteira de Saúde (/carteira-saude) - documentos organizados
-  • Perfil (/perfil) - conta e configurações
-- Para ações específicas:
-  • Ver estoque: "Vá em Rotina e toque no medicamento"
-  • Adicionar medicamento: "Use o botão + na aba Rotina"
-  • Ver documentos: "Abra a aba Carteira de Saúde"
-  • Indicar amigos: "Vá em Perfil > Indique e Ganhe"
-- Sempre ofereça ajuda adicional após guiar`;
-        break;
-
-      case 'INSIGHT_INTENT':
-        intentGuidance = `\n\nTAREFA: Trazer insights de saúde
-- Analisar padrões de adesão
-- Identificar horários com mais atrasos
-- Celebrar conquistas
-- Sugerir melhorias
-- Exemplo: "Você tomou 86% das doses este mês" / "Identifiquei atrasos após o almoço"`;
-        break;
-
-      case 'GENERIC_INTENT':
-        intentGuidance = `\n\nTAREFA: Acolhimento e ajuda geral
-- Seja amigável e acolhedor
-- Pergunte como pode ajudar
-- Direcione para recursos do app
-- Ofereça exemplos do que pode fazer`;
-        break;
-    }
-
-    return basePrompt + personaGuidance + intentGuidance;
+  // Navigation helpers
+  const handleNavigation = (route: string) => {
+    navigate(route);
+    toast.success('Abrindo para você!');
   };
 
   // Check AI usage limit
@@ -279,9 +92,7 @@ DOCUMENTOS: ${context.documents.length} documentos na Carteira de Saúde`;
       : undefined;
 
     // Determine persona
-    let personaType: PersonaType = 'default';
-    if (age && age >= 65) personaType = 'elderly';
-    else if (age && age >= 18 && age < 35) personaType = 'young';
+    const personaType: PersonaType = getPersonaFromAge(age);
 
     // Get active medications
     const { data: medications } = await supabase
@@ -359,6 +170,15 @@ DOCUMENTOS: ${context.documents.length} documentos na Carteira de Saúde`;
       if (!allowed) {
         setIsProcessing(false);
         return { limitReached: true };
+      }
+
+      // Check for navigation intent first
+      const navAction = detectNavigationIntent(message);
+      if (navAction && navAction.type === 'route' && navAction.target) {
+        // Ask for confirmation before navigating
+        const confirmMessage = `Posso abrir ${navAction.description} para você agora?`;
+        handleNavigation(navAction.target);
+        return confirmMessage;
       }
 
       // Get context
