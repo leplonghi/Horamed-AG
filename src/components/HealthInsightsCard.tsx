@@ -30,10 +30,6 @@ export default function HealthInsightsCard() {
             <span className="text-sm">Linha do Tempo</span>
           </Button>
         </div>
-
-        <p className="text-sm text-muted-foreground leading-relaxed px-[10px] mx-[10px] pr-0 text-left pt-0 pl-0">
-          Veja como seu compromisso com os medicamentos impacta sua saúde ao longo do tempo
-        </p>
       </CardContent>
     </Card>;
 }
