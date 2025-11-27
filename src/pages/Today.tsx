@@ -564,18 +564,18 @@ export default function Today() {
     <>
       <Header />
       <div className="min-h-screen bg-background pt-20 px-4 py-6 pb-24">
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-8">
           {/* Greeting & Streak Section */}
           <div className="animate-fade-in">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-6">
+              <div className="flex-1 min-w-0 space-y-3">
                 <h1 className="text-3xl font-bold tracking-tight">
                   {greeting}{userName && `, ${userName}`}!
                 </h1>
-                <p className="text-base text-primary/90 font-medium mt-2 leading-relaxed">
+                <p className="text-base text-primary/90 font-medium leading-relaxed">
                   {motivationalQuote}
                 </p>
-                <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
                   <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary/60" />
                   {timelineItems.length > 0 
                     ? `${timelineItems.length} evento${timelineItems.length > 1 ? 's' : ''} hoje`
@@ -642,17 +642,19 @@ export default function Today() {
           )}
 
           {/* Smart Actions & Quick Access */}
-          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <div className="space-y-5 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <SmartActionCards />
             <EssentialShortcuts />
           </div>
 
           {/* Tutorial Hint */}
-          <TutorialHint
-            id="today_page"
-            title="Sua rotina diária de saúde 📅"
-            message="Aqui você vê todas as suas doses do dia. Toque em ✓ para marcar como tomada, ⏰ para adiar 15 minutos, ou → para pular. Acompanhe seu progresso e mantenha sua sequência de dias!"
-          />
+          <div className="animate-fade-in" style={{ animationDelay: '0.15s' }}>
+            <TutorialHint
+              id="today_page"
+              title="Sua rotina diária de saúde 📅"
+              message="Aqui você vê todas as suas doses do dia. Toque em ✓ para marcar como tomada, ⏰ para adiar 15 minutos, ou → para pular. Acompanhe seu progresso e mantenha sua sequência de dias!"
+            />
+          </div>
 
           {/* AI Health Assistant */}
           <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
@@ -660,14 +662,16 @@ export default function Today() {
           </div>
 
           {/* Health Monitoring Section */}
-          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+          <div className="space-y-6 animate-fade-in" style={{ animationDelay: '0.25s' }}>
             {/* Fitness Widgets - Only show if user has supplements AND preference is enabled */}
             {hasSupplements && preferences.showFitnessWidgets && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold text-muted-foreground px-1">Acompanhamento Fitness</h2>
-                <HydrationWidget />
-                <SupplementConsistencyWidget last7Days={[75, 80, 90, 85, 100, 95, 85]} />
-                <EnergyHintWidget />
+              <div className="space-y-4">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Acompanhamento Fitness</h2>
+                <div className="space-y-3">
+                  <HydrationWidget />
+                  <SupplementConsistencyWidget last7Days={[75, 80, 90, 85, 100, 95, 85]} />
+                  <EnergyHintWidget />
+                </div>
               </div>
             )}
 
@@ -681,7 +685,7 @@ export default function Today() {
           </div>
 
           {/* Alerts & Reminders Section */}
-          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.3s' }}>
             <ExpiredPrescriptionsAlert />
             <VaccineRemindersWidget />
             <CaregiverVaccineReminders />
@@ -689,7 +693,7 @@ export default function Today() {
 
           {/* Adaptive Suggestions */}
           {suggestions.length > 0 && (
-            <div className="space-y-2 animate-fade-in">
+            <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.35s' }}>
               {suggestions.map((suggestion, idx) => (
                 <Alert key={idx} className="border-primary/20 bg-primary/5 animate-scale-in" style={{ animationDelay: `${idx * 0.1}s` }}>
                   <AlertDescription className="text-sm">{suggestion.message}</AlertDescription>
@@ -700,11 +704,11 @@ export default function Today() {
 
           {/* Today Summary & Progress */}
           {format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd") && todayStats.total > 0 && (
-            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 animate-scale-in">
+            <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 animate-scale-in" style={{ animationDelay: '0.4s' }}>
               <CardContent className="py-6">
-                <div className="flex items-center justify-between gap-6">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-between gap-8">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-muted-foreground">Progresso de Hoje</p>
                       <InfoDialog
                         title="O que é o progresso?"
@@ -714,14 +718,14 @@ export default function Today() {
                     <p className="text-3xl font-bold tracking-tight">
                       {todayStats.taken}/{todayStats.total}
                     </p>
-                    <p className="text-sm mt-2 font-medium">
+                    <p className="text-sm font-medium">
                       {adherencePercentage >= 80 && "🎉 Excelente progresso!"}
                       {adherencePercentage >= 50 && adherencePercentage < 80 && "💪 Bom trabalho!"}
                       {adherencePercentage < 50 && todayStats.total > 0 && "💫 Vamos lá!"}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <div className="text-4xl font-bold text-primary">{adherencePercentage}%</div>
+                    <div className="text-5xl font-bold text-primary">{adherencePercentage}%</div>
                     <p className="text-xs text-muted-foreground mt-1">completo</p>
                   </div>
                 </div>
@@ -730,8 +734,8 @@ export default function Today() {
           )}
 
           {/* Schedule & Timeline Section */}
-          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <h2 className="text-sm font-semibold text-muted-foreground px-1">Agenda & Calendário</h2>
+          <div className="space-y-5 animate-fade-in" style={{ animationDelay: '0.45s' }}>
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Agenda & Calendário</h2>
             
             {/* Export Card */}
             <Card 
