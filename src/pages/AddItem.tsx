@@ -28,6 +28,7 @@ import logo from "@/assets/horamed-logo.png";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
+import SupplementDetailInfo from "@/components/fitness/SupplementDetailInfo";
 
 export default function AddItem() {
   const navigate = useNavigate();

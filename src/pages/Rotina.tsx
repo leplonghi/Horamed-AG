@@ -41,7 +41,7 @@ interface Item {
 const CATEGORY_ICONS: Record<string, string> = {
   medicamento: "💊",
   vitamina: "🔴",
-  suplemento: "⚡",
+  suplemento: "🌿",
   outro: "📦",
 };
 
@@ -55,7 +55,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   medicamento: "bg-blue-100 text-blue-700 border-blue-200",
   vitamina: "bg-red-100 text-red-700 border-red-200",
-  suplemento: "bg-amber-100 text-amber-700 border-amber-200",
+  suplemento: "bg-performance-bg text-performance border-performance-border",
   outro: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
@@ -300,7 +300,158 @@ export default function Rotina() {
                   </p>
                 </Card>
               ) : (
-                filteredItems.map((item, index) => (
+                <>
+                  {/* Medications Section */}
+                  {filteredItems.filter(item => item.category === 'medicamento').length > 0 && (
+                    <div className="space-y-3">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide pl-2">Medicamentos</h3>
+                      {filteredItems.filter(item => item.category === 'medicamento').map((item, index) => (
+                        <Card 
+                          key={item.id} 
+                          style={{ animationDelay: `${index * 50}ms` }}
+                          className="p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-primary animate-fade-in-scale card-interactive"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-semibold text-foreground">
+                                    {item.name}
+                                  </h3>
+                                  <Badge variant="outline" className={`${CATEGORY_COLORS[item.category]} text-xs px-2 py-0.5 rounded-md`}>
+                                    {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                                  </Badge>
+                                </div>
+                                {item.dose_text && (
+                                  <p className="text-sm text-foreground">
+                                    {item.dose_text}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex gap-1 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => navigate(`/adicionar?edit=${item.id}`)}
+                                >
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => deleteItem(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                              {item.schedules && item.schedules.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>Diariamente às {getScheduleSummary(item.schedules[0])}</span>
+                                </div>
+                              )}
+                              {item.with_food && (
+                                <div className="flex items-center gap-2">
+                                  <UtensilsCrossed className="h-4 w-4" />
+                                  <span>Tomar com alimento</span>
+                                </div>
+                              )}
+                              {item.stock && item.stock.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4" />
+                                  <span>{item.stock[0].units_left} {item.stock[0].unit_label} restantes</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Supplements & Vitamins Section */}
+                  {filteredItems.filter(item => item.category === 'vitamina' || item.category === 'suplemento').length > 0 && (
+                    <div className="space-y-3 mt-6">
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide pl-2">Suplementos & Vitaminas</h3>
+                      {filteredItems.filter(item => item.category === 'vitamina' || item.category === 'suplemento').map((item, index) => (
+                        <Card 
+                          key={item.id} 
+                          style={{ animationDelay: `${index * 50}ms` }}
+                          className="p-5 hover:shadow-xl transition-all duration-300 hover:scale-[1.02] border-l-4 border-l-performance animate-fade-in-scale card-interactive"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 space-y-2">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-semibold text-foreground">
+                                    {item.name}
+                                  </h3>
+                                  <Badge variant="outline" className={`${CATEGORY_COLORS[item.category]} text-xs px-2 py-0.5 rounded-md`}>
+                                    {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                                  </Badge>
+                                </div>
+                                {item.dose_text && (
+                                  <p className="text-sm text-foreground">
+                                    {item.dose_text}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex gap-1 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => navigate(`/adicionar?edit=${item.id}`)}
+                                >
+                                  <Pencil className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => deleteItem(item.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                              {item.schedules && item.schedules.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  <span>Diariamente às {getScheduleSummary(item.schedules[0])}</span>
+                                </div>
+                              )}
+                              {item.with_food && (
+                                <div className="flex items-center gap-2">
+                                  <UtensilsCrossed className="h-4 w-4" />
+                                  <span>Tomar com alimento</span>
+                                </div>
+                              )}
+                              {item.stock && item.stock.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4" />
+                                  <span>{item.stock[0].units_left} {item.stock[0].unit_label} restantes</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Show all items if "todos" tab or if no grouping needed */}
+                  {(activeTab === 'todos' && filteredItems.filter(item => item.category !== 'medicamento' && item.category !== 'vitamina' && item.category !== 'suplemento').length === 0) || 
+                   (activeTab !== 'todos' && filteredItems.map((item, index) => (
                   <Card 
                     key={item.id} 
                     style={{ animationDelay: `${index * 50}ms` }}
@@ -366,7 +517,8 @@ export default function Rotina() {
                       </div>
                     </div>
                   </Card>
-                ))
+                )))}
+                </>
               )}
             </TabsContent>
           </Tabs>

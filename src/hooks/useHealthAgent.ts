@@ -188,7 +188,25 @@ export function useHealthAgent() {
       const intent = classifyIntent(message);
 
       // Build system prompt
-      const systemPrompt = buildSystemPrompt(intent, context.personaType, context);
+      let systemPrompt = buildSystemPrompt(intent, context.personaType, context);
+      
+      // Add fitness guidance if message mentions fitness keywords
+      const fitnessKeywords = ['treino', 'academia', 'performance', 'vitamina', 'suplemento', 'energia', 'sono', 'ozempic', 'mounjaro', 'glp-1', 'glp1', 'bariátrica', 'bariátrico', 'peso', 'dieta'];
+      const hasFitnessKeyword = fitnessKeywords.some(keyword => 
+        message.toLowerCase().includes(keyword)
+      );
+
+      if (hasFitnessKeyword) {
+        systemPrompt += `
+
+ORIENTAÇÃO FITNESS E BEM-ESTAR:
+- Se o usuário perguntar sobre treino, academia ou performance, forneça orientações contextuais simples
+- Para vitaminas (D, B12, ferro) ou suplementos, sugira horários ideais (manhã, pós-treino, antes de dormir)
+- Para Ozempic/Mounjaro/GLP-1: oriente sobre aplicação semanal, hidratação abundante (mínimo 2L/dia), refeições menores
+- Para pós-bariátrica: reforce proteína (60-80g/dia), hidratação entre refeições, 5-6 refeições pequenas/dia
+- NUNCA prescreva ou ajuste doses - sempre diga "Siga sempre as orientações do seu médico"
+- Foco em organização da rotina e dicas práticas, não em prescrições médicas`;
+      }
 
       // Call AI via edge function
       const { data, error } = await supabase.functions.invoke('health-assistant', {

@@ -82,12 +82,15 @@ export default function Plans() {
 
   const premiumPlanFeatures = [
     "💊 Medicamentos ilimitados",
+    "🌿 Acompanhe sua rotina de suplementos e vitaminas",
     "📋 Histórico médico completo e seguro",
     "🔬 Análise de exames laboratoriais",
     "📅 Agenda médica integrada",
-    "📈 Painel de evolução da saúde",
+    "📈 Widgets de bem-estar no Hoje e no Progresso",
     "✨ Análise de interações medicamentosas",
+    "🍎 Análises nutricionais mensais (Premium)",
     "👨‍👩‍👧‍👦 Múltiplos perfis familiares",
+    "🤖 Uso ilimitado do Assistente Hora para dúvidas de treino, GLP-1 e desempenho",
     "🤖 OCR de receitas e documentos",
     "🚫 Sem anúncios",
     "⚡ Suporte prioritário"

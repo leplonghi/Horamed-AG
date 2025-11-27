@@ -66,6 +66,12 @@ All colors MUST be HSL.
     --doc-other-fg: 210 10% 30%;
     --doc-other-bg: 210 10% 97%;
     --doc-other-border: 210 10% 50%;
+    
+    /* Performance/Wellness Accent (Lime/Amber for supplements) */
+    --performance: 84 81% 44%;
+    --performance-foreground: 0 0% 100%;
+    --performance-bg: 84 81% 97%;
+    --performance-border: 84 81% 44%;
   }
 
   .dark {
@@ -122,6 +128,12 @@ All colors MUST be HSL.
     --doc-other-fg: 210 10% 75%;
     --doc-other-bg: 210 10% 15%;
     --doc-other-border: 210 10% 55%;
+    
+    /* Performance/Wellness Accent - Dark Mode */
+    --performance: 84 81% 50%;
+    --performance-foreground: 0 0% 100%;
+    --performance-bg: 84 81% 15%;
+    --performance-border: 84 81% 50%;
   }
 }
 

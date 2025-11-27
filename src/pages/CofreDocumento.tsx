@@ -20,6 +20,7 @@ import { PrescriptionStatusBadge } from "@/components/PrescriptionStatusBadge";
 import { MedicationQuickAddCard } from "@/components/MedicationQuickAddCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
+import ExamDeficiencyBadges from "@/components/fitness/ExamDeficiencyBadges";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -663,7 +664,10 @@ export default function CofreDocumento() {
                 </div>
               </CardHeader>
               <CollapsibleContent>
-                <CardContent className="space-y-2">
+                <CardContent className="space-y-4">
+                  {/* Exam Deficiency Badges */}
+                  <ExamDeficiencyBadges examData={meta.extracted_values} />
+                  
                   {meta.extracted_values.map((val: any, idx: number) => (
                     <div key={idx} className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
                       <div className="flex items-start justify-between">
@@ -686,10 +690,11 @@ export default function CofreDocumento() {
                             {val.status === 'normal' ? '✓ Normal' : '⚠️ Alterado'}
                           </Badge>
                         )}
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
+                       </div>
+                     </div>
+                   ))}
+                   </div>
+                 </CardContent>
               </CollapsibleContent>
             </Collapsible>
           </Card>
