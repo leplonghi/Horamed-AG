@@ -4,7 +4,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { format, addMinutes, startOfDay, endOfDay, addHours, isAfter, isBefore } from "date-fns";
+import { addMinutes, addHours } from "date-fns";
 
 interface QuietHours {
   enabled: boolean;
@@ -20,6 +20,9 @@ interface OfflineAction {
   synced: boolean;
 }
 
+// Notification channel ID for Android
+const CHANNEL_ID = "horamed-medicamentos";
+
 export const usePushNotifications = () => {
   const navigate = useNavigate();
   const [quietHours, setQuietHours] = useState<QuietHours>({
@@ -29,6 +32,7 @@ export const usePushNotifications = () => {
   });
   
   useEffect(() => {
+    setupNotificationChannels();
     initializePushNotifications();
     scheduleNext48Hours();
     syncOfflineActions();
@@ -48,6 +52,65 @@ export const usePushNotifications = () => {
       clearInterval(syncInterval);
     };
   }, []);
+
+  // Setup Android notification channels and iOS action categories
+  const setupNotificationChannels = async () => {
+    try {
+      // Create notification channel for Android
+      await LocalNotifications.createChannel({
+        id: CHANNEL_ID,
+        name: "Lembretes de Medicamentos",
+        description: "Notificações para lembrar de tomar medicamentos",
+        importance: 5, // IMPORTANCE_HIGH
+        visibility: 1, // PUBLIC
+        sound: "default",
+        vibration: true,
+        lights: true,
+        lightColor: "#10B981", // Green
+      });
+
+      // Register action types for notification buttons
+      await LocalNotifications.registerActionTypes({
+        types: [
+          {
+            id: "DOSE_REMINDER",
+            actions: [
+              {
+                id: "taken",
+                title: "✓ Tomei",
+                foreground: true,
+              },
+              {
+                id: "snooze",
+                title: "⏰ 15 min",
+                foreground: false,
+              },
+              {
+                id: "skip",
+                title: "→ Pular",
+                foreground: false,
+                destructive: true,
+              },
+            ],
+          },
+          {
+            id: "DAILY_SUMMARY",
+            actions: [
+              {
+                id: "view",
+                title: "📊 Ver Resumo",
+                foreground: true,
+              },
+            ],
+          },
+        ],
+      });
+
+      console.log("✓ Notification channels and action types configured");
+    } catch (error) {
+      console.error("Error setting up notification channels:", error);
+    }
+  };
 
   const isInQuietHours = (date: Date): boolean => {
     if (!quietHours.enabled) return false;
@@ -300,18 +363,30 @@ export const usePushNotifications = () => {
           return null;
         }
 
+        const itemData = Array.isArray(dose.items) ? dose.items[0] : dose.items;
+        if (!itemData) return null;
+
         return {
           id: index + 1,
-          title: `💊 ${dose.items.name}`,
-          body: dose.items.dose_text || "Hora de tomar seu medicamento",
+          title: `💊 Hora do Remédio`,
+          body: `${itemData.name}${itemData.dose_text ? ` - ${itemData.dose_text}` : ''}`,
+          largeBody: `Está na hora de tomar ${itemData.name}.${itemData.dose_text ? `\nDose: ${itemData.dose_text}` : ''}`,
+          summaryText: "HoraMed",
           schedule: { at: dueDate },
+          channelId: CHANNEL_ID,
           actionTypeId: "DOSE_REMINDER",
           extra: {
             doseId: dose.id,
-            itemName: dose.items.name,
+            itemName: itemData.name,
+            type: "dose_reminder",
           },
-          attachments: undefined,
+          smallIcon: "ic_stat_pill",
+          largeIcon: "ic_launcher",
+          iconColor: "#10B981",
           sound: "default",
+          ongoing: false,
+          autoCancel: true,
+          group: "dose-reminders",
         };
       }).filter(Boolean);
 
@@ -343,17 +418,27 @@ export const usePushNotifications = () => {
 
       const snoozeTime = addMinutes(new Date(), minutes);
 
+      const itemData = Array.isArray(dose.items) ? dose.items[0] : dose.items;
+      
       await LocalNotifications.schedule({
         notifications: [{
           id: Date.now(),
-          title: `⏰ ${dose.items.name}`,
-          body: dose.items.dose_text || "Lembrete adiado",
+          title: `⏰ Lembrete Adiado`,
+          body: `${itemData?.name || 'Medicamento'}${itemData?.dose_text ? ` - ${itemData.dose_text}` : ''}`,
+          largeBody: `Você adiou este lembrete. Hora de tomar ${itemData?.name || 'seu medicamento'}.`,
+          summaryText: "HoraMed",
           schedule: { at: snoozeTime },
+          channelId: CHANNEL_ID,
           actionTypeId: "DOSE_REMINDER",
           extra: {
             doseId: dose.id,
-            itemName: dose.items.name,
+            itemName: itemData?.name,
+            type: "dose_reminder_snooze",
           },
+          smallIcon: "ic_stat_pill",
+          iconColor: "#F59E0B",
+          sound: "default",
+          autoCancel: true,
         }]
       });
 
@@ -405,9 +490,17 @@ export const usePushNotifications = () => {
         notifications: [{
           id: 999999,
           title: "📊 Resumo do Dia",
-          body: "Veja seu resumo de progresso e doses pendentes",
-          schedule: { at: summaryTime, repeats: true, every: "day" },
+          body: "Veja seu progresso e doses pendentes",
+          largeBody: "Confira como foi seu dia com os medicamentos e veja se há doses pendentes.",
+          summaryText: "HoraMed",
+          schedule: { at: summaryTime, repeats: true, every: "day" as any },
+          channelId: CHANNEL_ID,
+          actionTypeId: "DAILY_SUMMARY",
           extra: { type: "daily_summary" },
+          smallIcon: "ic_stat_chart",
+          iconColor: "#6366F1",
+          sound: "default",
+          autoCancel: true,
         }]
       });
 
