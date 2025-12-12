@@ -37,6 +37,7 @@ import EnergyHintWidget from "@/components/fitness/EnergyHintWidget";
 import SupplementConsistencyWidget from "@/components/fitness/SupplementConsistencyWidget";
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
 import TutorialHint from "@/components/TutorialHint";
+import { trackDoseTaken } from "@/hooks/useAppMetrics";
 interface TimelineItem {
   id: string;
   time: string;
@@ -356,21 +357,55 @@ export default function TodayRedesign() {
   }, [activeProfile]);
   useEffect(() => {
     const hour = new Date().getHours();
+    // Copy focada em cuidadores - emocional e direto
     let quotes: string[] = [];
+    const profileName = activeProfile?.name || userName || "seu familiar";
+    const isSelf = activeProfile?.relationship === 'self';
+    
     if (hour < 12) {
       setGreeting("Bom dia");
-      quotes = ["Um novo dia é uma nova oportunidade para cuidar da sua saúde!", "Cada dose tomada é um passo em direção ao seu bem-estar."];
+      if (isSelf) {
+        quotes = [
+          "Vamos começar o dia cuidando da sua saúde!",
+          "Suas doses da manhã estão te esperando."
+        ];
+      } else {
+        quotes = [
+          `${profileName} já tomou os remédios da manhã?`,
+          `Confira se ${profileName} está em dia com os medicamentos.`
+        ];
+      }
     } else if (hour < 18) {
       setGreeting("Boa tarde");
-      quotes = ["Continue firme! Você está fazendo um ótimo trabalho.", "Lembre-se: consistência é a chave para o sucesso."];
+      if (isSelf) {
+        quotes = [
+          "Continue firme! Você está cuidando bem de você.",
+          "Mantenha o foco na sua saúde."
+        ];
+      } else {
+        quotes = [
+          `Como está ${profileName}? Confira as doses.`,
+          `${profileName} tomou o remédio do almoço?`
+        ];
+      }
     } else {
       setGreeting("Boa noite");
-      quotes = ["Parabéns por mais um dia de cuidado com você!", "Descanse bem, você merece. Amanhã tem mais!"];
+      if (isSelf) {
+        quotes = [
+          "Não esqueça dos remédios da noite!",
+          "Finalize o dia em dia com sua saúde."
+        ];
+      } else {
+        quotes = [
+          `${profileName} já tomou os remédios da noite?`,
+          `Confirme as doses de ${profileName} antes de dormir.`
+        ];
+      }
     }
     setMotivationalQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     loadData(selectedDate);
     loadEventCounts();
-  }, [loadData, loadEventCounts, selectedDate]);
+  }, [loadData, loadEventCounts, selectedDate, activeProfile, userName]);
   useEffect(() => {
     if (activeProfile) {
       setLoading(true);
@@ -415,6 +450,9 @@ export default function TodayRedesign() {
           units_left: stockData.units_left - 1
         }).eq("item_id", itemId);
       }
+      // Track metric
+      trackDoseTaken(doseId, itemName);
+      
       showFeedback("dose-taken", {
         medicationName: itemName
       });
