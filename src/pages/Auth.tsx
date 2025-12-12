@@ -13,6 +13,7 @@ import logo from "@/assets/horamed-logo.png";
 import { z } from "zod";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useAuth } from "@/contexts/AuthContext";
+import { APP_DOMAIN } from "@/lib/domainConfig";
 
 const passwordSchema = z.string()
   .min(8, "A senha deve ter no mínimo 8 caracteres")
@@ -50,7 +51,7 @@ export default function Auth() {
     try {
       setLoading(true);
       
-      const redirectUrl = `${window.location.origin}/`;
+      const redirectUrl = `${APP_DOMAIN}/`;
       console.log('Initiating Google OAuth with redirect:', redirectUrl);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -104,7 +105,7 @@ export default function Auth() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${APP_DOMAIN}/`,
         },
       });
 
