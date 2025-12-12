@@ -71,14 +71,21 @@ import IndiqueGanhe from "./pages/IndiqueGanhe";
 import HealthAIButton from "./components/HealthAIButton";
 import Welcome from "./pages/Welcome";
 import QuickOnboarding from "./components/onboarding/QuickOnboarding";
+import { OverdueDosesBanner } from "./components/OverdueDosesBanner";
+import { trackAppOpened } from "./hooks/useAppMetrics";
 
 function AppContent() {
+  // Track app opened
+  useEffect(() => {
+    trackAppOpened();
+  }, []);
   const location = useLocation();
   const hideNavigationPaths = ["/auth", "/onboarding", "/onboarding-rapido", "/bem-vindo", "/"];
   const showNavigation = !hideNavigationPaths.includes(location.pathname);
 
   return (
     <>
+      <OverdueDosesBanner />
       <Toaster />
       <Sonner />
       <Routes>

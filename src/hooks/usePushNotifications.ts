@@ -448,24 +448,65 @@ export const usePushNotifications = () => {
     }
   };
 
-  const savePushToken = async (token: string) => {
+  const savePushToken = async (token: string, retryCount = 0) => {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 5000;
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.warn("[PushToken] No user found, will retry on auth change");
+        return;
+      }
+
+      console.log(`[PushToken] Saving token for user ${user.id}...`);
 
       const { error } = await supabase
         .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          push_token: token,
-          push_enabled: true,
-        });
+        .upsert(
+          {
+            user_id: user.id,
+            push_token: token,
+            push_enabled: true,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'user_id' }
+        );
 
       if (error) {
-        console.error("Error saving push token:", error);
+        console.error("[PushToken] Error saving:", error);
+        
+        // Retry on failure
+        if (retryCount < MAX_RETRIES) {
+          console.log(`[PushToken] Retrying in ${RETRY_DELAY}ms (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+          setTimeout(() => savePushToken(token, retryCount + 1), RETRY_DELAY);
+        }
+        return;
+      }
+
+      console.log("[PushToken] ✓ Token saved successfully");
+      
+      // Verify save
+      const { data: verify } = await supabase
+        .from("notification_preferences")
+        .select("push_token")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (verify?.push_token === token) {
+        console.log("[PushToken] ✓ Verified in database");
+      } else {
+        console.warn("[PushToken] Token mismatch after save, retrying...");
+        if (retryCount < MAX_RETRIES) {
+          setTimeout(() => savePushToken(token, retryCount + 1), RETRY_DELAY);
+        }
       }
     } catch (error) {
-      console.error("Error in savePushToken:", error);
+      console.error("[PushToken] Exception:", error);
+      
+      if (retryCount < MAX_RETRIES) {
+        setTimeout(() => savePushToken(token, retryCount + 1), RETRY_DELAY);
+      }
     }
   };
 
