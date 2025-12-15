@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Plus, X, Calendar, Clock } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 
 interface WizardStepScheduleProps {
   data: {
@@ -115,8 +117,9 @@ export function WizardStepSchedule({ data, updateData }: WizardStepScheduleProps
 
       {/* Times */}
       <div className="space-y-3">
-        <Label className="text-base font-semibold">
+        <Label className="text-base font-semibold flex items-center gap-2">
           Horários <span className="text-muted-foreground text-sm">(pelo menos 1)</span>
+          <HelpTooltip content={microcopy.help.wizard.times} />
         </Label>
         
         {/* Existing times */}

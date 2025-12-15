@@ -18,6 +18,7 @@ import HelpTooltip from "@/components/HelpTooltip";
 import WeightBMICard from "@/components/WeightBMICard";
 import FitnessProgressWidgets from "@/components/fitness/FitnessProgressWidgets";
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
+import { microcopy } from "@/lib/microcopy";
 
 export default function Progress() {
   const { user } = useAuth();
@@ -142,9 +143,9 @@ export default function Progress() {
 
         {/* Tutorial Hint */}
         <TutorialHint
-          id="progress_page"
-          title="Acompanhe sua evolução 📈"
-          message="Aqui você vê sua sequência de dias, taxa de compromisso, e conquistas. Cada dia tomando suas doses aumenta seu streak. Acima de 80% de compromisso é excelente! Ganhe XP e desbloqueie medalhas."
+          id={microcopy.tutorials.progress.id}
+          title={microcopy.tutorials.progress.title}
+          message={microcopy.tutorials.progress.message}
         />
 
         {/* Weight & BMI Card */}
@@ -347,6 +348,7 @@ export default function Progress() {
                 <CardDescription className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
                   <Trophy className="h-4 w-4" />
                   Compromisso
+                  <HelpTooltip content={microcopy.help.progress.adherence} />
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -366,6 +368,7 @@ export default function Progress() {
                 <CardDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
                   <TrendingUp className="h-4 w-4" />
                   No Horário
+                  <HelpTooltip content={microcopy.help.progress.onTime} />
                 </CardDescription>
               </CardHeader>
               <CardContent>

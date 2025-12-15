@@ -14,9 +14,11 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import FloatingActionButton from "@/components/FloatingActionButton";
 import TutorialHint from "@/components/TutorialHint";
+import HelpTooltip from "@/components/HelpTooltip";
 import InfoDialog from "@/components/InfoDialog";
 import { cn } from "@/lib/utils";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { microcopy } from "@/lib/microcopy";
 interface Item {
   id: string;
   name: string;
@@ -206,12 +208,19 @@ export default function Medications() {
             </Button>
           </div>
 
-          <TutorialHint id="medications_page" title="Gerencie seus medicamentos e suplementos 💊" message="Aqui você organiza todos os seus remédios, vitaminas e suplementos. Adicione novos itens, configure horários e acompanhe seu estoque. É simples e rápido!" />
+          <TutorialHint 
+            id={microcopy.tutorials.medications.id} 
+            title={microcopy.tutorials.medications.title} 
+            message={microcopy.tutorials.medications.message} 
+          />
 
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar medicamento..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <HelpTooltip content={microcopy.help.medications.search} />
+            </div>
           </div>
 
           {/* Medications List */}
@@ -257,14 +266,16 @@ export default function Medications() {
                             </div>
                           </div>
                           
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            <Badge variant="outline" className="text-xs font-medium">
+                          <div className="flex flex-wrap gap-2 mt-3 items-center">
+                            <Badge variant="outline" className="text-xs font-medium flex items-center gap-1">
                               {getScheduleSummary(item.schedules)}
+                              <HelpTooltip content={microcopy.help.medications.schedule} side="bottom" />
                             </Badge>
                             
-                            {stockStatus && <Badge variant={stockStatus.color === "destructive" ? "destructive" : "secondary"} className={`text-xs font-medium ${stockStatus.color === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" : ""}`}>
-                                <Package className="h-3 w-3 mr-1" />
+                            {stockStatus && <Badge variant={stockStatus.color === "destructive" ? "destructive" : "secondary"} className={`text-xs font-medium flex items-center gap-1 ${stockStatus.color === "warning" ? "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-400" : ""}`}>
+                                <Package className="h-3 w-3" />
                                 {stockStatus.label}
+                                <HelpTooltip content={microcopy.help.medications.stock} side="bottom" />
                               </Badge>}
                           </div>
                         </div>

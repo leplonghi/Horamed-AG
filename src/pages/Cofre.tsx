@@ -18,6 +18,9 @@ import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import TutorialHint from "@/components/TutorialHint";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
+
 export default function Cofre() {
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
   const [busca, setBusca] = useState("");
@@ -235,6 +238,7 @@ export default function Cofre() {
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Clock className="w-4 h-4" />
                   Expirando
+                  <HelpTooltip content={microcopy.help.cofre.expiring} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -250,6 +254,7 @@ export default function Cofre() {
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4" />
                   Revisar
+                  <HelpTooltip content={microcopy.help.cofre.review} />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -274,7 +279,11 @@ export default function Cofre() {
             </Card>
           </div>}
 
-        <TutorialHint id="carteira_page" title="Sua carteira de saúde digital 🏥" message="Guarde exames, receitas, vacinas e consultas aqui. Compartilhe facilmente com médicos quando precisar! Tudo com segurança e privacidade." />
+        <TutorialHint 
+          id={microcopy.tutorials.cofre.id} 
+          title={microcopy.tutorials.cofre.title} 
+          message={microcopy.tutorials.cofre.message} 
+        />
 
         <div className="flex gap-2 mb-4">
           <Input placeholder="Buscar documentos..." value={busca} onChange={e => setBusca(e.target.value)} className="flex-1" />
