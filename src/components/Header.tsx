@@ -52,7 +52,7 @@ export default function Header() {
     return email.substring(0, 2).toUpperCase();
   };
   return <header className="fixed top-0 left-0 right-0 bg-card border-b border-border z-50 shadow-sm animate-slide-up">
-      <div className="max-w-4xl mx-auto py-3 px-[24px] pl-0 pr-0 pb-[10px] pt-[10px]">
+      <div className="max-w-4xl mx-auto py-3 px-4 pb-[10px] pt-[10px]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3 animate-fade-in">
             <img src={logo} alt="HoraMed" width={60} height={56} className="h-14 w-auto hover:scale-105 transition-transform duration-300" loading="eager" fetchPriority="high" />
