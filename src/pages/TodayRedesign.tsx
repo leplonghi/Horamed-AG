@@ -357,17 +357,20 @@ export default function TodayRedesign() {
   }, [activeProfile]);
   useEffect(() => {
     const hour = new Date().getHours();
-    // Copy focada em cuidadores - emocional e direto
     let quotes: string[] = [];
-    const profileName = activeProfile?.name || userName || "seu familiar";
-    const isSelf = activeProfile?.relationship === 'self';
+    
+    // Determina se é perfil próprio ou de familiar
+    // Se ainda não carregou o perfil, assume que é próprio (mais comum)
+    const isSelf = !activeProfile || activeProfile.relationship === 'self';
+    const profileName = activeProfile?.name || userName || "você";
     
     if (hour < 12) {
       setGreeting("Bom dia");
       if (isSelf) {
         quotes = [
           "Vamos começar o dia cuidando da sua saúde!",
-          "Suas doses da manhã estão te esperando."
+          "Suas doses da manhã estão te esperando.",
+          "Bom dia! Como está se sentindo hoje?"
         ];
       } else {
         quotes = [
@@ -380,7 +383,8 @@ export default function TodayRedesign() {
       if (isSelf) {
         quotes = [
           "Continue firme! Você está cuidando bem de você.",
-          "Mantenha o foco na sua saúde."
+          "Mantenha o foco na sua saúde.",
+          "Não esqueça das doses da tarde!"
         ];
       } else {
         quotes = [
@@ -393,7 +397,8 @@ export default function TodayRedesign() {
       if (isSelf) {
         quotes = [
           "Não esqueça dos remédios da noite!",
-          "Finalize o dia em dia com sua saúde."
+          "Finalize o dia em dia com sua saúde.",
+          "Quase lá! Últimas doses do dia."
         ];
       } else {
         quotes = [
