@@ -58,8 +58,22 @@ const categoryConfig: Record<SupplementCategory, {
   },
 };
 
-// Detectar categoria baseado no nome do suplemento
-export function detectSupplementCategory(name: string): SupplementCategory {
+// Mapear categorias do wizard para as categorias de exibição
+const wizardCategoryMap: Record<string, SupplementCategory> = {
+  'energy': 'energia',
+  'sleep': 'sono',
+  'performance': 'performance',
+  'immunity': 'imunidade',
+  'hydration': 'geral', // Mapeia hidratação para geral por enquanto
+};
+
+// Detectar categoria baseado no nome do suplemento (fallback se não tiver categoria salva)
+export function detectSupplementCategory(name: string, savedCategory?: string): SupplementCategory {
+  // Se tiver categoria salva do wizard, usar ela
+  if (savedCategory && wizardCategoryMap[savedCategory]) {
+    return wizardCategoryMap[savedCategory];
+  }
+  
   const nameLower = name.toLowerCase();
   
   // Energia

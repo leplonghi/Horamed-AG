@@ -19,6 +19,7 @@ interface MedicationData {
   name: string;
   category: string;
   notes: string;
+  supplementCategory?: string;
   frequency: "daily" | "specific_days" | "weekly";
   times: string[];
   daysOfWeek?: number[];
