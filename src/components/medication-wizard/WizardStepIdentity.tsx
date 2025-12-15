@@ -5,20 +5,29 @@ import { Textarea } from "@/components/ui/textarea";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Pill, Leaf, Heart, Package, Check, ChevronsUpDown, HelpCircle, Search } from "lucide-react";
+import { Pill, Leaf, Heart, Package, Check, ChevronsUpDown, HelpCircle, Search, Zap, Moon, Shield, Droplets, Dumbbell } from "lucide-react";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-
+import { Badge } from "@/components/ui/badge";
 interface WizardStepIdentityProps {
   data: {
     name: string;
     category: string;
     notes: string;
+    supplementCategory?: string;
   };
   updateData: (data: Partial<any>) => void;
 }
+
+const supplementCategories = [
+  { value: "energy", label: "Energia", icon: Zap, color: "text-amber-500", bgColor: "bg-amber-50 dark:bg-amber-950/30", description: "Pré-treino, cafeína, B12" },
+  { value: "sleep", label: "Sono", icon: Moon, color: "text-purple-500", bgColor: "bg-purple-50 dark:bg-purple-950/30", description: "Melatonina, magnésio, camomila" },
+  { value: "immunity", label: "Imunidade", icon: Shield, color: "text-green-500", bgColor: "bg-green-50 dark:bg-green-950/30", description: "Vitamina C, D, zinco" },
+  { value: "performance", label: "Performance", icon: Dumbbell, color: "text-orange-500", bgColor: "bg-orange-50 dark:bg-orange-950/30", description: "Whey, creatina, BCAA" },
+  { value: "hydration", label: "Hidratação", icon: Droplets, color: "text-blue-500", bgColor: "bg-blue-50 dark:bg-blue-950/30", description: "Eletrólitos, isotônicos" },
+];
 
 export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps) {
   const [open, setOpen] = useState(false);
@@ -257,6 +266,49 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
           })}
         </div>
       </div>
+
+      {/* Categoria do Suplemento - só aparece se for vitamina ou suplemento */}
+      {(data.category === 'vitamina' || data.category === 'suplemento') && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Label className="text-lg font-semibold">
+              Para que você usa esse suplemento?
+            </Label>
+            <Badge variant="outline" className="text-xs">Opcional</Badge>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {supplementCategories.map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = data.supplementCategory === cat.value;
+              return (
+                <Button
+                  key={cat.value}
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateData({ 
+                    supplementCategory: isSelected ? undefined : cat.value 
+                  })}
+                  className={cn(
+                    "h-auto py-2 px-3 gap-2 transition-all",
+                    isSelected && "ring-2 ring-primary ring-offset-2"
+                  )}
+                >
+                  <Icon className={cn("h-4 w-4", isSelected ? "text-primary-foreground" : cat.color)} />
+                  <span>{cat.label}</span>
+                </Button>
+              );
+            })}
+          </div>
+          
+          {data.supplementCategory && (
+            <p className="text-xs text-muted-foreground">
+              {supplementCategories.find(c => c.value === data.supplementCategory)?.description}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Observações */}
       <div className="space-y-3">
