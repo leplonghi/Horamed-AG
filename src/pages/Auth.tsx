@@ -263,10 +263,15 @@ export default function Auth() {
               {isAvailable && isBiometricEnabled && (
                 <Button
                   type="button"
-                  onClick={loginWithBiometric}
+                  onClick={async () => {
+                    const result = await loginWithBiometric();
+                    if (result && typeof result === 'object' && 'email' in result) {
+                      setEmail(result.email);
+                      toast.info("Biometria confirmada! Digite sua senha para continuar.");
+                    }
+                  }}
                   disabled={biometricLoading}
-                  className="w-full h-12"
-                  variant="outline"
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg hover:shadow-xl transition-all"
                 >
                   <Fingerprint className="h-5 w-5 mr-2" />
                   {biometricLoading ? "Autenticando..." : "Entrar com Biometria"}
