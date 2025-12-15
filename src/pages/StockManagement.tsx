@@ -17,6 +17,7 @@ import { StockOriginBadge } from "@/components/StockOriginBadge";
 import { StockConsumptionChart } from "@/components/StockConsumptionChart";
 import TutorialHint from "@/components/TutorialHint";
 import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 import {
   Dialog,
   DialogContent,
@@ -142,9 +143,9 @@ export default function StockManagement() {
 
         {/* Tutorial Hint */}
         <TutorialHint
-          id="stock_page"
-          title="Controle inteligente de estoque 📦"
-          message="O sistema calcula automaticamente quanto tempo seus medicamentos vão durar baseado no uso real. Veja projeções, receba alertas de estoque baixo e links para reposição. Atualize o estoque sempre que comprar mais."
+          id={microcopy.tutorials.stock.id}
+          title={microcopy.tutorials.stock.title}
+          message={microcopy.tutorials.stock.message}
         />
 
         {/* Empty State */}
@@ -272,15 +273,16 @@ export default function StockManagement() {
                   {/* Progress Bar */}
                   <div className="space-y-2">
                     <Progress value={percentage} className="h-3" />
-                    <div className="flex justify-between text-xs text-muted-foreground">
+                    <div className="flex justify-between text-xs text-muted-foreground items-center">
                       <span>{Math.round(percentage)}% disponível</span>
                       {item.days_remaining !== null && item.days_remaining > 0 && (
-                        <span className={
+                        <span className={`flex items-center gap-1 ${
                           item.days_remaining <= 7 ? "text-destructive font-medium" :
                           item.days_remaining <= 14 ? "text-warning font-medium" :
                           ""
-                        }>
+                        }`}>
                           ~{item.days_remaining} dias restantes
+                          <HelpTooltip content={microcopy.help.stock.daysRemaining} side="left" />
                         </span>
                       )}
                     </div>

@@ -25,6 +25,9 @@ import { useSmartRedirect } from "@/hooks/useSmartRedirect";
 import { SideEffectQuickLog } from "@/components/SideEffectQuickLog";
 import { Check, Clock, AlertTriangle, Pill, Plus, Flame, X, Utensils } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import TutorialHint from "@/components/TutorialHint";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 
 interface DoseItem {
   id: string;
@@ -237,6 +240,7 @@ export default function Today() {
                 <Flame className="w-5 h-5 text-orange-500" />
                 <span className="font-bold text-orange-600 dark:text-orange-400">{streakData.currentStreak} dias</span>
                 <span className="text-sm text-muted-foreground">seguidos</span>
+                <HelpTooltip content={microcopy.help.today.streak} side="bottom" iconSize="sm" />
               </motion.div>
             )}
           </motion.div>
@@ -280,9 +284,12 @@ export default function Today() {
                   <span className="text-xs text-muted-foreground">{completedDoses}/{totalDoses}</span>
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                {pendingDoses.length === 0 ? "🎉 Tudo em dia!" : `${pendingDoses.length} dose${pendingDoses.length > 1 ? 's' : ''} restante${pendingDoses.length > 1 ? 's' : ''}`}
-              </p>
+              <div className="flex items-center gap-1 mt-2">
+                <p className="text-sm text-muted-foreground">
+                  {pendingDoses.length === 0 ? "🎉 Tudo em dia!" : `${pendingDoses.length} dose${pendingDoses.length > 1 ? 's' : ''} restante${pendingDoses.length > 1 ? 's' : ''}`}
+                </p>
+                <HelpTooltip content={microcopy.help.today.progress} iconSize="sm" />
+              </div>
             </motion.div>
           )}
 
@@ -296,6 +303,13 @@ export default function Today() {
               />
             </div>
           )}
+
+          {/* Tutorial for new users */}
+          <TutorialHint
+            id={microcopy.tutorials.today.id}
+            title={microcopy.tutorials.today.title}
+            message={microcopy.tutorials.today.message}
+          />
 
           {/* Empty State */}
           {!hasAnyItems && (
@@ -329,6 +343,7 @@ export default function Today() {
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <AlertTriangle className="w-4 h-4 text-destructive" />
                   <span className="text-sm font-semibold text-destructive">Atrasadas</span>
+                  <HelpTooltip content={microcopy.help.today.overdue} iconSize="sm" />
                 </div>
                 <div className="space-y-3">
                   {overdueDoses.map((dose, i) => (
@@ -358,6 +373,7 @@ export default function Today() {
                 <div className="flex items-center gap-2 mb-3 px-1">
                   <Clock className="w-4 h-4 text-primary" />
                   <span className="text-sm font-semibold">Próximas</span>
+                  <HelpTooltip content={microcopy.help.today.upcoming} iconSize="sm" />
                 </div>
                 <div className="space-y-3">
                   {upcomingDoses.map((dose, i) => (

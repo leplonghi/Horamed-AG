@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Pill, Leaf, Heart, Package, Check, ChevronsUpDown } from "lucide-react";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 
 interface WizardStepIdentityProps {
   data: {
@@ -79,8 +81,9 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name" className="text-lg font-semibold">
+        <Label htmlFor="name" className="text-lg font-semibold flex items-center gap-2">
           Nome do Medicamento *
+          <HelpTooltip content={microcopy.help.wizard.name} />
         </Label>
         
         <Popover open={open} onOpenChange={setOpen}>
@@ -144,8 +147,10 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
       </div>
 
       <div className="space-y-3">
-        <Label className="text-lg font-semibold">
-          Categoria {!manualEntry && <span className="text-sm text-muted-foreground font-normal">(detectada automaticamente)</span>}
+        <Label className="text-lg font-semibold flex items-center gap-2">
+          Categoria 
+          {!manualEntry && <span className="text-sm text-muted-foreground font-normal">(detectada automaticamente)</span>}
+          <HelpTooltip content={microcopy.help.medications.category} />
         </Label>
         <RadioGroup
           value={data.category}

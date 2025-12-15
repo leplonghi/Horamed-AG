@@ -3,6 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 
 interface WizardStepStockProps {
   data: {
@@ -39,8 +41,9 @@ export function WizardStepStock({ data, updateData }: WizardStepStockProps) {
       </Alert>
 
       <div className="space-y-2">
-        <Label htmlFor="unitsTotal" className="text-lg font-semibold">
+        <Label htmlFor="unitsTotal" className="text-lg font-semibold flex items-center gap-2">
           Quantidade disponível *
+          <HelpTooltip content={microcopy.help.wizard.stock} />
         </Label>
         <Input
           id="unitsTotal"
@@ -74,8 +77,9 @@ export function WizardStepStock({ data, updateData }: WizardStepStockProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="lowStockThreshold" className="text-base font-medium">
+        <Label htmlFor="lowStockThreshold" className="text-base font-medium flex items-center gap-2">
           Alerta de estoque baixo
+          <HelpTooltip content={microcopy.help.stock.alert} />
         </Label>
         <Input
           id="lowStockThreshold"
