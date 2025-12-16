@@ -265,7 +265,7 @@ export default function Cofre() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-600">
+                <div className="text-3xl font-bold text-destructive">
                   {stats.expiringSoon}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">em 30 dias</p>
@@ -281,7 +281,7 @@ export default function Cofre() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-amber-600">
+                <div className="text-3xl font-bold text-warning">
                   {stats.needsReview}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">pendentes</p>
