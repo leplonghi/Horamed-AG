@@ -131,10 +131,10 @@ export default function Progress() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col pb-20 bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen flex flex-col pb-20 bg-gradient-subtle">
       <Header />
 
-      <main className="flex-1 container mx-auto p-6 space-y-6">
+      <main className="flex-1 container mx-auto p-4 sm:p-6 space-y-6">
         <div className="flex items-start justify-between gap-4">
           <PageHeader
             title="Seu Progresso"
@@ -147,23 +147,25 @@ export default function Progress() {
           />
         </div>
 
-        {/* Explicação didática da seção */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-full shrink-0">
-                <Trophy className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">Como funciona?</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Cada dose tomada conta para sua <strong>sequência de dias</strong> e aumenta seu <strong>XP</strong>. 
-                  Quanto mais consistente você for, mais conquistas vai desbloquear!
-                </p>
-              </div>
+        {/* Explicação didática */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4 rounded-2xl"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}>
+              <Trophy className="h-5 w-5 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Como funciona?</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Cada dose tomada conta para sua <strong>sequência de dias</strong> e aumenta seu <strong>XP</strong>. 
+                Quanto mais consistente você for, mais conquistas vai desbloquear!
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Tutorial Hint */}
         <TutorialHint
@@ -192,11 +194,15 @@ export default function Progress() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card 
-            className="relative overflow-hidden bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-background border-2 border-purple-500/20 cursor-pointer group hover:border-purple-500/40 transition-all"
+          <div 
+            className="relative overflow-hidden rounded-2xl bg-card/80 backdrop-blur-sm p-6 cursor-pointer group hover-lift"
+            style={{ 
+              boxShadow: 'var(--shadow-md)',
+              background: 'linear-gradient(135deg, hsl(var(--primary) / 0.05), hsl(var(--accent) / 0.1))'
+            }}
             onClick={() => navigate("/conquistas")}
           >
-            {/* Sparkle decorations */}
+            {/* Sparkle decoration */}
             <motion.div
               className="absolute top-4 right-4"
               animate={{
@@ -212,90 +218,86 @@ export default function Progress() {
               <Sparkles className="h-6 w-6 text-yellow-500" />
             </motion.div>
 
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-                    <Trophy className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">Conquistas & XP</CardTitle>
-                    <CardDescription>
-                      Veja todos os seus badges e progresso
-                    </CardDescription>
-                  </div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, hsl(270 60% 60%), hsl(330 60% 60%))' }}>
+                  <Trophy className="h-6 w-6 text-white" />
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {/* This will be populated from the achievements hook */}
-                    ?
+                <div>
+                  <h3 className="text-xl font-semibold">Conquistas & XP</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Veja todos os seus badges e progresso
                   </p>
-                  <p className="text-xs text-muted-foreground">Desbloqueadas</p>
-                </div>
-                <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                    ?
-                  </p>
-                  <p className="text-xs text-muted-foreground">Nível</p>
-                </div>
-                <div className="text-center flex-1">
-                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    ?
-                  </p>
-                  <p className="text-xs text-muted-foreground">XP Total</p>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="text-center flex-1 p-3 rounded-xl bg-background/50">
+                <p className="text-2xl font-bold" style={{ color: 'hsl(270 60% 60%)' }}>?</p>
+                <p className="text-xs text-muted-foreground">Desbloqueadas</p>
+              </div>
+              <div className="text-center flex-1 p-3 rounded-xl bg-background/50">
+                <p className="text-2xl font-bold" style={{ color: 'hsl(330 60% 60%)' }}>?</p>
+                <p className="text-xs text-muted-foreground">Nível</p>
+              </div>
+              <div className="text-center flex-1 p-3 rounded-xl bg-background/50">
+                <p className="text-2xl font-bold text-yellow-500">?</p>
+                <p className="text-xs text-muted-foreground">XP Total</p>
+              </div>
+            </div>
+          </div>
         </motion.div>
 
-        {/* Streak Card - Destaque */}
+        {/* Streak Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.15 }}
         >
-          <Card className="overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background shadow-xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  Sequência Atual
-                </CardTitle>
-                {currentMilestone && (
-                  <span className="text-2xl">{currentMilestone.badge.split(" ")[0]}</span>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-center">
-                <StreakAnimation streak={streakData?.current_streak || 0} />
-              </div>
+          <div 
+            className="overflow-hidden rounded-2xl bg-card/80 backdrop-blur-sm p-6"
+            style={{ 
+              boxShadow: 'var(--shadow-lg)',
+              background: 'linear-gradient(135deg, hsl(var(--primary) / 0.05), transparent)'
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
+                <Award className="h-5 w-5 text-primary" />
+                Sequência Atual
+              </h3>
               {currentMilestone && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-center space-y-1 p-4 bg-primary/10 rounded-lg"
-                >
-                  <p className="font-semibold text-primary">{currentMilestone.badge}</p>
-                  <p className="text-sm text-muted-foreground">{currentMilestone.reward}</p>
-                </motion.div>
+                <span className="text-2xl">{currentMilestone.badge.split(" ")[0]}</span>
               )}
-              {nextMilestone && (
-                <div className="text-center text-sm text-muted-foreground">
-                  <p>
-                    Faltam apenas <span className="font-bold text-foreground">{nextMilestone.days - (streakData?.current_streak || 0)} dias</span> para{" "}
-                    <span className="font-semibold">{nextMilestone.badge}</span>
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div className="flex items-center justify-center py-4">
+              <StreakAnimation streak={streakData?.current_streak || 0} />
+            </div>
+            
+            {currentMilestone && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center p-4 rounded-xl mt-4"
+                style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}
+              >
+                <p className="font-semibold text-primary">{currentMilestone.badge}</p>
+                <p className="text-sm text-muted-foreground">{currentMilestone.reward}</p>
+              </motion.div>
+            )}
+            
+            {nextMilestone && (
+              <div className="text-center text-sm text-muted-foreground mt-4">
+                <p>
+                  Faltam apenas <span className="font-bold text-foreground">{nextMilestone.days - (streakData?.current_streak || 0)} dias</span> para{" "}
+                  <span className="font-semibold">{nextMilestone.badge}</span>
+                </p>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* Period Selector */}
@@ -305,16 +307,16 @@ export default function Progress() {
           transition={{ delay: 0.25 }}
         >
           <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as any)} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto p-1">
-              <TabsTrigger value="week" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsList className="grid w-full grid-cols-3 h-auto p-1.5 rounded-2xl bg-muted/50">
+              <TabsTrigger value="week" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                 <Calendar className="h-4 w-4 mr-2" />
                 7 dias
               </TabsTrigger>
-              <TabsTrigger value="month" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="month" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                 <Calendar className="h-4 w-4 mr-2" />
                 30 dias
               </TabsTrigger>
-              <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger value="all" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-all">
                 <Calendar className="h-4 w-4 mr-2" />
                 Todos
               </TabsTrigger>
@@ -323,83 +325,76 @@ export default function Progress() {
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
+            className="rounded-2xl bg-card/80 backdrop-blur-sm p-4 hover-lift"
+            style={{ boxShadow: 'var(--shadow-sm)' }}
           >
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <Target className="h-4 w-4" />
-                  Total
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold">{doseStats?.total || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">doses programadas</p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+              <Target className="h-4 w-4" />
+              <span className="text-sm">Total</span>
+            </div>
+            <p className="text-3xl font-bold">{doseStats?.total || 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">doses programadas</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
+            className="rounded-2xl p-4 hover-lift"
+            style={{ 
+              boxShadow: 'var(--shadow-sm)',
+              backgroundColor: 'hsl(var(--success) / 0.1)'
+            }}
           >
-            <Card className="border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-green-700 dark:text-green-400">
-                  <Zap className="h-4 w-4" />
-                  Tomadas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-green-700 dark:text-green-400">{doseStats?.taken || 0}</p>
-                <p className="text-xs text-muted-foreground mt-1">doses completadas</p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-2 mb-2 text-success">
+              <Zap className="h-4 w-4" />
+              <span className="text-sm">Tomadas</span>
+            </div>
+            <p className="text-3xl font-bold text-success">{doseStats?.taken || 0}</p>
+            <p className="text-xs text-muted-foreground mt-1">doses completadas</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
+            className="rounded-2xl p-4 hover-lift"
+            style={{ 
+              boxShadow: 'var(--shadow-sm)',
+              backgroundColor: 'hsl(var(--primary) / 0.1)'
+            }}
           >
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/20 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                  <Trophy className="h-4 w-4" />
-                  Compromisso
-                  <HelpTooltip content={microcopy.help.progress.adherence} />
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-blue-700 dark:text-blue-400">{doseStats?.adherence || 0}%</p>
-                <p className="text-xs text-muted-foreground mt-1">taxa de sucesso</p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-2 mb-2 text-primary">
+              <Trophy className="h-4 w-4" />
+              <span className="text-sm">Compromisso</span>
+              <HelpTooltip content={microcopy.help.progress.adherence} />
+            </div>
+            <p className="text-3xl font-bold text-primary">{doseStats?.adherence || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">taxa de sucesso</p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.45 }}
+            className="rounded-2xl p-4 hover-lift"
+            style={{ 
+              boxShadow: 'var(--shadow-sm)',
+              backgroundColor: 'hsl(var(--warning) / 0.1)'
+            }}
           >
-            <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
-                  <TrendingUp className="h-4 w-4" />
-                  No Horário
-                  <HelpTooltip content={microcopy.help.progress.onTime} />
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-3xl font-bold text-amber-700 dark:text-amber-400">{doseStats?.onTimeRate || 0}%</p>
-                <p className="text-xs text-muted-foreground mt-1">pontualidade</p>
-              </CardContent>
-            </Card>
+            <div className="flex items-center gap-2 mb-2 text-warning">
+              <TrendingUp className="h-4 w-4" />
+              <span className="text-sm">No Horário</span>
+              <HelpTooltip content={microcopy.help.progress.onTime} />
+            </div>
+            <p className="text-3xl font-bold text-warning">{doseStats?.onTimeRate || 0}%</p>
+            <p className="text-xs text-muted-foreground mt-1">pontualidade</p>
           </motion.div>
         </div>
 
@@ -409,41 +404,36 @@ export default function Progress() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <Card 
-            className="border-muted hover:border-primary/30 transition-all cursor-pointer group hover:shadow-lg"
+          <div 
+            className="rounded-2xl bg-card/80 backdrop-blur-sm p-5 cursor-pointer group hover-lift"
+            style={{ boxShadow: 'var(--shadow-sm)' }}
             onClick={() => navigate('/exportar')}
           >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
-                    <FileDown className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base">Exportar Dados</CardTitle>
-                    <CardDescription className="text-xs">
-                      Baixe relatório completo em PDF
-                    </CardDescription>
-                  </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
+                  <FileDown className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                <div>
+                  <h4 className="font-medium">Exportar Dados</h4>
+                  <p className="text-xs text-muted-foreground">
+                    Baixe relatório completo em PDF
+                  </p>
+                </div>
               </div>
-            </CardHeader>
-          </Card>
+              <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+            </div>
+          </div>
         </motion.div>
 
-        {/* Fitness Widgets - Only show if user has supplements AND preference is enabled */}
-        {hasSupplements && preferences.showFitnessWidgets && (
+        {/* Fitness Progress Widgets */}
+        {(hasSupplements || preferences.showFitnessWidgets) && user?.id && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
           >
-            <FitnessProgressWidgets 
-              supplementAdherence7Days={doseStats?.adherence || 0}
-              consistencyRate={doseStats?.onTimeRate || 0}
-              hasPreWorkoutSupplements={true}
-            />
+            <FitnessProgressWidgets />
           </motion.div>
         )}
       </main>

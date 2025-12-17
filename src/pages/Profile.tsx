@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { 
   User, Bell, Shield, HelpCircle, LogOut, FileDown, 
   Crown, Users, Plus, Trash2, Settings, BookOpen,
-  Download, FileText, AlertCircle, Smartphone, Gift, Activity, Check, Fingerprint
+  Download, FileText, AlertCircle, Smartphone, Gift, Activity, Check, Fingerprint, ArrowRight
 } from "lucide-react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
@@ -20,12 +18,12 @@ import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/horamed-logo-optimized.webp";
 import TutorialHint from "@/components/TutorialHint";
 import WeightTrackingCard from "@/components/WeightTrackingCard";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
+import { motion } from "framer-motion";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -68,7 +66,6 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await signOut();
-      // Limpar dados do localStorage da biometria
       localStorage.removeItem("biometric_refresh_token");
       localStorage.removeItem("biometric_expiry");
       localStorage.removeItem("biometric_enabled");
@@ -100,7 +97,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-gradient-subtle pb-20">
       <Header />
       
       <main className="container max-w-2xl mx-auto px-4 py-6 pt-24 space-y-6">
@@ -111,102 +108,108 @@ export default function Profile() {
           placement="bottom"
         />
 
-        {/* Explicação didática da seção */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-full shrink-0">
-                <User className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">O que você pode fazer aqui?</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Gerencie sua <strong>conta</strong>, crie <strong>perfis familiares</strong> (Premium), 
-                  configure <strong>notificações</strong> e veja seu <strong>plano de assinatura</strong>.
-                </p>
-              </div>
+        {/* Explicação didática */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4 rounded-2xl"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}>
+              <User className="h-5 w-5 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">O que você pode fazer aqui?</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Gerencie sua <strong>conta</strong>, crie <strong>perfis familiares</strong> (Premium), 
+                configure <strong>notificações</strong> e veja seu <strong>plano de assinatura</strong>.
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Profile Header Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Avatar className="h-20 w-20 sm:h-16 sm:w-16">
-                {activeProfile?.avatar_url ? (
-                  <AvatarImage src={activeProfile.avatar_url} alt={activeProfile.name} />
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl bg-card/80 backdrop-blur-sm p-6"
+          style={{ boxShadow: 'var(--shadow-md)' }}
+        >
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Avatar className="h-20 w-20 sm:h-16 sm:w-16 ring-4 ring-primary/20">
+              {activeProfile?.avatar_url ? (
+                <AvatarImage src={activeProfile.avatar_url} alt={activeProfile.name} />
+              ) : (
+                <AvatarFallback className="text-lg bg-primary/10 text-primary">
+                  {getInitials(activeProfile?.name || '')}
+                </AvatarFallback>
+              )}
+            </Avatar>
+            
+            <div className="flex-1 min-w-0 text-center sm:text-left">
+              <h1 className="text-2xl font-bold truncate">{activeProfile?.name}</h1>
+              <p className="text-sm text-muted-foreground truncate">{userEmail}</p>
+              <div className="mt-2 flex justify-center sm:justify-start">
+                {isPremium ? (
+                  <span className="pill-primary">
+                    <Crown className="h-3 w-3" />
+                    Premium
+                  </span>
                 ) : (
-                  <AvatarFallback className="text-lg">
-                    {getInitials(activeProfile?.name || '')}
-                  </AvatarFallback>
+                  <span className="pill">
+                    {daysLeft !== null ? `${daysLeft} dias restantes` : 'Gratuito'}
+                  </span>
                 )}
-              </Avatar>
-              
-              <div className="flex-1 min-w-0 text-center sm:text-left">
-                <h1 className="text-2xl font-bold truncate">{activeProfile?.name}</h1>
-                <p className="text-sm text-muted-foreground truncate">{userEmail}</p>
-                <div className="mt-2 flex justify-center sm:justify-start">
-                  {isPremium ? (
-                    <Badge className="gap-1">
-                      <Crown className="h-3 w-3" />
-                      Premium
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline">
-                      {daysLeft !== null ? `${daysLeft} dias restantes` : 'Gratuito'}
-                    </Badge>
-                  )}
-                </div>
               </div>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="w-full"
-                onClick={() => navigate('/profile/edit')}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Editar perfil
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg"
-                className="w-full"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sair da conta
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="w-full rounded-xl"
+              onClick={() => navigate('/profile/edit')}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Editar perfil
+            </Button>
+            <Button 
+              variant="outline" 
+              size="lg"
+              className="w-full rounded-xl"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair da conta
+            </Button>
+          </div>
+        </motion.div>
 
         {/* Tabs */}
         <Tabs defaultValue="account" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-auto">
-            <TabsTrigger value="account" className="flex-col gap-1 py-3">
+          <TabsList className="w-full grid grid-cols-4 h-auto p-1.5 rounded-2xl bg-muted/50">
+            <TabsTrigger value="account" className="flex-col gap-1 py-3 rounded-xl">
               <User className="h-5 w-5" />
               <span className="text-xs">Conta</span>
             </TabsTrigger>
-            <TabsTrigger value="profiles" className="flex-col gap-1 py-3">
+            <TabsTrigger value="profiles" className="flex-col gap-1 py-3 rounded-xl">
               <Users className="h-5 w-5" />
               <span className="text-xs">Perfis</span>
             </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex-col gap-1 py-3">
+            <TabsTrigger value="subscription" className="flex-col gap-1 py-3 rounded-xl">
               <Crown className="h-5 w-5" />
               <span className="text-xs">Plano</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-col gap-1 py-3">
+            <TabsTrigger value="settings" className="flex-col gap-1 py-3 rounded-xl">
               <Settings className="h-5 w-5" />
               <span className="text-xs">Ajustes</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Account Tab */}
-          <TabsContent value="account" className="space-y-6">
+          <TabsContent value="account" className="space-y-6 mt-6">
             {/* Weight Tracking */}
             {profile.user_id && (
               <WeightTrackingCard 
@@ -216,499 +219,363 @@ export default function Profile() {
             )}
 
             {/* Fitness Widgets Preferences */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-performance" />
-                  <CardTitle>Preferências de Bem-estar</CardTitle>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-5"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="h-5 w-5 text-performance" />
+                <h3 className="font-semibold">Preferências de Bem-estar</h3>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="fitness-widgets" className="cursor-pointer font-medium">
+                    Exibir widgets de bem-estar
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Mostre métricas de hidratação, consistência e energia
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="fitness-widgets" className="cursor-pointer font-medium">
-                      Exibir widgets de bem-estar
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      Mostre métricas de hidratação, consistência e energia
-                    </p>
-                  </div>
-                  <Switch
-                    id="fitness-widgets"
-                    checked={preferences.showFitnessWidgets}
-                    onCheckedChange={toggleFitnessWidgets}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                <Switch
+                  id="fitness-widgets"
+                  checked={preferences.showFitnessWidgets}
+                  onCheckedChange={toggleFitnessWidgets}
+                />
+              </div>
+            </motion.div>
           </TabsContent>
 
           {/* Profiles Tab */}
-          <TabsContent value="profiles" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Perfis Familiares</CardTitle>
-                    <CardDescription>
-                      Gerencie medicamentos de toda a família
-                    </CardDescription>
-                  </div>
-                  {isPremium && (
-                    <Button
-                      size="sm"
-                      onClick={() => navigate('/perfil/criar')}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Novo
-                    </Button>
-                  )}
+          <TabsContent value="profiles" className="space-y-6 mt-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-5"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="font-semibold">Perfis Familiares</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie medicamentos de toda a família
+                  </p>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {!isPremium && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-4">
-                    <div className="flex items-start gap-3">
-                      <Crown className="h-5 w-5 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        <p className="font-medium text-sm mb-1">
-                          Recurso Premium
-                        </p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          Crie perfis para toda família e gerencie medicamentos de cada um separadamente.
-                        </p>
-                        <Button
-                          size="lg"
-                          className="w-full"
-                          onClick={() => navigate('/planos')}
-                        >
-                          Fazer Upgrade
-                        </Button>
-                      </div>
+                {isPremium && (
+                  <Button
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() => navigate('/perfil/criar')}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Novo
+                  </Button>
+                )}
+              </div>
+
+              {!isPremium && (
+                <div 
+                  className="rounded-xl p-4 mb-4"
+                  style={{ backgroundColor: 'hsl(var(--primary) / 0.05)' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <Crown className="h-5 w-5 text-primary mt-0.5" />
+                    <div className="flex-1">
+                      <p className="font-medium text-sm mb-1">Recurso Premium</p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Crie perfis para toda família e gerencie medicamentos de cada um separadamente.
+                      </p>
+                      <Button
+                        size="lg"
+                        className="w-full rounded-xl"
+                        onClick={() => navigate('/planos')}
+                      >
+                        Fazer Upgrade
+                      </Button>
                     </div>
                   </div>
-                )}
-
-                <div className="space-y-2">
-                  {profiles.map(profile => {
-                    const isActive = activeProfile?.id === profile.id;
-                    
-                    return (
-                      <div
-                        key={profile.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                          isActive 
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-primary/50 hover:bg-accent/50'
-                        }`}
-                      >
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={profile.avatar_url || undefined} />
-                          <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{profile.name}</p>
-                            {isActive && (
-                              <Badge variant="default" className="text-xs">Ativo</Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {getRelationshipLabel(profile.relationship)}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          {!isActive && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => switchProfile(profile)}
-                            >
-                              Ativar
-                            </Button>
-                          )}
-                          {!profile.is_primary && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                if (confirm(`Deseja remover o perfil de ${profile.name}?`)) {
-                                  deleteProfile(profile.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
-              </CardContent>
-            </Card>
+              )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Cuidadores
-                </CardTitle>
-                <CardDescription>
-                  Compartilhe acesso com familiares e profissionais
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <CaregiverManager />
-              </CardContent>
-            </Card>
+              <div className="space-y-2">
+                {profiles.map(profile => {
+                  const isActive = activeProfile?.id === profile.id;
+                  
+                  return (
+                    <div
+                      key={profile.id}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        isActive 
+                          ? 'bg-primary/10 ring-2 ring-primary/30' 
+                          : 'bg-muted/30 hover:bg-muted/50'
+                      }`}
+                    >
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={profile.avatar_url || undefined} />
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {getInitials(profile.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{profile.name}</p>
+                          {isActive && (
+                            <span className="pill-primary text-xs">Ativo</span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {getRelationshipLabel(profile.relationship)}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-2">
+                        {!isActive && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => switchProfile(profile)}
+                          >
+                            Ativar
+                          </Button>
+                        )}
+                        {!profile.is_primary && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="rounded-xl"
+                            onClick={() => {
+                              if (confirm(`Deseja remover o perfil de ${profile.name}?`)) {
+                                deleteProfile(profile.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-5"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Shield className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold">Cuidadores</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Compartilhe acesso com familiares e profissionais
+                  </p>
+                </div>
+              </div>
+              <CaregiverManager />
+            </motion.div>
           </TabsContent>
 
           {/* Subscription Tab */}
-          <TabsContent value="subscription" className="space-y-6">
-            {/* Premium Upgrade CTA - Only for Free Users */}
+          <TabsContent value="subscription" className="space-y-6 mt-6">
+            {/* Premium Upgrade CTA */}
             {!isPremium && (
-              <Card className="border-2 border-primary bg-gradient-to-br from-primary/5 to-primary/10">
-                <CardContent className="pt-6">
-                  <div className="text-center space-y-4">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-2">
-                      <Crown className="h-8 w-8 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold mb-2">Assine o Premium</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Medicamentos ilimitados, IA sem limites e muito mais
-                      </p>
-                      <div className="inline-block px-4 py-2 bg-primary/20 rounded-full mb-4">
-                        <p className="text-2xl font-bold text-primary">R$ 19,90<span className="text-sm font-normal">/mês</span></p>
-                      </div>
-                    </div>
-                    <Button 
-                      size="lg"
-                      className="w-full h-12 text-base font-semibold"
-                      onClick={() => navigate('/planos')}
-                    >
-                      <Crown className="h-5 w-5 mr-2" />
-                      Assinar agora
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl p-6 text-center"
+                style={{ 
+                  boxShadow: 'var(--shadow-md)',
+                  background: 'linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.05))'
+                }}
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style={{ backgroundColor: 'hsl(var(--primary) / 0.2)' }}>
+                  <Crown className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Assine o Premium</h3>
+                <p className="text-muted-foreground mb-4">
+                  Medicamentos ilimitados, IA sem limites e muito mais
+                </p>
+                <div className="inline-block px-4 py-2 rounded-full mb-4" style={{ backgroundColor: 'hsl(var(--primary) / 0.2)' }}>
+                  <p className="text-2xl font-bold text-primary">R$ 19,90<span className="text-sm font-normal">/mês</span></p>
+                </div>
+                <Button 
+                  size="lg"
+                  className="w-full h-12 text-base font-semibold rounded-xl"
+                  onClick={() => navigate('/planos')}
+                >
+                  <Crown className="h-5 w-5 mr-2" />
+                  Assinar agora
+                </Button>
+              </motion.div>
             )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5" />
-                  Plano Atual
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-lg">
-                      {isPremium ? 'Premium' : 'Gratuito'}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-5"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <Crown className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">Plano Atual</h3>
+              </div>
+              
+              <div className="p-4 rounded-xl bg-muted/50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-lg">
+                    {isPremium ? 'Premium' : 'Gratuito'}
+                  </span>
+                  {isPremium ? (
+                    <span className="pill-primary">
+                      <Crown className="h-3 w-3" />
+                      Premium
                     </span>
-                    {isPremium ? (
-                      <Badge className="gap-1">
-                        <Crown className="h-3 w-3" />
-                        Premium
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">
-                        {daysLeft !== null ? `${daysLeft} dias restantes` : 'Gratuito'}
-                      </Badge>
-                    )}
-                  </div>
-                  {!isPremium && daysLeft !== null && (
-                    <p className="text-sm text-muted-foreground">
-                      {daysLeft > 0 
-                        ? `${daysLeft} dias restantes do período gratuito` 
-                        : 'Período gratuito expirado'}
-                    </p>
+                  ) : (
+                    <span className="pill">
+                      {daysLeft !== null ? `${daysLeft} dias restantes` : 'Gratuito'}
+                    </span>
                   )}
                 </div>
-
-                {isPremium ? (
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-primary/10">
-                          <Check className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Medicamentos ilimitados</p>
-                          <p className="text-sm text-muted-foreground">Adicione quantos medicamentos precisar</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-primary/10">
-                          <Check className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">IA sem limites</p>
-                          <p className="text-sm text-muted-foreground">Use a assistente de saúde sempre que precisar</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-primary/10">
-                          <Check className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Documentos ilimitados</p>
-                          <p className="text-sm text-muted-foreground">Guarde todas suas receitas e exames</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-primary/10">
-                          <Check className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Relatório mensal em PDF</p>
-                          <p className="text-sm text-muted-foreground">Compartilhe com seu médico</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="lg"
-                      className="w-full"
-                      onClick={() => navigate('/assinatura')}
-                    >
-                      Gerenciar assinatura
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-muted">
-                          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">1 medicamento ativo</p>
-                          <p className="text-sm text-muted-foreground">Limite do plano gratuito</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-muted">
-                          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">2 consultas IA por dia</p>
-                          <p className="text-sm text-muted-foreground">Redefine todo dia</p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 rounded-full bg-muted">
-                          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">Até 5 documentos</p>
-                          <p className="text-sm text-muted-foreground">Na Carteira de Saúde</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button 
-                      variant="outline"
-                      size="lg"
-                      className="w-full"
-                      onClick={() => navigate('/planos')}
-                    >
-                      Ver todos os benefícios Premium
-                    </Button>
-                  </div>
+                {!isPremium && daysLeft !== null && (
+                  <p className="text-sm text-muted-foreground">
+                    {daysLeft > 0 
+                      ? `${daysLeft} dias restantes do período gratuito` 
+                      : 'Período gratuito expirado'}
+                  </p>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Indique e Ganhe */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Gift className="h-5 w-5" />
-                  Indique e Ganhe
-                </CardTitle>
-                <CardDescription>
-                  {isPremium 
-                    ? 'Ganhe descontos acumulativos na sua mensalidade'
-                    : 'Libere mais 1 medicamento ativo para cada indicação Premium'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="w-full"
-                  onClick={() => navigate('/indique-ganhe')}
-                >
-                  <Gift className="h-4 w-4 mr-2" />
-                  Ver programa de indicação
-                </Button>
-              </CardContent>
-            </Card>
+              {isPremium && (
+                <div className="space-y-4 mt-4">
+                  <div className="space-y-3">
+                    {[
+                      'Medicamentos ilimitados',
+                      'Perfis familiares ilimitados',
+                      'Assistente IA sem limites',
+                      'Exportação de relatórios PDF',
+                      'Alertas inteligentes de estoque'
+                    ].map((benefit, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="mt-0.5 p-1 rounded-full" style={{ backgroundColor: 'hsl(var(--success) / 0.2)' }}>
+                          <Check className="h-3 w-3 text-success" />
+                        </div>
+                        <span className="text-sm">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <Button 
+                    variant="outline" 
+                    className="w-full rounded-xl"
+                    onClick={() => navigate('/assinatura')}
+                  >
+                    Gerenciar assinatura
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Referral Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-5 cursor-pointer group hover-lift"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+              onClick={() => navigate('/indique-ganhe')}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-xl" style={{ backgroundColor: 'hsl(var(--success) / 0.1)' }}>
+                    <Gift className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">Indique e Ganhe</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Ganhe benefícios indicando amigos
+                    </p>
+                  </div>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+            </motion.div>
           </TabsContent>
 
           {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
-                  Notificações e Alarmes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  className="w-full justify-start"
-                  onClick={() => navigate('/notificacoes-config')}
-                >
-                  <Bell className="h-4 w-4 mr-2" />
-                  Configurar notificações
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/alarmes')}
-                >
-                  <Smartphone className="h-4 w-4 mr-2" />
-                  Configurar alarmes
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Biometric Authentication */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Fingerprint className="h-5 w-5" />
-                  Acesso por Biometria
-                </CardTitle>
-                <CardDescription>
-                  Use impressão digital ou Face ID para acessar o app
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {biometricAvailable ? (
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label htmlFor="biometric-toggle" className="cursor-pointer font-medium">
-                        Login com biometria
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        {isBiometricEnabled 
-                          ? "Ativado - sua biometria pré-preenche o email" 
-                          : "Desativado - ative no próximo login"}
-                      </p>
+          <TabsContent value="settings" className="space-y-4 mt-6">
+            {[
+              { icon: Bell, label: 'Notificações', desc: 'Configure alertas e lembretes', path: '/notificacoes/configurar' },
+              { icon: Smartphone, label: 'Alarmes', desc: 'Sons e vibração', path: '/alarmes' },
+              { icon: FileDown, label: 'Exportar Dados', desc: 'Baixe seus dados em PDF', path: '/exportar' },
+              { icon: BookOpen, label: 'Tutorial', desc: 'Aprenda a usar o app', path: '/tutorial' },
+              { icon: HelpCircle, label: 'Ajuda e Suporte', desc: 'Dúvidas e contato', path: '/ajuda' },
+              { icon: Shield, label: 'Privacidade', desc: 'Política de privacidade', path: '/privacidade' },
+              { icon: FileText, label: 'Termos de Uso', desc: 'Termos e condições', path: '/termos' },
+            ].map((item, index) => (
+              <motion.div
+                key={item.path}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="rounded-2xl bg-card/80 backdrop-blur-sm p-4 cursor-pointer group hover-lift"
+                style={{ boxShadow: 'var(--shadow-sm)' }}
+                onClick={() => navigate(item.path)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-muted group-hover:bg-primary/10 transition-colors">
+                      <item.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
-                    <Switch
-                      id="biometric-toggle"
-                      checked={isBiometricEnabled}
-                      onCheckedChange={(checked) => {
-                        if (!checked) {
-                          disableBiometric();
-                        } else {
-                          toast.info("Para ativar, faça login novamente e escolha 'Entrar com Biometria'");
-                        }
-                      }}
-                    />
+                    <div>
+                      <h4 className="font-medium">{item.label}</h4>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="p-4 bg-muted/50 rounded-lg text-center">
-                    <Fingerprint className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">
-                      Biometria não disponível neste dispositivo
-                    </p>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Biometric Auth */}
+            {biometricAvailable && isBiometricEnabled && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="rounded-2xl bg-card/80 backdrop-blur-sm p-4"
+                style={{ boxShadow: 'var(--shadow-sm)' }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-muted">
+                      <Fingerprint className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h4 className="font-medium">Login Biométrico</h4>
+                      <p className="text-xs text-muted-foreground">Ativado neste dispositivo</p>
+                    </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileDown className="h-5 w-5" />
-                  Dados e Privacidade
-                </CardTitle>
-                <CardDescription>
-                  Seus dados são protegidos conforme a LGPD
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/exportar')}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar meus dados
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/privacidade')}
-                >
-                  <Shield className="h-4 w-4 mr-2" />
-                  Política de privacidade
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/termos')}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Termos de uso
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HelpCircle className="h-5 w-5" />
-                  Ajuda e Suporte
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/tutorial')}
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Tutorial do app
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/ajuda')}
-                >
-                  <HelpCircle className="h-4 w-4 mr-2" />
-                  Central de ajuda
-                </Button>
-                <Button 
-                  variant="outline"
-                  size="lg" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/emergencia')}
-                >
-                  <AlertCircle className="h-4 w-4 mr-2" />
-                  Contatos de emergência
-                </Button>
-              </CardContent>
-            </Card>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive rounded-xl"
+                    onClick={disableBiometric}
+                  >
+                    Desativar
+                  </Button>
+                </div>
+              </motion.div>
+            )}
           </TabsContent>
         </Tabs>
       </main>
