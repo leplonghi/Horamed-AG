@@ -1,61 +1,49 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Calendar, Plus, Clock, AlertTriangle, FolderOpen, Edit } from "lucide-react";
+import { FileText, Calendar, Plus, Clock, AlertTriangle, FolderOpen, Edit, Search } from "lucide-react";
 import AddHealthDocumentModal from "@/components/cofre/AddHealthDocumentModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDocumentos, DocumentoSaude } from "@/hooks/useCofre";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { usePrescriptionControl } from "@/hooks/usePrescriptionControl";
 import { PrescriptionStatusBadge } from "@/components/PrescriptionStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isBefore, differenceInDays, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import TutorialHint from "@/components/TutorialHint";
 import HelpTooltip from "@/components/HelpTooltip";
 import { microcopy } from "@/lib/microcopy";
+import { motion } from "framer-motion";
 
 export default function Cofre() {
   const [categoriaAtiva, setCategoriaAtiva] = useState("todos");
   const [busca, setBusca] = useState("");
   const [filtroExp, setFiltroExp] = useState<"30" | "all">("all");
   const [showAddModal, setShowAddModal] = useState(false);
-  const {
-    activeProfile
-  } = useUserProfiles();
+  const { activeProfile } = useUserProfiles();
   const navigate = useNavigate();
+  
   const handleDocumentSuccess = (documentId: string, type: string, extractedData: any) => {
-    // Navigate to appropriate review screen based on type
     navigate(`/carteira/${documentId}/review`, {
-      state: {
-        type,
-        extractedData
-      }
+      state: { type, extractedData }
     });
   };
-  const {
-    data: allDocumentos
-  } = useDocumentos({
-    profileId: activeProfile?.id
-  });
-  const {
-    data: documentos,
-    isLoading
-  } = useDocumentos({
+  
+  const { data: allDocumentos } = useDocumentos({ profileId: activeProfile?.id });
+  const { data: documentos, isLoading } = useDocumentos({
     profileId: activeProfile?.id,
     categoria: categoriaAtiva === "todos" ? undefined : categoriaAtiva,
     q: busca,
     exp: filtroExp
   });
-  const {
-    data: prescriptionStatus
-  } = usePrescriptionControl(activeProfile?.id);
+  const { data: prescriptionStatus } = usePrescriptionControl(activeProfile?.id);
+  
   const stats = useMemo(() => {
     if (!allDocumentos) return null;
     const now = new Date();
@@ -67,240 +55,237 @@ export default function Cofre() {
       acc[slug] = (acc[slug] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    return {
-      total: allDocumentos.length,
-      expiringSoon,
-      needsReview,
-      byCategory
-    };
+    return { total: allDocumentos.length, expiringSoon, needsReview, byCategory };
   }, [allDocumentos]);
-  const getSignedUrl = async (path: string) => {
-    const {
-      data
-    } = await supabase.storage.from("carteira-saude").createSignedUrl(path, 3600);
-    return data?.signedUrl;
+
+  const getCategoryIcon = (categorySlug?: string) => {
+    switch (categorySlug) {
+      case "receita":
+        return { emoji: "💊", label: "Receita", color: "text-doc-prescription-foreground", bg: "bg-doc-prescription-background", border: "border-doc-prescription-border" };
+      case "exame":
+        return { emoji: "🧪", label: "Exame", color: "text-doc-exam-foreground", bg: "bg-doc-exam-background", border: "border-doc-exam-border" };
+      case "vacinacao":
+        return { emoji: "💉", label: "Vacina", color: "text-doc-vaccine-foreground", bg: "bg-doc-vaccine-background", border: "border-doc-vaccine-border" };
+      case "consulta":
+        return { emoji: "🩺", label: "Consulta", color: "text-doc-consultation-foreground", bg: "bg-doc-consultation-background", border: "border-doc-consultation-border" };
+      default:
+        return { emoji: "📋", label: "Documento", color: "text-doc-other-foreground", bg: "bg-doc-other-background", border: "border-doc-other-border" };
+    }
   };
-  const renderDocumentoCard = (doc: DocumentoSaude) => {
+
+  const renderDocumentoCard = (doc: DocumentoSaude, index: number) => {
     const isExpiringSoon = doc.expires_at && new Date(doc.expires_at) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     const needsReview = doc.status_extraction === "pending_review";
     const isReviewed = doc.status_extraction === "reviewed";
-
-    // Buscar status da receita
     const prescStatus = prescriptionStatus?.find(ps => ps.id === doc.id);
     const isPrescription = doc.categorias_saude?.slug === "receita";
-
-    // Friendly status label
-    const getStatusLabel = () => {
-      if (needsReview) return "Aguardando sua revisão";
-      if (isReviewed) return "Revisado";
-      return "Lendo documento...";
-    };
-    const getCategoryIcon = (categorySlug?: string) => {
-      switch (categorySlug) {
-        case "receita":
-          return {
-            emoji: "💊",
-            label: "Receita",
-            type: "prescription",
-            color: "text-doc-prescription-foreground",
-            bg: "bg-doc-prescription-background",
-            border: "border-doc-prescription-border"
-          };
-        case "exame":
-          return {
-            emoji: "🧪",
-            label: "Exame",
-            type: "exam",
-            color: "text-doc-exam-foreground",
-            bg: "bg-doc-exam-background",
-            border: "border-doc-exam-border"
-          };
-        case "vacinacao":
-          return {
-            emoji: "💉",
-            label: "Vacina",
-            type: "vaccine",
-            color: "text-doc-vaccine-foreground",
-            bg: "bg-doc-vaccine-background",
-            border: "border-doc-vaccine-border"
-          };
-        case "consulta":
-          return {
-            emoji: "🩺",
-            label: "Consulta",
-            type: "consultation",
-            color: "text-doc-consultation-foreground",
-            bg: "bg-doc-consultation-background",
-            border: "border-doc-consultation-border"
-          };
-        default:
-          return {
-            emoji: "📋",
-            label: "Documento",
-            type: "other",
-            color: "text-doc-other-foreground",
-            bg: "bg-doc-other-background",
-            border: "border-doc-other-border"
-          };
-      }
-    };
     const category = getCategoryIcon(doc.categorias_saude?.slug);
-    return <Link key={doc.id} to={`/carteira/${doc.id}`}>
-        <Card className={`hover:shadow-lg transition-all cursor-pointer relative group border-l-4 ${category.border}`}>
-          <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={e => {
-          e.preventDefault();
-          e.stopPropagation();
-          navigate(`/carteira/${doc.id}/editar`);
-        }}>
-            <Edit className="h-3.5 w-3.5" />
-          </Button>
-          <CardContent className="p-4 bg-accent">
-            <div className="flex gap-3">
-              <div className={`w-14 h-14 rounded-lg ${category.bg} flex items-center justify-center flex-shrink-0 border ${category.border}`}>
+
+    return (
+      <motion.div
+        key={doc.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+      >
+        <Link to={`/carteira/${doc.id}`}>
+          <div 
+            className={`relative rounded-2xl bg-card/80 backdrop-blur-sm p-4 group hover-lift transition-all border-l-4 ${category.border}`}
+            style={{ boxShadow: 'var(--shadow-sm)' }}
+          >
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="absolute top-3 right-3 h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity z-10 rounded-xl" 
+              onClick={e => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/carteira/${doc.id}/editar`);
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex gap-4">
+              <div className={`w-14 h-14 rounded-xl ${category.bg} flex items-center justify-center flex-shrink-0 border ${category.border}`}>
                 <span className="text-2xl">{category.emoji}</span>
               </div>
+              
               <div className="flex-1 min-w-0">
-                <h3 className="heading-card truncate mb-2">{doc.title || "Sem título"}</h3>
-                <div className="flex flex-wrap gap-1.5 mb-2">
-                  <Badge variant="outline" className={`text-tiny h-5 ${category.color} ${category.border}`}>
+                <h3 className="font-semibold text-foreground truncate mb-2">{doc.title || "Sem título"}</h3>
+                
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  <span className={`pill text-xs ${category.color}`}>
                     {category.label}
-                  </Badge>
-                  {needsReview && <Badge variant="secondary" className="text-tiny h-5 bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30">
-                      👁️ Pronto para revisar
-                    </Badge>}
-                  {isReviewed && <Badge variant="secondary" className="text-tiny h-5 bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30">
-                      ✓ Revisado
-                    </Badge>}
-                  {isExpiringSoon && <Badge variant="destructive" className="text-tiny h-5">
-                      ⏰ Vence em breve
-                    </Badge>}
-                  {/* Badges de status de receita */}
-                  {isPrescription && prescStatus && <PrescriptionStatusBadge status={prescStatus.status} daysUntilExpiry={prescStatus.daysUntilExpiry} isDuplicate={prescStatus.isDuplicate} isPurchased={prescStatus.isPurchased} className="text-tiny h-5" />}
+                  </span>
+                  {needsReview && (
+                    <span className="pill-warning text-xs">👁️ Revisar</span>
+                  )}
+                  {isReviewed && (
+                    <span className="pill-success text-xs">✓ Revisado</span>
+                  )}
+                  {isExpiringSoon && (
+                    <span className="pill-destructive text-xs">⏰ Vence em breve</span>
+                  )}
+                  {isPrescription && prescStatus && (
+                    <PrescriptionStatusBadge 
+                      status={prescStatus.status} 
+                      daysUntilExpiry={prescStatus.daysUntilExpiry} 
+                      isDuplicate={prescStatus.isDuplicate} 
+                      isPurchased={prescStatus.isPurchased} 
+                      className="text-xs" 
+                    />
+                  )}
                 </div>
-                <div className="text-label space-y-1">
-                  {doc.issued_at && <div className="flex items-center gap-1.5">
+                
+                <div className="text-xs text-muted-foreground space-y-1">
+                  {doc.issued_at && (
+                    <div className="flex items-center gap-1.5">
                       <span>📅</span>
-                      <span>Emissão: {format(new Date(doc.issued_at), "dd/MM/yyyy", {
-                      locale: ptBR
-                    })}</span>
-                    </div>}
-                  {doc.expires_at && <div className="flex items-center gap-1.5">
+                      <span>Emissão: {format(new Date(doc.issued_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+                    </div>
+                  )}
+                  {doc.expires_at && (
+                    <div className="flex items-center gap-1.5">
                       <span>⏰</span>
-                      <span>Validade: {format(new Date(doc.expires_at), "dd/MM/yyyy", {
-                      locale: ptBR
-                    })}</span>
-                    </div>}
-                  {doc.provider && <div className="flex items-center gap-1.5 truncate">
+                      <span>Validade: {format(new Date(doc.expires_at), "dd/MM/yyyy", { locale: ptBR })}</span>
+                    </div>
+                  )}
+                  {doc.provider && (
+                    <div className="flex items-center gap-1.5 truncate">
                       <span>🏥</span>
                       <span className="truncate">{doc.provider}</span>
-                    </div>}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </Link>;
+          </div>
+        </Link>
+      </motion.div>
+    );
   };
-  return <div className="min-h-screen bg-background pb-20">
+
+  return (
+    <div className="min-h-screen bg-gradient-subtle pb-20">
       <Header />
-      <div className="container max-w-6xl mx-auto pt-20 sm:pt-24 pb-6 space-y-6 px-4 sm:px-6">
+      
+      <div className="container max-w-4xl mx-auto pt-20 sm:pt-24 pb-6 space-y-6 px-4 sm:px-6">
         <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <h1 className="heading-page">Carteira de Saúde</h1>
+              <h1 className="text-2xl font-bold">Carteira de Saúde</h1>
               <HelpTooltip 
                 content="Guarde aqui todos os seus documentos de saúde: receitas, exames, vacinas e laudos. Tudo organizado e seguro." 
                 iconSize="lg"
               />
             </div>
-            <p className="text-description">
+            <p className="text-sm text-muted-foreground">
               Seus documentos médicos organizados e seguros
             </p>
           </div>
-          <Button size="lg" className="gap-2" onClick={() => setShowAddModal(true)}>
+          <Button 
+            size="lg" 
+            className="gap-2 rounded-xl hover-lift hidden sm:flex" 
+            onClick={() => setShowAddModal(true)}
+          >
             <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">Adicionar documento</span>
-            <span className="sm:hidden">Adicionar</span>
+            Adicionar documento
           </Button>
         </div>
 
-        {/* Explicação didática da seção */}
-        <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-full shrink-0">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">Como funciona?</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Tire uma foto ou faça upload de receitas e exames. O app <strong>lê automaticamente</strong> os dados 
-                  e você pode revisar antes de salvar. Seus documentos ficam sempre disponíveis!
-                </p>
-              </div>
+        {/* Explicação didática */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4 rounded-2xl"
+        >
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl" style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}>
+              <FileText className="h-5 w-5 text-primary" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="space-y-1">
+              <p className="font-medium text-foreground">Como funciona?</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Tire uma foto ou faça upload de receitas e exames. O app <strong>lê automaticamente</strong> os dados 
+                e você pode revisar antes de salvar. Seus documentos ficam sempre disponíveis!
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
-        {stats && <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2 text-center">
-                  <FolderOpen className="w-4 h-4" />
-                  Total
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.total}</div>
-                <p className="text-xs text-muted-foreground mt-1">documentos</p>
-              </CardContent>
-            </Card>
+        {/* Stats Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-4 hover-lift"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                <FolderOpen className="w-4 h-4" />
+                <span className="text-sm">Total</span>
+              </div>
+              <div className="text-3xl font-bold">{stats.total}</div>
+              <p className="text-xs text-muted-foreground mt-1">documentos</p>
+            </motion.div>
 
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <Clock className="w-4 h-4" />
-                  Expirando
-                  <HelpTooltip content={microcopy.help.cofre.expiring} />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-destructive">
-                  {stats.expiringSoon}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">em 30 dias</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="rounded-2xl p-4 hover-lift"
+              style={{ 
+                boxShadow: 'var(--shadow-sm)',
+                backgroundColor: 'hsl(var(--destructive) / 0.1)'
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-destructive">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">Expirando</span>
+                <HelpTooltip content={microcopy.help.cofre.expiring} />
+              </div>
+              <div className="text-3xl font-bold text-destructive">{stats.expiringSoon}</div>
+              <p className="text-xs text-muted-foreground mt-1">em 30 dias</p>
+            </motion.div>
 
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  Revisar
-                  <HelpTooltip content={microcopy.help.cofre.review} />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-warning">
-                  {stats.needsReview}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">pendentes</p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="rounded-2xl p-4 hover-lift"
+              style={{ 
+                boxShadow: 'var(--shadow-sm)',
+                backgroundColor: 'hsl(var(--warning) / 0.1)'
+              }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-warning">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm">Revisar</span>
+                <HelpTooltip content={microcopy.help.cofre.review} />
+              </div>
+              <div className="text-3xl font-bold text-warning">{stats.needsReview}</div>
+              <p className="text-xs text-muted-foreground mt-1">pendentes</p>
+            </motion.div>
 
-            <Card className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Categorias
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{Object.keys(stats.byCategory).length}</div>
-                <p className="text-xs text-muted-foreground mt-1">tipos</p>
-              </CardContent>
-            </Card>
-          </div>}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="rounded-2xl bg-card/80 backdrop-blur-sm p-4 hover-lift"
+              style={{ boxShadow: 'var(--shadow-sm)' }}
+            >
+              <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                <FileText className="w-4 h-4" />
+                <span className="text-sm">Categorias</span>
+              </div>
+              <div className="text-3xl font-bold">{Object.keys(stats.byCategory).length}</div>
+              <p className="text-xs text-muted-foreground mt-1">tipos</p>
+            </motion.div>
+          </div>
+        )}
 
         <TutorialHint 
           id={microcopy.tutorials.cofre.id} 
@@ -308,48 +293,78 @@ export default function Cofre() {
           message={microcopy.tutorials.cofre.message} 
         />
 
-        <div className="flex gap-2 mb-4">
-          <Input placeholder="Buscar documentos..." value={busca} onChange={e => setBusca(e.target.value)} className="flex-1" />
-          <Button variant={filtroExp === "30" ? "default" : "outline"} size="icon" onClick={() => setFiltroExp(filtroExp === "30" ? "all" : "30")}>
+        {/* Search and Filter */}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Buscar documentos..." 
+              value={busca} 
+              onChange={e => setBusca(e.target.value)} 
+              className="pl-10 rounded-full border-2 focus:border-primary transition-all"
+            />
+          </div>
+          <Button 
+            variant={filtroExp === "30" ? "default" : "outline"} 
+            size="icon" 
+            className="rounded-full"
+            onClick={() => setFiltroExp(filtroExp === "30" ? "all" : "30")}
+          >
             <Calendar className="w-4 h-4" />
           </Button>
         </div>
 
+        {/* Tabs */}
         <Tabs value={categoriaAtiva} onValueChange={setCategoriaAtiva}>
-          <TabsList className="w-full flex-wrap h-auto gap-1">
-            <TabsTrigger value="todos">Todos</TabsTrigger>
-            <TabsTrigger value="vacinacao">Vacinas</TabsTrigger>
-            <TabsTrigger value="exame">Exames</TabsTrigger>
-            <TabsTrigger value="receita">Receitas</TabsTrigger>
-            <TabsTrigger value="consulta">Consultas</TabsTrigger>
+          <TabsList className="w-full flex-wrap h-auto gap-1 p-1.5 rounded-2xl bg-muted/50">
+            <TabsTrigger value="todos" className="rounded-xl">Todos</TabsTrigger>
+            <TabsTrigger value="vacinacao" className="rounded-xl">Vacinas</TabsTrigger>
+            <TabsTrigger value="exame" className="rounded-xl">Exames</TabsTrigger>
+            <TabsTrigger value="receita" className="rounded-xl">Receitas</TabsTrigger>
+            <TabsTrigger value="consulta" className="rounded-xl">Consultas</TabsTrigger>
           </TabsList>
 
           <TabsContent value={categoriaAtiva} className="space-y-3 mt-6">
-            {isLoading ? <>
-                <Skeleton className="h-20" />
-                <Skeleton className="h-20" />
-                <Skeleton className="h-20" />
-              </> : documentos && documentos.length > 0 ? documentos.map(renderDocumentoCard) : <Card>
-                <CardContent className="text-center py-[30px]">
-                  <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground mb-2">Nenhum documento encontrado</p>
-                  <p className="text-xs text-muted-foreground">
-                    Clique em "Adicionar Documento" acima para começar
-                  </p>
-                </CardContent>
-              </Card>}
+            {isLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-24 rounded-2xl" />
+                <Skeleton className="h-24 rounded-2xl" />
+                <Skeleton className="h-24 rounded-2xl" />
+              </div>
+            ) : documentos && documentos.length > 0 ? (
+              documentos.map((doc, index) => renderDocumentoCard(doc, index))
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="rounded-2xl bg-card/80 backdrop-blur-sm p-8 text-center"
+                style={{ boxShadow: 'var(--shadow-sm)' }}
+              >
+                <div className="inline-flex p-4 rounded-full bg-muted/50 mb-4">
+                  <FileText className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <p className="text-muted-foreground font-medium mb-2">Nenhum documento encontrado</p>
+                <p className="text-xs text-muted-foreground">
+                  Clique em "Adicionar Documento" para começar
+                </p>
+              </motion.div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Botão flutuante mobile */}
-      <Button size="lg" onClick={() => setShowAddModal(true)} className="md:hidden fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg">
+      {/* FAB Mobile */}
+      <Button 
+        size="lg" 
+        onClick={() => setShowAddModal(true)} 
+        className="md:hidden fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-xl hover-lift"
+        style={{ boxShadow: 'var(--shadow-lg)' }}
+      >
         <Plus className="w-6 h-6" />
       </Button>
 
-      {/* Add Document Modal */}
       <AddHealthDocumentModal open={showAddModal} onOpenChange={setShowAddModal} onSuccess={handleDocumentSuccess} />
-
       <Navigation />
-    </div>;
+    </div>
+  );
 }
