@@ -372,31 +372,43 @@ export default function MedicamentosHub() {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-foreground">
-              Minha Saúde
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold text-foreground">
+                Minha Saúde
+              </h2>
+              <HelpTooltip 
+                content="Gerencie medicamentos, vitaminas, suplementos e controle seu estoque tudo em um só lugar." 
+                iconSize="lg"
+              />
+            </div>
             <div className="flex gap-2">
-              <Button
-                size="icon"
-                variant="outline"
-                className="rounded-full hover-lift"
-                onClick={() => {
-                  if (!hasFeature('ocr')) {
-                    setShowUpgradeModal(true);
-                  } else {
-                    setShowOCR(true);
-                  }
-                }}
-              >
-                <Camera className="h-5 w-5" />
-              </Button>
-              <Button
-                size="icon"
-                className="rounded-full hover-lift"
-                onClick={() => setWizardOpen(true)}
-              >
-                <Plus className="h-5 w-5" />
-              </Button>
+              <div className="relative">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="rounded-full hover-lift"
+                  onClick={() => {
+                    if (!hasFeature('ocr')) {
+                      setShowUpgradeModal(true);
+                    } else {
+                      setShowOCR(true);
+                    }
+                  }}
+                >
+                  <Camera className="h-5 w-5" />
+                </Button>
+                <span className="sr-only">{microcopy.help.medications.ocr}</span>
+              </div>
+              <div className="relative">
+                <Button
+                  size="icon"
+                  className="rounded-full hover-lift"
+                  onClick={() => setWizardOpen(true)}
+                >
+                  <Plus className="h-5 w-5" />
+                </Button>
+                <span className="sr-only">{microcopy.help.medications.addButton}</span>
+              </div>
             </div>
           </div>
 
@@ -428,6 +440,30 @@ export default function MedicamentosHub() {
                 <span className="hidden sm:inline">Histórico</span>
               </TabsTrigger>
             </TabsList>
+
+            {/* Tabs Help - Tooltip contextual */}
+            <div className="flex justify-center mt-3">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                {activeSection === "rotina" && (
+                  <>
+                    <span>{microcopy.help.medications.tabs.rotina}</span>
+                    <HelpTooltip content="Aqui você cadastra horários e doses de cada item." iconSize="sm" />
+                  </>
+                )}
+                {activeSection === "estoque" && (
+                  <>
+                    <span>{microcopy.help.medications.tabs.estoque}</span>
+                    <HelpTooltip content={microcopy.help.stock.refill} iconSize="sm" />
+                  </>
+                )}
+                {activeSection === "historico" && (
+                  <>
+                    <span>{microcopy.help.medications.tabs.historico}</span>
+                    <HelpTooltip content="Útil para mostrar ao médico durante consultas." iconSize="sm" />
+                  </>
+                )}
+              </div>
+            </div>
 
             {/* ROTINA TAB */}
             <TabsContent value="rotina" className="space-y-6 mt-6">
@@ -558,6 +594,12 @@ export default function MedicamentosHub() {
 
             {/* ESTOQUE TAB */}
             <TabsContent value="estoque" className="space-y-6 mt-6">
+              <TutorialHint
+                id={microcopy.tutorials.estoque.id}
+                title={microcopy.tutorials.estoque.title}
+                message={microcopy.tutorials.estoque.message}
+              />
+
               <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -565,7 +607,10 @@ export default function MedicamentosHub() {
                       <Package className="h-5 w-5 text-primary" />
                     </div>
                     <div className="space-y-1">
-                      <p className="font-medium text-foreground">Como funciona?</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">Como funciona?</p>
+                        <HelpTooltip content={microcopy.help.stock.projection} iconSize="sm" />
+                      </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         Cada vez que você marca uma dose como <strong>tomada</strong>, o estoque diminui automaticamente. 
                         O app calcula quantos dias ainda vão durar!
@@ -758,9 +803,18 @@ export default function MedicamentosHub() {
 
             {/* HISTÓRICO TAB */}
             <TabsContent value="historico" className="space-y-6 mt-6">
+              <TutorialHint
+                id={microcopy.tutorials.historico.id}
+                title={microcopy.tutorials.historico.title}
+                message={microcopy.tutorials.historico.message}
+              />
+
               <Card className="p-8 text-center">
                 <History className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold text-lg mb-2">Histórico de Doses</h3>
+                <h3 className="font-semibold text-lg mb-2 flex items-center justify-center gap-2">
+                  Histórico de Doses
+                  <HelpTooltip content="Veja todas as doses tomadas, horários e padrões. Ideal para mostrar ao médico." />
+                </h3>
                 <p className="text-muted-foreground mb-6">
                   Veja o histórico completo de todas as doses tomadas
                 </p>

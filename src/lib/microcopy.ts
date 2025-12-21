@@ -127,15 +127,24 @@ export const microcopy = {
       streak: "Quantos dias seguidos você tomou todos os medicamentos. Quanto maior, melhor!",
       progress: "Porcentagem de doses tomadas hoje. Meta: 100%!",
       overdue: "Doses que passaram do horário mas ainda podem ser tomadas.",
-      upcoming: "Suas próximas doses programadas para hoje."
+      upcoming: "Suas próximas doses programadas para hoje.",
+      doseCard: "Toque no ✓ para confirmar que tomou. Arraste para mais opções.",
+      withFood: "Este medicamento deve ser tomado junto com alimentos."
     },
 
-    // Página Medicamentos
+    // Página Medicamentos / Hub
     medications: {
       search: "Digite o nome do medicamento para filtrar a lista.",
       stock: "Quantidade restante do medicamento. Avisamos quando estiver acabando.",
       schedule: "Quantas vezes por dia você toma este medicamento.",
-      category: "Tipo do item: medicamento, vitamina, suplemento ou outro."
+      category: "Tipo do item: medicamento, vitamina, suplemento ou outro.",
+      tabs: {
+        rotina: "Seus medicamentos, vitaminas e suplementos ativos.",
+        estoque: "Veja e atualize a quantidade disponível de cada item.",
+        historico: "Histórico completo de todas as doses tomadas."
+      },
+      ocr: "Tire foto da receita e o app preenche tudo automaticamente.",
+      addButton: "Adicione um novo medicamento, vitamina ou suplemento."
     },
 
     // Estoque
@@ -143,7 +152,9 @@ export const microcopy = {
       daysRemaining: "Previsão de quando o estoque vai acabar, baseado no seu uso.",
       refill: "Adicione unidades quando comprar mais medicamentos.",
       consumption: "Histórico de uso nos últimos 7 dias.",
-      alert: "Alertas aparecem quando o estoque está baixo."
+      alert: "Alertas aparecem quando o estoque está baixo.",
+      progress: "Barra mostra quanto ainda resta. Verde = bom, amarelo = atenção, vermelho = repor.",
+      projection: "Calculamos automaticamente baseado em quantas vezes você toma por dia."
     },
 
     // Carteira de Saúde
@@ -151,7 +162,9 @@ export const microcopy = {
       document: "Guarde receitas, exames, vacinas e consultas aqui.",
       review: "Documentos que precisam da sua confirmação após leitura automática.",
       expiring: "Documentos com validade próxima do vencimento.",
-      share: "Compartilhe documentos com médicos ou familiares de forma segura."
+      share: "Compartilhe documentos com médicos ou familiares de forma segura.",
+      upload: "Tire foto ou escolha da galeria. A leitura é automática.",
+      categories: "Filtre por tipo: vacinas, exames, receitas ou consultas."
     },
 
     // Progresso
@@ -159,7 +172,8 @@ export const microcopy = {
       adherence: "Porcentagem de doses tomadas no período. Acima de 80% é excelente!",
       onTime: "Porcentagem de doses tomadas no horário certo (até 15min de atraso).",
       milestone: "Conquistas desbloqueadas pela sua dedicação.",
-      xp: "Pontos de experiência ganhos ao tomar doses e manter sequências."
+      xp: "Pontos de experiência ganhos ao tomar doses e manter sequências.",
+      chart: "Gráfico mostra sua evolução ao longo do tempo."
     },
 
     // Perfil
@@ -175,7 +189,22 @@ export const microcopy = {
       name: "Digite o nome do medicamento como está na caixa ou receita.",
       dose: "Quantidade que você toma por vez (ex: 1 comprimido, 10ml).",
       times: "Horários em que você precisa tomar este medicamento.",
-      stock: "Quantas unidades você tem agora? Avisamos quando estiver acabando."
+      stock: "Quantas unidades você tem agora? Avisamos quando estiver acabando.",
+      withFood: "Alguns medicamentos funcionam melhor com alimentos."
+    },
+
+    // Navegação e ações gerais
+    navigation: {
+      home: "Voltar para a tela principal com doses do dia.",
+      add: "Adicionar novo item à sua rotina.",
+      camera: "Escanear receita ou documento usando a câmera.",
+      search: "Buscar em seus medicamentos e documentos."
+    },
+
+    // Clara (assistente IA)
+    clara: {
+      main: "Pergunte qualquer coisa sobre seus medicamentos. A Clara ajuda a esclarecer dúvidas.",
+      suggestion: "Sugestões personalizadas baseadas na sua rotina."
     }
   },
 
@@ -210,6 +239,31 @@ export const microcopy = {
       id: "medication_wizard",
       title: "Adicionar medicamento ➕",
       message: "Preencha o nome, horários e estoque. É rápido! Em 3 passos seu medicamento está configurado e você será lembrado."
+    },
+    estoque: {
+      id: "estoque_tab",
+      title: "Controle de estoque inteligente 📦",
+      message: "O app calcula quando cada medicamento vai acabar. Atualize quando comprar mais e receba alertas antes de ficar sem."
+    },
+    historico: {
+      id: "historico_tab",
+      title: "Histórico completo 📊",
+      message: "Veja todas as doses tomadas, horários e padrões. Ideal para mostrar ao seu médico nas consultas."
+    },
+    firstMedication: {
+      id: "first_medication",
+      title: "Bem-vindo! Vamos começar 🎉",
+      message: "Adicione seu primeiro medicamento tocando no botão +. É rápido e você começa a receber lembretes imediatamente."
+    },
+    doseActions: {
+      id: "dose_actions",
+      title: "Dica: Opções de dose 💡",
+      message: "Além de confirmar, você pode adiar, pular ou ver informações sobre o medicamento. Segure o botão para mais opções."
+    },
+    notifications: {
+      id: "notifications_setup",
+      title: "Configure seus lembretes 🔔",
+      message: "Ative notificações para nunca esquecer uma dose. Você pode escolher som, horário de antecedência e mais."
     }
   },
 
