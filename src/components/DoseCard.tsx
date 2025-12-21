@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, XCircle, SkipForward, AlertCircle, Info } from "lucide-react";
+import { CheckCircle2, Clock, XCircle, SkipForward, AlertCircle, Info, Utensils } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import DoseActionButton from "./DoseActionButton";
 import MedicationInfoSheet from "./MedicationInfoSheet";
 import { useMedicationInfo } from "@/hooks/useMedicationInfo";
+import HelpTooltip from "@/components/HelpTooltip";
+import { microcopy } from "@/lib/microcopy";
 
 interface DoseCardProps {
   dose: {
@@ -20,6 +22,7 @@ interface DoseCardProps {
     items: {
       name: string;
       dose_text: string | null;
+      with_food?: boolean | null;
     };
     stock?: {
       units_left: number;
@@ -145,8 +148,16 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
                   </Button>
                 </div>
                 {dose.items.dose_text && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
                     {dose.items.dose_text}
+                    {dose.items.with_food && (
+                      <>
+                        <span className="mx-1">•</span>
+                        <Utensils className="h-3 w-3" />
+                        <span className="text-xs">com alimento</span>
+                        <HelpTooltip content={microcopy.help.today.withFood} iconSize="sm" />
+                      </>
+                    )}
                   </p>
                 )}
               </div>

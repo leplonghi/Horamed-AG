@@ -358,6 +358,7 @@ export default function Progress() {
             <div className="flex items-center gap-2 mb-2 text-success">
               <Zap className="h-4 w-4" />
               <span className="text-sm">Tomadas</span>
+              <HelpTooltip content={microcopy.help.progress.adherence} iconSize="sm" />
             </div>
             <p className="text-3xl font-bold text-success">{doseStats?.taken || 0}</p>
             <p className="text-xs text-muted-foreground mt-1">doses completadas</p>
