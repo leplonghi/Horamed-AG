@@ -237,27 +237,24 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
                 key={cat.value}
                 onClick={() => updateData({ category: cat.value })}
                 className={cn(
-                  "p-2.5 sm:p-4 cursor-pointer transition-all active:scale-[0.98]",
+                  "p-3 sm:p-4 cursor-pointer transition-all active:scale-[0.98] overflow-hidden relative",
                   isSelected 
                     ? `${cat.bgColor} ${cat.borderColor} border-2 shadow-md` 
                     : "hover:border-primary/30"
                 )}
               >
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex flex-col items-center text-center gap-2 sm:flex-row sm:text-left sm:gap-3">
                   <div className={cn(
-                    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0",
+                    "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
                     isSelected ? cat.bgColor : "bg-muted"
                   )}>
-                    <Icon className={cn("w-4 h-4 sm:w-5 sm:h-5", cat.color)} />
+                    <Icon className={cn("w-5 h-5", cat.color)} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm sm:text-base font-medium">{cat.label}</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground line-clamp-1 hidden sm:block">
-                      {cat.description}
-                    </p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-tight">{cat.label}</p>
                   </div>
                   {isSelected && (
-                    <Check className="w-4 h-4 sm:w-5 sm:h-5 text-primary shrink-0" />
+                    <Check className="w-4 h-4 text-primary shrink-0 absolute top-2 right-2 sm:static" />
                   )}
                 </div>
               </Card>
