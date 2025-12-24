@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { PushNotifications, ActionPerformed } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { addMinutes, addHours } from "date-fns";
+
+// Check if running on native platform
+const isNativePlatform = Capacitor.isNativePlatform();
 
 interface QuietHours {
   enabled: boolean;
@@ -55,6 +59,12 @@ export const usePushNotifications = () => {
 
   // Setup Android notification channels and iOS action categories
   const setupNotificationChannels = async () => {
+    // Skip on web - channels are only for native
+    if (!isNativePlatform) {
+      console.log("ℹ️ Skipping native notification channels on web");
+      return;
+    }
+    
     try {
       // Create notification channel for Android
       await LocalNotifications.createChannel({
@@ -133,7 +143,110 @@ export const usePushNotifications = () => {
     return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
   };
 
+  // Initialize Web Push notifications
+  const initializeWebPushNotifications = async () => {
+    try {
+      if (!('Notification' in window)) {
+        console.log("ℹ️ Browser doesn't support notifications");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      
+      if (permission === 'granted') {
+        console.log('✓ Web notifications permission granted');
+        toast.success("✓ Notificações ativadas!", { duration: 2000 });
+        
+        // Show a test notification to confirm it's working
+        scheduleWebNotifications();
+      } else if (permission === 'denied') {
+        toast.error("Notificações bloqueadas. Ative nas configurações do navegador.", { duration: 4000 });
+      } else {
+        toast.info("Clique em 'Permitir' para receber lembretes de medicamentos", { duration: 4000 });
+      }
+    } catch (error) {
+      console.error("Error initializing web notifications:", error);
+    }
+  };
+
+  // Schedule web notifications using the browser API
+  const scheduleWebNotifications = async () => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Get doses for next 24 hours
+      const now = new Date();
+      const end24h = addHours(now, 24);
+
+      const { data: doses, error } = await supabase
+        .from("dose_instances")
+        .select(`
+          id,
+          due_at,
+          status,
+          items (
+            id,
+            name,
+            dose_text,
+            user_id
+          )
+        `)
+        .eq("items.user_id", user.id)
+        .eq("status", "scheduled")
+        .gte("due_at", now.toISOString())
+        .lte("due_at", end24h.toISOString())
+        .order("due_at", { ascending: true });
+
+      if (error) throw error;
+      if (!doses || doses.length === 0) return;
+
+      // Schedule notifications using setTimeout (simple approach for web)
+      doses.forEach((dose) => {
+        const dueDate = new Date(dose.due_at);
+        const timeUntilDue = dueDate.getTime() - now.getTime();
+        
+        // Only schedule if in the future and not in quiet hours
+        if (timeUntilDue > 0 && !isInQuietHours(dueDate)) {
+          const itemData = Array.isArray(dose.items) ? dose.items[0] : dose.items;
+          if (!itemData) return;
+
+          setTimeout(() => {
+            if (Notification.permission === 'granted' && !isInQuietHours(new Date())) {
+              const notification = new Notification(`💊 Hora do Remédio`, {
+                body: `${itemData.name}${itemData.dose_text ? ` - ${itemData.dose_text}` : ''}`,
+                icon: '/favicon.png',
+                tag: `dose-${dose.id}`,
+                requireInteraction: true,
+              });
+
+              notification.onclick = () => {
+                window.focus();
+                navigate("/hoje");
+                notification.close();
+              };
+            }
+          }, timeUntilDue);
+        }
+      });
+
+      console.log(`✓ Scheduled ${doses.length} web notifications for next 24h`);
+    } catch (error) {
+      console.error("Error scheduling web notifications:", error);
+    }
+  };
+
   const initializePushNotifications = async () => {
+    // Use web notifications for browsers, native for apps
+    if (!isNativePlatform) {
+      await initializeWebPushNotifications();
+      return;
+    }
+
     try {
       // Request Push Notifications permission
       const pushPermStatus = await PushNotifications.requestPermissions();
@@ -318,6 +431,12 @@ export const usePushNotifications = () => {
   };
 
   const scheduleNext48Hours = async () => {
+    // On web, use the web notification scheduler
+    if (!isNativePlatform) {
+      await scheduleWebNotifications();
+      return;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -417,8 +536,29 @@ export const usePushNotifications = () => {
       if (!dose) return;
 
       const snoozeTime = addMinutes(new Date(), minutes);
-
       const itemData = Array.isArray(dose.items) ? dose.items[0] : dose.items;
+
+      // Handle web snooze notifications
+      if (!isNativePlatform) {
+        const timeUntilSnooze = snoozeTime.getTime() - Date.now();
+        setTimeout(() => {
+          if ('Notification' in window && Notification.permission === 'granted') {
+            const notification = new Notification(`⏰ Lembrete Adiado`, {
+              body: `${itemData?.name || 'Medicamento'}${itemData?.dose_text ? ` - ${itemData.dose_text}` : ''}`,
+              icon: '/favicon.png',
+              tag: `snooze-${doseId}`,
+              requireInteraction: true,
+            });
+            notification.onclick = () => {
+              window.focus();
+              navigate("/hoje");
+              notification.close();
+            };
+          }
+        }, timeUntilSnooze);
+        console.log(`✓ Scheduled web snooze notification for ${minutes} minutes`);
+        return;
+      }
       
       await LocalNotifications.schedule({
         notifications: [{
