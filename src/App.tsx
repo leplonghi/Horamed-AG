@@ -76,7 +76,7 @@ import Recompensas from "./pages/Recompensas";
 import HealthAIButton from "./components/HealthAIButton";
 import Welcome from "./pages/Welcome";
 import QuickOnboarding from "./components/onboarding/QuickOnboarding";
-import { OverdueDosesBanner } from "./components/OverdueDosesBanner";
+
 import { trackAppOpened } from "./hooks/useAppMetrics";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCanceled from "./pages/SubscriptionCanceled";
@@ -92,7 +92,6 @@ function AppContent() {
 
   return (
     <>
-      <OverdueDosesBanner />
       <Toaster />
       <Sonner />
       <Routes>

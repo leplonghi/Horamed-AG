@@ -39,6 +39,7 @@ import SupplementConsistencyWidget from "@/components/fitness/SupplementConsiste
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
 import TutorialHint from "@/components/TutorialHint";
 import { trackDoseTaken } from "@/hooks/useAppMetrics";
+import { OverdueDosesBanner } from "@/components/OverdueDosesBanner";
 interface TimelineItem {
   id: string;
   time: string;
@@ -494,6 +495,9 @@ export default function TodayRedesign() {
       <Header />
 
       <main className="container mx-auto pt-24 pb-20 max-w-6xl px-[10px]">
+        {/* Overdue doses banner - inline, not fixed */}
+        <OverdueDosesBanner />
+
         {/* Compact Header with greeting */}
         <div className="mb-3">
           <div className="flex items-center justify-between gap-2">
