@@ -18,6 +18,7 @@ import { StockConsumptionChart } from "@/components/StockConsumptionChart";
 import TutorialHint from "@/components/TutorialHint";
 import HelpTooltip from "@/components/HelpTooltip";
 import { microcopy } from "@/lib/microcopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +36,7 @@ import {
 export default function StockManagement() {
   const { isEnabled } = useFeatureFlags();
   const { activeProfile } = useUserProfiles();
+  const { t } = useLanguage();
   const { data: stockProjections, isLoading, refetch } = useStockProjection(activeProfile?.id);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [adjustmentAmount, setAdjustmentAmount] = useState<number>(0);
@@ -67,13 +69,13 @@ export default function StockManagement() {
           .eq("id", stockId);
       }
 
-      toast.success("✓ Estoque atualizado!");
+      toast.success(`✓ ${t('stock.updated')}`);
       refetch();
       setEditingItem(null);
       setAdjustmentAmount(0);
     } catch (error) {
       console.error("Error updating stock:", error);
-      toast.error("Erro ao atualizar estoque");
+      toast.error(t('stock.updateError'));
     }
   };
 
@@ -87,20 +89,20 @@ export default function StockManagement() {
 
       if (data?.url) {
         window.open(data.url, '_blank');
-        toast.success('Link aberto em nova aba');
+        toast.success(t('stock.linkOpened') || 'Link opened in new tab');
       }
     } catch (error) {
       console.error('Error handling restock:', error);
-      toast.error('Erro ao abrir link de reposição');
+      toast.error(t('stock.restockError') || 'Error opening restock link');
     }
   };
 
   const getStockStatus = (unitsLeft: number, unitsTotal: number) => {
     const percentage = (unitsLeft / unitsTotal) * 100;
-    if (percentage <= 10) return { color: "text-destructive", bg: "bg-destructive/10", label: "Crítico" };
-    if (percentage <= 20) return { color: "text-warning", bg: "bg-warning/10", label: "Baixo" };
-    if (percentage <= 50) return { color: "text-primary", bg: "bg-primary/10", label: "Médio" };
-    return { color: "text-success", bg: "bg-success/10", label: "Bom" };
+    if (percentage <= 10) return { color: "text-destructive", bg: "bg-destructive/10", label: t('meds.critical') };
+    if (percentage <= 20) return { color: "text-warning", bg: "bg-warning/10", label: t('meds.low') };
+    if (percentage <= 50) return { color: "text-primary", bg: "bg-primary/10", label: t('meds.medium') };
+    return { color: "text-success", bg: "bg-success/10", label: t('meds.good') };
   };
 
   const toggleExpanded = (id: string) => {
@@ -118,7 +120,7 @@ export default function StockManagement() {
       <div className="min-h-screen bg-background pb-20">
         <Header />
         <div className="container max-w-4xl mx-auto p-6 flex items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">Carregando estoque...</div>
+          <div className="animate-pulse text-muted-foreground">{t('stock.loading')}</div>
         </div>
         <Navigation />
       </div>
@@ -135,15 +137,15 @@ export default function StockManagement() {
           <div className="flex items-center gap-3">
             <h1 className="heading-page flex items-center gap-3">
               <Package className="h-8 w-8 text-primary" />
-              Controle Inteligente de Estoque
+              {t('stock.pageTitle')}
             </h1>
             <HelpTooltip 
-              content="O estoque é atualizado automaticamente quando você toma uma dose. Assim você sabe exatamente quantas unidades restam." 
+              content={t('stock.howItWorksDesc')} 
               iconSize="lg"
             />
           </div>
           <p className="text-description">
-            Acompanhe consumo real, projeções automáticas e receba alertas personalizados
+            {t('stock.pageSubtitle')}
           </p>
         </div>
 
@@ -155,11 +157,8 @@ export default function StockManagement() {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div className="space-y-1">
-                <p className="font-medium text-foreground">Como funciona?</p>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Cada vez que você marca uma dose como <strong>tomada</strong>, o estoque diminui automaticamente. 
-                  O app calcula quantos dias ainda vão durar e te avisa antes de acabar!
-                </p>
+                <p className="font-medium text-foreground">{t('stock.howItWorks')}</p>
+                <p className="text-sm text-muted-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: t('stock.howItWorksDesc') }} />
               </div>
             </div>
           </CardContent>
@@ -176,13 +175,13 @@ export default function StockManagement() {
         {(!stockProjections || stockProjections.length === 0) && (
           <Card className="p-12 text-center">
             <Package className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="heading-card mb-2">Nenhum estoque configurado</h3>
+            <h3 className="heading-card mb-2">{t('stock.noStockConfigured')}</h3>
             <p className="text-subtitle mb-6">
-              Configure o controle de estoque ao adicionar medicamentos da receita
+              {t('stock.noStockDesc')}
             </p>
             <Button onClick={() => window.location.href = "/carteira"}>
               <Plus className="h-4 w-4 mr-2" />
-              Ir para Carteira
+              {t('stock.goToWallet')}
             </Button>
           </Card>
         )}
@@ -207,7 +206,7 @@ export default function StockManagement() {
                           <strong className={status.color}>
                             {item.units_left}
                           </strong>{" "}
-                          de {item.units_total} unidades
+                          {t('stock.of')} {item.units_total} {t('stock.units')}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-tiny font-medium ${status.bg} ${status.color}`}>
                           {status.label}
@@ -228,27 +227,27 @@ export default function StockManagement() {
                           setAdjustmentAmount(0);
                         }}>
                           <Edit className="h-4 w-4 mr-2" />
-                          Ajustar
+                          {t('stock.adjust')}
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Ajustar Estoque</DialogTitle>
+                          <DialogTitle>{t('stock.adjustStock')}</DialogTitle>
                           <DialogDescription>
-                            {item.item_name} - Adicione ou remova unidades
+                            {item.item_name} - {t('stock.adjustDesc')}
                           </DialogDescription>
                         </DialogHeader>
 
                         <div className="space-y-4 py-4">
                           <div className="space-y-2">
-                            <Label>Estoque Atual</Label>
+                            <Label>{t('stock.currentStock')}</Label>
                             <div className="text-3xl font-bold text-primary">
-                              {item.units_left} unidades
+                              {item.units_left} {t('stock.units')}
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="adjustment">Quantidade para ajustar</Label>
+                            <Label htmlFor="adjustment">{t('stock.adjustAmount')}</Label>
                             <Input
                               id="adjustment"
                               type="number"
@@ -266,7 +265,7 @@ export default function StockManagement() {
                               className="w-full"
                             >
                               <Plus className="h-4 w-4 mr-2" />
-                              Reabastecer
+                              {t('stock.restock')}
                             </Button>
                             <Button
                               onClick={() => updateStock(item.id, Math.max(0, item.units_left - adjustmentAmount))}
@@ -275,17 +274,17 @@ export default function StockManagement() {
                               className="w-full"
                             >
                               <Minus className="h-4 w-4 mr-2" />
-                              Remover
+                              {t('stock.remove')}
                             </Button>
                           </div>
 
                           {adjustmentAmount > 0 && (
                             <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
                               <p>
-                                Após adicionar: <strong className="text-success">{item.units_left + adjustmentAmount}</strong>
+                                {t('stock.afterAdding')}: <strong className="text-success">{item.units_left + adjustmentAmount}</strong>
                               </p>
                               <p>
-                                Após remover: <strong className="text-warning">{Math.max(0, item.units_left - adjustmentAmount)}</strong>
+                                {t('stock.afterRemoving')}: <strong className="text-warning">{Math.max(0, item.units_left - adjustmentAmount)}</strong>
                               </p>
                             </div>
                           )}
@@ -298,14 +297,14 @@ export default function StockManagement() {
                   <div className="space-y-2">
                     <Progress value={percentage} className="h-3" />
                     <div className="flex justify-between text-xs text-muted-foreground items-center">
-                      <span>{Math.round(percentage)}% disponível</span>
+                      <span>{Math.round(percentage)}% {t('stock.available')}</span>
                       {item.days_remaining !== null && item.days_remaining > 0 && (
                         <span className={`flex items-center gap-1 ${
                           item.days_remaining <= 7 ? "text-destructive font-medium" :
                           item.days_remaining <= 14 ? "text-warning font-medium" :
                           ""
                         }`}>
-                          ~{item.days_remaining} dias restantes
+                          ~{item.days_remaining} {t('stock.daysRemainingLabel')}
                           <HelpTooltip content={microcopy.help.stock.daysRemaining} side="left" />
                         </span>
                       )}
@@ -321,8 +320,8 @@ export default function StockManagement() {
                         <>
                           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <div className="text-sm flex-1">
-                            <strong>🚨 Estoque Crítico!</strong>
-                            <p>Apenas {item.units_left} {item.units_left === 1 ? 'unidade restante' : 'unidades restantes'}. Compre agora para não interromper o tratamento.</p>
+                            <strong>🚨 {t('stock.criticalStock')}</strong>
+                            <p>{item.units_left} {item.units_left === 1 ? t('stock.criticalDesc') : t('stock.criticalDescPlural')}</p>
                           </div>
                           {isEnabled('affiliate') && (
                             <Button
@@ -332,7 +331,7 @@ export default function StockManagement() {
                               className="shrink-0"
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
-                              Comprar
+                              {t('stock.buy')}
                             </Button>
                           )}
                         </>
@@ -340,8 +339,8 @@ export default function StockManagement() {
                         <>
                           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <div className="text-sm flex-1">
-                            <strong>⚠️ Estoque Baixo</strong>
-                            <p>Considere repor em breve. {item.days_remaining && `Acabará em ~${item.days_remaining} dias.`}</p>
+                            <strong>⚠️ {t('stock.lowStockAlert')}</strong>
+                            <p>{t('stock.lowStockDesc')} {item.days_remaining && `${t('stock.endsIn')} ~${item.days_remaining} ${t('history.days')}.`}</p>
                           </div>
                         </>
                       )}
@@ -352,7 +351,7 @@ export default function StockManagement() {
                   <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(item.id)}>
                     <CollapsibleTrigger className="w-full">
                       <Button variant="ghost" size="sm" className="w-full">
-                        {isExpanded ? '▼' : '▶'} Ver detalhes e análises
+                        {isExpanded ? '▼' : '▶'} {t('stock.viewDetails')}
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent className="space-y-4 pt-4">
@@ -386,12 +385,12 @@ export default function StockManagement() {
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
             <div className="text-sm space-y-2">
-              <p className="font-medium text-foreground">💡 Como Funciona o Controle Automático</p>
+              <p className="font-medium text-foreground">💡 {t('stock.howAutoWorks')}</p>
               <ul className="text-muted-foreground space-y-1 list-disc list-inside">
-                <li><strong>Dedução automática:</strong> O estoque diminui quando você marca uma dose como tomada</li>
-                <li><strong>Projeção inteligente:</strong> Calculamos quando vai acabar baseado no seu padrão real de consumo</li>
-                <li><strong>Histórico completo:</strong> Veja linha do tempo de tudo que foi tomado, ajustado ou reabastecido</li>
-                <li><strong>Alertas personalizados:</strong> Receba avisos antes de acabar, considerando seu ritmo de uso</li>
+                <li><strong>{t('stock.autoDeduction')}</strong></li>
+                <li><strong>{t('stock.smartProjection')}</strong></li>
+                <li><strong>{t('stock.completeHistory')}</strong></li>
+                <li><strong>{t('stock.customAlerts')}</strong></li>
               </ul>
             </div>
           </div>
