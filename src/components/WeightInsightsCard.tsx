@@ -1,7 +1,7 @@
 import { useWeightInsights } from "@/hooks/useWeightInsights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingDown, TrendingUp, Minus, Lightbulb, Target, Activity, AlertCircle, Scale, ArrowRight } from "lucide-react";
+import { TrendingDown, TrendingUp, Minus, Activity, Clock, Info, Scale, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -37,32 +37,19 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'correlation': return <Activity className="h-5 w-5" />;
-      case 'milestone': return <Target className="h-5 w-5" />;
-      case 'suggestion': return <Lightbulb className="h-5 w-5" />;
+      case 'frequency': return <Clock className="h-5 w-5" />;
+      case 'info': return <Info className="h-5 w-5" />;
       case 'trend': return <TrendingDown className="h-5 w-5" />;
       default: return <Scale className="h-5 w-5" />;
     }
   };
 
-  const getSeverityStyles = (severity?: string) => {
-    switch (severity) {
-      case 'positive': return {
-        bg: 'hsl(var(--success) / 0.1)',
-        border: 'hsl(var(--success) / 0.2)',
-        text: 'text-success'
-      };
-      case 'attention': return {
-        bg: 'hsl(var(--warning) / 0.1)',
-        border: 'hsl(var(--warning) / 0.2)',
-        text: 'text-warning'
-      };
-      default: return {
-        bg: 'hsl(var(--primary) / 0.1)',
-        border: 'hsl(var(--primary) / 0.2)',
-        text: 'text-primary'
-      };
-    }
-  };
+  // Neutral styling - no green/red judgmental colors
+  const getNeutralStyles = () => ({
+    bg: 'hsl(var(--primary) / 0.1)',
+    border: 'hsl(var(--primary) / 0.2)',
+    text: 'text-primary'
+  });
 
   return (
     <motion.div
@@ -70,7 +57,7 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
       animate={{ opacity: 1, y: 0 }}
       className="space-y-4"
     >
-      {/* Header with GLP-1 context */}
+      {/* Header with medication context */}
       {data.hasGLP1 && data.medications && data.medications.length > 0 && (
         <div 
           className="rounded-2xl p-4 flex items-center gap-3"
@@ -84,7 +71,7 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
           </div>
           <div className="flex-1">
             <p className="font-medium text-foreground">
-              Acompanhamento de peso ativo
+              Acompanhamento ativo
             </p>
             <p className="text-sm text-muted-foreground">
               Correlacionando com {data.medications.map(m => m.name).join(', ')}
@@ -93,10 +80,10 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
         </div>
       )}
 
-      {/* Insights */}
+      {/* Insights with neutral tone */}
       <div className="space-y-3">
         {data.insights.slice(0, 3).map((insight, index) => {
-          const styles = getSeverityStyles(insight.severity);
+          const styles = getNeutralStyles();
           
           return (
             <motion.div
@@ -139,11 +126,18 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
         })}
       </div>
 
+      {/* Frequency guidance */}
+      <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+        <p className="text-xs text-muted-foreground text-center">
+          Para acompanhar tendências, o ideal é registrar o peso uma vez por semana.
+        </p>
+      </div>
+
       {/* Quick action to log weight */}
       <Button
         variant="outline"
         className="w-full rounded-xl hover-lift"
-        onClick={() => navigate('/historico-peso')}
+        onClick={() => navigate(`/peso/historico${profileId ? `?profile=${profileId}` : ''}`)}
       >
         <Scale className="h-4 w-4 mr-2" />
         Registrar peso

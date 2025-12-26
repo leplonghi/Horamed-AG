@@ -1,6 +1,6 @@
 import { useWeightInsights } from "@/hooks/useWeightInsights";
 import { Button } from "@/components/ui/button";
-import { Scale, TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
+import { Scale, TrendingDown, TrendingUp, Minus, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -19,14 +19,23 @@ export default function TodayWeightWidget({ profileId }: TodayWeightWidgetProps)
 
   // Get the main correlation insight
   const correlationInsight = data.insights.find(i => i.type === 'correlation' && i.trend);
-  const suggestionInsight = data.insights.find(i => i.type === 'suggestion');
+  const trendInsight = data.insights.find(i => i.type === 'trend');
 
   // If no meaningful insight to show, don't render
-  if (!correlationInsight && !suggestionInsight) {
+  if (!correlationInsight && !trendInsight) {
     return null;
   }
 
-  const mainInsight = correlationInsight || suggestionInsight;
+  const mainInsight = correlationInsight || trendInsight;
+
+  const getTrendIcon = () => {
+    if (mainInsight?.trend === 'down') {
+      return <TrendingDown className="h-5 w-5 text-primary" />;
+    } else if (mainInsight?.trend === 'up') {
+      return <TrendingUp className="h-5 w-5 text-primary" />;
+    }
+    return <Minus className="h-5 w-5 text-primary" />;
+  };
 
   return (
     <motion.div
@@ -42,21 +51,9 @@ export default function TodayWeightWidget({ profileId }: TodayWeightWidgetProps)
         <div className="flex items-center gap-3">
           <div 
             className="p-2.5 rounded-xl shrink-0"
-            style={{ 
-              backgroundColor: mainInsight?.severity === 'positive' 
-                ? 'hsl(var(--success) / 0.1)' 
-                : mainInsight?.severity === 'attention'
-                  ? 'hsl(var(--warning) / 0.1)'
-                  : 'hsl(var(--primary) / 0.1)'
-            }}
+            style={{ backgroundColor: 'hsl(var(--primary) / 0.1)' }}
           >
-            {mainInsight?.trend === 'down' ? (
-              <TrendingDown className={`h-5 w-5 ${mainInsight?.severity === 'positive' ? 'text-success' : 'text-primary'}`} />
-            ) : mainInsight?.trend === 'up' ? (
-              <TrendingUp className={`h-5 w-5 ${mainInsight?.severity === 'attention' ? 'text-warning' : 'text-primary'}`} />
-            ) : (
-              <Scale className="h-5 w-5 text-primary" />
-            )}
+            {getTrendIcon()}
           </div>
           
           <div className="flex-1 min-w-0">
@@ -65,10 +62,7 @@ export default function TodayWeightWidget({ profileId }: TodayWeightWidgetProps)
                 {mainInsight?.title || 'Acompanhamento de peso'}
               </h4>
               {mainInsight?.value && (
-                <span className={`text-sm font-bold ${
-                  mainInsight?.severity === 'positive' ? 'text-success' : 
-                  mainInsight?.severity === 'attention' ? 'text-warning' : 'text-primary'
-                }`}>
+                <span className="text-sm font-bold text-primary">
                   {mainInsight.value}
                 </span>
               )}

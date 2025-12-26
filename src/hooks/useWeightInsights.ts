@@ -15,13 +15,12 @@ const BARIATRIC_MEDICATIONS = [
   'sibutramina', 'lorcaserin', 'phentermine', 'topiramato'
 ];
 
-interface WeightInsight {
-  type: 'progress' | 'correlation' | 'trend' | 'milestone' | 'suggestion';
+export interface WeightInsight {
+  type: 'observation' | 'correlation' | 'trend' | 'frequency' | 'info';
   title: string;
   description: string;
   value?: string;
   trend?: 'up' | 'down' | 'stable';
-  severity?: 'positive' | 'neutral' | 'attention';
 }
 
 interface WeightData {
@@ -29,11 +28,20 @@ interface WeightData {
   recorded_at: string;
 }
 
+export interface MedicationMarker {
+  id: string;
+  name: string;
+  startDate: string;
+  category: string;
+  type: 'medication' | 'supplement';
+}
+
 interface MedicationData {
   id: string;
   name: string;
   created_at: string;
-  category: string;
+  category: string | null;
+  treatment_start_date: string | null;
 }
 
 export function useWeightInsights(profileId?: string) {
@@ -42,7 +50,16 @@ export function useWeightInsights(profileId?: string) {
   return useQuery({
     queryKey: ["weight-insights", user?.id, profileId],
     queryFn: async () => {
-      if (!user?.id) return { insights: [], hasGLP1: false, medications: [] };
+      if (!user?.id) return { 
+        insights: [], 
+        hasGLP1: false, 
+        medications: [], 
+        medicationMarkers: [],
+        latestWeight: null,
+        totalChange: null,
+        daysSinceFirst: null,
+        daysSinceLastLog: null
+      };
 
       // Fetch weight logs
       let weightQuery = supabase
@@ -57,44 +74,58 @@ export function useWeightInsights(profileId?: string) {
 
       const { data: weightLogs } = await weightQuery;
 
-      // Fetch medications to check for GLP-1/bariatric
-      let medsQuery = supabase
+      // Fetch ALL active medications for timeline markers
+      let allMedsQuery = supabase
         .from("items")
-        .select("id, name, created_at, category")
+        .select("id, name, created_at, category, treatment_start_date")
         .eq("user_id", user.id)
         .eq("is_active", true);
 
       if (profileId) {
-        medsQuery = medsQuery.eq("profile_id", profileId);
+        allMedsQuery = allMedsQuery.eq("profile_id", profileId);
       }
 
-      const { data: medications } = await medsQuery;
+      const { data: allMedications } = await allMedsQuery;
+
+      // Create medication markers for timeline
+      const medicationMarkers: MedicationMarker[] = (allMedications || []).map((med: MedicationData) => ({
+        id: med.id,
+        name: med.name,
+        startDate: med.treatment_start_date || med.created_at,
+        category: med.category || 'medication',
+        type: med.category === 'supplement' ? 'supplement' : 'medication'
+      }));
 
       // Detect GLP-1 or bariatric medications
-      const glp1Meds = (medications || []).filter(med => 
+      const glp1Meds = (allMedications || []).filter((med: MedicationData) => 
         GLP1_MEDICATIONS.some(glp => med.name.toLowerCase().includes(glp))
       );
 
-      const bariatricMeds = (medications || []).filter(med => 
+      const bariatricMeds = (allMedications || []).filter((med: MedicationData) => 
         BARIATRIC_MEDICATIONS.some(bar => med.name.toLowerCase().includes(bar))
       );
 
       const weightRelatedMeds = [...glp1Meds, ...bariatricMeds];
       const hasGLP1 = weightRelatedMeds.length > 0;
 
-      // Generate insights
+      // Generate insights with NEUTRAL, non-judgmental tone
       const insights: WeightInsight[] = [];
 
       if (!weightLogs || weightLogs.length === 0) {
-        insights.push({
-          type: 'suggestion',
-          title: 'Comece a registrar seu peso',
-          description: hasGLP1 
-            ? `Você está usando ${weightRelatedMeds[0]?.name}. Registrar seu peso ajudará a acompanhar seu progresso.`
-            : 'Registre seu peso regularmente para acompanhar sua evolução.',
-          severity: 'neutral'
-        });
-        return { insights, hasGLP1, medications: weightRelatedMeds };
+        return { 
+          insights: [{
+            type: 'info' as const,
+            title: 'Acompanhamento de peso',
+            description: 'Registre seu peso para visualizar tendências ao longo do tempo.',
+          }], 
+          hasGLP1, 
+          medications: weightRelatedMeds,
+          medicationMarkers,
+          latestWeight: null,
+          totalChange: null,
+          daysSinceFirst: null,
+          daysSinceLastLog: null
+        };
       }
 
       const weights = weightLogs as WeightData[];
@@ -108,9 +139,44 @@ export function useWeightInsights(profileId?: string) {
         new Date(firstWeight.recorded_at)
       );
 
-      // If we have GLP-1 medication, correlate with medication start
+      const lastLogDate = new Date(latestWeight.recorded_at);
+      const daysSinceLastLog = differenceInDays(new Date(), lastLogDate);
+
+      // NEUTRAL 7-day trend observation
+      const sevenDaysAgo = subDays(new Date(), 7);
+      const recentWeights = weights.filter(w => new Date(w.recorded_at) >= sevenDaysAgo);
+      
+      if (recentWeights.length >= 2) {
+        const weekChange = recentWeights[recentWeights.length - 1].weight_kg - recentWeights[0].weight_kg;
+        
+        if (Math.abs(weekChange) < 0.3) {
+          insights.push({
+            type: 'trend',
+            title: 'Peso estável',
+            description: 'Seu peso está estável nas últimas semanas.',
+            value: `${latestWeight.weight_kg} kg`,
+            trend: 'stable'
+          });
+        } else {
+          insights.push({
+            type: 'trend',
+            title: 'Variação observada',
+            description: `Houve uma variação de ${Math.abs(weekChange).toFixed(1)} kg em relação ao período anterior.`,
+            value: `${weekChange > 0 ? '+' : ''}${weekChange.toFixed(1)} kg`,
+            trend: weekChange > 0 ? 'up' : 'down'
+          });
+        }
+      } else if (weights.length < 3) {
+        insights.push({
+          type: 'info',
+          title: 'Poucos registros',
+          description: 'Ainda não há dados suficientes para análise de tendência.',
+        });
+      }
+
+      // NEUTRAL medication correlation (if applicable)
       if (hasGLP1 && weightRelatedMeds[0]) {
-        const medStartDate = new Date(weightRelatedMeds[0].created_at);
+        const medStartDate = new Date(weightRelatedMeds[0].treatment_start_date || weightRelatedMeds[0].created_at);
         const weightsAfterMed = weights.filter(w => 
           new Date(w.recorded_at) >= medStartDate
         );
@@ -120,90 +186,33 @@ export function useWeightInsights(profileId?: string) {
           const changeWithMed = latestWeight.weight_kg - weightAtMedStart.weight_kg;
           const daysSinceMed = differenceInDays(new Date(), medStartDate);
 
-          if (changeWithMed < 0) {
-            insights.push({
-              type: 'correlation',
-              title: `Progresso com ${weightRelatedMeds[0].name}`,
-              description: `Você perdeu ${Math.abs(changeWithMed).toFixed(1)}kg desde que iniciou o tratamento há ${daysSinceMed} dias.`,
-              value: `${changeWithMed.toFixed(1)}kg`,
-              trend: 'down',
-              severity: 'positive'
-            });
-          } else if (changeWithMed > 0) {
-            insights.push({
-              type: 'correlation',
-              title: `Acompanhamento com ${weightRelatedMeds[0].name}`,
-              description: `Desde o início do tratamento há ${daysSinceMed} dias, seu peso aumentou ${changeWithMed.toFixed(1)}kg. Continue acompanhando com seu médico.`,
-              value: `+${changeWithMed.toFixed(1)}kg`,
-              trend: 'up',
-              severity: 'attention'
-            });
-          }
-        }
-
-        // Fetch adherence for this medication
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select("status")
-          .eq("item_id", weightRelatedMeds[0].id)
-          .gte("due_at", subDays(new Date(), 30).toISOString());
-
-        if (doses && doses.length > 0) {
-          const taken = doses.filter(d => d.status === 'taken').length;
-          const adherence = Math.round((taken / doses.length) * 100);
-
           insights.push({
             type: 'correlation',
-            title: 'Adesão ao tratamento',
-            description: `Sua adesão ao ${weightRelatedMeds[0].name} nos últimos 30 dias foi de ${adherence}%.`,
-            value: `${adherence}%`,
-            severity: adherence >= 80 ? 'positive' : adherence >= 60 ? 'neutral' : 'attention'
+            title: 'Correlação com tratamento',
+            description: `Desde o início do acompanhamento com ${weightRelatedMeds[0].name} (${daysSinceMed} dias), variação de ${Math.abs(changeWithMed).toFixed(1)} kg.`,
+            value: `${changeWithMed > 0 ? '+' : ''}${changeWithMed.toFixed(1)} kg`,
+            trend: changeWithMed > 0 ? 'up' : changeWithMed < 0 ? 'down' : 'stable'
           });
         }
       }
 
-      // 7-day trend
-      const sevenDaysAgo = subDays(new Date(), 7);
-      const recentWeights = weights.filter(w => new Date(w.recorded_at) >= sevenDaysAgo);
-      
-      if (recentWeights.length >= 2) {
-        const weekChange = recentWeights[recentWeights.length - 1].weight_kg - recentWeights[0].weight_kg;
-        
+      // Frequency guidance (weekly is ideal)
+      if (daysSinceLastLog > 10) {
         insights.push({
-          type: 'trend',
-          title: 'Tendência da semana',
-          description: weekChange === 0 
-            ? 'Seu peso está estável nesta semana.'
-            : weekChange < 0 
-              ? `Você perdeu ${Math.abs(weekChange).toFixed(1)}kg nos últimos 7 dias.`
-              : `Seu peso aumentou ${weekChange.toFixed(1)}kg nos últimos 7 dias.`,
-          value: weekChange === 0 ? '0kg' : `${weekChange > 0 ? '+' : ''}${weekChange.toFixed(1)}kg`,
-          trend: weekChange < 0 ? 'down' : weekChange > 0 ? 'up' : 'stable',
-          severity: weekChange <= 0 ? 'positive' : 'neutral'
+          type: 'frequency',
+          title: 'Registro semanal recomendado',
+          description: 'Para acompanhar tendências, o ideal é registrar o peso uma vez por semana.',
         });
       }
 
-      // Milestones
-      if (totalChange <= -5) {
+      // Long-term observation (neutral, no celebration)
+      if (daysSinceFirst > 30 && weights.length >= 4) {
         insights.push({
-          type: 'milestone',
-          title: '🎉 Marco alcançado!',
-          description: `Parabéns! Você já perdeu ${Math.abs(totalChange).toFixed(1)}kg desde o início do acompanhamento.`,
-          value: `${totalChange.toFixed(1)}kg`,
-          severity: 'positive'
-        });
-      }
-
-      // Suggestion for regular logging
-      const lastLogDate = new Date(latestWeight.recorded_at);
-      const daysSinceLastLog = differenceInDays(new Date(), lastLogDate);
-      
-      if (daysSinceLastLog > 7) {
-        insights.push({
-          type: 'suggestion',
-          title: 'Registre seu peso',
-          description: `Faz ${daysSinceLastLog} dias desde sua última pesagem. Mantenha o acompanhamento regular!`,
-          severity: 'attention'
+          type: 'observation',
+          title: 'Histórico de acompanhamento',
+          description: `${weights.length} registros em ${daysSinceFirst} dias. Variação total: ${totalChange > 0 ? '+' : ''}${totalChange.toFixed(1)} kg.`,
+          value: `${totalChange > 0 ? '+' : ''}${totalChange.toFixed(1)} kg`,
+          trend: totalChange > 0 ? 'up' : totalChange < 0 ? 'down' : 'stable'
         });
       }
 
@@ -211,9 +220,11 @@ export function useWeightInsights(profileId?: string) {
         insights, 
         hasGLP1, 
         medications: weightRelatedMeds,
+        medicationMarkers,
         latestWeight: latestWeight.weight_kg,
         totalChange,
-        daysSinceFirst
+        daysSinceFirst,
+        daysSinceLastLog
       };
     },
     enabled: !!user?.id,
