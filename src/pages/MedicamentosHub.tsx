@@ -277,77 +277,95 @@ export default function MedicamentosHub() {
 
   const renderItemCard = (item: Item, index: number, isSupplementItem: boolean = false) => {
     const supplementTags = isSupplementItem ? getSupplementTags(item.name) : [];
-    const borderColor = isSupplementItem ? 'border-l-performance' : 'border-l-primary';
+    const gradientClass = isSupplementItem 
+      ? 'from-amber-500/10 to-orange-500/5 border-amber-500/30' 
+      : 'from-primary/10 to-primary/5 border-primary/30';
+    const iconBg = isSupplementItem ? 'bg-amber-500/20' : 'bg-primary/20';
+    const iconColor = isSupplementItem ? 'text-amber-600' : 'text-primary';
     
     return (
       <motion.div
         key={item.id}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className={`rounded-2xl bg-card/80 backdrop-blur-sm p-5 hover-lift transition-all border-l-4 ${borderColor}`}
-        style={{ boxShadow: 'var(--shadow-sm)' }}
+        transition={{ delay: index * 0.03 }}
       >
-        <div className="space-y-3">
-          <div className="flex items-start justify-between">
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-lg font-semibold text-foreground">
-                  {item.name}
-                </h3>
-                <span className={`pill text-xs ${isSupplementItem ? 'pill-warning' : 'pill-primary'}`}>
-                  {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
-                </span>
-                {supplementTags.map((tag, idx) => (
-                  <SupplementTag key={idx} type={tag as any} />
-                ))}
+        <Card className={`overflow-hidden bg-gradient-to-br ${gradientClass} border hover:shadow-lg transition-all duration-300`}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              {/* Icon */}
+              <div className={`p-2.5 rounded-xl ${iconBg} flex-shrink-0`}>
+                <Pill className={`h-5 w-5 ${iconColor}`} />
               </div>
-              {item.dose_text && (
-                <p className="text-sm text-muted-foreground">{item.dose_text}</p>
-              )}
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-foreground truncate">
+                      {item.name}
+                    </h3>
+                    {item.dose_text && (
+                      <p className="text-sm text-muted-foreground">{item.dose_text}</p>
+                    )}
+                  </div>
+                  
+                  {/* Actions - compact on mobile */}
+                  <div className="flex gap-0.5 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-primary/10"
+                      onClick={() => navigate(`/adicionar?edit=${item.id}`)}
+                    >
+                      <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-destructive/10"
+                      onClick={() => deleteItem(item.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Tags & Info */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isSupplementItem ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-primary/20 text-primary'}`}>
+                    {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                  </span>
+                  {supplementTags.map((tag, idx) => (
+                    <SupplementTag key={idx} type={tag as any} />
+                  ))}
+                </div>
+                
+                {/* Schedule & Stock info */}
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                  {item.schedules && item.schedules.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{getScheduleSummary(item.schedules[0])}</span>
+                    </div>
+                  )}
+                  {item.with_food && (
+                    <div className="flex items-center gap-1">
+                      <UtensilsCrossed className="h-3.5 w-3.5" />
+                      <span>Com alimento</span>
+                    </div>
+                  )}
+                  {item.stock && item.stock.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Package className="h-3.5 w-3.5" />
+                      <span>{item.stock[0].units_left} {item.stock[0].unit_label}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-
-            <div className="flex gap-1 flex-shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-xl"
-                onClick={() => navigate(`/adicionar?edit=${item.id}`)}
-              >
-                <Pencil className="h-4 w-4 text-muted-foreground" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-xl"
-                onClick={() => deleteItem(item.id)}
-              >
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-            {item.schedules && item.schedules.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                <span>Diariamente às {getScheduleSummary(item.schedules[0])}</span>
-              </div>
-            )}
-            {item.with_food && (
-              <div className="flex items-center gap-1.5">
-                <UtensilsCrossed className="h-4 w-4" />
-                <span>Com alimento</span>
-              </div>
-            )}
-            {item.stock && item.stock.length > 0 && (
-              <div className="flex items-center gap-1.5">
-                <Package className="h-4 w-4" />
-                <span>{item.stock[0].units_left} {item.stock[0].unit_label} restantes</span>
-              </div>
-            )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </motion.div>
     );
   };
@@ -375,71 +393,60 @@ export default function MedicamentosHub() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-foreground">
-                {t('meds.title')}
-              </h2>
-              <HelpTooltip 
-                content="Gerencie medicamentos, vitaminas, suplementos e controle seu estoque tudo em um só lugar." 
-                iconSize="lg"
-              />
-            </div>
-            <div className="flex gap-2">
-              <div className="relative">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="rounded-full hover-lift"
-                  onClick={() => {
-                    if (!hasFeature('ocr')) {
-                      setShowUpgradeModal(true);
-                    } else {
-                      setShowOCR(true);
-                    }
-                  }}
-                >
-                  <Camera className="h-5 w-5" />
-                </Button>
-                <span className="sr-only">{microcopy.help.medications.ocr}</span>
+              <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                <Pill className="h-6 w-6 text-primary" />
               </div>
-              <div className="relative">
-                <Button
-                  size="icon"
-                  className="rounded-full hover-lift"
-                  onClick={() => setWizardOpen(true)}
-                >
-                  <Plus className="h-5 w-5" />
-                </Button>
-                <span className="sr-only">{microcopy.help.medications.addButton}</span>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                  {t('meds.title')}
+                </h2>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Gerencie medicamentos e estoque
+                </p>
               </div>
             </div>
+            <Button
+              size="default"
+              className="rounded-xl hover-lift gap-2 shadow-md"
+              onClick={() => setWizardOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Adicionar</span>
+            </Button>
           </div>
 
           {/* Clara Contextual */}
           <ContextualClara context="medications" />
 
-          {/* Section Tabs */}
+          {/* Section Tabs - Redesign com labels claros */}
           <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 p-1 rounded-2xl bg-muted/50">
+            <TabsList className="w-full grid grid-cols-3 h-auto p-1.5 rounded-2xl bg-muted/60 backdrop-blur-sm gap-1">
               <TabsTrigger 
                 value="rotina" 
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-2 transition-all"
+                className="rounded-xl py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex flex-col items-center gap-1 transition-all"
               >
-                <Pill className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('meds.routine')}</span>
+                <div className="p-1.5 rounded-lg bg-primary/10 group-data-[state=active]:bg-primary/20">
+                  <Pill className="h-4 w-4 text-primary" />
+                </div>
+                <span className="text-xs font-medium">Meus Remédios</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="estoque" 
-                className="rounded-xl flex items-center gap-2 transition-all"
+                className="rounded-xl py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex flex-col items-center gap-1 transition-all"
               >
-                <Package className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('meds.stock')}</span>
+                <div className="p-1.5 rounded-lg bg-amber-500/10">
+                  <Package className="h-4 w-4 text-amber-600" />
+                </div>
+                <span className="text-xs font-medium">Estoque</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="historico" 
-                className="rounded-xl flex items-center gap-2 transition-all"
+                className="rounded-xl py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex flex-col items-center gap-1 transition-all"
               >
-                <History className="h-4 w-4" />
-                <span className="hidden sm:inline">{t('meds.history')}</span>
+                <div className="p-1.5 rounded-lg bg-purple-500/10">
+                  <History className="h-4 w-4 text-purple-600" />
+                </div>
+                <span className="text-xs font-medium">Histórico</span>
               </TabsTrigger>
             </TabsList>
 
