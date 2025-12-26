@@ -8,9 +8,22 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Price IDs by currency
+const PRICES = {
+  BRL: {
+    monthly: 'price_1SYEVNAY2hnWxlHujMBQSYTt', // R$ 19,90/mês
+    annual: 'price_1SYEWmAY2hnWxlHuNegLluyC',  // R$ 199,90/ano
+  },
+  USD: {
+    monthly: 'price_1SieJOAY2hnWxlHuJLfSNRz9', // $3.99/month
+    annual: 'price_1SieJtAY2hnWxlHuAOa6m5nu',  // $39.99/year
+  },
+};
+
 // Input validation schema
 const checkoutSchema = z.object({
   planType: z.enum(['monthly', 'annual']).default('monthly'),
+  countryCode: z.string().length(2).default('US'),
 });
 
 serve(async (req) => {
@@ -26,13 +39,18 @@ serve(async (req) => {
     if (!parseResult.success) {
       console.error('[CREATE-CHECKOUT] Validation error:', parseResult.error.message);
       return new Response(
-        JSON.stringify({ error: 'Invalid plan type. Must be monthly or annual.' }),
+        JSON.stringify({ error: 'Invalid input. planType must be monthly or annual.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    const { planType } = parseResult.data;
-    console.log(`[CREATE-CHECKOUT] Creating checkout for plan: ${planType}`);
+    const { planType, countryCode } = parseResult.data;
+    
+    // Determine currency based on country - ONLY Brazil uses BRL
+    const currency = countryCode === 'BR' ? 'BRL' : 'USD';
+    const priceId = PRICES[currency][planType];
+    
+    console.log(`[CREATE-CHECKOUT] Creating checkout - plan: ${planType}, country: ${countryCode}, currency: ${currency}, priceId: ${priceId}`);
     
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2025-08-27.basil',
@@ -72,6 +90,7 @@ serve(async (req) => {
         email: user.email,
         metadata: {
           supabase_user_id: user.id,
+          country: countryCode,
         },
       });
       customerId = customer.id;
@@ -84,13 +103,6 @@ serve(async (req) => {
     } else {
       console.log(`[CREATE-CHECKOUT] Using existing customer: ${customerId}`);
     }
-
-    // Use actual Stripe price IDs
-    const priceId = planType === 'annual' 
-      ? 'price_1SYEWmAY2hnWxlHuNegLluyC' // Annual: R$ 199,90/ano
-      : 'price_1SYEVNAY2hnWxlHujMBQSYTt'; // Monthly: R$ 19,90/mês
-    
-    console.log(`[CREATE-CHECKOUT] Using price ID: ${priceId}`);
 
     // Production domain configuration
     const appDomain = Deno.env.get('APP_DOMAIN') || req.headers.get('origin') || 'https://app.horamed.net';
@@ -109,6 +121,8 @@ serve(async (req) => {
         trial_period_days: 7,
         metadata: {
           plan_type: planType,
+          country: countryCode,
+          currency: currency,
         },
       },
       success_url: `${appDomain}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
@@ -116,6 +130,8 @@ serve(async (req) => {
       metadata: {
         supabase_user_id: user.id,
         plan_type: planType,
+        country: countryCode,
+        currency: currency,
       },
     });
 
