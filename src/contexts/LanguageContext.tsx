@@ -1,16 +1,24 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { PORTUGUESE_COUNTRIES, getLanguageByCountry } from '@/lib/stripeConfig';
 
 export type Language = 'pt' | 'en';
+
+interface CountryInfo {
+  code: string;
+  detected: boolean;
+}
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string>) => string;
+  country: CountryInfo;
+  isPortugueseCountry: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-// Traduções
+// Complete translations
 const translations: Record<Language, Record<string, string>> = {
   pt: {
     // Navigation
@@ -64,6 +72,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.signup': 'Cadastrar',
     'common.copy': 'Copiar',
     'common.copied': 'Copiado!',
+    'common.perMonth': '/mês',
+    'common.perYear': '/ano',
     
     // Today page
     'today.title': 'Hoje',
@@ -240,6 +250,77 @@ const translations: Record<Language, Record<string, string>> = {
     'rewards.inviteNow': 'Indicar agora',
     'rewards.viewPlans': 'Ver planos',
     'rewards.shareMessage': 'Use meu código {code} no HoraMed e ganhe 7 dias Premium grátis!',
+    
+    // Landing page
+    'landing.heroTitle': 'A tranquilidade de saber que quem você ama está cuidado',
+    'landing.heroHighlight': 'quem você ama está cuidado',
+    'landing.heroSubtitle': 'Lembretes de medicamentos que funcionam. Para você, seus pais, toda a família. Simples como deveria ser.',
+    'landing.ctaPrimary': 'Começar Agora — É Grátis',
+    'landing.noCreditCard': 'Sem cartão de crédito',
+    'landing.freeTrial': '7 dias Premium grátis',
+    'landing.login': 'Entrar',
+    'landing.startFree': 'Começar Grátis',
+    'landing.benefit1Title': 'Lembretes no Horário Certo',
+    'landing.benefit1Desc': 'Notificações personalizadas para cada medicamento. Você cuida de quem ama, nós cuidamos do horário.',
+    'landing.benefit2Title': 'Carteira de Saúde Digital',
+    'landing.benefit2Desc': 'Receitas, exames e vacinas organizados. Tudo pronto para mostrar ao médico quando precisar.',
+    'landing.benefit3Title': 'Cuidado em Família',
+    'landing.benefit3Desc': 'Acompanhe a saúde dos seus pais, filhos e dependentes. Cada um com seu perfil individual.',
+    'landing.benefit4Title': 'Controle de Estoque',
+    'landing.benefit4Desc': 'Saiba quando comprar mais. Evite a angústia de ficar sem medicamento.',
+    'landing.benefit5Title': 'Assistente Inteligente',
+    'landing.benefit5Desc': 'Tire dúvidas sobre seus medicamentos de forma simples e acessível.',
+    'landing.benefit6Title': 'Histórico Completo',
+    'landing.benefit6Desc': 'Acompanhe sua evolução e compartilhe relatórios profissionais com seu médico.',
+    'landing.emotionalQuote': 'Você sabe quantas vezes seu pai esqueceu de tomar o remédio da pressão essa semana?',
+    'landing.emotionalText': 'Para quem cuida de familiares ou gerencia múltiplos medicamentos, cada dose esquecida é uma preocupação. O HoraMed existe para trazer paz de espírito a quem precisa cuidar.',
+    'landing.howItWorksTitle': 'Comece em 2 minutos',
+    'landing.howItWorksSubtitle': 'Sem complicação. Se você sabe usar o celular, sabe usar o HoraMed.',
+    'landing.step1Title': 'Cadastre seus medicamentos',
+    'landing.step1Desc': 'Digite o nome ou fotografe a receita. A gente organiza tudo.',
+    'landing.step2Title': 'Receba lembretes',
+    'landing.step2Desc': 'No horário exato. Push, alarme ou até WhatsApp.',
+    'landing.step3Title': 'Tenha tranquilidade',
+    'landing.step3Desc': 'Saiba que você ou seu familiar está cuidado.',
+    'landing.worksTitle': 'Funciona de verdade. Todo dia.',
+    'landing.worksSubtitle': 'Desenvolvido pensando em quem mais precisa: idosos, cuidadores e famílias.',
+    'landing.testimonialsTitle': 'Histórias reais de quem cuida',
+    'landing.pricingTitle': 'Comece grátis, evolua quando quiser',
+    'landing.pricingSubtitle': 'Sem surpresas. Sem letras pequenas.',
+    'landing.planFree': 'Gratuito',
+    'landing.planFreeDesc': 'Para começar',
+    'landing.planPremium': 'Premium',
+    'landing.planPremiumDesc': 'Para quem cuida de verdade',
+    'landing.feature1': '1 medicamento ativo',
+    'landing.feature2': 'Lembretes por push',
+    'landing.feature3': 'Histórico básico',
+    'landing.feature4': '5 documentos na carteira',
+    'landing.featurePremium1': 'Medicamentos ilimitados',
+    'landing.featurePremium2': 'Perfis familiares',
+    'landing.featurePremium3': 'Assistente Clara ilimitado',
+    'landing.featurePremium4': 'Relatórios para o médico',
+    'landing.featurePremium5': 'Cuidadores com acesso',
+    'landing.mostPopular': 'Mais popular',
+    'landing.tryFree': 'Testar 7 dias grátis',
+    'landing.simpleTitle': 'Tão simples que até seu pai vai conseguir usar',
+    'landing.simpleDesc': 'Desenvolvemos pensando em quem precisa de simplicidade. Botões grandes, textos claros, e uma única função: lembrar de tomar o remédio.',
+    'landing.worksOnPhone': 'Funciona no celular que você já tem',
+    'landing.dosesRemembered': 'Doses lembradas',
+    'landing.familiesOrganized': 'Famílias organizadas',
+    'landing.finalCtaTitle': 'Comece hoje a cuidar melhor',
+    'landing.finalCtaDesc': 'Junte-se a milhares de pessoas que já confiam no HoraMed para cuidar de quem amam.',
+    'landing.footerRights': 'Todos os direitos reservados.',
+    'landing.footerTerms': 'Termos de Uso',
+    'landing.footerPrivacy': 'Privacidade',
+    'landing.footerContact': 'Contato',
+    
+    // Notifications
+    'notifications.doseReminder': 'Hora de tomar {medication}',
+    'notifications.doseReminderBody': 'Não esqueça de tomar sua dose de {medication}',
+    'notifications.overdueTitle': 'Dose atrasada',
+    'notifications.overdueBody': 'Você ainda não tomou {medication}. Tome assim que possível.',
+    'notifications.lowStockTitle': 'Estoque baixo',
+    'notifications.lowStockBody': 'Seu estoque de {medication} está acabando. Compre mais em breve.',
   },
   en: {
     // Navigation
@@ -293,6 +374,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.signup': 'Sign up',
     'common.copy': 'Copy',
     'common.copied': 'Copied!',
+    'common.perMonth': '/month',
+    'common.perYear': '/year',
     
     // Today page
     'today.title': 'Today',
@@ -469,42 +552,187 @@ const translations: Record<Language, Record<string, string>> = {
     'rewards.inviteNow': 'Invite now',
     'rewards.viewPlans': 'View plans',
     'rewards.shareMessage': 'Use my code {code} on HoraMed and get 7 days Premium free!',
+    
+    // Landing page
+    'landing.heroTitle': 'The peace of knowing your loved ones are taken care of',
+    'landing.heroHighlight': 'your loved ones are taken care of',
+    'landing.heroSubtitle': 'Medication reminders that work. For you, your parents, the whole family. Simple as it should be.',
+    'landing.ctaPrimary': 'Get Started — It\'s Free',
+    'landing.noCreditCard': 'No credit card required',
+    'landing.freeTrial': '7 days Premium free',
+    'landing.login': 'Login',
+    'landing.startFree': 'Start Free',
+    'landing.benefit1Title': 'Reminders at the Right Time',
+    'landing.benefit1Desc': 'Personalized notifications for each medication. You care for your loved ones, we take care of the timing.',
+    'landing.benefit2Title': 'Digital Health Wallet',
+    'landing.benefit2Desc': 'Prescriptions, exams, and vaccines organized. Everything ready to show your doctor when needed.',
+    'landing.benefit3Title': 'Family Care',
+    'landing.benefit3Desc': 'Track the health of your parents, children, and dependents. Each with their own individual profile.',
+    'landing.benefit4Title': 'Stock Control',
+    'landing.benefit4Desc': 'Know when to buy more. Avoid the anxiety of running out of medication.',
+    'landing.benefit5Title': 'Smart Assistant',
+    'landing.benefit5Desc': 'Get answers about your medications in a simple and accessible way.',
+    'landing.benefit6Title': 'Complete History',
+    'landing.benefit6Desc': 'Track your progress and share professional reports with your doctor.',
+    'landing.emotionalQuote': 'Do you know how many times your dad forgot to take his blood pressure medication this week?',
+    'landing.emotionalText': 'For those who care for family members or manage multiple medications, every missed dose is a worry. HoraMed exists to bring peace of mind to those who need to care.',
+    'landing.howItWorksTitle': 'Start in 2 minutes',
+    'landing.howItWorksSubtitle': 'No complications. If you know how to use a phone, you know how to use HoraMed.',
+    'landing.step1Title': 'Register your medications',
+    'landing.step1Desc': 'Type the name or photograph the prescription. We organize everything.',
+    'landing.step2Title': 'Receive reminders',
+    'landing.step2Desc': 'At the exact time. Push, alarm, or even WhatsApp.',
+    'landing.step3Title': 'Have peace of mind',
+    'landing.step3Desc': 'Know that you or your family member is taken care of.',
+    'landing.worksTitle': 'It really works. Every day.',
+    'landing.worksSubtitle': 'Developed thinking about those who need it most: seniors, caregivers, and families.',
+    'landing.testimonialsTitle': 'Real stories from those who care',
+    'landing.pricingTitle': 'Start free, upgrade when you want',
+    'landing.pricingSubtitle': 'No surprises. No fine print.',
+    'landing.planFree': 'Free',
+    'landing.planFreeDesc': 'To get started',
+    'landing.planPremium': 'Premium',
+    'landing.planPremiumDesc': 'For those who really care',
+    'landing.feature1': '1 active medication',
+    'landing.feature2': 'Push reminders',
+    'landing.feature3': 'Basic history',
+    'landing.feature4': '5 documents in wallet',
+    'landing.featurePremium1': 'Unlimited medications',
+    'landing.featurePremium2': 'Family profiles',
+    'landing.featurePremium3': 'Unlimited Clara assistant',
+    'landing.featurePremium4': 'Reports for your doctor',
+    'landing.featurePremium5': 'Caregiver access',
+    'landing.mostPopular': 'Most popular',
+    'landing.tryFree': 'Try 7 days free',
+    'landing.simpleTitle': 'So simple even your dad can use it',
+    'landing.simpleDesc': 'We developed it thinking about those who need simplicity. Large buttons, clear text, and one single function: remember to take your medication.',
+    'landing.worksOnPhone': 'Works on the phone you already have',
+    'landing.dosesRemembered': 'Doses remembered',
+    'landing.familiesOrganized': 'Families organized',
+    'landing.finalCtaTitle': 'Start caring better today',
+    'landing.finalCtaDesc': 'Join thousands of people who already trust HoraMed to care for their loved ones.',
+    'landing.footerRights': 'All rights reserved.',
+    'landing.footerTerms': 'Terms of Use',
+    'landing.footerPrivacy': 'Privacy',
+    'landing.footerContact': 'Contact',
+    
+    // Notifications
+    'notifications.doseReminder': 'Time to take {medication}',
+    'notifications.doseReminderBody': 'Don\'t forget to take your dose of {medication}',
+    'notifications.overdueTitle': 'Overdue dose',
+    'notifications.overdueBody': 'You haven\'t taken {medication} yet. Take it as soon as possible.',
+    'notifications.lowStockTitle': 'Low stock',
+    'notifications.lowStockBody': 'Your stock of {medication} is running low. Buy more soon.',
   }
 };
 
-// Detecta se o idioma do navegador é português
-const detectLanguage = (): Language => {
+// Detect country via multiple methods
+async function detectCountry(): Promise<string> {
+  // Check localStorage first
+  const saved = localStorage.getItem('horamed_country');
+  if (saved) return saved;
+
+  try {
+    // Try IP-based detection using free services
+    const response = await fetch('https://ipapi.co/json/', { 
+      signal: AbortSignal.timeout(3000) 
+    });
+    if (response.ok) {
+      const data = await response.json();
+      const country = data.country_code || 'US';
+      localStorage.setItem('horamed_country', country);
+      return country;
+    }
+  } catch {
+    // Fallback to timezone-based detection
+    try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (timezone.startsWith('America/Sao_Paulo') || 
+          timezone.startsWith('America/Fortaleza') ||
+          timezone.startsWith('America/Recife') ||
+          timezone.startsWith('America/Bahia') ||
+          timezone.startsWith('America/Belem') ||
+          timezone.startsWith('America/Manaus') ||
+          timezone.startsWith('America/Cuiaba') ||
+          timezone.startsWith('America/Campo_Grande') ||
+          timezone.startsWith('America/Porto_Velho') ||
+          timezone.startsWith('America/Boa_Vista') ||
+          timezone.startsWith('America/Rio_Branco')) {
+        return 'BR';
+      }
+      if (timezone.startsWith('Europe/Lisbon')) return 'PT';
+      if (timezone.startsWith('Africa/Luanda')) return 'AO';
+      if (timezone.startsWith('Africa/Maputo')) return 'MZ';
+    } catch {}
+  }
+
+  // Default to US (English, USD)
+  return 'US';
+}
+
+// Detect language based on country first, then browser
+function detectLanguage(countryCode: string): Language {
   const saved = localStorage.getItem('horamed_language');
   if (saved === 'pt' || saved === 'en') {
     return saved;
   }
   
-  // Detecta idioma do navegador
-  const browserLang = navigator.language || (navigator as any).userLanguage || 'en';
-  const langCode = browserLang.toLowerCase().split('-')[0];
-  
-  // Só retorna português para língua portuguesa, todo o resto é inglês
-  return langCode === 'pt' ? 'pt' : 'en';
-};
+  // Use country to determine language
+  return getLanguageByCountry(countryCode);
+}
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(detectLanguage);
+  const [country, setCountry] = useState<CountryInfo>({ code: 'US', detected: false });
+  const [language, setLanguageState] = useState<Language>('en');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('horamed_language', language);
-    document.documentElement.lang = language;
-  }, [language]);
+    async function init() {
+      const detectedCountry = await detectCountry();
+      setCountry({ code: detectedCountry, detected: true });
+      
+      const lang = detectLanguage(detectedCountry);
+      setLanguageState(lang);
+      setIsInitialized(true);
+    }
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem('horamed_language', language);
+      document.documentElement.lang = language === 'pt' ? 'pt-BR' : 'en';
+    }
+  }, [language, isInitialized]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
+    localStorage.setItem('horamed_language', lang);
   };
 
-  const t = (key: string): string => {
-    return translations[language][key] || key;
+  const t = (key: string, params?: Record<string, string>): string => {
+    let text = translations[language][key] || translations['en'][key] || key;
+    
+    // Replace parameters like {code} with actual values
+    if (params) {
+      Object.entries(params).forEach(([param, value]) => {
+        text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), value);
+      });
+    }
+    
+    return text;
   };
+
+  const isPortugueseCountry = PORTUGUESE_COUNTRIES.includes(country.code);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ 
+      language, 
+      setLanguage, 
+      t, 
+      country,
+      isPortugueseCountry
+    }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -518,7 +746,5 @@ export function useLanguage() {
   return context;
 }
 
-export function useTranslation() {
-  const { t, language } = useLanguage();
-  return { t, language };
-}
+// Alias for backward compatibility
+export const useTranslation = useLanguage;

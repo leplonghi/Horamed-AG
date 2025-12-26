@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/horamed-logo-optimized.webp";
 import heroImage from "@/assets/landing-hero-family.jpg";
-import caringHandsImage from "@/assets/landing-caring-hands.jpg";
 import happySeniorImage from "@/assets/landing-happy-senior.jpg";
 import { 
   Bell, 
@@ -23,72 +21,121 @@ import {
 import { motion } from "framer-motion";
 import { getAuthRedirectUrl } from "@/lib/domainConfig";
 import SEOHead from "@/components/SEOHead";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { PRICING, BRL_COUNTRIES } from "@/lib/stripeConfig";
 
 const Landing = () => {
   const authUrl = getAuthRedirectUrl();
+  const { t, language, country } = useLanguage();
+  
+  // Determine pricing based on country
+  const isBrazil = BRL_COUNTRIES.includes(country.code);
+  const pricing = isBrazil ? PRICING.brl : PRICING.usd;
+  const priceDisplay = `${pricing.symbol}${pricing.monthly.toFixed(2)}`;
+  const priceLabel = language === 'pt' ? '/mês' : '/month';
 
   const benefits = [
     {
       icon: Bell,
-      title: "Lembretes no Horário Certo",
-      description: "Notificações personalizadas para cada medicamento. Você cuida de quem ama, nós cuidamos do horário."
+      title: t('landing.benefit1Title'),
+      description: t('landing.benefit1Desc')
     },
     {
       icon: FileText,
-      title: "Carteira de Saúde Digital",
-      description: "Receitas, exames e vacinas organizados. Tudo pronto para mostrar ao médico quando precisar."
+      title: t('landing.benefit2Title'),
+      description: t('landing.benefit2Desc')
     },
     {
       icon: Users,
-      title: "Cuidado em Família",
-      description: "Acompanhe a saúde dos seus pais, filhos e dependentes. Cada um com seu perfil individual."
+      title: t('landing.benefit3Title'),
+      description: t('landing.benefit3Desc')
     },
     {
       icon: Shield,
-      title: "Controle de Estoque",
-      description: "Saiba quando comprar mais. Evite a angústia de ficar sem medicamento."
+      title: t('landing.benefit4Title'),
+      description: t('landing.benefit4Desc')
     },
     {
       icon: Brain,
-      title: "Assistente Inteligente",
-      description: "Tire dúvidas sobre seus medicamentos de forma simples e acessível."
+      title: t('landing.benefit5Title'),
+      description: t('landing.benefit5Desc')
     },
     {
       icon: Calendar,
-      title: "Histórico Completo",
-      description: "Acompanhe sua evolução e compartilhe relatórios profissionais com seu médico."
+      title: t('landing.benefit6Title'),
+      description: t('landing.benefit6Desc')
     }
   ];
 
-  const testimonials = [
+  const testimonials = language === 'pt' ? [
     {
       name: "Maria Helena",
       role: "Filha cuidadora",
       content: "Minha mãe tem 78 anos e toma 6 medicamentos. Antes eu ligava 3 vezes por dia para lembrar. Agora tenho paz de saber que ela está cuidada.",
       rating: 5,
-      image: null
     },
     {
       name: "Roberto",
       role: "Paciente cardíaco",
       content: "Depois do infarto, a disciplina virou questão de vida. O HoraMed me dá essa segurança todo dia, sem falhar.",
       rating: 5,
-      image: null
     },
     {
       name: "Carla",
       role: "Mãe de 3 filhos",
       content: "Organizo as vacinas das crianças e os remédios dos meus pais idosos no mesmo app. Simplificou minha vida.",
       rating: 5,
-      image: null
     }
+  ] : [
+    {
+      name: "Mary H.",
+      role: "Caregiver daughter",
+      content: "My mom is 78 and takes 6 medications. I used to call 3 times a day to remind her. Now I have peace of mind knowing she's taken care of.",
+      rating: 5,
+    },
+    {
+      name: "Robert",
+      role: "Heart patient",
+      content: "After my heart attack, discipline became a matter of life. HoraMed gives me that security every day, without fail.",
+      rating: 5,
+    },
+    {
+      name: "Carol",
+      role: "Mother of 3",
+      content: "I organize my kids' vaccines and my elderly parents' medications in the same app. It simplified my life.",
+      rating: 5,
+    }
+  ];
+
+  const freeFeatures = [
+    t('landing.feature1'),
+    t('landing.feature2'),
+    t('landing.feature3'),
+    t('landing.feature4'),
+  ];
+
+  const premiumFeatures = [
+    t('landing.featurePremium1'),
+    t('landing.featurePremium2'),
+    t('landing.featurePremium3'),
+    t('landing.featurePremium4'),
+    t('landing.featurePremium5'),
+  ];
+
+  const steps = [
+    { step: "1", title: t('landing.step1Title'), desc: t('landing.step1Desc') },
+    { step: "2", title: t('landing.step2Title'), desc: t('landing.step2Desc') },
+    { step: "3", title: t('landing.step3Title'), desc: t('landing.step3Desc') },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       <SEOHead 
-        title="HoraMed - Cuidar de quem você ama ficou mais simples" 
-        description="Lembretes de medicamentos para você e sua família. Organize a saúde de quem você ama com tranquilidade e confiança."
+        title={language === 'pt' ? "HoraMed - Cuidar de quem você ama ficou mais simples" : "HoraMed - Caring for your loved ones made simple"} 
+        description={language === 'pt' 
+          ? "Lembretes de medicamentos para você e sua família. Organize a saúde de quem você ama com tranquilidade e confiança."
+          : "Medication reminders for you and your family. Organize the health of your loved ones with peace and confidence."
+        }
       />
 
       {/* Header */}
@@ -99,16 +146,16 @@ const Landing = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => window.location.href = authUrl}>
-              Entrar
+              {t('landing.login')}
             </Button>
             <Button onClick={() => window.location.href = authUrl}>
-              Começar Grátis
+              {t('landing.startFree')}
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section - Emotional */}
+      {/* Hero Section */}
       <section className="pt-24 pb-16 md:pb-24 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -119,12 +166,15 @@ const Landing = () => {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                A tranquilidade de saber que <span className="text-primary">quem você ama está cuidado</span>
+                {language === 'pt' ? (
+                  <>A tranquilidade de saber que <span className="text-primary">quem você ama está cuidado</span></>
+                ) : (
+                  <>The peace of knowing <span className="text-primary">your loved ones are taken care of</span></>
+                )}
               </h1>
               
               <p className="text-xl text-muted-foreground leading-relaxed">
-                Lembretes de medicamentos que funcionam. Para você, seus pais, toda a família. 
-                Simples como deveria ser.
+                {t('landing.heroSubtitle')}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -133,17 +183,17 @@ const Landing = () => {
                   onClick={() => window.location.href = authUrl}
                   className="h-14 px-8 text-lg font-medium"
                 >
-                  Começar Agora — É Grátis
+                  {t('landing.ctaPrimary')}
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Button>
               </div>
 
               <div className="flex flex-wrap gap-6 text-sm text-muted-foreground pt-2">
                 <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" /> Sem cartão de crédito
+                  <Check className="w-4 h-4 text-primary" /> {t('landing.noCreditCard')}
                 </span>
                 <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-primary" /> 7 dias Premium grátis
+                  <Check className="w-4 h-4 text-primary" /> {t('landing.freeTrial')}
                 </span>
               </div>
             </motion.div>
@@ -157,15 +207,9 @@ const Landing = () => {
               <div className="rounded-2xl overflow-hidden shadow-2xl">
                 <img 
                   src={heroImage} 
-                  alt="Filha cuidando da mãe idosa com seus medicamentos" 
+                  alt={language === 'pt' ? "Filha cuidando da mãe idosa" : "Daughter caring for elderly mother"} 
                   className="w-full h-auto object-cover"
                 />
-              </div>
-              <div className="absolute -bottom-6 -left-6 bg-card rounded-xl shadow-lg p-4 border border-border max-w-xs hidden md:block">
-                <p className="text-sm text-muted-foreground italic">
-                  "Agora tenho certeza de que minha mãe tomou o remédio, mesmo de longe."
-                </p>
-                <p className="text-xs text-primary mt-2 font-medium">— Maria Helena, 52 anos</p>
               </div>
             </motion.div>
           </div>
@@ -183,11 +227,10 @@ const Landing = () => {
           >
             <Quote className="w-10 h-10 text-primary/30 mx-auto mb-6" />
             <p className="text-2xl md:text-3xl font-medium text-foreground leading-relaxed mb-6">
-              "Você sabe quantas vezes seu pai esqueceu de tomar o remédio da pressão essa semana?"
+              "{t('landing.emotionalQuote')}"
             </p>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Para quem cuida de familiares ou gerencia múltiplos medicamentos, cada dose esquecida é uma preocupação. 
-              O HoraMed existe para trazer paz de espírito a quem precisa cuidar.
+              {t('landing.emotionalText')}
             </p>
           </motion.div>
         </div>
@@ -198,10 +241,10 @@ const Landing = () => {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Funciona de verdade. Todo dia.
+              {t('landing.worksTitle')}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Desenvolvido pensando em quem mais precisa: idosos, cuidadores e famílias.
+              {t('landing.worksSubtitle')}
             </p>
           </div>
 
@@ -227,18 +270,18 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Social Proof - Subtle */}
+      {/* Social Proof */}
       <section className="py-12 px-4 border-y border-border/50">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-12 text-center">
             <div>
-              <p className="text-3xl font-bold text-foreground">10.000+</p>
-              <p className="text-sm text-muted-foreground">Doses lembradas</p>
+              <p className="text-3xl font-bold text-foreground">10,000+</p>
+              <p className="text-sm text-muted-foreground">{t('landing.dosesRemembered')}</p>
             </div>
             <div className="w-px h-10 bg-border/50 hidden sm:block" />
             <div>
               <p className="text-3xl font-bold text-foreground">500+</p>
-              <p className="text-sm text-muted-foreground">Famílias organizadas</p>
+              <p className="text-sm text-muted-foreground">{t('landing.familiesOrganized')}</p>
             </div>
             <div className="w-px h-10 bg-border/50 hidden sm:block" />
             <div className="flex items-center gap-1">
@@ -254,31 +297,15 @@ const Landing = () => {
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Comece em 2 minutos
+              {t('landing.howItWorksTitle')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Sem complicação. Se você sabe usar o celular, sabe usar o HoraMed.
+              {t('landing.howItWorksSubtitle')}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-12">
-            {[
-              { 
-                step: "1", 
-                title: "Cadastre seus medicamentos", 
-                desc: "Digite o nome ou fotografe a receita. A gente organiza tudo." 
-              },
-              { 
-                step: "2", 
-                title: "Receba lembretes", 
-                desc: "No horário exato. Push, alarme ou até WhatsApp." 
-              },
-              { 
-                step: "3", 
-                title: "Tenha tranquilidade", 
-                desc: "Saiba que você ou seu familiar está cuidado." 
-              }
-            ].map((item, i) => (
+            {steps.map((item, i) => (
               <motion.div
                 key={i}
                 className="text-center"
@@ -298,12 +325,12 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Testimonials - Emotional */}
+      {/* Testimonials */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Histórias reais de quem cuida
+              {t('landing.testimonialsTitle')}
             </h2>
           </div>
 
@@ -351,7 +378,7 @@ const Landing = () => {
             >
               <img 
                 src={happySeniorImage} 
-                alt="Idoso feliz usando smartphone" 
+                alt={language === 'pt' ? "Idoso feliz usando smartphone" : "Happy senior using smartphone"} 
                 className="rounded-2xl shadow-lg w-full"
               />
             </motion.div>
@@ -363,30 +390,29 @@ const Landing = () => {
               viewport={{ once: true }}
             >
               <h3 className="text-2xl md:text-3xl font-bold text-foreground">
-                Tão simples que até seu pai vai conseguir usar
+                {t('landing.simpleTitle')}
               </h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Desenvolvemos pensando em quem precisa de simplicidade. Botões grandes, textos claros, 
-                e uma única função: lembrar de tomar o remédio.
+                {t('landing.simpleDesc')}
               </p>
               <div className="flex items-center gap-4">
                 <Smartphone className="w-8 h-8 text-primary" />
-                <span className="text-muted-foreground">Funciona no celular que você já tem</span>
+                <span className="text-muted-foreground">{t('landing.worksOnPhone')}</span>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Pricing Section - Clean */}
+      {/* Pricing Section */}
       <section className="py-20 px-4 bg-muted/30">
         <div className="container mx-auto max-w-4xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Comece grátis, evolua quando quiser
+              {t('landing.pricingTitle')}
             </h2>
             <p className="text-lg text-muted-foreground">
-              Sem surpresas. Sem letras pequenas.
+              {t('landing.pricingSubtitle')}
             </p>
           </div>
 
@@ -394,20 +420,15 @@ const Landing = () => {
             {/* Free Plan */}
             <Card className="p-8 border-border/50 bg-card">
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-foreground">Gratuito</h3>
-                <p className="text-muted-foreground">Para começar</p>
+                <h3 className="text-xl font-semibold text-foreground">{t('landing.planFree')}</h3>
+                <p className="text-muted-foreground">{t('landing.planFreeDesc')}</p>
               </div>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-foreground">R$ 0</span>
-                <span className="text-muted-foreground">/mês</span>
+                <span className="text-4xl font-bold text-foreground">{pricing.symbol}0</span>
+                <span className="text-muted-foreground">{priceLabel}</span>
               </div>
               <ul className="space-y-3 mb-8">
-                {[
-                  "1 medicamento ativo",
-                  "Lembretes por push",
-                  "Histórico básico",
-                  "5 documentos na carteira"
-                ].map((feature, i) => (
+                {freeFeatures.map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-muted-foreground">
                     <Check className="w-4 h-4 text-primary" />
                     <span>{feature}</span>
@@ -415,35 +436,28 @@ const Landing = () => {
                 ))}
               </ul>
               <Button variant="outline" className="w-full" onClick={() => window.location.href = authUrl}>
-                Começar Grátis
+                {t('landing.startFree')}
               </Button>
             </Card>
 
             {/* Premium Plan */}
             <Card className="p-8 border-primary/30 bg-card relative">
               <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                Mais popular
+                {t('landing.mostPopular')}
               </Badge>
               <div className="mb-6">
-                <h3 className="text-xl font-semibold text-foreground">Premium</h3>
-                <p className="text-muted-foreground">Para quem cuida de verdade</p>
+                <h3 className="text-xl font-semibold text-foreground">{t('landing.planPremium')}</h3>
+                <p className="text-muted-foreground">{t('landing.planPremiumDesc')}</p>
               </div>
               <div className="mb-6">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-foreground">R$ 19,90</span>
-                  <span className="text-muted-foreground">/mês</span>
+                  <span className="text-4xl font-bold text-foreground">{priceDisplay}</span>
+                  <span className="text-muted-foreground">{priceLabel}</span>
                 </div>
-                <p className="text-sm text-primary mt-1">7 dias grátis para experimentar</p>
+                <p className="text-sm text-primary mt-1">{t('landing.freeTrial')}</p>
               </div>
               <ul className="space-y-3 mb-8">
-                {[
-                  "Medicamentos ilimitados",
-                  "Documentos ilimitados",
-                  "Gestão familiar completa",
-                  "WhatsApp + Push + Alarme",
-                  "Relatório mensal em PDF",
-                  "Assistente IA ilimitado"
-                ].map((feature, i) => (
+                {premiumFeatures.map((feature, i) => (
                   <li key={i} className="flex items-center gap-2 text-foreground">
                     <Check className="w-4 h-4 text-primary" />
                     <span>{feature}</span>
@@ -451,17 +465,17 @@ const Landing = () => {
                 ))}
               </ul>
               <Button className="w-full" onClick={() => window.location.href = authUrl}>
-                Experimentar 7 Dias Grátis
+                {t('landing.tryFree')}
               </Button>
               <p className="text-xs text-center text-muted-foreground mt-3">
-                Cancele quando quiser, sem burocracia
+                {language === 'pt' ? 'Cancele quando quiser, sem burocracia' : 'Cancel anytime, no hassle'}
               </p>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Final CTA - Emotional */}
+      {/* Final CTA */}
       <section className="py-24 px-4 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto max-w-3xl text-center">
           <motion.div
@@ -472,21 +486,21 @@ const Landing = () => {
           >
             <Heart className="w-12 h-12 text-primary mx-auto mb-6" />
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              Cuidar de quem você ama não precisa ser difícil
+              {t('landing.finalCtaTitle')}
             </h2>
             <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
-              Cada lembrete é uma dose de tranquilidade. Para você e para quem depende de você.
+              {t('landing.finalCtaDesc')}
             </p>
             <Button 
               size="lg" 
               onClick={() => window.location.href = authUrl}
               className="h-14 px-10 text-lg font-medium"
             >
-              Começar Agora — É Grátis
+              {t('landing.ctaPrimary')}
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
-              Sem cartão de crédito • Pronto em 2 minutos
+              {t('landing.noCreditCard')} • {language === 'pt' ? 'Pronto em 2 minutos' : 'Ready in 2 minutes'}
             </p>
           </motion.div>
         </div>
@@ -501,18 +515,18 @@ const Landing = () => {
             </div>
             <div className="flex gap-6 text-sm text-muted-foreground">
               <a href="/termos" className="hover:text-foreground transition-colors">
-                Termos de Uso
+                {t('landing.footerTerms')}
               </a>
               <a href="/privacidade" className="hover:text-foreground transition-colors">
-                Privacidade
+                {t('landing.footerPrivacy')}
               </a>
               <button onClick={() => window.location.href = authUrl} className="hover:text-foreground transition-colors">
-                Entrar
+                {t('landing.login')}
               </button>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-border/30 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} HoraMed. Feito com cuidado para quem cuida.
+            © {new Date().getFullYear()} HoraMed. {t('landing.footerRights')}
           </div>
         </div>
       </footer>

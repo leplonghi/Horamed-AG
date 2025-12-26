@@ -208,6 +208,34 @@ serve(async (req) => {
               console.error('[STRIPE-WEBHOOK] Error creating coupon:', couponError);
             }
           }
+      }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        console.log(`[STRIPE-WEBHOOK] Payment failed for customer ${customerId}`);
+
+        // Find user by customer ID
+        const { data: subData } = await supabaseAdmin
+          .from('subscriptions')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (subData) {
+          // Mark subscription as past_due (not cancelled yet)
+          await supabaseAdmin
+            .from('subscriptions')
+            .update({ 
+              status: 'past_due',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('user_id', subData.user_id);
+
+          console.log(`[STRIPE-WEBHOOK] Marked subscription as past_due for user ${subData.user_id}`);
         }
         break;
       }
