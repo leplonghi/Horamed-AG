@@ -34,7 +34,7 @@ export default function Terms() {
               <p><strong>Aplicativo:</strong> HoraMed</p>
               <p><strong>Responsável:</strong> Luis Eduardo Paim Longhi</p>
               <p><strong>Última atualização:</strong> 25/11/2025</p>
-              <p><strong>Contato:</strong> <a href="mailto:app.medhora@gmail.com" className="text-primary hover:underline">app.medhora@gmail.com</a></p>
+              <p><strong>Contato:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
               <p><strong>Localização:</strong> São Luís - MA</p>
             </div>
           </Card>
@@ -324,7 +324,7 @@ export default function Terms() {
                     <li><strong>Revogação:</strong> Revogar consentimento</li>
                   </ul>
                   <p className="text-muted-foreground mt-3">
-                    <strong>Exercer direitos:</strong> <a href="mailto:app.medhora@gmail.com" className="text-primary hover:underline">app.medhora@gmail.com</a>
+                    <strong>Exercer direitos:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a>
                   </p>
                 </div>
 
@@ -412,7 +412,7 @@ export default function Terms() {
                   <h4 className="font-semibold mb-2">Suporte e Contato</h4>
                   <p className="text-muted-foreground">
                     Dúvidas sobre uso, assinaturas ou privacidade:<br />
-                    <a href="mailto:app.medhora@gmail.com" className="text-primary hover:underline font-semibold">app.medhora@gmail.com</a>
+                    <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline font-semibold">duvidas@horamed.net</a>
                   </p>
                 </div>
               </AccordionContent>
@@ -445,7 +445,7 @@ export default function Terms() {
           <Card className="p-6 bg-primary/5 border-primary/20">
             <h3 className="font-semibold mb-3">Dados do Responsável</h3>
             <div className="space-y-2 text-sm">
-              <p><strong>E-mail:</strong> <a href="mailto:contato@horamed.net" className="text-primary hover:underline">contato@horamed.net</a></p>
+              <p><strong>E-mail:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
             </div>
           </Card>
 
