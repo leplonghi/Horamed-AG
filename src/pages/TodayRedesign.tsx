@@ -280,7 +280,7 @@ export default function TodayRedesign() {
       if (itemIds.length > 0) {
         const {
           data: dosesData
-        } = await supabase.from("dose_instances").select(`id, due_at, status, item_id, items (name, dose_text, with_food)`).in("item_id", itemIds).gte("due_at", dayStart.toISOString()).lte("due_at", dayEnd.toISOString()).order("due_at", {
+        } = await supabase.from("dose_instances").select(`id, due_at, status, item_id, items (name, dose_text, with_food, category)`).in("item_id", itemIds).gte("due_at", dayStart.toISOString()).lte("due_at", dayEnd.toISOString()).order("due_at", {
           ascending: true
         });
         doses = dosesData;

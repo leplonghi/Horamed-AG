@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, Package, Sparkles, AlertTriangle, Edit, Info, ExternalLink, History } from "lucide-react";
+import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, Package, Sparkles, AlertTriangle, Edit, Info, ExternalLink, History, Leaf, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -34,6 +34,7 @@ import { StockConsumptionChart } from "@/components/StockConsumptionChart";
 import HelpTooltip from "@/components/HelpTooltip";
 import { microcopy } from "@/lib/microcopy";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { getCategoryColors } from "@/lib/categoryColors";
 import {
   Dialog,
   DialogContent,
@@ -277,11 +278,8 @@ export default function MedicamentosHub() {
 
   const renderItemCard = (item: Item, index: number, isSupplementItem: boolean = false) => {
     const supplementTags = isSupplementItem ? getSupplementTags(item.name) : [];
-    const gradientClass = isSupplementItem 
-      ? 'from-amber-500/10 to-orange-500/5 border-amber-500/30' 
-      : 'from-primary/10 to-primary/5 border-primary/30';
-    const iconBg = isSupplementItem ? 'bg-amber-500/20' : 'bg-primary/20';
-    const iconColor = isSupplementItem ? 'text-amber-600' : 'text-primary';
+    const categoryConfig = getCategoryColors(item.category);
+    const CategoryIcon = categoryConfig.icon;
     
     return (
       <motion.div
@@ -290,12 +288,12 @@ export default function MedicamentosHub() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.03 }}
       >
-        <Card className={`overflow-hidden bg-gradient-to-br ${gradientClass} border hover:shadow-lg transition-all duration-300`}>
+        <Card className={`overflow-hidden border-l-4 ${categoryConfig.bgColor} ${categoryConfig.borderColor} border hover:shadow-lg transition-all duration-300`}>
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               {/* Icon */}
-              <div className={`p-2.5 rounded-xl ${iconBg} flex-shrink-0`}>
-                <Pill className={`h-5 w-5 ${iconColor}`} />
+              <div className={`p-2.5 rounded-xl ${categoryConfig.iconBg} flex-shrink-0`}>
+                <CategoryIcon className={`h-5 w-5 ${categoryConfig.color}`} />
               </div>
               
               {/* Content */}
@@ -333,7 +331,7 @@ export default function MedicamentosHub() {
                 
                 {/* Tags & Info */}
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isSupplementItem ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' : 'bg-primary/20 text-primary'}`}>
+                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${categoryConfig.badgeColor}`}>
                     {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
                   </span>
                   {supplementTags.map((tag, idx) => (

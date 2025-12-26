@@ -11,6 +11,7 @@ import MedicationInfoSheet from "./MedicationInfoSheet";
 import { useMedicationInfo } from "@/hooks/useMedicationInfo";
 import HelpTooltip from "@/components/HelpTooltip";
 import { microcopy } from "@/lib/microcopy";
+import { getCategoryColors } from "@/lib/categoryColors";
 
 interface DoseCardProps {
   dose: {
@@ -23,6 +24,7 @@ interface DoseCardProps {
       name: string;
       dose_text: string | null;
       with_food?: boolean | null;
+      category?: string | null;
     };
     stock?: {
       units_left: number;
@@ -41,6 +43,10 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
   const isPast = dueTime < now;
   const isCurrent = Math.abs(dueTime.getTime() - now.getTime()) < 30 * 60 * 1000; // 30min window
   const isFuture = dueTime > now && !isCurrent;
+
+  // Get category colors
+  const categoryConfig = getCategoryColors(dose.items.category);
+  const CategoryIcon = categoryConfig.icon;
 
   const handleShowInfo = () => {
     setShowInfo(true);
@@ -110,23 +116,28 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
     <>
       <Card
         className={cn(
-          "p-4 transition-all duration-300 hover:shadow-md",
+          "p-4 transition-all duration-300 hover:shadow-md border-l-4",
           config.color,
+          categoryConfig.borderColor,
           isCurrent && "ring-2 ring-primary/50"
         )}
       >
         <div className="flex items-start gap-4">
-          {/* Icon */}
+          {/* Icon - usando cor da categoria */}
           <div className={cn(
             "p-2 rounded-full shrink-0",
             dose.status === 'taken' && "bg-success/20",
             dose.status === 'missed' && "bg-destructive/20",
             dose.status === 'skipped' && "bg-muted",
-            dose.status === 'scheduled' && isPast && !isCurrent && "bg-warning/20",
-            dose.status === 'scheduled' && isCurrent && "bg-primary/20",
-            dose.status === 'scheduled' && isFuture && "bg-secondary"
+            dose.status === 'scheduled' && categoryConfig.iconBg
           )}>
-            <StatusIcon className={cn("h-5 w-5", config.color.split(' ').pop())} />
+            <CategoryIcon className={cn(
+              "h-5 w-5",
+              dose.status === 'taken' && "text-success",
+              dose.status === 'missed' && "text-destructive",
+              dose.status === 'skipped' && "text-muted-foreground",
+              dose.status === 'scheduled' && categoryConfig.color
+            )} />
           </div>
 
           {/* Content */}
