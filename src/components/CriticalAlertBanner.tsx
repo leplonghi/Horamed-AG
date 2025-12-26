@@ -93,47 +93,43 @@ export default function CriticalAlertBanner({ alerts, onDismiss, onDismissAll }:
               key={alert.id}
               style={{ animationDelay: `${index * 50}ms` }}
               className={cn(
-                "p-2 border backdrop-blur-sm bg-gradient-to-br transition-all duration-300 animate-fade-in",
+                "p-3 border backdrop-blur-sm bg-gradient-to-br transition-all duration-300 animate-fade-in overflow-hidden",
                 config.gradient,
                 config.border
               )}
             >
-              <div className="flex gap-2 items-start">
+              <div className="flex gap-2 items-center">
                 <div className={cn(
-                  "p-1 rounded shrink-0",
+                  "p-1.5 rounded shrink-0",
                   config.iconBg
                 )}>
-                  <Icon className={cn("h-3 w-3", config.text)} />
+                  <Icon className={cn("h-4 w-4", config.text)} />
                 </div>
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className={cn("font-semibold text-xs leading-tight", config.text)}>
-                      {alert.title}
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDismiss(alert.id)}
-                      className="shrink-0 h-5 w-5 hover:bg-background/50 -mr-1 -mt-0.5"
-                    >
-                      <X className="h-2.5 w-2.5" />
-                    </Button>
-                  </div>
-                  <p className="text-[11px] text-foreground/70 leading-snug">
-                    {alert.message}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <h3 className={cn("font-semibold text-sm leading-tight truncate", config.text)}>
+                    {alert.title}
+                  </h3>
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
                   {actionLink && (
                     <Link to={actionLink.path}>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="h-6 text-[10px] px-2 gap-1 mt-1 border-current/20 hover:bg-background/50"
+                        className="h-7 text-xs px-2.5 border-current/20 hover:bg-background/50 whitespace-nowrap"
                       >
-                        {actionLink.label}
-                        <ExternalLink className="h-2.5 w-2.5" />
+                        Confirmar
                       </Button>
                     </Link>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDismiss(alert.id)}
+                    className="shrink-0 h-7 w-7 hover:bg-background/50"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
             </Card>
