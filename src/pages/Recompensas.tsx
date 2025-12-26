@@ -1,40 +1,95 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Share2, Gift, Users, ArrowLeft, Target, Percent, Award, MessageCircle } from "lucide-react";
+import { Copy, Share2, Gift, Users, ArrowLeft, Target, Percent, Award, MessageCircle, Check, Ticket, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Recompensas() {
   const navigate = useNavigate();
   const { stats, loading, generateReferralLink, claimReward, isPremium } = useReferralSystem();
   const { t, language } = useTranslation();
+  const [codeInput, setCodeInput] = useState("");
+  const [applyingCode, setApplyingCode] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const copyCode = () => {
     if (!stats.referralCode) return;
     navigator.clipboard.writeText(stats.referralCode);
+    setCodeCopied(true);
     toast.success(t('rewards.codeCopied'));
+    setTimeout(() => setCodeCopied(false), 2000);
   };
 
   const copyLink = () => {
     const link = generateReferralLink();
     if (!link) return;
     navigator.clipboard.writeText(link);
+    setLinkCopied(true);
     toast.success(t('rewards.linkCopied'));
+    setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const shareWhatsApp = () => {
     const link = generateReferralLink();
-    const text = t('rewards.shareMessage').replace('{code}', stats.referralCode || '') + ' ' + link;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    if (!link) {
+      toast.error("Erro ao gerar link");
+      return;
+    }
+    const message = `🎁 Olá! Estou usando o HoraMed para gerenciar medicamentos e está sendo incrível!\n\nUse meu código *${stats.referralCode}* e ganhe 7 dias Premium grátis!\n\n👉 ${link}`;
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   const shareSMS = () => {
     const link = generateReferralLink();
-    const text = t('rewards.shareMessage').replace('{code}', stats.referralCode || '') + ' ' + link;
-    window.open(`sms:?body=${encodeURIComponent(text)}`, "_blank");
+    if (!link) return;
+    const message = `🎁 Use meu código ${stats.referralCode} no HoraMed e ganhe 7 dias Premium grátis! ${link}`;
+    window.open(`sms:?body=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const shareNative = async () => {
+    const link = generateReferralLink();
+    if (!link) return;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'HoraMed - Convite',
+          text: `🎁 Use meu código ${stats.referralCode} e ganhe 7 dias Premium grátis!`,
+          url: link,
+        });
+      } catch (error) {
+        copyLink();
+      }
+    } else {
+      copyLink();
+    }
+  };
+
+  const handleApplyCode = async () => {
+    if (!codeInput.trim()) {
+      toast.error("Digite um código de indicação");
+      return;
+    }
+
+    setApplyingCode(true);
+    
+    // O código será aplicado redirecionando para a página de auth com o parâmetro ref
+    const authUrl = `/auth?ref=${encodeURIComponent(codeInput.trim().toUpperCase())}`;
+    
+    toast.info("Para aplicar o código, você precisa criar uma nova conta ou entrar com o código aplicado.");
+    
+    setTimeout(() => {
+      setApplyingCode(false);
+      navigate(authUrl);
+    }, 1500);
   };
 
   const formatDate = (dateStr: string) => {
@@ -71,54 +126,173 @@ export default function Recompensas() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 -mt-4 space-y-4">
-        {/* Section 1: Your Code */}
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full">
-                <Gift className="h-8 w-8 text-white" />
-              </div>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold text-lg mb-2">{t('rewards.yourCode')}</h3>
-              <div className="inline-flex items-center gap-2 bg-background px-6 py-3 rounded-lg text-2xl font-mono font-bold border-2 border-primary/20">
-                {stats.referralCode || t('common.loading')}
-              </div>
-            </div>
+        {/* Tabs: Indicar ou Usar Código */}
+        <Tabs defaultValue="indicar" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="indicar" className="gap-2">
+              <Gift className="h-4 w-4" />
+              Indicar Amigos
+            </TabsTrigger>
+            <TabsTrigger value="codigo" className="gap-2">
+              <Ticket className="h-4 w-4" />
+              Tenho um Código
+            </TabsTrigger>
+          </TabsList>
 
-            <div className="flex gap-2">
-              <Button onClick={copyCode} variant="outline" className="flex-1">
-                <Copy className="h-4 w-4 mr-2" />
-                {t('rewards.copyCode')}
-              </Button>
-              <Button onClick={copyLink} className="flex-1 bg-primary">
-                <Share2 className="h-4 w-4 mr-2" />
-                {t('rewards.generateLink')}
-              </Button>
-            </div>
-          </div>
-        </Card>
+          {/* Tab: Indicar Amigos */}
+          <TabsContent value="indicar" className="space-y-4">
+            {/* Section 1: Your Code */}
+            <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full">
+                    <Gift className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">{t('rewards.yourCode')}</h3>
+                  <div 
+                    onClick={copyCode}
+                    className="inline-flex items-center gap-2 bg-background px-6 py-3 rounded-lg text-2xl font-mono font-bold border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-colors"
+                  >
+                    {stats.referralCode || t('common.loading')}
+                    {codeCopied ? (
+                      <Check className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Copy className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Toque para copiar</p>
+                </div>
+              </div>
+            </Card>
 
-        {/* Section 2: Share */}
-        <Card className="p-4">
-          <h3 className="font-semibold mb-3 flex items-center gap-2">
-            <Share2 className="h-4 w-4" /> {t('rewards.share')}
-          </h3>
-          <div className="grid grid-cols-2 gap-2">
-            <Button onClick={shareWhatsApp} variant="outline" className="gap-2">
-              <MessageCircle className="h-4 w-4 text-green-500" />
-              WhatsApp
-            </Button>
-            <Button onClick={shareSMS} variant="outline" className="gap-2">
-              SMS
-            </Button>
-            <Button onClick={copyLink} variant="outline" className="gap-2 col-span-2">
-              <Copy className="h-4 w-4" />
-              {t('rewards.copyFullLink')}
-            </Button>
-          </div>
-        </Card>
+            {/* Section 2: Share Options */}
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Share2 className="h-4 w-4" /> Compartilhar
+              </h3>
+              <div className="space-y-3">
+                {/* WhatsApp - Destaque */}
+                <Button 
+                  onClick={shareWhatsApp} 
+                  className="w-full h-12 bg-green-500 hover:bg-green-600 text-white gap-3"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  Enviar pelo WhatsApp
+                </Button>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Button onClick={shareSMS} variant="outline" className="gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    SMS
+                  </Button>
+                  <Button onClick={shareNative} variant="outline" className="gap-2">
+                    <Share2 className="h-4 w-4" />
+                    Mais opções
+                  </Button>
+                </div>
+
+                <Button 
+                  onClick={copyLink} 
+                  variant="secondary" 
+                  className="w-full gap-2"
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="h-4 w-4 text-green-500" />
+                      Link copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4" />
+                      Copiar link completo
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+
+            {/* Como funciona */}
+            <Card className="p-4 bg-muted/50">
+              <h3 className="font-semibold mb-3">🎯 Como funciona</h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">1</div>
+                  <p>Compartilhe seu código com amigos e familiares</p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">2</div>
+                  <p>Eles criam uma conta usando seu código</p>
+                </div>
+                <div className="flex gap-3">
+                  <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs shrink-0">3</div>
+                  <p><strong>Vocês dois</strong> ganham 7 dias Premium grátis!</p>
+                </div>
+              </div>
+            </Card>
+          </TabsContent>
+
+          {/* Tab: Usar Código */}
+          <TabsContent value="codigo" className="space-y-4">
+            <Card className="p-6">
+              <div className="text-center space-y-4">
+                <div className="flex items-center justify-center">
+                  <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full">
+                    <Ticket className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Insira o código de indicação</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Recebeu um código de um amigo? Digite abaixo para ganhar 7 dias Premium grátis!
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Input
+                    placeholder="Ex: HR-ABC123"
+                    value={codeInput}
+                    onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                    className="text-center text-lg font-mono h-12"
+                    maxLength={10}
+                  />
+                  <Button 
+                    onClick={handleApplyCode}
+                    disabled={applyingCode || !codeInput.trim()}
+                    className="w-full h-11"
+                  >
+                    {applyingCode ? "Aplicando..." : "Aplicar código"}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-muted-foreground">
+                  O código será aplicado ao criar uma nova conta ou fazer login
+                </p>
+              </div>
+            </Card>
+
+            <Card className="p-4 bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900">
+              <h3 className="font-semibold mb-2 text-green-700 dark:text-green-400">🎁 Benefícios</h3>
+              <ul className="space-y-2 text-sm text-green-600 dark:text-green-400">
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  7 dias de Premium grátis
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Medicamentos ilimitados
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="h-4 w-4" />
+                  Relatórios avançados
+                </li>
+              </ul>
+            </Card>
+          </TabsContent>
+        </Tabs>
 
         {/* Section 3: Goals Progress */}
         <Card className="p-4">
@@ -241,7 +415,8 @@ export default function Recompensas() {
 
         {/* Final CTA */}
         <div className="flex gap-2 pt-4">
-          <Button onClick={shareWhatsApp} className="flex-1 bg-gradient-to-r from-primary to-purple-500">
+          <Button onClick={shareWhatsApp} className="flex-1 bg-gradient-to-r from-primary to-purple-500 gap-2">
+            <MessageCircle className="h-4 w-4" />
             {t('rewards.inviteNow')}
           </Button>
           <Button onClick={() => navigate("/planos")} variant="outline" className="flex-1">
