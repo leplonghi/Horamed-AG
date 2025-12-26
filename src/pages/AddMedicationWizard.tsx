@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Camera, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Camera, Check, Image, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,15 +16,25 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
+import { useSubscription } from "@/hooks/useSubscription";
+import UpgradeModal from "@/components/UpgradeModal";
 import { cn } from "@/lib/utils";
 
 type SchedulePreset = "1x" | "2x" | "3x" | "custom";
+type AddMethod = "manual" | "camera" | "gallery";
 
 export default function AddMedicationWizard() {
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
-  const [step, setStep] = useState(1);
+  const { hasFeature } = useSubscription();
+  const [step, setStep] = useState(0); // 0 = choose method, 1-3 = wizard steps
   const [loading, setSaving] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Step 1 - Basic info
   const [name, setName] = useState("");
@@ -50,6 +60,66 @@ export default function AddMedicationWizard() {
     "2x": { label: "2x ao dia (manhã/noite)", times: ["08:00", "20:00"], icon: "🌗" },
     "3x": { label: "3x ao dia (8h/14h/20h)", times: ["08:00", "14:00", "20:00"], icon: "🕐" },
     custom: { label: "Personalizar horários", times: [], icon: "⚙️" },
+  };
+  
+  // OCR Processing
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      setImagePreview(base64);
+      await processOCR(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+  
+  const processOCR = async (imageData: string) => {
+    setIsProcessingOCR(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-medication', {
+        body: { image: imageData }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.name) {
+        setName(data.name);
+        if (data.dose) setDose(data.dose);
+        if (data.duration_days) setTreatmentDays(data.duration_days.toString());
+        toast.success("Dados extraídos com sucesso!");
+        setStep(1); // Go to first wizard step
+      } else {
+        toast.error("Não foi possível extrair os dados. Tente novamente.");
+        setImagePreview(null);
+      }
+    } catch (error) {
+      console.error("OCR Error:", error);
+      toast.error("Erro ao processar imagem");
+      setImagePreview(null);
+    } finally {
+      setIsProcessingOCR(false);
+    }
+  };
+  
+  const handleMethodSelect = (method: AddMethod) => {
+    if (method === "manual") {
+      setStep(1);
+    } else if (method === "camera") {
+      if (!hasFeature('ocr')) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      cameraInputRef.current?.click();
+    } else if (method === "gallery") {
+      if (!hasFeature('ocr')) {
+        setShowUpgradeModal(true);
+        return;
+      }
+      galleryInputRef.current?.click();
+    }
   };
 
   const handleNext = () => {
@@ -136,33 +206,139 @@ export default function AddMedicationWizard() {
   return (
     <>
       <Header />
+      {/* Hidden file inputs */}
+      <input
+        type="file"
+        ref={cameraInputRef}
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={galleryInputRef}
+        accept="image/*"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+      
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        feature="OCR de receitas"
+      />
+      
       <div className="min-h-screen bg-background pt-20 px-4 pb-24">
         <div className="max-w-2xl mx-auto space-y-6">
-          {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2">
-            {progressSteps.map((s, idx) => (
-              <div key={s.number} className="flex items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center font-medium transition-colors ${
-                    s.active
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {s.number}
-                </div>
-                {idx < progressSteps.length - 1 && (
-                  <div
-                    className={`w-12 h-1 mx-2 transition-colors ${
-                      step > s.number ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                )}
+          
+          {/* Step 0 - Choose Method */}
+          {step === 0 && (
+            <div className="space-y-6">
+              <div className="text-center space-y-2">
+                <h1 className="text-2xl font-bold">Adicionar Medicamento</h1>
+                <p className="text-muted-foreground">Como você quer adicionar?</p>
               </div>
-            ))}
-          </div>
+              
+              {isProcessingOCR ? (
+                <Card className="p-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <p className="text-muted-foreground">Processando imagem...</p>
+                    {imagePreview && (
+                      <img src={imagePreview} alt="Preview" className="max-h-32 rounded-lg opacity-50" />
+                    )}
+                  </div>
+                </Card>
+              ) : (
+                <div className="grid gap-4">
+                  <Card 
+                    className="p-6 cursor-pointer hover:border-primary hover:shadow-md transition-all"
+                    onClick={() => handleMethodSelect("manual")}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-primary/10">
+                        <Sparkles className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Digitar manualmente</h3>
+                        <p className="text-sm text-muted-foreground">Preencha os dados do medicamento</p>
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  <Card 
+                    className="p-6 cursor-pointer hover:border-primary hover:shadow-md transition-all"
+                    onClick={() => handleMethodSelect("camera")}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-blue-500/10">
+                        <Camera className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">Escanear receita</h3>
+                        <p className="text-sm text-muted-foreground">Tire foto e extraímos os dados</p>
+                      </div>
+                      {!hasFeature('ocr') && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Premium</span>
+                      )}
+                    </div>
+                  </Card>
+                  
+                  <Card 
+                    className="p-6 cursor-pointer hover:border-primary hover:shadow-md transition-all"
+                    onClick={() => handleMethodSelect("gallery")}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 rounded-xl bg-purple-500/10">
+                        <Image className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold">Importar da galeria</h3>
+                        <p className="text-sm text-muted-foreground">Use uma foto já existente</p>
+                      </div>
+                      {!hasFeature('ocr') && (
+                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Premium</span>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+              )}
+              
+              <Button variant="ghost" className="w-full" onClick={() => navigate(-1)}>
+                Cancelar
+              </Button>
+            </div>
+          )}
+          
+          {/* Wizard Steps 1-3 */}
+          {step >= 1 && (
+            <>
+              {/* Progress indicator */}
+              <div className="flex items-center justify-center gap-2">
+                {progressSteps.map((s, idx) => (
+                  <div key={s.number} className="flex items-center">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-medium transition-colors ${
+                        s.active
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {s.number}
+                    </div>
+                    {idx < progressSteps.length - 1 && (
+                      <div
+                        className={`w-12 h-1 mx-2 transition-colors ${
+                          step > s.number ? "bg-primary" : "bg-muted"
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
 
-          <Card>
+              <Card>
             <CardHeader>
               <CardTitle>
                 {step === 1 && "Informações do Item"}
