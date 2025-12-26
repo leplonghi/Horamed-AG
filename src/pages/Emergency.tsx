@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle, Phone, MapPin, Clock, Activity, Lock } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface EmergencyResponse {
   guidance: string;
@@ -32,6 +33,7 @@ interface EmergencyResponse {
 const Emergency = () => {
   const navigate = useNavigate();
   const { isEnabled } = useFeatureFlags();
+  const { t } = useLanguage();
   const [medicationName, setMedicationName] = useState("");
   const [missedDoses, setMissedDoses] = useState("1");
   const [timeSinceMissed, setTimeSinceMissed] = useState("");
@@ -48,12 +50,12 @@ const Emergency = () => {
             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mx-auto">
               <Lock className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-bold">Funcionalidade Desabilitada</h2>
+            <h2 className="text-2xl font-bold">{t('emergency.disabled')}</h2>
             <p className="text-muted-foreground">
-              O Modo Emergência está temporariamente desabilitado. Em caso de emergência real, ligue para o SAMU (192).
+              {t('emergency.disabledDesc')}
             </p>
             <Button onClick={() => navigate('/hoje')} variant="outline">
-              Voltar para Início
+              {t('emergency.backToHome')}
             </Button>
           </div>
         </main>
@@ -63,7 +65,7 @@ const Emergency = () => {
 
   const handleEmergency = async () => {
     if (!medicationName.trim() || !timeSinceMissed.trim()) {
-      toast.error("Preencha todos os campos");
+      toast.error(t('emergency.fillAllFields'));
       return;
     }
 
@@ -81,10 +83,10 @@ const Emergency = () => {
       if (error) throw error;
 
       setResponse(data);
-      toast.success("Orientação obtida");
+      toast.success(t('emergency.guidanceObtained'));
     } catch (error) {
       console.error('Error getting emergency guidance:', error);
-      toast.error("Erro ao obter orientação");
+      toast.error(t('emergency.guidanceError'));
     } finally {
       setLoading(false);
     }
@@ -94,36 +96,36 @@ const Emergency = () => {
     <div className="min-h-screen bg-background pb-20">
       <Header />
       
-      <main className="container mx-auto px-4 py-6 pt-24 space-y-6">{/* pt-24 para compensar o header fixo */}
+      <main className="container mx-auto px-4 py-6 pt-24 space-y-6">
         <Alert className="border-red-500 bg-red-500/10">
           <AlertTriangle className="h-5 w-5 text-red-600" />
           <AlertDescription className="text-red-600 font-semibold">
-            MODO EMERGÊNCIA - Em caso de emergência grave, ligue para o SAMU (192)
+            {t('emergency.alert')}
           </AlertDescription>
         </Alert>
 
         <div>
-          <h1 className="text-3xl font-bold text-red-600">Modo Emergência</h1>
-          <p className="text-muted-foreground">Orientação rápida para doses esquecidas</p>
+          <h1 className="text-3xl font-bold text-red-600">{t('emergency.title')}</h1>
+          <p className="text-muted-foreground">{t('emergency.subtitle')}</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Informações da Dose Esquecida</CardTitle>
-            <CardDescription>Preencha os dados para receber orientação</CardDescription>
+            <CardTitle>{t('emergency.missedDoseInfo')}</CardTitle>
+            <CardDescription>{t('emergency.fillData')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Medicamento</Label>
+              <Label>{t('emergency.medication')}</Label>
               <Input
-                placeholder="Ex: Losartana 50mg"
+                placeholder={t('emergency.medicationPlaceholder')}
                 value={medicationName}
                 onChange={(e) => setMedicationName(e.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Quantas doses foram esquecidas?</Label>
+              <Label>{t('emergency.howManyMissed')}</Label>
               <Input
                 type="number"
                 min="1"
@@ -133,9 +135,9 @@ const Emergency = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Há quanto tempo esqueceu? (Ex: 2 horas, 1 dia)</Label>
+              <Label>{t('emergency.howLongAgo')}</Label>
               <Input
-                placeholder="Ex: 3 horas"
+                placeholder={t('emergency.timePlaceholder')}
                 value={timeSinceMissed}
                 onChange={(e) => setTimeSinceMissed(e.target.value)}
               />
@@ -147,7 +149,7 @@ const Emergency = () => {
               className="w-full bg-red-600 hover:bg-red-700"
             >
               <Activity className="w-4 h-4 mr-2" />
-              Obter Orientação de Emergência
+              {t('emergency.getGuidance')}
             </Button>
           </CardContent>
         </Card>
@@ -158,7 +160,7 @@ const Emergency = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  Orientação
+                  {t('emergency.guidance')}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -172,7 +174,7 @@ const Emergency = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Phone className="w-5 h-5" />
-                  Contatos de Emergência
+                  {t('emergency.emergencyContacts')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
@@ -194,7 +196,7 @@ const Emergency = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="w-5 h-5" />
-                  Farmácias 24h Próximas
+                  {t('emergency.nearby24hPharmacies')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -211,7 +213,7 @@ const Emergency = () => {
                           </span>
                           <span className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
-                            Aberto 24h
+                            {t('emergency.open24h')}
                           </span>
                         </div>
                       </div>
@@ -221,7 +223,7 @@ const Emergency = () => {
                         onClick={() => window.open(`tel:${pharmacy.phone}`, '_self')}
                       >
                         <Phone className="w-4 h-4 mr-2" />
-                        Ligar
+                        {t('emergency.call')}
                       </Button>
                     </div>
                   </div>

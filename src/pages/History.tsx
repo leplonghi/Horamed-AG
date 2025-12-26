@@ -11,7 +11,7 @@ import { MonthlyProgressCalendar } from "@/components/MonthlyProgressCalendar";
 import DoseTimeline from "@/components/DoseTimeline";
 import InfoDialog from "@/components/InfoDialog";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, subDays, eachDayOfInterval } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { 
   Calendar as CalendarIcon, 
   TrendingUp, 
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DoseInstance {
   id: string;
@@ -53,6 +54,7 @@ interface MedicationStats {
 }
 
 export default function History() {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
   const [doses, setDoses] = useState<DoseInstance[]>([]);
   const [previousDoses, setPreviousDoses] = useState<DoseInstance[]>([]);
@@ -61,6 +63,8 @@ export default function History() {
   const [longestStreak, setLongestStreak] = useState<number>(0);
   const [medicationStats, setMedicationStats] = useState<MedicationStats[]>([]);
   const { activeProfile } = useUserProfiles();
+
+  const dateLocale = language === 'pt' ? ptBR : enUS;
 
   useEffect(() => {
     loadAllData();
@@ -108,8 +112,8 @@ export default function History() {
         previousStartDate = subDays(startDate, 1);
         previousEndDate = subDays(endDate, 1);
       } else if (activeTab === 'week') {
-        startDate = startOfWeek(now, { locale: ptBR });
-        endDate = endOfWeek(now, { locale: ptBR });
+        startDate = startOfWeek(now, { locale: dateLocale });
+        endDate = endOfWeek(now, { locale: dateLocale });
         previousStartDate = subWeeks(startDate, 1);
         previousEndDate = subWeeks(endDate, 1);
       } else {
@@ -177,7 +181,7 @@ export default function History() {
       if (prevError) throw prevError;
       setPreviousDoses((prevData || []) as DoseInstance[]);
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      console.error('Error loading history:', error);
     }
   };
 
@@ -196,7 +200,7 @@ export default function History() {
       setStreak(data?.current_streak || 0);
       setLongestStreak(data?.longest_streak || 0);
     } catch (error) {
-      console.error('Erro ao carregar sequência:', error);
+      console.error('Error loading streak:', error);
     }
   };
 
@@ -251,7 +255,7 @@ export default function History() {
 
       setMedicationStats(stats);
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      console.error('Error loading stats:', error);
     }
   };
 
@@ -271,17 +275,17 @@ export default function History() {
 
   const getPeriodLabel = () => {
     switch (activeTab) {
-      case 'today': return 'Hoje';
-      case 'week': return 'Esta Semana';
-      case 'month': return 'Este Mês';
+      case 'today': return t('history.todayLabel');
+      case 'week': return t('history.thisWeek');
+      case 'month': return t('history.thisMonth');
     }
   };
 
   const getPreviousPeriodLabel = () => {
     switch (activeTab) {
-      case 'today': return 'Ontem';
-      case 'week': return 'Semana Passada';
-      case 'month': return 'Mês Passado';
+      case 'today': return t('history.yesterday');
+      case 'week': return t('history.lastWeek');
+      case 'month': return t('history.lastMonth');
     }
   };
 
@@ -303,9 +307,9 @@ export default function History() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Histórico Completo</h1>
+            <h1 className="text-3xl font-bold">{t('history.title')}</h1>
             <p className="text-muted-foreground">
-              Análises detalhadas do seu compromisso com o tratamento
+              {t('history.subtitle')}
             </p>
           </div>
           {streak > 0 && <StreakBadge streak={streak} type="current" />}
@@ -317,10 +321,10 @@ export default function History() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Target className="h-4 w-4" />
-                <span className="text-sm">Progresso</span>
+                <span className="text-sm">{t('history.progress')}</span>
                 <InfoDialog
-                  title="O que é o progresso?"
-                  description="Progresso é a porcentagem de doses tomadas corretamente no período selecionado. Um bom progresso ajuda a garantir a eficácia do tratamento."
+                  title={t('history.progress')}
+                  description={t('history.progressDesc')}
                   triggerClassName="h-4 w-4"
                 />
               </div>
@@ -343,7 +347,7 @@ export default function History() {
                 {difference === 0 && (
                   <>
                     <Minus className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">sem mudança</span>
+                    <span className="text-muted-foreground">{t('history.noChange')}</span>
                   </>
                 )}
               </div>
@@ -354,10 +358,10 @@ export default function History() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Activity className="h-4 w-4" />
-                <span className="text-sm">Sequência</span>
+                <span className="text-sm">{t('history.sequence')}</span>
                 <InfoDialog
-                  title="O que é a sequência?"
-                  description="Sequência (streak) são dias consecutivos com progresso acima de 80%. Quanto maior sua sequência, mais consistente você está sendo com seu tratamento!"
+                  title={t('history.sequence')}
+                  description={t('history.sequenceDesc')}
                   triggerClassName="h-4 w-4"
                 />
               </div>
@@ -365,7 +369,7 @@ export default function History() {
                 {streak}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Recorde: {longestStreak} dias
+                {t('history.record')}: {longestStreak} {t('history.days')}
               </p>
             </CardContent>
           </Card>
@@ -374,10 +378,10 @@ export default function History() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <Clock className="h-4 w-4" />
-                <span className="text-sm">Tomadas</span>
+                <span className="text-sm">{t('history.taken')}</span>
                 <InfoDialog
-                  title="Doses tomadas"
-                  description="Número de doses que você tomou no período selecionado. Cada dose tomada no horário correto contribui para o sucesso do seu tratamento."
+                  title={t('history.taken')}
+                  description={t('history.takenDesc')}
                   triggerClassName="h-4 w-4"
                 />
               </div>
@@ -385,7 +389,7 @@ export default function History() {
                 {currentStats.taken}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                de {currentStats.total} doses
+                {t('history.ofDoses')} {currentStats.total} {t('history.doses')}
               </p>
             </CardContent>
           </Card>
@@ -394,10 +398,10 @@ export default function History() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 text-muted-foreground mb-2">
                 <BarChart3 className="h-4 w-4" />
-                <span className="text-sm">Perdidas</span>
+                <span className="text-sm">{t('history.missed')}</span>
                 <InfoDialog
-                  title="Doses perdidas"
-                  description="Doses que não foram tomadas no período. Use os lembretes e configurações do app para reduzir este número e melhorar seu tratamento."
+                  title={t('history.missed')}
+                  description={t('history.missedDesc')}
                   triggerClassName="h-4 w-4"
                 />
               </div>
@@ -405,7 +409,7 @@ export default function History() {
                 {currentStats.missed + currentStats.skipped}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {currentStats.missed} perdidas, {currentStats.skipped} puladas
+                {currentStats.missed} {t('history.missed').toLowerCase()}, {currentStats.skipped} {t('history.skipped')}
               </p>
             </CardContent>
           </Card>
@@ -414,16 +418,16 @@ export default function History() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="today">Hoje</TabsTrigger>
-            <TabsTrigger value="week">Semana</TabsTrigger>
-            <TabsTrigger value="month">Mês</TabsTrigger>
+            <TabsTrigger value="today">{t('history.today')}</TabsTrigger>
+            <TabsTrigger value="week">{t('history.week')}</TabsTrigger>
+            <TabsTrigger value="month">{t('history.month')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-6">
             {/* Comparison Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Comparação de Períodos</CardTitle>
+                <CardTitle className="text-lg">{t('history.periodComparison')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -435,7 +439,7 @@ export default function History() {
                   </div>
                   <Progress value={currentStats.progressRate} className="h-2" />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {currentStats.taken} de {currentStats.total} doses tomadas
+                    {currentStats.taken} {t('history.ofDoses')} {currentStats.total} {t('history.dosesTaken')}
                   </p>
                 </div>
 
@@ -450,7 +454,7 @@ export default function History() {
                   </div>
                   <Progress value={previousStats.progressRate} className="h-2 opacity-50" />
                   <p className="text-xs text-muted-foreground mt-1">
-                    {previousStats.taken} de {previousStats.total} doses tomadas
+                    {previousStats.taken} {t('history.ofDoses')} {previousStats.total} {t('history.dosesTaken')}
                   </p>
                 </div>
 
@@ -458,9 +462,9 @@ export default function History() {
                   <div className={`p-3 rounded-lg ${difference > 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
                     <p className={`text-sm font-medium ${difference > 0 ? 'text-success' : 'text-destructive'}`}>
                       {difference > 0 ? (
-                        <>🎉 Parabéns! Você melhorou {Math.abs(difference)}% comparado com {getPreviousPeriodLabel().toLowerCase()}!</>
+                        <>🎉 {t('history.congratsImproved', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</>
                       ) : (
-                        <>⚠️ Seu compromisso caiu {Math.abs(difference)}% comparado com {getPreviousPeriodLabel().toLowerCase()}. Vamos retomar!</>
+                        <>⚠️ {t('history.commitmentDropped', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</>
                       )}
                     </p>
                   </div>
@@ -471,9 +475,9 @@ export default function History() {
             {/* Visualization Options */}
             <Tabs defaultValue="timeline" className="space-y-6">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="timeline">Linha do Tempo</TabsTrigger>
-                <TabsTrigger value="calendar">Calendário Mensal</TabsTrigger>
-                <TabsTrigger value="list">Lista de Doses</TabsTrigger>
+                <TabsTrigger value="timeline">{t('history.timeline')}</TabsTrigger>
+                <TabsTrigger value="calendar">{t('history.monthlyCalendar')}</TabsTrigger>
+                <TabsTrigger value="list">{t('history.doseList')}</TabsTrigger>
               </TabsList>
 
               <TabsContent value="timeline">
@@ -501,7 +505,7 @@ export default function History() {
             {medicationStats.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Compromisso por Medicamento (últimos 30 dias)</CardTitle>
+                  <CardTitle className="text-lg">{t('history.byMedication')} ({t('history.last30days')})</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {medicationStats.map((med) => (
@@ -514,7 +518,7 @@ export default function History() {
                        </div>
                        <Progress value={med.progressRate} className="h-2" />
                       <p className="text-xs text-muted-foreground mt-1">
-                        {med.taken} de {med.total} doses tomadas
+                        {med.taken} {t('history.ofDoses')} {med.total} {t('history.dosesTaken')}
                       </p>
                     </div>
                   ))}

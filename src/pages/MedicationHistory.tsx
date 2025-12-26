@@ -11,10 +11,12 @@ import { ArrowLeft, TrendingUp, Calendar as CalendarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { startOfMonth, endOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function MedicationHistory() {
   const { id } = useParams();
+  const { t, language } = useLanguage();
   const [medication, setMedication] = useState<any>(null);
   const [doses, setDoses] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -63,7 +65,7 @@ export default function MedicationHistory() {
 
       setDoses(dosesData || []);
     } catch (error) {
-      console.error('Erro ao carregar histórico:', error);
+      console.error('Error loading history:', error);
     } finally {
       setLoading(false);
     }
@@ -91,6 +93,8 @@ export default function MedicationHistory() {
     return acc;
   }, {} as Record<string, { taken: number; missed: number; total: number }>);
 
+  const calendarLocale = language === 'pt' ? ptBR : enUS;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -101,15 +105,15 @@ export default function MedicationHistory() {
           <Link to="/doses">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar
+              {t('medHistory.back')}
             </Button>
           </Link>
 
           <h1 className="text-3xl font-bold mb-2">
-            {medication?.name || 'Carregando...'}
+            {medication?.name || t('common.loading')}
           </h1>
           <p className="text-muted-foreground">
-            Histórico completo e estatísticas
+            {t('medHistory.subtitle')}
           </p>
         </div>
 
@@ -119,7 +123,7 @@ export default function MedicationHistory() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-primary">{stats.adherence}%</p>
-                <p className="text-sm text-muted-foreground">Adesão</p>
+                <p className="text-sm text-muted-foreground">{t('medHistory.adherence')}</p>
               </div>
             </CardContent>
           </Card>
@@ -128,7 +132,7 @@ export default function MedicationHistory() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-success">{stats.taken}</p>
-                <p className="text-sm text-muted-foreground">Tomadas</p>
+                <p className="text-sm text-muted-foreground">{t('medHistory.taken')}</p>
               </div>
             </CardContent>
           </Card>
@@ -137,7 +141,7 @@ export default function MedicationHistory() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-destructive">{stats.missed}</p>
-                <p className="text-sm text-muted-foreground">Esquecidas</p>
+                <p className="text-sm text-muted-foreground">{t('medHistory.forgotten')}</p>
               </div>
             </CardContent>
           </Card>
@@ -146,7 +150,7 @@ export default function MedicationHistory() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-muted-foreground">{stats.skipped}</p>
-                <p className="text-sm text-muted-foreground">Puladas</p>
+                <p className="text-sm text-muted-foreground">{t('medHistory.skipped')}</p>
               </div>
             </CardContent>
           </Card>
@@ -157,13 +161,13 @@ export default function MedicationHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Progresso de Adesão
+              {t('medHistory.adherenceProgress')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Progress value={stats.adherence} className="h-4" />
             <p className="text-sm text-muted-foreground mt-2">
-              {stats.taken} de {stats.total} doses tomadas este mês
+              {stats.taken} {t('history.ofDoses')} {stats.total} {t('history.dosesTaken')}
             </p>
           </CardContent>
         </Card>
@@ -173,7 +177,7 @@ export default function MedicationHistory() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CalendarIcon className="h-5 w-5" />
-              Calendário de Doses
+              {t('medHistory.doseCalendar')}
             </CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -181,7 +185,7 @@ export default function MedicationHistory() {
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
-              locale={ptBR}
+              locale={calendarLocale}
               className="rounded-md border"
               modifiers={{
                 perfect: Object.keys(dosesByDate)
@@ -215,14 +219,14 @@ export default function MedicationHistory() {
         {/* Dose Timeline */}
         <Card>
           <CardHeader>
-            <CardTitle>Histórico Detalhado</CardTitle>
+            <CardTitle>{t('medHistory.detailedHistory')}</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="text-center text-muted-foreground py-8">Carregando...</p>
+              <p className="text-center text-muted-foreground py-8">{t('medHistory.loading')}</p>
             ) : doses.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nenhuma dose neste período
+                {t('medHistory.noDosesInPeriod')}
               </p>
             ) : (
               <DoseTimeline doses={doses} period="month" />
