@@ -6,17 +6,37 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   CheckCircle2, Crown, Calendar, CreditCard, 
-  ArrowLeft, AlertCircle, Sparkles 
+  ArrowLeft, AlertCircle, Sparkles, XCircle, 
+  AlertTriangle, Heart, TrendingDown, Shield
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function SubscriptionManagement() {
   const navigate = useNavigate();
   const { subscription, isPremium, isFree, isExpired, daysLeft, loading, refresh } = useSubscription();
   const [canceling, setCanceling] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelStep, setCancelStep] = useState<'confirm' | 'fomo' | 'final'>('confirm');
+  const [cancelingSubscription, setCancelingSubscription] = useState(false);
+
+  // Calculate if within 7-day free cancellation window
+  const daysSubscribed = subscription?.started_at 
+    ? differenceInDays(new Date(), new Date(subscription.started_at)) 
+    : 0;
+  const isWithinFreeCancellation = daysSubscribed <= 7;
 
   const handleManageSubscription = async () => {
     setCanceling(true);
@@ -33,6 +53,44 @@ export default function SubscriptionManagement() {
       toast.error("Erro ao abrir portal de gerenciamento");
     } finally {
       setCanceling(false);
+    }
+  };
+
+  const handleCancelClick = () => {
+    setCancelStep('confirm');
+    setShowCancelDialog(true);
+  };
+
+  const handleCancelProceed = () => {
+    if (cancelStep === 'confirm') {
+      setCancelStep('fomo');
+    } else if (cancelStep === 'fomo') {
+      setCancelStep('final');
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setCancelingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        body: { immediate: isWithinFreeCancellation }
+      });
+      
+      if (error) throw error;
+      
+      if (isWithinFreeCancellation) {
+        toast.success("Assinatura cancelada. Você não será cobrado.");
+      } else {
+        toast.success("Assinatura será cancelada ao final do período atual.");
+      }
+      
+      setShowCancelDialog(false);
+      refresh();
+    } catch (error: any) {
+      console.error('Cancel error:', error);
+      toast.error("Erro ao cancelar assinatura. Tente novamente.");
+    } finally {
+      setCancelingSubscription(false);
     }
   };
 
@@ -85,7 +143,8 @@ export default function SubscriptionManagement() {
                   >
                     {subscription?.status === 'active' ? 'Ativo' : 
                      subscription?.status === 'cancelled' ? 'Cancelado' : 
-                     subscription?.status === 'expired' ? 'Expirado' : 'Inativo'}
+                     subscription?.status === 'expired' ? 'Expirado' : 
+                     subscription?.status === 'trial' ? 'Trial' : 'Inativo'}
                   </Badge>
                 </div>
               </div>
@@ -149,15 +208,15 @@ export default function SubscriptionManagement() {
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-primary" />
-                      <span>Gráficos avançados</span>
+                      <span>Assistente de saúde com IA</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-primary" />
+                      <span>Relatórios mensais</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-primary" />
                       <span>Sem anúncios</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-primary" />
-                      <span>Suporte prioritário</span>
                     </div>
                   </>
                 ) : (
@@ -187,11 +246,23 @@ export default function SubscriptionManagement() {
                 onClick={handleManageSubscription}
                 disabled={canceling}
               >
-                {canceling ? "Abrindo..." : "Gerenciar Assinatura no Stripe"}
+                {canceling ? "Abrindo..." : "Alterar Forma de Pagamento"}
               </Button>
-              <p className="text-xs text-center text-muted-foreground">
-                Altere plano, forma de pagamento ou cancele sua assinatura
-              </p>
+              
+              <Button 
+                variant="outline" 
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleCancelClick}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Cancelar Assinatura
+              </Button>
+              
+              {isWithinFreeCancellation && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Você está dentro do período de 7 dias. Cancele sem custos.
+                </p>
+              )}
             </>
           ) : (
             <>
@@ -220,6 +291,141 @@ export default function SubscriptionManagement() {
           </p>
         </Card>
       </div>
+
+      {/* Cancel Dialog with FOMO */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent className="max-w-md">
+          {cancelStep === 'confirm' && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  Tem certeza que quer cancelar?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="space-y-3">
+                  <p>
+                    {isWithinFreeCancellation 
+                      ? "Você está dentro do período de 7 dias. Seu cancelamento será imediato e você não será cobrado."
+                      : "Sua assinatura continuará ativa até o final do período pago. Após isso, você perderá acesso aos recursos Premium."}
+                  </p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <Button variant="destructive" onClick={handleCancelProceed}>
+                  Continuar cancelamento
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
+
+          {cancelStep === 'fomo' && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-center text-xl">
+                  😢 Vamos sentir sua falta!
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              
+              <div className="space-y-4 py-4">
+                <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-3">
+                    <Heart className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Sua saúde é importante</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Usuários Premium têm 73% mais adesão ao tratamento do que usuários gratuitos.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
+                  <div className="flex items-start gap-3">
+                    <TrendingDown className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Você perderá acesso a:</p>
+                      <ul className="text-xs text-muted-foreground mt-1 space-y-1">
+                        <li>• Medicamentos ilimitados</li>
+                        <li>• OCR de receitas médicas</li>
+                        <li>• Assistente de saúde com IA</li>
+                        <li>• Relatórios mensais detalhados</li>
+                      </ul>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-primary/10 border-primary/30">
+                  <div className="flex items-start gap-3">
+                    <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Oferta especial para você!</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Que tal pausar por 1 mês ao invés de cancelar? Você mantém seu histórico e dados.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+                <Button 
+                  className="w-full" 
+                  onClick={() => setShowCancelDialog(false)}
+                >
+                  <Crown className="h-4 w-4 mr-2" />
+                  Manter meu Premium
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-muted-foreground"
+                  onClick={handleCancelProceed}
+                >
+                  Continuar com cancelamento
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
+
+          {cancelStep === 'final' && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                  <XCircle className="h-5 w-5" />
+                  Confirmar Cancelamento
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {isWithinFreeCancellation ? (
+                    <p>
+                      Sua assinatura será <strong>cancelada imediatamente</strong> e você não será cobrado.
+                    </p>
+                  ) : (
+                    <p>
+                      Sua assinatura permanecerá ativa até <strong>
+                        {subscription?.expires_at 
+                          ? format(new Date(subscription.expires_at), "dd 'de' MMMM", { locale: ptBR })
+                          : 'o final do período'}
+                      </strong>. Após essa data, você será rebaixado para o plano gratuito.
+                    </p>
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={cancelingSubscription}>
+                  Voltar
+                </AlertDialogCancel>
+                <Button 
+                  variant="destructive" 
+                  onClick={handleCancelSubscription}
+                  disabled={cancelingSubscription}
+                >
+                  {cancelingSubscription ? "Cancelando..." : "Confirmar Cancelamento"}
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
