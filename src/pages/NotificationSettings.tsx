@@ -5,7 +5,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Bell, Smartphone, Watch } from "lucide-react";
+import { ArrowLeft, Bell, Smartphone, Watch, AlertTriangle, ChevronRight, Settings2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -157,6 +158,38 @@ export default function NotificationSettings() {
         </div>
 
         <div className="space-y-5">
+          {/* Setup Banner for Mobile */}
+          {Capacitor.isNativePlatform() && (
+            <Card 
+              className="p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/30 cursor-pointer hover:shadow-md transition-all"
+              onClick={() => navigate('/configurar-notificacoes')}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/20 rounded-full">
+                  <Settings2 className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-sm">Configurar para funcionar com app fechado</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Passo a passo para garantir que os lembretes funcionem sempre
+                  </p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </Card>
+          )}
+
+          {!Capacitor.isNativePlatform() && (
+            <Alert>
+              <Smartphone className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Para notificações mesmo com o app fechado, instale o HoraMed no seu celular.{' '}
+                <Button variant="link" className="p-0 h-auto text-primary" onClick={() => navigate('/install')}>
+                  Como instalar →
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           <Card className="border-2 hover:shadow-lg transition-all duration-200">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-3">

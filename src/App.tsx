@@ -55,6 +55,7 @@ import CaregiverAccept from './pages/CaregiverAccept';
 import ConsultationCardView from './pages/ConsultationCardView';
 import Admin from './pages/Admin';
 import NotificationSettings from "./pages/NotificationSettings";
+import NotificationSetup from "./pages/NotificationSetup";
 import Tutorial from "./pages/Tutorial";
 import Achievements from "./pages/Achievements";
 import MedicalAppointments from "./pages/MedicalAppointments";
@@ -155,6 +156,8 @@ function AppContent() {
         <Route path="/assinatura/cancelado" element={<ProtectedRoute><SubscriptionCanceled /></ProtectedRoute>} />
         <Route path="/notificacoes-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
         <Route path="/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
+        <Route path="/configurar-notificacoes" element={<ProtectedRoute><NotificationSetup /></ProtectedRoute>} />
+        <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
         <Route path="/exportar" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
         <Route path="/exportar-dados" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
         <Route path="/privacidade" element={<Privacy />} />
