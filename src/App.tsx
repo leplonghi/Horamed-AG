@@ -74,6 +74,7 @@ import AnalyticsDetails from "./pages/AnalyticsDetails";
 import IndiqueGanhe from "./pages/IndiqueGanhe";
 import Recompensas from "./pages/Recompensas";
 import HealthAIButton from "./components/HealthAIButton";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 import Welcome from "./pages/Welcome";
 import QuickOnboarding from "./components/onboarding/QuickOnboarding";
 
@@ -202,6 +203,7 @@ function AppContent() {
           </Routes>
       {showNavigation && <Navigation />}
       <HealthAIButton />
+      <PWAInstallPrompt />
     </>
   );
 }

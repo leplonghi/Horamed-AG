@@ -1279,6 +1279,15 @@ const translations: Record<Language, Record<string, string>> = {
     'healthCalendar.syncCompleteDesc': '{count} eventos sincronizados com sucesso.',
     'healthCalendar.syncError': 'Erro na sincronização',
     'healthCalendar.syncErrorDesc': 'Não foi possível sincronizar com o Google Agenda.',
+    
+    // PWA Install Prompt
+    'pwa.installTitle': 'Instalar HoraMed',
+    'pwa.installDesc': 'Acesse mais rápido, receba lembretes e use mesmo offline.',
+    'pwa.install': 'Instalar',
+    'pwa.notNow': 'Agora não',
+    'pwa.iosInstructions': 'Como instalar no iPhone:',
+    'pwa.iosTapShare': 'Toque no ícone de Compartilhar',
+    'pwa.iosAddHome': 'Selecione "Adicionar à Tela de Início"',
   },
   en: {
     // Navigation
@@ -2539,6 +2548,15 @@ const translations: Record<Language, Record<string, string>> = {
     'healthCalendar.syncCompleteDesc': '{count} events synced successfully.',
     'healthCalendar.syncError': 'Sync error',
     'healthCalendar.syncErrorDesc': 'Could not sync with Google Calendar.',
+    
+    // PWA Install Prompt
+    'pwa.installTitle': 'Install HoraMed',
+    'pwa.installDesc': 'Access faster, receive reminders and use even offline.',
+    'pwa.install': 'Install',
+    'pwa.notNow': 'Not now',
+    'pwa.iosInstructions': 'How to install on iPhone:',
+    'pwa.iosTapShare': 'Tap the Share icon',
+    'pwa.iosAddHome': 'Select "Add to Home Screen"',
   }
 };
 
