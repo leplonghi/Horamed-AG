@@ -17,7 +17,7 @@ export default function HelpSupport() {
   const { t } = useLanguage();
 
   const handleContactSupport = () => {
-    window.location.href = "mailto:appmedhora@gmail.com";
+    window.location.href = "mailto:duvidas@horamed.net";
   };
 
   return (
