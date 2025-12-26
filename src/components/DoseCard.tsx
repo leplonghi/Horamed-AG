@@ -88,8 +88,8 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
           return {
             icon: AlertCircle,
             label: "Atrasado",
-            color: "bg-warning/10 border-warning/20 text-warning animate-pulse",
-            badgeColor: "bg-warning text-warning-foreground",
+            color: "bg-red-500/15 border-red-500/40 text-red-600 dark:text-red-400",
+            badgeColor: "bg-red-500 text-white",
           };
         }
         if (isCurrent) {
