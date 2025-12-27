@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useSideEffectsLog, SideEffectLog } from "@/hooks/useSideEffectsLog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { Download, TrendingUp, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SideEffectsDashboardProps {
   itemId?: string;
@@ -17,10 +18,22 @@ interface SideEffectsDashboardProps {
 
 export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const { logs, isLoading, fetchLogs, getCorrelationData } = useSideEffectsLog();
   const [medications, setMedications] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedMedication, setSelectedMedication] = useState<string>(itemId || "");
   const [chartData, setChartData] = useState<any[]>([]);
+
+  const dateLocale = language === 'pt' ? ptBR : enUS;
+
+  // Chart labels based on language
+  const chartLabels = {
+    overallFeeling: language === 'pt' ? 'Sensação Geral' : 'Overall Feeling',
+    energy: language === 'pt' ? 'Energia' : 'Energy',
+    pain: language === 'pt' ? 'Dor' : 'Pain',
+    nausea: language === 'pt' ? 'Náusea' : 'Nausea',
+    sleep: language === 'pt' ? 'Sono' : 'Sleep',
+  };
 
   useEffect(() => {
     loadMedications();
@@ -64,12 +77,12 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     ]);
 
     const combined = (overall as any[]).map((item: any, index: number) => ({
-      date: format(new Date(item.recorded_at), 'dd/MM', { locale: ptBR }),
-      'Sensação Geral': item.overall_feeling,
-      'Energia': (energy as any[])[index]?.energy_level,
-      'Dor': (pain as any[])[index]?.pain_level,
-      'Náusea': (nausea as any[])[index]?.nausea_level,
-      'Sono': (sleep as any[])[index]?.sleep_quality,
+      date: format(new Date(item.recorded_at), 'dd/MM', { locale: dateLocale }),
+      [chartLabels.overallFeeling]: item.overall_feeling,
+      [chartLabels.energy]: (energy as any[])[index]?.energy_level,
+      [chartLabels.pain]: (pain as any[])[index]?.pain_level,
+      [chartLabels.nausea]: (nausea as any[])[index]?.nausea_level,
+      [chartLabels.sleep]: (sleep as any[])[index]?.sleep_quality,
     }));
 
     setChartData(combined);
@@ -77,32 +90,30 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
 
   const exportToPDF = async () => {
     try {
-      toast.info("Gerando relatório PDF...");
+      toast.info(t('sideEffects.generatingPdf'));
       
       const selectedMed = medications.find(m => m.id === selectedMedication);
       const reportData = {
-        medication: selectedMed?.name || "Medicamento",
-        logs: logs.slice(0, 30), // últimos 30 registros
+        medication: selectedMed?.name || t('today.medication'),
+        logs: logs.slice(0, 30),
         chartData,
         generatedAt: new Date().toISOString(),
       };
 
-      // Aqui você pode usar jspdf ou integrar com edge function para gerar PDF
-      // Por simplicidade, vou criar um JSON que o médico pode importar
       const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `diario-efeitos-${selectedMed?.name}-${format(new Date(), 'yyyy-MM-dd')}.json`;
+      a.download = `side-effects-${selectedMed?.name}-${format(new Date(), 'yyyy-MM-dd')}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success("Relatório exportado com sucesso!");
+      toast.success(t('sideEffects.exportSuccess'));
     } catch (error) {
       console.error('Error exporting report:', error);
-      toast.error("Erro ao exportar relatório");
+      toast.error(t('sideEffects.exportError'));
     }
   };
 
@@ -128,14 +139,14 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h2 className="text-2xl font-bold">Diário de Efeitos</h2>
+          <h2 className="text-2xl font-bold">{t('sideEffects.diaryTitle')}</h2>
           <p className="text-muted-foreground">
-            Acompanhe como você se sente após cada dose
+            {t('sideEffects.diarySubtitle')}
           </p>
         </div>
         <Button onClick={exportToPDF} disabled={logs.length === 0}>
           <Download className="h-4 w-4 mr-2" />
-          Exportar para Médico
+          {t('sideEffects.exportToDoctorBtn')}
         </Button>
       </div>
 
@@ -143,10 +154,10 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center gap-4">
-            <label className="text-sm font-medium">Medicamento:</label>
+            <label className="text-sm font-medium">{t('sideEffects.medicationLabel')}</label>
             <Select value={selectedMedication} onValueChange={setSelectedMedication}>
               <SelectTrigger className="w-[300px]">
-                <SelectValue placeholder="Selecione um medicamento" />
+                <SelectValue placeholder={t('sideEffects.selectMedication')} />
               </SelectTrigger>
               <SelectContent>
                 {medications.map((med) => (
@@ -164,51 +175,51 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
       <div className="grid gap-4 md:grid-cols-5">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Sensação Geral</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('sideEffects.overallFeeling')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getAverageRating('overall_feeling')}</div>
-            <p className="text-xs text-muted-foreground">média de 5</p>
+            <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Energia</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('sideEffects.energy')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getAverageRating('energy_level')}</div>
-            <p className="text-xs text-muted-foreground">média de 5</p>
+            <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Dor</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('sideEffects.pain')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getAverageRating('pain_level')}</div>
-            <p className="text-xs text-muted-foreground">média de 5</p>
+            <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Náusea</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('sideEffects.nausea')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getAverageRating('nausea_level')}</div>
-            <p className="text-xs text-muted-foreground">média de 5</p>
+            <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Sono</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('sideEffects.sleep')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{getAverageRating('sleep_quality')}</div>
-            <p className="text-xs text-muted-foreground">média de 5</p>
+            <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
       </div>
@@ -219,10 +230,10 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Evolução dos Efeitos
+              {t('sideEffects.evolutionTitle')}
             </CardTitle>
             <CardDescription>
-              Acompanhe como os efeitos variam ao longo do tempo
+              {t('sideEffects.evolutionSubtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -233,11 +244,11 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
                 <YAxis domain={[1, 5]} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="Sensação Geral" stroke="#8b5cf6" strokeWidth={2} />
-                <Line type="monotone" dataKey="Energia" stroke="#10b981" strokeWidth={2} />
-                <Line type="monotone" dataKey="Dor" stroke="#ef4444" strokeWidth={2} />
-                <Line type="monotone" dataKey="Náusea" stroke="#f59e0b" strokeWidth={2} />
-                <Line type="monotone" dataKey="Sono" stroke="#3b82f6" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.overallFeeling} stroke="#8b5cf6" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.energy} stroke="#10b981" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.pain} stroke="#ef4444" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.nausea} stroke="#f59e0b" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.sleep} stroke="#3b82f6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -247,7 +258,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
           <CardContent className="py-12 text-center">
             <Activity className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground">
-              Nenhum registro encontrado. Comece a registrar seus efeitos após cada dose!
+              {t('sideEffects.noRecords')}
             </p>
           </CardContent>
         </Card>

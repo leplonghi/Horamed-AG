@@ -1,6 +1,7 @@
 import { FileText, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   prescriptionId: string | null;
@@ -10,12 +11,13 @@ interface Props {
 
 export function StockOriginBadge({ prescriptionId, prescriptionTitle, lastRefillAt }: Props) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   if (!prescriptionId && !lastRefillAt) {
     return (
       <Badge variant="outline" className="gap-1.5">
         <Package className="h-3 w-3" />
-        <span>Adicionado manualmente</span>
+        <span>{t('stockOrigin.addedManually')}</span>
       </Badge>
     );
   }
@@ -28,7 +30,7 @@ export function StockOriginBadge({ prescriptionId, prescriptionTitle, lastRefill
       >
         <Badge variant="secondary" className="gap-1.5 cursor-pointer hover:bg-secondary/80 transition-colors">
           <FileText className="h-3 w-3" />
-          <span>Da receita: {prescriptionTitle}</span>
+          <span>{t('stockOrigin.fromPrescription')} {prescriptionTitle}</span>
         </Badge>
       </button>
     );
@@ -38,7 +40,7 @@ export function StockOriginBadge({ prescriptionId, prescriptionTitle, lastRefill
     return (
       <Badge variant="outline" className="gap-1.5">
         <Package className="h-3 w-3" />
-        <span>Reabastecido manualmente</span>
+        <span>{t('stockOrigin.refilledManually')}</span>
       </Badge>
     );
   }

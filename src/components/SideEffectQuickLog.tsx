@@ -9,6 +9,7 @@ import { useSideEffectsLog, COMMON_SIDE_EFFECTS, SideEffectInput } from "@/hooks
 import { toast } from "sonner";
 import { Smile, Meh, Frown, Zap, Heart, Moon, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SideEffectQuickLogProps {
   open: boolean;
@@ -19,14 +20,6 @@ interface SideEffectQuickLogProps {
   profileId?: string;
 }
 
-const RATING_LABELS = {
-  1: { label: "Muito Ruim", icon: Frown, color: "text-destructive" },
-  2: { label: "Ruim", icon: Frown, color: "text-orange-500" },
-  3: { label: "Ok", icon: Meh, color: "text-yellow-500" },
-  4: { label: "Bom", icon: Smile, color: "text-green-500" },
-  5: { label: "Muito Bom", icon: Smile, color: "text-success" },
-};
-
 export function SideEffectQuickLog({ 
   open, 
   onOpenChange, 
@@ -35,6 +28,7 @@ export function SideEffectQuickLog({
   itemName,
   profileId 
 }: SideEffectQuickLogProps) {
+  const { t, language } = useLanguage();
   const { createLog } = useSideEffectsLog();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -45,6 +39,14 @@ export function SideEffectQuickLog({
   const [sleepQuality, setSleepQuality] = useState<number>(3);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
+
+  const RATING_LABELS = {
+    1: { label: language === 'pt' ? "Muito Ruim" : "Very Bad", icon: Frown, color: "text-destructive" },
+    2: { label: language === 'pt' ? "Ruim" : "Bad", icon: Frown, color: "text-orange-500" },
+    3: { label: "Ok", icon: Meh, color: "text-yellow-500" },
+    4: { label: language === 'pt' ? "Bom" : "Good", icon: Smile, color: "text-green-500" },
+    5: { label: language === 'pt' ? "Muito Bom" : "Very Good", icon: Smile, color: "text-success" },
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -63,10 +65,9 @@ export function SideEffectQuickLog({
       };
 
       await createLog(input);
-      toast.success("Efeitos registrados com sucesso!");
+      toast.success(language === 'pt' ? "Efeitos registrados com sucesso!" : "Effects logged successfully!");
       onOpenChange(false);
       
-      // Reset form
       setOverallFeeling(3);
       setEnergyLevel(3);
       setPainLevel(3);
@@ -76,7 +77,7 @@ export function SideEffectQuickLog({
       setNotes("");
     } catch (error) {
       console.error('Error creating side effect log:', error);
-      toast.error("Erro ao registrar efeitos");
+      toast.error(language === 'pt' ? "Erro ao registrar efeitos" : "Error logging effects");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,54 +135,48 @@ export function SideEffectQuickLog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Como você está se sentindo?</DialogTitle>
+          <DialogTitle>{language === 'pt' ? 'Como você está se sentindo?' : 'How are you feeling?'}</DialogTitle>
           <DialogDescription>
-            Registre os efeitos após tomar {itemName}
+            {language === 'pt' ? `Registre os efeitos após tomar ${itemName}` : `Log effects after taking ${itemName}`}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Rating Scales */}
           <div className="space-y-4">
             <RatingSlider
-              label="Sensação Geral"
+              label={t('sideEffects.overallFeeling')}
               value={overallFeeling}
               onChange={(v) => setOverallFeeling(v[0])}
               icon={Heart}
             />
-            
             <RatingSlider
-              label="Nível de Energia"
+              label={t('sideEffects.energy')}
               value={energyLevel}
               onChange={(v) => setEnergyLevel(v[0])}
               icon={Zap}
             />
-            
             <RatingSlider
-              label="Dor/Desconforto"
+              label={t('sideEffects.pain')}
               value={painLevel}
               onChange={(v) => setPainLevel(v[0])}
               icon={Frown}
             />
-            
             <RatingSlider
-              label="Náusea"
+              label={t('sideEffects.nausea')}
               value={nauseaLevel}
               onChange={(v) => setNauseaLevel(v[0])}
               icon={Meh}
             />
-            
             <RatingSlider
-              label="Qualidade do Sono"
+              label={t('sideEffects.sleep')}
               value={sleepQuality}
               onChange={(v) => setSleepQuality(v[0])}
               icon={Moon}
             />
           </div>
 
-          {/* Side Effect Tags */}
           <div className="space-y-2">
-            <Label>Efeitos Colaterais (opcional)</Label>
+            <Label>{language === 'pt' ? 'Efeitos Colaterais (opcional)' : 'Side Effects (optional)'}</Label>
             <div className="flex flex-wrap gap-2">
               <AnimatePresence>
                 {COMMON_SIDE_EFFECTS.map((tag) => {
@@ -208,38 +203,25 @@ export function SideEffectQuickLog({
             </div>
           </div>
 
-          {/* Notes */}
           <div className="space-y-2">
-            <Label htmlFor="notes">Observações (opcional)</Label>
+            <Label htmlFor="notes">{language === 'pt' ? 'Observações (opcional)' : 'Notes (optional)'}</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Descreva qualquer outro sintoma ou observação..."
+              placeholder={language === 'pt' ? 'Descreva qualquer outro sintoma ou observação...' : 'Describe any other symptom or observation...'}
               className="min-h-[100px]"
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground text-right">
-              {notes.length}/500
-            </p>
+            <p className="text-xs text-muted-foreground text-right">{notes.length}/500</p>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              Cancelar
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1" disabled={isSubmitting}>
+              {t('common.cancel')}
             </Button>
-            <Button
-              onClick={handleSubmit}
-              className="flex-1"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Salvando..." : "Salvar Registro"}
+            <Button onClick={handleSubmit} className="flex-1" disabled={isSubmitting}>
+              {isSubmitting ? (language === 'pt' ? "Salvando..." : "Saving...") : (language === 'pt' ? "Salvar Registro" : "Save Log")}
             </Button>
           </div>
         </div>
