@@ -972,6 +972,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           notes: string | null
+          notification_type: string | null
           profile_id: string | null
           total_doses: number | null
           treatment_duration_days: number | null
@@ -989,6 +990,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           notes?: string | null
+          notification_type?: string | null
           profile_id?: string | null
           total_doses?: number | null
           treatment_duration_days?: number | null
@@ -1006,6 +1008,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           notes?: string | null
+          notification_type?: string | null
           profile_id?: string | null
           total_doses?: number | null
           treatment_duration_days?: number | null

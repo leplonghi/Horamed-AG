@@ -31,6 +31,7 @@ interface MedicationData {
   unitsTotal: number;
   unitLabel: string;
   lowStockThreshold: number;
+  notificationType: "silent" | "push" | "alarm";
 }
 
 interface MedicationWizardProps {
@@ -49,6 +50,7 @@ const INITIAL_DATA: MedicationData = {
   unitsTotal: 30,
   unitLabel: "comprimidos",
   lowStockThreshold: 5,
+  notificationType: "push",
 };
 
 export default function MedicationWizard({ open, onOpenChange, editItemId }: MedicationWizardProps) {
@@ -128,6 +130,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         unitsTotal: stock?.units_left || stock?.units_total || 30,
         unitLabel: stock?.unit_label || "comprimidos",
         lowStockThreshold: 5,
+        notificationType: (item.notification_type as "silent" | "push" | "alarm") || "push",
       });
       
       // Mostrar estoque se já existir
@@ -294,6 +297,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             notes: medicationData.notes || null,
             treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
             treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
+            notification_type: medicationData.notificationType,
           })
           .eq("id", itemIdToEdit);
 
@@ -340,6 +344,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             is_active: true,
             treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
             treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
+            notification_type: medicationData.notificationType,
           })
           .select()
           .single();
