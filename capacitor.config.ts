@@ -7,15 +7,20 @@ const config: CapacitorConfig = {
   plugins: {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon',
-      iconColor: '#3B82F6',
-      sound: 'notification.wav'
+      iconColor: '#10B981',
+      sound: 'notification.wav',
+      // Android specific
+      channelId: 'horamed-medicamentos',
+      channelName: 'Lembretes de Medicamentos',
+      channelDescription: 'Notificações para lembrar de tomar medicamentos',
+      channelImportance: 5, // IMPORTANCE_HIGH - shows heads-up notification
     },
     PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert']
+      presentationOptions: ['badge', 'sound', 'alert'],
     },
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: '#3B82F6',
+      backgroundColor: '#10B981',
       showSpinner: false,
       androidScaleType: 'CENTER_CROP',
       splashFullScreen: true,
@@ -25,11 +30,15 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: false
+    webContentsDebuggingEnabled: false,
+    // Enable background execution for alarms
+    backgroundColor: '#10B981',
   },
   ios: {
     contentInset: 'automatic',
-    scrollEnabled: true
+    scrollEnabled: true,
+    // Request authorization for notifications
+    limitsNavigationsToAppBoundDomains: true,
   }
 };
 
