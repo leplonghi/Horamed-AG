@@ -1,10 +1,15 @@
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Infinity } from "lucide-react";
+import { Calendar, Infinity, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StepTooltip from "./StepTooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StepContinuousProps {
   isContinuous: boolean;
@@ -15,6 +20,15 @@ interface StepContinuousProps {
   onStartDateChange: (date: string) => void;
   onComplete: () => void;
 }
+
+const durationPresets = [
+  { days: 5, label: "5 dias", description: "Tratamento curto" },
+  { days: 7, label: "7 dias", description: "1 semana" },
+  { days: 10, label: "10 dias", description: "Antibióticos comuns" },
+  { days: 14, label: "14 dias", description: "2 semanas" },
+  { days: 21, label: "21 dias", description: "3 semanas" },
+  { days: 30, label: "30 dias", description: "1 mês" },
+];
 
 export default function StepContinuous({ 
   isContinuous,
@@ -33,101 +47,195 @@ export default function StepContinuous({
     : null;
 
   return (
-    <div className="space-y-4">
-      <StepTooltip type="info">
-        <strong>Uso contínuo:</strong> Para medicamentos de longo prazo (ex: pressão, diabetes).{" "}
-        <strong>Uso temporário:</strong> Para tratamentos com prazo definido (ex: antibióticos, 7 dias).
-      </StepTooltip>
+    <TooltipProvider>
+      <div className="space-y-4">
+        <StepTooltip type="info">
+          <strong>Uso contínuo:</strong> Para medicamentos de longo prazo (ex: pressão, diabetes).{" "}
+          <strong>Uso temporário:</strong> Para tratamentos com prazo definido (ex: antibióticos).
+        </StepTooltip>
 
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => onContinuousChange(true)}
-          className={cn(
-            "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-            isContinuous 
-              ? "border-primary bg-primary/5 shadow-sm" 
-              : "border-border hover:border-primary/30"
-          )}
-        >
-          <div className={cn(
-            "p-2.5 rounded-full",
-            isContinuous ? "bg-primary/10" : "bg-muted"
-          )}>
-            <Infinity className={cn("h-5 w-5", isContinuous ? "text-primary" : "text-muted-foreground")} />
-          </div>
-          <div className="text-center">
-            <p className="font-medium text-sm">Uso contínuo</p>
-            <p className="text-xs text-muted-foreground">Sem data final</p>
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onContinuousChange(false)}
-          className={cn(
-            "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-            !isContinuous 
-              ? "border-primary bg-primary/5 shadow-sm" 
-              : "border-border hover:border-primary/30"
-          )}
-        >
-          <div className={cn(
-            "p-2.5 rounded-full",
-            !isContinuous ? "bg-primary/10" : "bg-muted"
-          )}>
-            <Calendar className={cn("h-5 w-5", !isContinuous ? "text-primary" : "text-muted-foreground")} />
-          </div>
-          <div className="text-center">
-            <p className="font-medium text-sm">Temporário</p>
-            <p className="text-xs text-muted-foreground">Por X dias</p>
-          </div>
-        </button>
-      </div>
-
-      {/* Temporary treatment options */}
-      {!isContinuous && (
-        <div className="space-y-4 p-4 bg-muted/30 rounded-lg border animate-in fade-in duration-300">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="start-date" className="text-sm">Data de início</Label>
-              <Input
-                id="start-date"
-                type="date"
-                value={startDate}
-                onChange={(e) => onStartDateChange(e.target.value)}
-                min={today}
-              />
+        <div className="grid grid-cols-2 gap-3">
+          {/* Temporary - now first and more prominent */}
+          <button
+            type="button"
+            onClick={() => onContinuousChange(false)}
+            className={cn(
+              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+              !isContinuous 
+                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20" 
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute top-2 right-2">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px]">
+                <p className="text-xs">Para antibióticos, anti-inflamatórios, e outros medicamentos com prazo de término.</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className={cn(
+              "p-3 rounded-full",
+              !isContinuous ? "bg-primary/20" : "bg-muted"
+            )}>
+              <Calendar className={cn("h-6 w-6", !isContinuous ? "text-primary" : "text-muted-foreground")} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="duration" className="text-sm">Duração (dias)</Label>
-              <Input
-                id="duration"
-                type="number"
-                min="1"
-                max="365"
-                placeholder="Ex: 7, 14, 30"
-                value={treatmentDays || ""}
-                onChange={(e) => onTreatmentDaysChange(e.target.value ? parseInt(e.target.value) : null)}
-              />
+            <div className="text-center">
+              <p className="font-semibold text-sm">Temporário</p>
+              <p className="text-xs text-muted-foreground">Por X dias</p>
             </div>
-          </div>
+            {!isContinuous && (
+              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground text-xs">✓</span>
+              </div>
+            )}
+          </button>
 
-          {endDate && (
-            <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg">
-              <span className="text-sm">Término em:</span>
-              <span className="font-semibold text-primary">{endDate}</span>
+          {/* Continuous */}
+          <button
+            type="button"
+            onClick={() => onContinuousChange(true)}
+            className={cn(
+              "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+              isContinuous 
+                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20" 
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute top-2 right-2">
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px]">
+                <p className="text-xs">Para medicamentos de uso contínuo como pressão alta, diabetes, tireoide, etc.</p>
+              </TooltipContent>
+            </Tooltip>
+            <div className={cn(
+              "p-3 rounded-full",
+              isContinuous ? "bg-primary/20" : "bg-muted"
+            )}>
+              <Infinity className={cn("h-6 w-6", isContinuous ? "text-primary" : "text-muted-foreground")} />
             </div>
-          )}
+            <div className="text-center">
+              <p className="font-semibold text-sm">Uso contínuo</p>
+              <p className="text-xs text-muted-foreground">Sem data final</p>
+            </div>
+            {isContinuous && (
+              <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground text-xs">✓</span>
+              </div>
+            )}
+          </button>
         </div>
-      )}
 
-      <Button 
-        onClick={onComplete}
-        className="w-full h-11"
-      >
-        Continuar
-      </Button>
-    </div>
+        {/* Temporary treatment options */}
+        {!isContinuous && (
+          <div className="space-y-4 p-4 bg-muted/30 rounded-xl border animate-in fade-in slide-in-from-top-2 duration-300">
+            {/* Duration presets */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                Duração do tratamento
+                <Tooltip>
+                  <TooltipTrigger>
+                    <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Escolha uma opção rápida ou digite a duração exata abaixo</p>
+                  </TooltipContent>
+                </Tooltip>
+              </Label>
+              <div className="grid grid-cols-3 gap-2">
+                {durationPresets.map((preset) => (
+                  <Tooltip key={preset.days}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => onTreatmentDaysChange(preset.days)}
+                        className={cn(
+                          "py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                          treatmentDays === preset.days
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-background border hover:border-primary/50 hover:bg-primary/5"
+                        )}
+                      >
+                        {preset.label}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-xs">{preset.description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="start-date" className="text-sm flex items-center gap-2">
+                  Data de início
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Quando você começou ou vai começar o tratamento</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => onStartDateChange(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duration" className="text-sm flex items-center gap-2">
+                  Ou digite dias
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="text-xs">Número total de dias do tratamento</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  max="365"
+                  placeholder="Ex: 7, 14, 30"
+                  value={treatmentDays || ""}
+                  onChange={(e) => onTreatmentDaysChange(e.target.value ? parseInt(e.target.value) : null)}
+                />
+              </div>
+            </div>
+
+            {endDate && treatmentDays && (
+              <div className="flex items-center justify-between p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span className="text-sm">Término previsto:</span>
+                </div>
+                <span className="font-bold text-primary">{endDate}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Button 
+          onClick={onComplete}
+          className="w-full h-12 text-base font-semibold"
+        >
+          Continuar
+        </Button>
+      </div>
+    </TooltipProvider>
   );
 }
