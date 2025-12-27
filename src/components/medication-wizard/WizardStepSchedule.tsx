@@ -124,19 +124,48 @@ export function WizardStepSchedule({ data, updateData }: WizardStepScheduleProps
     <div className="space-y-6">
       {/* Duração do tratamento - agora primeiro */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-sm font-medium">{t('wizard.continuousUse')}</Label>
-            <p className="text-xs text-muted-foreground">{t('wizard.noEndDate')}</p>
-          </div>
-          <Switch
-            checked={data.continuousUse}
-            onCheckedChange={(checked) => updateData({ continuousUse: checked })}
-          />
+        <Label className="text-base font-semibold">{t('wizard.treatmentDuration') || 'Duração do Tratamento'}</Label>
+        
+        <div className="grid grid-cols-2 gap-2">
+          {/* Temporary */}
+          <button
+            type="button"
+            onClick={() => updateData({ continuousUse: false })}
+            className={cn(
+              "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all",
+              !data.continuousUse 
+                ? "border-primary bg-primary/10 shadow-md" 
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <Clock className={cn("h-5 w-5", !data.continuousUse ? "text-primary" : "text-muted-foreground")} />
+            <div className="text-center">
+              <p className="font-medium text-xs">{t('wizard.temporary') || 'Temporário'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('wizard.temporaryDesc') || 'Por período'}</p>
+            </div>
+          </button>
+
+          {/* Continuous */}
+          <button
+            type="button"
+            onClick={() => updateData({ continuousUse: true })}
+            className={cn(
+              "flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all",
+              data.continuousUse 
+                ? "border-primary bg-primary/10 shadow-md" 
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <Sun className={cn("h-5 w-5", data.continuousUse ? "text-primary" : "text-muted-foreground")} />
+            <div className="text-center">
+              <p className="font-medium text-xs">{t('wizard.continuousUse')}</p>
+              <p className="text-[10px] text-muted-foreground">{t('wizard.noEndDate')}</p>
+            </div>
+          </button>
         </div>
 
         {!data.continuousUse && (
-          <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg">
+          <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="space-y-1.5">
               <Label className="text-xs">{t('wizard.start')}</Label>
               <Input
