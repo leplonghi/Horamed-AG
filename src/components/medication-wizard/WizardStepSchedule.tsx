@@ -3,11 +3,17 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X, Clock, Sun, Moon, Sunrise, Sunset } from "lucide-react";
+import { Plus, X, Clock, Sun, Moon, Sunrise, Sunset, Bell, BellOff, Volume2, HelpCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface WizardStepScheduleProps {
   data: {
@@ -17,6 +23,7 @@ interface WizardStepScheduleProps {
     continuousUse: boolean;
     startDate?: string;
     endDate?: string;
+    notificationType?: "silent" | "push" | "alarm";
   };
   updateData: (data: Partial<any>) => void;
 }
@@ -113,6 +120,7 @@ export function WizardStepSchedule({ data, updateData }: WizardStepScheduleProps
   };
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       {/* Duração do tratamento - agora primeiro */}
       <div className="space-y-3">
@@ -306,6 +314,95 @@ export function WizardStepSchedule({ data, updateData }: WizardStepScheduleProps
           </Button>
         )}
       </div>
+
+      {/* Tipo de Notificação */}
+      <div className="space-y-3 pt-4 border-t">
+        <div className="flex items-center gap-2">
+          <Label className="text-base font-semibold">{t('wizard.notificationType') || 'Tipo de Alerta'}</Label>
+          <Tooltip>
+            <TooltipTrigger>
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[250px]">
+              <p className="text-xs">
+                {t('wizard.notificationTypeTooltip') || 'Escolha como você quer ser lembrado deste medicamento. Útil para horários de trabalho ou reuniões.'}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {/* Silent */}
+          <button
+            type="button"
+            onClick={() => updateData({ notificationType: "silent" })}
+            className={cn(
+              "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+              data.notificationType === "silent"
+                ? "border-primary bg-primary/10 shadow-md"
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <div className={cn(
+              "p-2.5 rounded-full",
+              data.notificationType === "silent" ? "bg-primary/20" : "bg-muted"
+            )}>
+              <BellOff className={cn("h-5 w-5", data.notificationType === "silent" ? "text-primary" : "text-muted-foreground")} />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-xs">{t('wizard.silent') || 'Silencioso'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('wizard.silentDesc') || 'Sem som'}</p>
+            </div>
+          </button>
+
+          {/* Push */}
+          <button
+            type="button"
+            onClick={() => updateData({ notificationType: "push" })}
+            className={cn(
+              "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+              (data.notificationType === "push" || !data.notificationType)
+                ? "border-primary bg-primary/10 shadow-md"
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <div className={cn(
+              "p-2.5 rounded-full",
+              (data.notificationType === "push" || !data.notificationType) ? "bg-primary/20" : "bg-muted"
+            )}>
+              <Bell className={cn("h-5 w-5", (data.notificationType === "push" || !data.notificationType) ? "text-primary" : "text-muted-foreground")} />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-xs">{t('wizard.push') || 'Notificação'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('wizard.pushDesc') || 'Apenas push'}</p>
+            </div>
+          </button>
+
+          {/* Alarm */}
+          <button
+            type="button"
+            onClick={() => updateData({ notificationType: "alarm" })}
+            className={cn(
+              "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all",
+              data.notificationType === "alarm"
+                ? "border-primary bg-primary/10 shadow-md"
+                : "border-border hover:border-primary/30 bg-background"
+            )}
+          >
+            <div className={cn(
+              "p-2.5 rounded-full",
+              data.notificationType === "alarm" ? "bg-primary/20" : "bg-muted"
+            )}>
+              <Volume2 className={cn("h-5 w-5", data.notificationType === "alarm" ? "text-primary" : "text-muted-foreground")} />
+            </div>
+            <div className="text-center">
+              <p className="font-medium text-xs">{t('wizard.alarm') || 'Alarme'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('wizard.alarmDesc') || 'Som alto'}</p>
+            </div>
+          </button>
+        </div>
+      </div>
     </div>
+    </TooltipProvider>
   );
 }
