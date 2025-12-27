@@ -19,7 +19,7 @@ import Navigation from "@/components/Navigation";
 import logo from "@/assets/horamed-logo-web.webp";
 
 type Category = "medicamento" | "vitamina" | "suplemento" | "outro";
-type FrequencyType = "daily" | "specific_days" | "weekly";
+type FrequencyType = "daily" | "specific_days" | "weekly" | "every_x_days" | "as_needed";
 
 interface FormData {
   name: string;
@@ -40,7 +40,7 @@ interface FormData {
 const INITIAL_DATA: FormData = {
   name: "",
   category: "medicamento",
-  isContinuous: true,
+  isContinuous: false,
   treatmentDays: null,
   startDate: new Date().toISOString().split('T')[0],
   frequency: "daily",
