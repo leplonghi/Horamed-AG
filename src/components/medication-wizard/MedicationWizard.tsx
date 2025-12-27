@@ -45,7 +45,7 @@ const INITIAL_DATA: MedicationData = {
   notes: "",
   frequency: "daily",
   times: ["08:00"],
-  continuousUse: true,
+  continuousUse: false,
   unitsTotal: 30,
   unitLabel: "comprimidos",
   lowStockThreshold: 5,
