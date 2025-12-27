@@ -1,8 +1,9 @@
 import { format, subDays, startOfDay } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Minus, Calendar } from "lucide-react";
 import { ConsumptionEntry } from "@/hooks/useStockProjection";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   itemName: string;
@@ -12,6 +13,9 @@ interface Props {
 }
 
 export function StockTimeline({ itemName, consumptionHistory, dailyAvg, daysRemaining }: Props) {
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'pt' ? ptBR : enUS;
+
   // Get last 7 days
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const date = subDays(new Date(), 6 - i);
@@ -35,7 +39,7 @@ export function StockTimeline({ itemName, consumptionHistory, dailyAvg, daysRema
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Calendar className="h-4 w-4" />
-          Consumo dos Últimos 7 Dias
+          {t('stockTimeline.last7Days')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -49,10 +53,12 @@ export function StockTimeline({ itemName, consumptionHistory, dailyAvg, daysRema
               <div key={date.toISOString()} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span className={`text-subtitle ${isToday ? 'font-semibold text-foreground' : ''}`}>
-                    {format(date, 'EEE', { locale: ptBR })}
+                    {format(date, 'EEE', { locale: dateLocale })}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {total > 0 ? `${total} ${total === 1 ? 'dose' : 'doses'}` : 'Nenhuma dose'}
+                    {total > 0 
+                      ? `${total} ${total === 1 ? t('stockTimeline.dose') : t('stockTimeline.doses')}` 
+                      : t('stockTimeline.noDose')}
                   </span>
                 </div>
                 <div className="relative h-6 bg-muted rounded-full overflow-hidden">
@@ -88,20 +94,20 @@ export function StockTimeline({ itemName, consumptionHistory, dailyAvg, daysRema
         {/* Summary */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t">
           <div className="space-y-1">
-            <p className="text-tiny text-muted-foreground">Média diária</p>
+            <p className="text-tiny text-muted-foreground">{t('stockTimeline.dailyAvg')}</p>
             <p className="text-lg font-semibold">
-              {dailyAvg.toFixed(1)} doses
+              {dailyAvg.toFixed(1)} {t('stockTimeline.doses')}
             </p>
           </div>
           {daysRemaining !== null && (
             <div className="space-y-1">
-              <p className="text-tiny text-muted-foreground">Duração estimada</p>
+              <p className="text-tiny text-muted-foreground">{t('stockTimeline.estimatedDuration')}</p>
               <p className={`text-lg font-semibold ${
                 daysRemaining <= 7 ? 'text-destructive' :
                 daysRemaining <= 14 ? 'text-warning' :
                 'text-success'
               }`}>
-                ~{daysRemaining} dias
+                ~{daysRemaining} {t('stockTimeline.days')}
               </p>
             </div>
           )}
@@ -111,19 +117,19 @@ export function StockTimeline({ itemName, consumptionHistory, dailyAvg, daysRema
         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground border-t pt-3">
           <div className="flex items-center gap-1">
             <span>✓</span>
-            <span>Tomado</span>
+            <span>{t('stockTimeline.taken')}</span>
           </div>
           <div className="flex items-center gap-1">
             <span>⚙</span>
-            <span>Ajustado</span>
+            <span>{t('stockTimeline.adjusted')}</span>
           </div>
           <div className="flex items-center gap-1">
             <span>📦</span>
-            <span>Reabastecido</span>
+            <span>{t('stockTimeline.refilled')}</span>
           </div>
           <div className="flex items-center gap-1">
             <span>⚠</span>
-            <span>Perdido</span>
+            <span>{t('stockTimeline.lost')}</span>
           </div>
         </div>
       </CardContent>

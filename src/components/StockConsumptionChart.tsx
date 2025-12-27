@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   itemName: string;
@@ -21,22 +22,25 @@ export function StockConsumptionChart({
   unitsLeft,
   unitsTotal,
 }: Props) {
+  const { t } = useLanguage();
   const missedCount = scheduledCount - takenCount;
   const stockPercentage = (unitsLeft / unitsTotal) * 100;
+
+  const doseWord = missedCount === 1 ? t('stockTimeline.dose') : t('stockTimeline.doses');
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <Activity className="h-4 w-4" />
-          Análise de Consumo (7 dias)
+          {t('stockChart.analysisTitle')}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Adherence Overview */}
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-subtitle">Seu progresso</span>
+            <span className="text-subtitle">{t('stockChart.yourProgress')}</span>
             <span className={`font-semibold ${
               adherence >= 80 ? 'text-success' :
               adherence >= 60 ? 'text-warning' :
@@ -47,9 +51,9 @@ export function StockConsumptionChart({
           </div>
           <Progress value={adherence} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>✓ {takenCount} tomadas</span>
+            <span>✓ {takenCount} {t('stockChart.taken')}</span>
             {missedCount > 0 && (
-              <span className="text-warning">⚠ {missedCount} perdidas</span>
+              <span className="text-warning">⚠ {missedCount} {t('stockChart.missed')}</span>
             )}
           </div>
         </div>
@@ -60,42 +64,39 @@ export function StockConsumptionChart({
             {trend === 'increasing' && (
               <>
                 <TrendingUp className="h-4 w-4 text-warning" />
-                <span className="text-sm font-medium">Consumo aumentando</span>
+                <span className="text-sm font-medium">{t('stockChart.increasing')}</span>
               </>
             )}
             {trend === 'stable' && (
               <>
                 <Minus className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Consumo estável</span>
+                <span className="text-sm font-medium">{t('stockChart.stable')}</span>
               </>
             )}
             {trend === 'decreasing' && (
               <>
                 <TrendingDown className="h-4 w-4 text-success" />
-                <span className="text-sm font-medium">Consumo diminuindo</span>
+                <span className="text-sm font-medium">{t('stockChart.decreasing')}</span>
               </>
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            {trend === 'increasing' && 
-              'Você está tomando mais doses recentemente. Verifique se está seguindo a prescrição corretamente.'}
-            {trend === 'stable' && 
-              'Seu consumo está consistente. Continue assim!'}
-            {trend === 'decreasing' && 
-              'Você está tomando menos doses recentemente. Não se esqueça do tratamento!'}
+            {trend === 'increasing' && t('stockChart.increasingTip')}
+            {trend === 'stable' && t('stockChart.stableTip')}
+            {trend === 'decreasing' && t('stockChart.decreasingTip')}
           </p>
         </div>
 
         {/* Stock Status */}
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-subtitle">Estoque restante</span>
+            <span className="text-subtitle">{t('stockChart.remainingStock')}</span>
             <span className={`font-semibold ${
               stockPercentage <= 10 ? 'text-destructive' :
               stockPercentage <= 25 ? 'text-warning' :
               'text-success'
             }`}>
-              {unitsLeft} de {unitsTotal}
+              {unitsLeft} {t('stock.of')} {unitsTotal}
             </span>
           </div>
           <Progress value={stockPercentage} className="h-2" />
@@ -105,8 +106,7 @@ export function StockConsumptionChart({
         {adherence < 80 && missedCount > 0 && (
           <div className="p-3 bg-warning/10 border border-warning/20 rounded-lg">
             <p className="text-xs text-warning-foreground">
-              <strong>💡 Dica:</strong> Você perdeu {missedCount} {missedCount === 1 ? 'dose' : 'doses'} essa semana.
-              Configure lembretes para não esquecer!
+              <strong>💡 {t('stockChart.tipLabel')}</strong> {t('stockChart.missedTip', { count: String(missedCount), word: doseWord })}
             </p>
           </div>
         )}
