@@ -12,15 +12,32 @@ import { Switch } from "@/components/ui/switch";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import NotificationMetrics from "@/components/NotificationMetrics";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ALARM_SOUNDS = [
-  { id: "beep", name: "Beep Simples", url: "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLTgjMGHm7A7+OZUQ0PVqzn7qxaFg1Lp+LyvmohBSx+zPLTgjIFHm3A7+GZUQ0PVqzn7qxaFg1" },
-  { id: "bell", name: "Sino", url: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" },
-  { id: "chime", name: "Chime Suave", url: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3" },
-  { id: "alert", name: "Alerta Forte", url: "https://assets.mixkit.co/active_storage/sfx/2871/2871-preview.mp3" },
+  { id: "beep", nameKey: "beepSimple", url: "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLTgjMGHm7A7+OZUQ0PVqzn7qxaFg1Lp+LyvmohBSx+zPLTgjIFHm3A7+GZUQ0PVqzn7qxaFg1" },
+  { id: "bell", nameKey: "bell", url: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" },
+  { id: "chime", nameKey: "chimeSoft", url: "https://assets.mixkit.co/active_storage/sfx/2870/2870-preview.mp3" },
+  { id: "alert", nameKey: "alertStrong", url: "https://assets.mixkit.co/active_storage/sfx/2871/2871-preview.mp3" },
 ];
 
+const SOUND_NAMES: Record<string, Record<string, string>> = {
+  pt: {
+    beepSimple: "Beep Simples",
+    bell: "Sino",
+    chimeSoft: "Chime Suave",
+    alertStrong: "Alerta Forte",
+  },
+  en: {
+    beepSimple: "Simple Beep",
+    bell: "Bell",
+    chimeSoft: "Soft Chime",
+    alertStrong: "Strong Alert",
+  }
+};
+
 export default function AlarmSettings() {
+  const { t, language } = useLanguage();
   const [alarmEnabled, setAlarmEnabled] = useState(true);
   const [selectedSound, setSelectedSound] = useState("beep");
   const [duration, setDuration] = useState([30]);
@@ -53,7 +70,7 @@ export default function AlarmSettings() {
       alertMinutes: alertMinutes[0],
     };
     localStorage.setItem("alarmSettings", JSON.stringify(settings));
-    toast.success("Configurações salvas!");
+    toast.success(t('alarm.saved'));
   };
 
   const requestNotificationPermission = async () => {
@@ -61,9 +78,9 @@ export default function AlarmSettings() {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
       if (permission === "granted") {
-        toast.success("Notificações ativadas!");
+        toast.success(t('alarm.notifEnabled'));
       } else {
-        toast.error("Notificações negadas. Por favor, ative nas configurações do navegador.");
+        toast.error(t('alarm.notifDenied'));
       }
     }
   };
@@ -81,18 +98,18 @@ export default function AlarmSettings() {
         await LocalNotifications.schedule({
           notifications: [
             {
-              title: "🔔 Teste de Notificação",
-              body: "Assim você será notificado sobre seus remédios!",
+              title: t('alarm.testTitle'),
+              body: t('alarm.testBody'),
               id: Math.floor(Math.random() * 100000),
               schedule: { at: new Date(Date.now() + 100) },
               sound: undefined,
             },
           ],
         });
-        toast.success("Notificação de teste enviada!");
+        toast.success(t('alarm.testSent'));
       } catch (error) {
         console.error("Error testing notification:", error);
-        toast.error("Erro ao testar notificação");
+        toast.error(t('alarm.testError'));
       }
     }
 
@@ -104,11 +121,11 @@ export default function AlarmSettings() {
     setTestAudio(audio);
 
     audio.play().then(() => {
-      toast.info("Teste de alarme", {
-        description: `Tocando por ${duration[0]} segundos`,
+      toast.info(t('alarm.testPlaying'), {
+        description: t('alarm.playingFor', { seconds: duration[0].toString() }),
         duration: duration[0] * 1000,
         action: {
-          label: "Parar",
+          label: t('alarm.stop'),
           onClick: () => {
             audio.pause();
             audio.currentTime = 0;
@@ -123,7 +140,7 @@ export default function AlarmSettings() {
       }, duration[0] * 1000);
     }).catch((error) => {
       console.error("Error playing alarm:", error);
-      toast.error("Erro ao tocar alarme. Verifique as permissões de áudio.");
+      toast.error(t('alarm.playError'));
     });
   };
 
@@ -131,7 +148,7 @@ export default function AlarmSettings() {
     if (testAudio) {
       testAudio.pause();
       testAudio.currentTime = 0;
-      toast.success("Alarme parado");
+      toast.success(t('alarm.stopped'));
     }
   };
 
@@ -143,8 +160,8 @@ export default function AlarmSettings() {
         <div className="flex items-center gap-3 mb-6">
           <Bell className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Configurações de Alarme</h1>
-            <p className="text-muted-foreground">Personalize seus alertas de medicação</p>
+            <h1 className="text-3xl font-bold">{t('alarm.title')}</h1>
+            <p className="text-muted-foreground">{t('alarm.subtitle')}</p>
           </div>
         </div>
 
@@ -154,12 +171,12 @@ export default function AlarmSettings() {
             <div className="flex items-start gap-4">
               <AlertCircle className="h-6 w-6 text-warning mt-1" />
               <div className="flex-1">
-                <h3 className="font-semibold mb-2">Ativar Notificações</h3>
+                <h3 className="font-semibold mb-2">{t('alarm.permRequired')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Para receber alertas de medicação, você precisa permitir notificações.
+                  {t('alarm.permDesc')}
                 </p>
                 <Button onClick={requestNotificationPermission} variant="outline">
-                  Permitir Notificações
+                  {t('alarm.allowNotif')}
                 </Button>
               </div>
             </div>
@@ -170,9 +187,9 @@ export default function AlarmSettings() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <Label className="text-lg font-semibold">Alarme Ativo</Label>
+              <Label className="text-lg font-semibold">{t('alarm.enableAlarm')}</Label>
               <p className="text-sm text-muted-foreground">
-                Ative ou desative todos os alarmes
+                {language === 'pt' ? 'Ative ou desative todos os alarmes' : 'Enable or disable all alarms'}
               </p>
             </div>
             <Switch
@@ -186,16 +203,16 @@ export default function AlarmSettings() {
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Volume2 className="h-5 w-5 text-primary" />
-            <Label className="text-lg font-semibold">Tipo de Toque</Label>
+            <Label className="text-lg font-semibold">{t('alarm.sound')}</Label>
           </div>
           <Select value={selectedSound} onValueChange={setSelectedSound}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione um som" />
+              <SelectValue placeholder={language === 'pt' ? 'Selecione um som' : 'Select a sound'} />
             </SelectTrigger>
             <SelectContent>
               {ALARM_SOUNDS.map((sound) => (
                 <SelectItem key={sound.id} value={sound.id}>
-                  {sound.name}
+                  {SOUND_NAMES[language]?.[sound.nameKey] || SOUND_NAMES.en[sound.nameKey]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -206,12 +223,12 @@ export default function AlarmSettings() {
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            <Label className="text-lg font-semibold">Duração do Alarme</Label>
+            <Label className="text-lg font-semibold">{t('alarm.duration')}</Label>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Tempo de toque</span>
-              <span className="font-semibold">{duration[0]} segundos</span>
+              <span className="text-muted-foreground">{language === 'pt' ? 'Tempo de toque' : 'Ring time'}</span>
+              <span className="font-semibold">{t('alarm.durationSeconds', { seconds: duration[0].toString() })}</span>
             </div>
             <Slider
               value={duration}
@@ -227,12 +244,12 @@ export default function AlarmSettings() {
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Bell className="h-5 w-5 text-primary" />
-            <Label className="text-lg font-semibold">Antecedência do Alerta</Label>
+            <Label className="text-lg font-semibold">{t('alarm.alertBefore')}</Label>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Alertar com</span>
-              <span className="font-semibold">{alertMinutes[0]} minutos de antecedência</span>
+              <span className="text-muted-foreground">{language === 'pt' ? 'Alertar com' : 'Alert with'}</span>
+              <span className="font-semibold">{t('alarm.alertMinutes', { minutes: alertMinutes[0].toString() })}</span>
             </div>
             <Slider
               value={alertMinutes}
@@ -242,7 +259,7 @@ export default function AlarmSettings() {
               step={5}
             />
             <p className="text-xs text-muted-foreground">
-              0 = apenas no horário exato
+              {language === 'pt' ? '0 = apenas no horário exato' : '0 = only at exact time'}
             </p>
           </div>
         </Card>
@@ -251,10 +268,10 @@ export default function AlarmSettings() {
         <div className="grid gap-3">
           <Button onClick={testAlarm} className="w-full" size="lg" disabled={!alarmEnabled}>
             <Volume2 className="h-5 w-5 mr-2" />
-            Testar Alarme
+            {t('alarm.testAlarm')}
           </Button>
           <Button onClick={stopTest} variant="outline" className="w-full">
-            Parar Teste
+            {t('alarm.stopTest')}
           </Button>
         </div>
 
@@ -263,7 +280,7 @@ export default function AlarmSettings() {
 
         {/* Save Button */}
         <Button onClick={saveSettings} className="w-full" size="lg" variant="default">
-          Salvar Configurações
+          {t('alarm.saveSettings')}
         </Button>
 
         {Capacitor.isNativePlatform() && (
@@ -272,10 +289,10 @@ export default function AlarmSettings() {
               <Smartphone className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">
-                  ✅ Notificações Nativas Ativas
+                  ✅ {t('alarm.nativeNotif')}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Você receberá notificações push mesmo com o app fechado ou em segundo plano.
+                  {t('alarm.nativeDesc')}
                 </p>
               </div>
             </div>
@@ -283,7 +300,7 @@ export default function AlarmSettings() {
         )}
 
         <p className="text-center text-sm text-muted-foreground">
-          As configurações são salvas localmente no seu dispositivo
+          {language === 'pt' ? 'As configurações são salvas localmente no seu dispositivo' : 'Settings are saved locally on your device'}
         </p>
       </main>
 
