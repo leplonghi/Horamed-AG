@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Clock, Copy } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PrescriptionStatusBadgeProps {
   status: 'valid' | 'expiring_soon' | 'expired';
@@ -16,43 +17,45 @@ export function PrescriptionStatusBadge({
   isPurchased,
   className 
 }: PrescriptionStatusBadgeProps) {
+  const { t } = useLanguage();
+  
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
-      {/* Status de validade */}
+      {/* Validity status */}
       {status === 'valid' && !isPurchased && (
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Válida
+          {t('prescription.valid')}
         </Badge>
       )}
       
       {status === 'expiring_soon' && !isPurchased && (
         <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
           <Clock className="h-3 w-3 mr-1" />
-          Vence em {daysUntilExpiry} {daysUntilExpiry === 1 ? 'dia' : 'dias'}
+          {t('prescription.expiresIn')} {daysUntilExpiry} {daysUntilExpiry === 1 ? t('prescription.day') : t('prescription.days')}
         </Badge>
       )}
       
       {status === 'expired' && !isPurchased && (
         <Badge variant="destructive">
           <AlertTriangle className="h-3 w-3 mr-1" />
-          Vencida
+          {t('prescription.expired')}
         </Badge>
       )}
 
-      {/* Status de compra */}
+      {/* Purchase status */}
       {isPurchased && (
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Utilizada
+          {t('prescription.used')}
         </Badge>
       )}
 
-      {/* Indicador de duplicata */}
+      {/* Duplicate indicator */}
       {isDuplicate && (
         <Badge variant="secondary">
           <Copy className="h-3 w-3 mr-1" />
-          Receita Repetida
+          {t('prescription.duplicate')}
         </Badge>
       )}
     </div>

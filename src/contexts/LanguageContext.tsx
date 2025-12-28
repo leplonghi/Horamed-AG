@@ -1748,6 +1748,15 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreDoc.activeIngredient': 'Princípio Ativo',
     'cofreDoc.addedToRoutine': 'Já adicionado à rotina',
     'cofreDoc.doctorNotes': 'Observações do Médico',
+    
+    // Prescription Status Badge
+    'prescription.valid': 'Válida',
+    'prescription.expired': 'Vencida',
+    'prescription.expiresIn': 'Vence em',
+    'prescription.day': 'dia',
+    'prescription.days': 'dias',
+    'prescription.used': 'Utilizada',
+    'prescription.duplicate': 'Receita Repetida',
     'cofreDoc.viewInRoutine': 'Ver na Rotina de Medicamentos',
     'cofreDoc.normalValue': 'Normal',
     'cofreDoc.alteredValue': 'Alterado',
@@ -3944,6 +3953,15 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.category.vacinacao': 'Vaccination Card',
     'cofre.category.consulta': 'Medical Appointment',
     'cofre.category.outro': 'Document',
+    
+    // Prescription Status Badge
+    'prescription.valid': 'Valid',
+    'prescription.expired': 'Expired',
+    'prescription.expiresIn': 'Expires in',
+    'prescription.day': 'day',
+    'prescription.days': 'days',
+    'prescription.used': 'Used',
+    'prescription.duplicate': 'Repeat Prescription',
     
     // Travel Mode
     'travel.title': 'Travel Mode',
