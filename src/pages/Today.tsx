@@ -37,6 +37,7 @@ import GuidedTour from "@/components/GuidedTour";
 import ImprovedClaraButton from "@/components/ImprovedClaraButton";
 import HealthAssistantChat from "@/components/HealthAssistantChat";
 import MiniWeekCalendar from "@/components/MiniWeekCalendar";
+import LowStockQuickRefill from "@/components/LowStockQuickRefill";
 
 interface DoseItem {
   id: string;
@@ -384,6 +385,9 @@ export default function Today() {
               />
             </div>
           )}
+
+          {/* Low Stock Quick Refill - Simpler way to restock */}
+          {hasAnyItems && <LowStockQuickRefill profileId={activeProfile?.id} />}
 
           {/* Clara Suggestions - Proactive AI suggestions */}
           {hasAnyItems && (
