@@ -3,6 +3,7 @@ import { Sparkles, Plus, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   onComplete: () => void;
@@ -11,6 +12,7 @@ interface Props {
 
 export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleAddItem = () => {
     onComplete(); // Save preferences
@@ -37,7 +39,7 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          Tudo pronto!
+          {t('onboardingStep4.title')}
         </motion.h1>
 
         <motion.p
@@ -46,7 +48,7 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          Vamos adicionar seu primeiro item agora ou você pode explorar o app primeiro
+          {t('onboardingStep4.subtitle')}
         </motion.p>
       </div>
 
@@ -63,9 +65,9 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
                 <Plus className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">Adicionar Agora</h3>
+                <h3 className="font-semibold text-lg">{t('onboardingStep4.addNow')}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Configure seu primeiro item em 3 passos simples
+                  {t('onboardingStep4.addNowDesc')}
                 </p>
               </div>
             </div>
@@ -75,7 +77,7 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
               onClick={handleAddItem}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar Primeiro Item
+              {t('onboardingStep4.addFirstItem')}
             </Button>
           </div>
         </Card>
@@ -87,9 +89,9 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
                 <Eye className="h-6 w-6 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">Ver Como Funciona</h3>
+                <h3 className="font-semibold text-lg">{t('onboardingStep4.seeHow')}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Demonstração interativa de 15 segundos
+                  {t('onboardingStep4.seeHowDesc')}
                 </p>
               </div>
             </div>
@@ -100,7 +102,7 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
               onClick={onShowDemo}
             >
               <Eye className="h-4 w-4 mr-2" />
-              Ver Demonstração
+              {t('onboardingStep4.seeDemo')}
             </Button>
           </div>
         </Card>
@@ -113,7 +115,7 @@ export default function OnboardingStep4({ onComplete, onShowDemo }: Props) {
         transition={{ delay: 0.6 }}
       >
         <Button variant="ghost" onClick={onComplete}>
-          Explorar o app
+          {t('onboardingStep4.explore')}
         </Button>
       </motion.div>
     </div>

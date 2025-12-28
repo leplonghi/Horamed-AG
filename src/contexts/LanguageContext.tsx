@@ -2535,6 +2535,26 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreManual.notes': 'Observações',
     'cofreManual.notesPlaceholder': 'Detalhes adicionais...',
     'cofreManual.save': 'Salvar Documento',
+    
+    // Onboarding Step 4
+    'onboardingStep4.title': 'Tudo pronto!',
+    'onboardingStep4.subtitle': 'Vamos adicionar seu primeiro item agora ou você pode explorar o app primeiro',
+    'onboardingStep4.addNow': 'Adicionar Agora',
+    'onboardingStep4.addNowDesc': 'Configure seu primeiro item em 3 passos simples',
+    'onboardingStep4.addFirstItem': 'Adicionar Primeiro Item',
+    'onboardingStep4.seeHow': 'Ver Como Funciona',
+    'onboardingStep4.seeHowDesc': 'Demonstração interativa de 15 segundos',
+    'onboardingStep4.seeDemo': 'Ver Demonstração',
+    'onboardingStep4.explore': 'Explorar o app',
+    
+    // Onboarding Demo
+    'onboardingDemo.today': 'Hoje',
+    'onboardingDemo.mark': 'Marcar',
+    'onboardingDemo.streak': 'Sequência de {days} dias! 🔥',
+    'onboardingDemo.keepGoing': 'Continue assim para manter seu compromisso',
+    'onboardingDemo.experienceTitle': 'Assim será sua experiência',
+    'onboardingDemo.experienceDesc': 'Lembretes automáticos, acompanhamento visual e conquistas para te manter motivado',
+    'onboardingDemo.startingIn': 'Começando em {count} segundo{plural}...',
   },
   en: {
     // Navigation
@@ -5156,6 +5176,26 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreManual.notes': 'Notes',
     'cofreManual.notesPlaceholder': 'Additional details...',
     'cofreManual.save': 'Save Document',
+    
+    // Onboarding Step 4
+    'onboardingStep4.title': 'All set!',
+    'onboardingStep4.subtitle': "Let's add your first item now or you can explore the app first",
+    'onboardingStep4.addNow': 'Add Now',
+    'onboardingStep4.addNowDesc': 'Set up your first item in 3 simple steps',
+    'onboardingStep4.addFirstItem': 'Add First Item',
+    'onboardingStep4.seeHow': 'See How It Works',
+    'onboardingStep4.seeHowDesc': 'Interactive 15-second demo',
+    'onboardingStep4.seeDemo': 'See Demo',
+    'onboardingStep4.explore': 'Explore the app',
+    
+    // Onboarding Demo
+    'onboardingDemo.today': 'Today',
+    'onboardingDemo.mark': 'Mark',
+    'onboardingDemo.streak': '{days}-day streak! 🔥',
+    'onboardingDemo.keepGoing': 'Keep going to maintain your commitment',
+    'onboardingDemo.experienceTitle': 'This is your experience',
+    'onboardingDemo.experienceDesc': 'Automatic reminders, visual tracking, and achievements to keep you motivated',
+    'onboardingDemo.startingIn': 'Starting in {count} second{plural}...',
   }
 };
 
