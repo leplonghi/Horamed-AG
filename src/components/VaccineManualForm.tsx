@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,40 +15,31 @@ interface VaccineManualFormProps {
   onClose: () => void;
 }
 
-// Vacinas do Calendário Nacional (Ministério da Saúde)
-const ADULT_VACCINES = [
-  { name: "dT (Difteria/Tétano)", prevention: "Difteria e Tétano" },
-  { name: "dTpa (Tríplice Acelular)", prevention: "Difteria, Tétano e Coqueluche" },
-  { name: "Hepatite B", prevention: "Hepatite B" },
-  { name: "Febre Amarela", prevention: "Febre Amarela" },
-  { name: "Tríplice Viral (SCR)", prevention: "Sarampo, Caxumba e Rubéola" },
-  { name: "Influenza (Gripe)", prevention: "Influenza" },
-  { name: "Pneumocócica 23-valente", prevention: "Pneumonia" },
-  { name: "Meningocócica ACWY", prevention: "Meningite" },
-  { name: "COVID-19", prevention: "COVID-19" },
+// Vaccine keys for translation
+const ADULT_VACCINE_KEYS = [
+  "dt", "dtpa", "hepatiteB", "febreAmarela", "tripliceViral", 
+  "influenza", "pneumococica23", "meningococicaACWY", "covid19"
 ];
 
-const CHILD_VACCINES = [
-  { name: "BCG", prevention: "Tuberculose" },
-  { name: "Hepatite B", prevention: "Hepatite B" },
-  { name: "Pentavalente", prevention: "Difteria, Tétano, Coqueluche, Hepatite B, Hib" },
-  { name: "VIP/VOP (Poliomielite)", prevention: "Poliomielite" },
-  { name: "Rotavírus", prevention: "Rotavírus" },
-  { name: "Pneumocócica 10-valente", prevention: "Pneumonia" },
-  { name: "Meningocócica C", prevention: "Meningite C" },
-  { name: "Febre Amarela", prevention: "Febre Amarela" },
-  { name: "Tríplice Viral (SCR)", prevention: "Sarampo, Caxumba e Rubéola" },
-  { name: "Tetraviral", prevention: "Sarampo, Caxumba, Rubéola e Varicela" },
-  { name: "Hepatite A", prevention: "Hepatite A" },
-  { name: "DTP", prevention: "Difteria, Tétano e Coqueluche" },
-  { name: "Varicela", prevention: "Varicela (Catapora)" },
-  { name: "HPV", prevention: "Papilomavírus Humano" },
+const CHILD_VACCINE_KEYS = [
+  "bcg", "hepatiteBChild", "pentavalente", "vipvop", "rotavirus",
+  "pneumococica10", "meningococicaC", "febreAmarelaChild", "tripliceViralChild",
+  "tetraviral", "hepatiteA", "dtp", "varicela", "hpv"
 ];
 
 export default function VaccineManualForm({ profileId, vaccineType, onClose }: VaccineManualFormProps) {
   const { t } = useLanguage();
   const createMutation = useCreateVaccinationRecord();
-  const vaccines = vaccineType === 'adulto' ? ADULT_VACCINES : CHILD_VACCINES;
+  
+  // Build translated vaccine list
+  const vaccines = useMemo(() => {
+    const keys = vaccineType === 'adulto' ? ADULT_VACCINE_KEYS : CHILD_VACCINE_KEYS;
+    return keys.map(key => ({
+      name: t(`vaccines.vaccine.${key}.name`),
+      prevention: t(`vaccines.vaccine.${key}.prevention`),
+      key
+    }));
+  }, [vaccineType, t]);
 
   const [formData, setFormData] = useState({
     vaccine_name: "",
@@ -63,11 +54,11 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
     notes: "",
   });
 
-  const handleVaccineSelect = (name: string) => {
-    const vaccine = vaccines.find(v => v.name === name);
+  const handleVaccineSelect = (key: string) => {
+    const vaccine = vaccines.find(v => v.key === key);
     setFormData({
       ...formData,
-      vaccine_name: name,
+      vaccine_name: vaccine?.name || key,
       disease_prevention: vaccine?.prevention || "",
     });
   };
@@ -103,7 +94,7 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
               </SelectTrigger>
               <SelectContent>
                 {vaccines.map((vaccine) => (
-                  <SelectItem key={vaccine.name} value={vaccine.name}>
+                  <SelectItem key={vaccine.key} value={vaccine.key}>
                     {vaccine.name}
                   </SelectItem>
                 ))}
