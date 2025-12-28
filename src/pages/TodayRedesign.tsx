@@ -41,6 +41,7 @@ import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
 import TutorialHint from "@/components/TutorialHint";
 import { trackDoseTaken } from "@/hooks/useAppMetrics";
 import { OverdueDosesBanner } from "@/components/OverdueDosesBanner";
+import { useLanguage } from "@/contexts/LanguageContext";
 interface TimelineItem {
   id: string;
   time: string;
@@ -74,6 +75,7 @@ export default function TodayRedesign() {
   const {
     activeProfile
   } = useUserProfiles();
+  const { t, language } = useLanguage();
   useSmartRedirect();
   const {
     suggestions
@@ -139,7 +141,7 @@ export default function TodayRedesign() {
       .update({ tutorial_flags: newFlags })
       .eq("user_id", user.id);
 
-    toast.success(newState ? "Tutoriais ativados" : "Tutoriais desativados");
+    toast.success(newState ? t('todayRedesign.tutorialsEnabled') : t('todayRedesign.tutorialsDisabled'));
   };
 
   // Check if user has supplements
@@ -325,8 +327,8 @@ export default function TodayRedesign() {
           id: apt.id,
           time: format(new Date(apt.data_consulta), "HH:mm"),
           type: "appointment",
-          title: apt.especialidade || "Consulta Médica",
-          subtitle: apt.medico_nome ? `Dr(a). ${apt.medico_nome}` : apt.local,
+          title: apt.especialidade || t('todayRedesign.appointmentDefault'),
+          subtitle: apt.medico_nome ? t('todayRedesign.doctorPrefix', { name: apt.medico_nome }) : apt.local,
           status: apt.status === "realizada" ? "done" : "pending"
         });
       });
@@ -353,67 +355,100 @@ export default function TodayRedesign() {
       }
     } catch (error) {
       console.error("Error loading data:", error);
-      toast.error("Erro ao carregar dados");
+      toast.error(t('todayRedesign.loadError'));
     } finally {
       setLoading(false);
     }
-  }, [activeProfile]);
+  }, [activeProfile, t]);
   useEffect(() => {
     const hour = new Date().getHours();
     let quotes: string[] = [];
-    
-    // Determina se é perfil próprio ou de familiar
-    // Se ainda não carregou o perfil, assume que é próprio (mais comum)
+
+    // Determine whether this is the user's own profile or a family profile
     const isSelf = !activeProfile || activeProfile.relationship === 'self';
-    const profileName = activeProfile?.name || userName || "você";
-    
+    const profileName = activeProfile?.name || userName || (language === 'pt' ? "você" : "you");
+
     if (hour < 12) {
-      setGreeting("Bom dia");
+      setGreeting(t('today.goodMorning'));
       if (isSelf) {
-        quotes = [
-          "Vamos começar o dia cuidando da sua saúde!",
-          "Suas doses da manhã estão te esperando.",
-          "Bom dia! Como está se sentindo hoje?"
-        ];
+        quotes = language === 'pt'
+          ? [
+              "Vamos começar o dia cuidando da sua saúde!",
+              "Suas doses da manhã estão te esperando.",
+              "Bom dia! Como está se sentindo hoje?"
+            ]
+          : [
+              "Let's start the day taking care of your health!",
+              "Your morning doses are waiting for you.",
+              "Good morning! How are you feeling today?"
+            ];
       } else {
-        quotes = [
-          `${profileName} já tomou os remédios da manhã?`,
-          `Confira se ${profileName} está em dia com os medicamentos.`
-        ];
+        quotes = language === 'pt'
+          ? [
+              `${profileName} já tomou os remédios da manhã?`,
+              `Confira se ${profileName} está em dia com os medicamentos.`
+            ]
+          : [
+              `Has ${profileName} taken the morning meds?`,
+              `Check if ${profileName} is up to date with medications.`
+            ];
       }
     } else if (hour < 18) {
-      setGreeting("Boa tarde");
+      setGreeting(t('today.goodAfternoon'));
       if (isSelf) {
-        quotes = [
-          "Continue firme! Você está cuidando bem de você.",
-          "Mantenha o foco na sua saúde.",
-          "Não esqueça das doses da tarde!"
-        ];
+        quotes = language === 'pt'
+          ? [
+              "Continue firme! Você está cuidando bem de você.",
+              "Mantenha o foco na sua saúde.",
+              "Não esqueça das doses da tarde!"
+            ]
+          : [
+              "Keep going — you're taking great care of yourself.",
+              "Stay focused on your health.",
+              "Don't forget your afternoon doses!"
+            ];
       } else {
-        quotes = [
-          `Como está ${profileName}? Confira as doses.`,
-          `${profileName} tomou o remédio do almoço?`
-        ];
+        quotes = language === 'pt'
+          ? [
+              `Como está ${profileName}? Confira as doses.`,
+              `${profileName} tomou o remédio do almoço?`
+            ]
+          : [
+              `How is ${profileName}? Check today's doses.`,
+              `Did ${profileName} take the midday dose?`
+            ];
       }
     } else {
-      setGreeting("Boa noite");
+      setGreeting(t('today.goodEvening'));
       if (isSelf) {
-        quotes = [
-          "Não esqueça dos remédios da noite!",
-          "Finalize o dia em dia com sua saúde.",
-          "Quase lá! Últimas doses do dia."
-        ];
+        quotes = language === 'pt'
+          ? [
+              "Não esqueça dos remédios da noite!",
+              "Finalize o dia em dia com sua saúde.",
+              "Quase lá! Últimas doses do dia."
+            ]
+          : [
+              "Don't forget your evening meds!",
+              "Finish the day with your health on track.",
+              "Almost there — last doses of the day."
+            ];
       } else {
-        quotes = [
-          `${profileName} já tomou os remédios da noite?`,
-          `Confirme as doses de ${profileName} antes de dormir.`
-        ];
+        quotes = language === 'pt'
+          ? [
+              `${profileName} já tomou os remédios da noite?`,
+              `Confirme as doses de ${profileName} antes de dormir.`
+            ]
+          : [
+              `Has ${profileName} taken the evening meds?`,
+              `Confirm ${profileName}'s doses before bedtime.`
+            ];
       }
     }
+
     setMotivationalQuote(quotes[Math.floor(Math.random() * quotes.length)]);
     loadData(selectedDate);
     loadEventCounts();
-  }, [loadData, loadEventCounts, selectedDate, activeProfile, userName]);
+  }, [loadData, loadEventCounts, selectedDate, activeProfile, userName, language, t]);
   useEffect(() => {
     if (activeProfile) {
       setLoading(true);
@@ -446,7 +481,7 @@ export default function TodayRedesign() {
         data: stockData
       } = await supabase.from("stock").select("units_left").eq("item_id", itemId).single();
       if (stockData && stockData.units_left === 0) {
-        toast.error("Estoque zerado! Reabasteça antes de registrar dose.");
+        toast.error(t('todayRedesign.stockEmpty'));
         return;
       }
       await supabase.from("dose_instances").update({
@@ -469,7 +504,7 @@ export default function TodayRedesign() {
       criticalAlerts.refresh();
     } catch (error) {
       console.error("Error marking dose:", error);
-      toast.error("Erro ao confirmar dose");
+      toast.error(t('todayRedesign.confirmDoseError'));
     }
   };
   const snoozeDose = async (doseId: string, itemName: string) => {
@@ -483,12 +518,12 @@ export default function TodayRedesign() {
         await supabase.from("dose_instances").update({
           due_at: newDueAt.toISOString()
         }).eq("id", doseId);
-        toast.success(`${itemName} adiado por 15 minutos`);
+        toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
         loadData(selectedDate);
       }
     } catch (error) {
       console.error("Error snoozing dose:", error);
-      toast.error("Erro ao adiar dose");
+      toast.error(t('todayRedesign.snoozeError'));
     }
   };
   return (
@@ -584,11 +619,11 @@ export default function TodayRedesign() {
               <Gift className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">Indique e Ganhe</p>
-              <p className="text-xs text-muted-foreground truncate">Ganhe descontos indicando amigos</p>
+              <p className="font-semibold text-sm">{t('todayRedesign.referralTitle')}</p>
+              <p className="text-xs text-muted-foreground truncate">{t('todayRedesign.referralDesc')}</p>
             </div>
             <Button size="sm" variant="outline" onClick={() => navigate("/recompensas")} className="shrink-0">
-              Ver
+              {t('todayRedesign.referralCta')}
             </Button>
           </div>
         </Card>
@@ -601,7 +636,7 @@ export default function TodayRedesign() {
             onClick={() => navigate("/adicionar-medicamento")}
             className="text-xs gap-1.5"
           >
-            <span className="text-primary">+</span> Remédio
+            <span className="text-primary">+</span> {t('todayRedesign.quickAddMedication')}
           </Button>
           <Button
             variant="outline"
@@ -609,7 +644,7 @@ export default function TodayRedesign() {
             onClick={() => navigate("/carteira")}
             className="text-xs gap-1.5"
           >
-            <span className="text-green-600">📄</span> Documento
+            <span className="text-green-600">📄</span> {t('todayRedesign.quickAddDocument')}
           </Button>
         </div>
 
@@ -619,7 +654,7 @@ export default function TodayRedesign() {
           <Card className="p-3 bg-gradient-to-br from-green-500/15 to-green-500/5 border-green-500/20">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] text-green-600 dark:text-green-400 uppercase tracking-wide font-medium">Doses Hoje</p>
+                <p className="text-[10px] text-green-600 dark:text-green-400 uppercase tracking-wide font-medium">{t('todayRedesign.dosesTodayLabel')}</p>
                 <p className="text-lg font-bold text-foreground">
                   {todayStats.taken}/{todayStats.total}
                 </p>
@@ -647,8 +682,8 @@ export default function TodayRedesign() {
                 <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">Evolução</p>
-                <p className="text-[10px] text-muted-foreground">Insights e dados</p>
+                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">{t('todayRedesign.insightsTitle')}</p>
+                <p className="text-[10px] text-muted-foreground">{t('todayRedesign.insightsDesc')}</p>
               </div>
             </div>
           </Card>

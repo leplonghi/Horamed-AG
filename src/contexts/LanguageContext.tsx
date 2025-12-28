@@ -117,6 +117,25 @@ const translations: Record<Language, Record<string, string>> = {
     'today.noPendingDoses': 'Sem doses pendentes por agora',
     'today.noScheduledDoses': 'Seus medicamentos não têm doses agendadas para hoje',
     'today.helpTooltip': 'Esta é sua tela principal. Aqui você vê todas as doses do dia e confirma quando tomar cada medicamento.',
+
+    // Today (TodayRedesign)
+    'todayRedesign.tutorialsEnabled': 'Tutoriais ativados',
+    'todayRedesign.tutorialsDisabled': 'Tutoriais desativados',
+    'todayRedesign.loadError': 'Erro ao carregar dados',
+    'todayRedesign.stockEmpty': 'Estoque zerado! Reabasteça antes de registrar dose.',
+    'todayRedesign.confirmDoseError': 'Erro ao confirmar dose',
+    'todayRedesign.snoozeSuccess': '{name} adiado por 15 minutos',
+    'todayRedesign.snoozeError': 'Erro ao adiar dose',
+    'todayRedesign.appointmentDefault': 'Consulta médica',
+    'todayRedesign.doctorPrefix': 'Dr(a). {name}',
+    'todayRedesign.referralTitle': 'Indique e Ganhe',
+    'todayRedesign.referralDesc': 'Ganhe descontos indicando amigos',
+    'todayRedesign.referralCta': 'Ver',
+    'todayRedesign.quickAddMedication': 'Remédio',
+    'todayRedesign.quickAddDocument': 'Documento',
+    'todayRedesign.dosesTodayLabel': 'Doses hoje',
+    'todayRedesign.insightsTitle': 'Evolução',
+    'todayRedesign.insightsDesc': 'Insights e dados',
     
     // Medications
     'meds.title': 'Minha Saúde',
@@ -2225,6 +2244,25 @@ const translations: Record<Language, Record<string, string>> = {
     'today.noPendingDoses': 'No pending doses right now',
     'today.noScheduledDoses': 'Your medications have no doses scheduled for today',
     'today.helpTooltip': 'This is your main screen. Here you see all doses for the day and confirm when you take each medication.',
+
+    // Today (TodayRedesign)
+    'todayRedesign.tutorialsEnabled': 'Tutorials enabled',
+    'todayRedesign.tutorialsDisabled': 'Tutorials disabled',
+    'todayRedesign.loadError': 'Error loading data',
+    'todayRedesign.stockEmpty': 'Out of stock! Refill before logging a dose.',
+    'todayRedesign.confirmDoseError': 'Error confirming dose',
+    'todayRedesign.snoozeSuccess': '{name} snoozed for 15 minutes',
+    'todayRedesign.snoozeError': 'Error snoozing dose',
+    'todayRedesign.appointmentDefault': 'Medical appointment',
+    'todayRedesign.doctorPrefix': 'Dr. {name}',
+    'todayRedesign.referralTitle': 'Refer & earn',
+    'todayRedesign.referralDesc': 'Get discounts by inviting friends',
+    'todayRedesign.referralCta': 'View',
+    'todayRedesign.quickAddMedication': 'Medication',
+    'todayRedesign.quickAddDocument': 'Document',
+    'todayRedesign.dosesTodayLabel': "Today's doses",
+    'todayRedesign.insightsTitle': 'Progress',
+    'todayRedesign.insightsDesc': 'Insights & data',
     
     // Medications
     'meds.title': 'My Health',
