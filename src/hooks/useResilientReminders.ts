@@ -28,7 +28,8 @@ const RETRY_DELAY = 60000; // 1 minute
 
 // Singleton to prevent multiple initializations
 let isInitialized = false;
-let initializationPromise: Promise<void> | null = null;
+let lastSyncTime = 0;
+const SYNC_COOLDOWN = 30 * 60 * 1000; // 30 minutes between syncs
 
 export const useResilientReminders = () => {
   const { logAction } = useAuditLog();
@@ -42,44 +43,36 @@ export const useResilientReminders = () => {
       if (backupData) {
         const reminders = JSON.parse(backupData);
         if (reminders.length > 100) {
-          // Keep only the 50 most recent reminders
           const sorted = reminders.sort((a: any, b: any) => 
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
           localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted.slice(0, 50)));
-          console.log(`[Reminders] Cleaned up ${reminders.length - 50} old localStorage reminders`);
         }
       }
     } catch (e) {
-      console.error('[Reminders] Error cleaning localStorage:', e);
-      // If corrupted, reset entirely
       localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
-  // Initialize local storage sync - only once per app lifecycle
+  // Initialize - only once per app lifecycle with cooldown
   useEffect(() => {
-    // Skip if already initialized globally or in this instance
     if (isInitialized || hasInitializedRef.current) return;
+    
+    const now = Date.now();
+    if (now - lastSyncTime < SYNC_COOLDOWN) return;
     
     hasInitializedRef.current = true;
     isInitialized = true;
+    lastSyncTime = now;
 
-    const initialize = async () => {
-      cleanupLocalStorageReminders();
-      await cleanupOldReminders();
-      await syncLocalRemindersWithBackend();
-    };
+    // Run cleanup only, skip expensive sync on startup
+    cleanupLocalStorageReminders();
+    cleanupOldReminders().catch(console.error);
 
-    // Only run once globally
-    if (!initializationPromise) {
-      initializationPromise = initialize();
-    }
-    
-    // Check for pending retries every 5 minutes (reduced from 1 min)
+    // Check for pending retries every 30 minutes (reduced frequency)
     const interval = setInterval(() => {
       retryFailedReminders();
-    }, 5 * RETRY_DELAY);
+    }, 30 * RETRY_DELAY);
 
     return () => {
       clearInterval(interval);

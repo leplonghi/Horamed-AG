@@ -84,8 +84,8 @@ export const useOverdueDoses = () => {
   useEffect(() => {
     loadOverdueDoses();
     
-    // Refresh every minute
-    const interval = setInterval(loadOverdueDoses, 60 * 1000);
+    // Refresh every 3 minutes instead of 1 minute
+    const interval = setInterval(loadOverdueDoses, 3 * 60 * 1000);
     return () => clearInterval(interval);
   }, [loadOverdueDoses]);
 
