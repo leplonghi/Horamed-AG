@@ -18,6 +18,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { format } from "date-fns";
+import { ptBR, enUS } from "date-fns/locale";
 
 interface StockData {
   enabled: boolean;
@@ -32,34 +35,37 @@ interface StepStockProps {
   onComplete: () => void;
 }
 
-const unitOptions = [
-  { value: "comprimidos", label: "Comprimidos", emoji: "💊" },
-  { value: "cápsulas", label: "Cápsulas", emoji: "💊" },
-  { value: "gotas", label: "Gotas", emoji: "💧" },
-  { value: "ml", label: "Mililitros (ml)", emoji: "🧴" },
-  { value: "sachês", label: "Sachês", emoji: "📦" },
-  { value: "adesivos", label: "Adesivos", emoji: "🩹" },
-  { value: "ampolas", label: "Ampolas", emoji: "💉" },
-  { value: "unidades", label: "Unidades", emoji: "📦" },
-];
-
 const quickQuantities = [10, 20, 30, 60, 90];
 
 export default function StepStock({ stock, dosesPerDay, onStockChange, onComplete }: StepStockProps) {
+  const { t, language } = useLanguage();
+  const locale = language === 'pt' ? ptBR : enUS;
+
+  const unitOptions = [
+    { value: "comprimidos", label: t('wizard.pills'), emoji: "💊" },
+    { value: "cápsulas", label: t('wizard.capsules'), emoji: "💊" },
+    { value: "gotas", label: t('wizard.drops'), emoji: "💧" },
+    { value: "ml", label: t('wizard.ml'), emoji: "🧴" },
+    { value: "sachês", label: t('wizard.doses'), emoji: "📦" },
+    { value: "adesivos", label: language === 'pt' ? 'Adesivos' : 'Patches', emoji: "🩹" },
+    { value: "ampolas", label: language === 'pt' ? 'Ampolas' : 'Ampoules', emoji: "💉" },
+    { value: "unidades", label: t('wizard.units'), emoji: "📦" },
+  ];
+
   const daysRemaining = stock.unitsTotal > 0 && dosesPerDay > 0 
     ? Math.floor(stock.unitsTotal / dosesPerDay) 
     : 0;
 
   const isLowStock = daysRemaining > 0 && daysRemaining <= 7;
   const endDate = daysRemaining > 0 
-    ? new Date(Date.now() + daysRemaining * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')
+    ? format(new Date(Date.now() + daysRemaining * 24 * 60 * 60 * 1000), 'PP', { locale })
     : null;
 
   return (
     <TooltipProvider>
       <div className="space-y-4">
         <StepTooltip type="info">
-          <strong>Controle de estoque</strong> te avisa quando o medicamento está acabando. O sistema desconta automaticamente a cada dose tomada.
+          <strong>{t('wizard.stockControlToggle')}</strong> {t('wizard.stockControlDesc').toLowerCase()}. {t('wizard.appWillAlert')}
         </StepTooltip>
 
         {/* Enable toggle */}
@@ -84,8 +90,8 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
               )} />
             </div>
             <div>
-              <p className="font-semibold">Controlar estoque</p>
-              <p className="text-sm text-muted-foreground">Alertas quando estiver acabando</p>
+              <p className="font-semibold">{t('wizard.stockControlToggle')}</p>
+              <p className="text-sm text-muted-foreground">{t('wizard.stockControlDesc')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -94,7 +100,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
                 <HelpCircle className="h-4 w-4 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent side="left" className="max-w-[200px]">
-                <p className="text-xs">Você receberá alertas quando o estoque estiver baixo para não ficar sem medicamento.</p>
+                <p className="text-xs">{t('wizard.stockControlTooltip')}</p>
               </TooltipContent>
             </Tooltip>
             <Switch
@@ -110,13 +116,13 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
             {/* Quick quantities */}
             <div className="space-y-2">
               <Label className="text-sm font-medium flex items-center gap-2">
-                Quantidade atual
+                {t('wizard.currentQuantity')}
                 <Tooltip>
                   <TooltipTrigger>
                     <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p className="text-xs">Quantas unidades você tem agora</p>
+                    <p className="text-xs">{t('wizard.howManyNow')}</p>
                   </TooltipContent>
                 </Tooltip>
               </Label>
@@ -138,7 +144,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
                       </button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">{qty} unidades</p>
+                      <p className="text-xs">{qty} {t('wizard.units')}</p>
                     </TooltipContent>
                   </Tooltip>
                 ))}
@@ -147,7 +153,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="units" className="text-sm">Ou digite a quantidade</Label>
+                <Label htmlFor="units" className="text-sm">{t('wizard.orTypeQty')}</Label>
                 <Input
                   id="units"
                   type="number"
@@ -163,13 +169,13 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unit-type" className="text-sm flex items-center gap-2">
-                  Tipo de unidade
+                  {t('wizard.unitType')}
                   <Tooltip>
                     <TooltipTrigger>
                       <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Formato do medicamento</p>
+                      <p className="text-xs">{t('wizard.medFormat')}</p>
                     </TooltipContent>
                   </Tooltip>
                 </Label>
@@ -206,27 +212,27 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
                     ) : (
                       <TrendingDown className="h-5 w-5 text-primary" />
                     )}
-                    <span className="font-semibold">Duração estimada</span>
+                    <span className="font-semibold">{t('wizard.estimatedDuration')}</span>
                   </div>
                   <span className={cn(
                     "text-lg font-bold",
                     isLowStock ? "text-amber-600 dark:text-amber-400" : "text-primary"
                   )}>
-                    ~{daysRemaining} dias
+                    ~{daysRemaining} {t('progress.days')}
                   </span>
                 </div>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <p>{stock.unitsTotal} {stock.unitLabel} ÷ {dosesPerDay} dose(s)/dia</p>
+                  <p>{stock.unitsTotal} {stock.unitLabel} ÷ {dosesPerDay} {t('wizard.dose').toLowerCase()}(s)/{language === 'pt' ? 'dia' : 'day'}</p>
                   {endDate && (
                     <p className="flex items-center gap-1">
                       <Bell className="h-3.5 w-3.5" />
-                      Previsão de término: <strong>{endDate}</strong>
+                      {t('wizard.endForecast')}: <strong>{endDate}</strong>
                     </p>
                   )}
                 </div>
                 {isLowStock && (
                   <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 font-medium">
-                    ⚠️ Estoque baixo! Considere comprar mais.
+                    ⚠️ {t('wizard.lowStockWarning')}
                   </p>
                 )}
               </div>
@@ -238,7 +244,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
           onClick={onComplete}
           className="w-full h-12 text-base font-semibold"
         >
-          {stock.enabled ? "Finalizar" : "Pular e finalizar"}
+          {stock.enabled ? t('wizard.finish') : t('wizard.skipFinish')}
         </Button>
       </div>
     </TooltipProvider>

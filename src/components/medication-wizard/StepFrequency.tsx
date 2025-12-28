@@ -9,6 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type FrequencyType = "daily" | "specific_days" | "weekly" | "every_x_days" | "as_needed";
 
@@ -22,53 +23,6 @@ interface StepFrequencyProps {
   onComplete: () => void;
 }
 
-const frequencyOptions = [
-  {
-    value: "daily" as FrequencyType,
-    label: "Todos os dias",
-    emoji: "📅",
-    description: "Tomar diariamente sem falhar",
-    tooltip: "Para medicamentos de uso diário contínuo"
-  },
-  {
-    value: "specific_days" as FrequencyType,
-    label: "Dias específicos",
-    emoji: "📆",
-    description: "Escolher dias da semana",
-    tooltip: "Ex: Seg, Qua e Sex - para tratamentos alternados"
-  },
-  {
-    value: "weekly" as FrequencyType,
-    label: "Semanalmente",
-    emoji: "🗓️",
-    description: "Uma vez por semana",
-    tooltip: "Para medicamentos tomados 1x por semana (ex: vitamina D)"
-  },
-  {
-    value: "as_needed" as FrequencyType,
-    label: "Quando necessário",
-    emoji: "💡",
-    description: "Apenas quando precisar",
-    tooltip: "Para medicamentos SOS (ex: analgésicos, antialérgicos)"
-  }
-];
-
-const weekDays = [
-  { value: 0, short: "Dom", full: "Domingo" },
-  { value: 1, short: "Seg", full: "Segunda" },
-  { value: 2, short: "Ter", full: "Terça" },
-  { value: 3, short: "Qua", full: "Quarta" },
-  { value: 4, short: "Qui", full: "Quinta" },
-  { value: 5, short: "Sex", full: "Sexta" },
-  { value: 6, short: "Sáb", full: "Sábado" }
-];
-
-const quickDayPresets = [
-  { label: "Dias úteis", days: [1, 2, 3, 4, 5], tooltip: "Segunda a Sexta" },
-  { label: "Fins de semana", days: [0, 6], tooltip: "Sábado e Domingo" },
-  { label: "Dias alternados", days: [1, 3, 5], tooltip: "Seg, Qua, Sex" },
-];
-
 export default function StepFrequency({ 
   frequency, 
   daysOfWeek, 
@@ -76,6 +30,55 @@ export default function StepFrequency({
   onDaysChange,
   onComplete
 }: StepFrequencyProps) {
+  const { t } = useLanguage();
+
+  const frequencyOptions = [
+    {
+      value: "daily" as FrequencyType,
+      label: t('wizard.everyDay'),
+      emoji: "📅",
+      description: t('wizard.everyDayDesc'),
+      tooltip: t('wizard.everyDayTooltip')
+    },
+    {
+      value: "specific_days" as FrequencyType,
+      label: t('wizard.specificDaysLabel'),
+      emoji: "📆",
+      description: t('wizard.specificDaysLabelDesc'),
+      tooltip: t('wizard.specificDaysTooltip')
+    },
+    {
+      value: "weekly" as FrequencyType,
+      label: t('wizard.weeklyLabel'),
+      emoji: "🗓️",
+      description: t('wizard.weeklyLabelDesc'),
+      tooltip: t('wizard.weeklyTooltip')
+    },
+    {
+      value: "as_needed" as FrequencyType,
+      label: t('wizard.asNeeded'),
+      emoji: "💡",
+      description: t('wizard.asNeededDesc'),
+      tooltip: t('wizard.asNeededTooltip')
+    }
+  ];
+
+  const weekDays = [
+    { value: 0, short: t('wizard.sun'), full: t('wizard.sunday') },
+    { value: 1, short: t('wizard.mon'), full: t('wizard.monday') },
+    { value: 2, short: t('wizard.tue'), full: t('wizard.tuesday') },
+    { value: 3, short: t('wizard.wed'), full: t('wizard.wednesday') },
+    { value: 4, short: t('wizard.thu'), full: t('wizard.thursday') },
+    { value: 5, short: t('wizard.fri'), full: t('wizard.friday') },
+    { value: 6, short: t('wizard.sat'), full: t('wizard.saturday') }
+  ];
+
+  const quickDayPresets = [
+    { label: t('wizard.weekdays'), days: [1, 2, 3, 4, 5], tooltip: t('wizard.monToFri') },
+    { label: t('wizard.weekends'), days: [0, 6], tooltip: t('wizard.satSun') },
+    { label: t('wizard.alternating'), days: [1, 3, 5], tooltip: t('wizard.monWedFri') },
+  ];
+
   const toggleDay = (day: number) => {
     if (daysOfWeek.includes(day)) {
       onDaysChange(daysOfWeek.filter(d => d !== day));
@@ -93,7 +96,7 @@ export default function StepFrequency({
     <TooltipProvider>
       <div className="space-y-4">
         <StepTooltip type="info">
-          Defina com que frequência você precisa tomar este medicamento. Isso determina quais dias aparecerão lembretes.
+          {t('wizard.frequencyTip')}
         </StepTooltip>
 
         {/* Frequency options */}
@@ -140,7 +143,7 @@ export default function StepFrequency({
         {(frequency === "specific_days" || frequency === "weekly") && (
           <div className="space-y-3 p-4 bg-muted/30 rounded-xl border-2 border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
             <Label className="text-sm font-medium flex items-center gap-2">
-              {frequency === "weekly" ? "Qual dia da semana?" : "Quais dias da semana?"}
+              {frequency === "weekly" ? t('wizard.whichDayOfWeek') : t('wizard.whichDaysOfWeek')}
               <Tooltip>
                 <TooltipTrigger>
                   <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
@@ -148,8 +151,8 @@ export default function StepFrequency({
                 <TooltipContent>
                   <p className="text-xs">
                     {frequency === "weekly" 
-                      ? "Selecione apenas um dia" 
-                      : "Selecione os dias em que você toma o medicamento"}
+                      ? t('wizard.selectOneDay')
+                      : t('wizard.selectDays')}
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -218,7 +221,7 @@ export default function StepFrequency({
 
             {daysOfWeek.length > 0 && (
               <div className="flex items-center gap-2 p-2 bg-primary/10 rounded-lg">
-                <span className="text-xs text-muted-foreground">Selecionado:</span>
+                <span className="text-xs text-muted-foreground">{t('wizard.selected')}:</span>
                 <span className="text-sm font-medium text-primary">
                   {daysOfWeek.map(d => weekDays[d].full).join(", ")}
                 </span>
@@ -232,7 +235,7 @@ export default function StepFrequency({
           disabled={!canContinue}
           className="w-full h-12 text-base font-semibold"
         >
-          Continuar
+          {t('wizard.continue')}
         </Button>
       </div>
     </TooltipProvider>

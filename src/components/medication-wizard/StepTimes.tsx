@@ -11,6 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface StepTimesProps {
   times: string[];
@@ -18,42 +19,42 @@ interface StepTimesProps {
   onComplete: () => void;
 }
 
-const quickPresets = [
-  { 
-    label: "1x ao dia", 
-    times: ["08:00"],
-    description: "Pela manhã",
-    emoji: "🌅"
-  },
-  { 
-    label: "2x ao dia", 
-    times: ["08:00", "20:00"],
-    description: "Manhã e noite",
-    emoji: "🌅🌙"
-  },
-  { 
-    label: "3x ao dia", 
-    times: ["08:00", "14:00", "20:00"],
-    description: "Manhã, tarde, noite",
-    emoji: "🌅☀️🌙"
-  },
-  { 
-    label: "4x ao dia", 
-    times: ["08:00", "12:00", "16:00", "20:00"],
-    description: "A cada 4 horas",
-    emoji: "⏰"
-  },
-];
-
-const intervalPresets = [
-  { hours: 6, label: "6 em 6h", times: ["06:00", "12:00", "18:00", "00:00"] },
-  { hours: 8, label: "8 em 8h", times: ["08:00", "16:00", "00:00"] },
-  { hours: 12, label: "12 em 12h", times: ["08:00", "20:00"] },
-];
-
 export default function StepTimes({ times, onTimesChange, onComplete }: StepTimesProps) {
   const [showCustom, setShowCustom] = useState(false);
-  const [showIntervals, setShowIntervals] = useState(false);
+  const { t } = useLanguage();
+
+  const quickPresets = [
+    { 
+      label: t('wizard.onceDay'), 
+      times: ["08:00"],
+      description: t('wizard.inMorning'),
+      emoji: "🌅"
+    },
+    { 
+      label: t('wizard.twiceDay'), 
+      times: ["08:00", "20:00"],
+      description: t('wizard.morningNight'),
+      emoji: "🌅🌙"
+    },
+    { 
+      label: t('wizard.thriceDay'), 
+      times: ["08:00", "14:00", "20:00"],
+      description: t('wizard.morningAfternoonNight'),
+      emoji: "🌅☀️🌙"
+    },
+    { 
+      label: t('wizard.fourDay'), 
+      times: ["08:00", "12:00", "16:00", "20:00"],
+      description: t('wizard.every4h'),
+      emoji: "⏰"
+    },
+  ];
+
+  const intervalPresets = [
+    { hours: 6, label: t('wizard.every6h'), times: ["06:00", "12:00", "18:00", "00:00"] },
+    { hours: 8, label: t('wizard.every8h'), times: ["08:00", "16:00", "00:00"] },
+    { hours: 12, label: t('wizard.every12h'), times: ["08:00", "20:00"] },
+  ];
 
   const addTime = () => {
     onTimesChange([...times, "12:00"]);
@@ -72,7 +73,6 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
   const selectPreset = (presetTimes: string[]) => {
     onTimesChange([...presetTimes]);
     setShowCustom(false);
-    setShowIntervals(false);
   };
 
   const isPresetSelected = (presetTimes: string[]) => {
@@ -89,29 +89,29 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
 
   const getTimePeriod = (time: string) => {
     const hour = parseInt(time.split(':')[0]);
-    if (hour >= 5 && hour < 12) return "Manhã";
-    if (hour >= 12 && hour < 18) return "Tarde";
-    if (hour >= 18 && hour < 21) return "Noite";
-    return "Madrugada";
+    if (hour >= 5 && hour < 12) return t('wizard.periodMorning');
+    if (hour >= 12 && hour < 18) return t('wizard.periodAfternoon');
+    if (hour >= 18 && hour < 21) return t('wizard.periodEvening');
+    return t('wizard.periodDawn');
   };
 
   return (
     <TooltipProvider>
       <div className="space-y-4">
         <StepTooltip type="tip">
-          Escolha quantas vezes ao dia você toma este medicamento. Você pode usar uma opção rápida ou personalizar os horários.
+          {t('wizard.timeTip')}
         </StepTooltip>
 
         {/* Quick presets */}
         <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-2">
-            Opções rápidas
+            {t('wizard.quickOptions')}
             <Tooltip>
               <TooltipTrigger>
                 <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs">Clique para definir os horários automaticamente</p>
+                <p className="text-xs">{t('wizard.clickToSet')}</p>
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -144,7 +144,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p className="text-xs">Horários: {preset.times.join(", ")}</p>
+                  <p className="text-xs">{t('wizard.times')}: {preset.times.join(", ")}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -154,13 +154,13 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
         {/* Interval presets */}
         <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-2">
-            Intervalos fixos
+            {t('wizard.fixedIntervals')}
             <Tooltip>
               <TooltipTrigger>
                 <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent>
-                <p className="text-xs">Para medicamentos que precisam de intervalo regular</p>
+                <p className="text-xs">{t('wizard.regularInterval')}</p>
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -182,7 +182,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
-                  <p className="text-xs">Horários: {preset.times.join(", ")}</p>
+                  <p className="text-xs">{t('wizard.times')}: {preset.times.join(", ")}</p>
                 </TooltipContent>
               </Tooltip>
             ))}
@@ -195,7 +195,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
             <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center">
-            <span className="bg-background px-3 text-xs text-muted-foreground">ou</span>
+            <span className="bg-background px-3 text-xs text-muted-foreground">{t('wizard.or')}</span>
           </div>
         </div>
 
@@ -211,13 +211,13 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
           )}
         >
           <Sparkles className="h-4 w-4 mr-2" />
-          <span className="font-semibold">Personalizar horários</span>
+          <span className="font-semibold">{t('wizard.customizeTimes')}</span>
           <Tooltip>
             <TooltipTrigger asChild>
               <HelpCircle className="h-4 w-4 ml-2 opacity-70" />
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Defina horários específicos manualmente</p>
+              <p className="text-xs">{t('wizard.setManually')}</p>
             </TooltipContent>
           </Tooltip>
         </Button>
@@ -225,7 +225,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
         {/* Custom time inputs */}
         {showCustom && (
           <div className="space-y-3 p-4 bg-muted/30 rounded-xl border-2 border-primary/20 animate-in fade-in slide-in-from-top-2 duration-300">
-            <Label className="text-sm font-medium">Seus horários personalizados</Label>
+            <Label className="text-sm font-medium">{t('wizard.yourCustomTimes')}</Label>
             <div className="space-y-2">
               {times.map((time, index) => (
                 <div key={index} className="flex items-center gap-2 p-2 bg-background rounded-lg border">
@@ -253,7 +253,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-xs">Remover este horário</p>
+                        <p className="text-xs">{t('wizard.removeTime')}</p>
                       </TooltipContent>
                     </Tooltip>
                   )}
@@ -269,14 +269,14 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
               className="w-full border-dashed"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Adicionar outro horário
+              {t('wizard.addAnotherTime')}
             </Button>
           </div>
         )}
 
         {/* Summary */}
         <div className="flex flex-wrap gap-2 p-3 bg-primary/5 rounded-xl border border-primary/20">
-          <span className="text-sm font-medium w-full mb-1">Resumo dos horários:</span>
+          <span className="text-sm font-medium w-full mb-1">{t('wizard.timesSummary')}</span>
           {[...times].sort().map((time, i) => (
             <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium">
               {getTimeIcon(time)} {time}
@@ -289,7 +289,7 @@ export default function StepTimes({ times, onTimesChange, onComplete }: StepTime
           disabled={times.length === 0}
           className="w-full h-12 text-base font-semibold"
         >
-          Continuar
+          {t('wizard.continue')}
         </Button>
       </div>
     </TooltipProvider>
