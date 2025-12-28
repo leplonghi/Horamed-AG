@@ -161,15 +161,15 @@ export default function HealthAssistantChat() {
 
   return (
     <>
-      <Card className="fixed bottom-24 right-6 w-96 h-[500px] shadow-xl z-50 flex flex-col animate-scale-in">
+      <Card className="fixed inset-4 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-96 sm:h-[500px] h-[calc(100vh-2rem)] shadow-xl z-50 flex flex-col animate-scale-in">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-primary text-primary-foreground rounded-t-lg">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <Heart className="h-5 w-5" />
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-primary text-primary-foreground rounded-t-lg shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div>
-              <h3 className="font-semibold">Clara</h3>
+              <h3 className="font-semibold text-sm sm:text-base">Clara</h3>
               <p className="text-xs opacity-80">Assistente HoraMed</p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function HealthAssistantChat() {
 
         {/* AI Limit Warning (Free users) */}
         {!aiLimits.isPremium && !aiLimits.isLoading && (
-          <Alert className="m-2 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20">
+          <Alert className="mx-2 mt-2 border-yellow-500/50 bg-yellow-50 dark:bg-yellow-950/20 shrink-0">
             <Sparkles className="h-4 w-4 text-yellow-600" />
             <AlertDescription className="text-xs">
               {aiLimits.canUseAI ? (
@@ -202,8 +202,8 @@ export default function HealthAssistantChat() {
         )}
 
         {/* Messages */}
-        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 p-3 sm:p-4 min-h-0" ref={scrollRef}>
+          <div className="space-y-3 sm:space-y-4">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -214,7 +214,7 @@ export default function HealthAssistantChat() {
               >
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                    "max-w-[85%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-sm leading-relaxed",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground"
@@ -233,7 +233,7 @@ export default function HealthAssistantChat() {
             )}
             {/* Affiliate Recommendation */}
             {showAffiliate && affiliateProduct && (
-              <div className="px-4">
+              <div className="px-2 sm:px-4">
                 <AffiliateCard 
                   product={affiliateProduct}
                   context="AI_QUERY"
@@ -248,13 +248,13 @@ export default function HealthAssistantChat() {
         </ScrollArea>
 
         {/* Quick Chips */}
-        <div className="px-4 py-2 border-t">
-          <div className="flex gap-2 flex-wrap">
+        <div className="px-3 sm:px-4 py-2 border-t shrink-0">
+          <div className="flex gap-1.5 sm:gap-2 flex-wrap">
             {quickChips.map((chip, idx) => (
               <Badge 
                 key={idx}
                 variant="outline"
-                className="cursor-pointer hover:bg-primary/10 transition-colors text-xs"
+                className="cursor-pointer hover:bg-primary/10 transition-colors text-xs px-2 py-0.5"
                 onClick={() => setInput(chip)}
               >
                 {chip}
@@ -264,7 +264,7 @@ export default function HealthAssistantChat() {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t">
+        <div className="p-3 sm:p-4 border-t shrink-0">
           <div className="flex gap-2">
             <Input
               value={input}
@@ -272,12 +272,13 @@ export default function HealthAssistantChat() {
               onKeyPress={handleKeyPress}
               placeholder={aiLimits.canUseAI ? "Digite sua mensagem..." : "Limite diário atingido"}
               disabled={isLoading || !aiLimits.canUseAI}
-              className="flex-1"
+              className="flex-1 text-base sm:text-sm"
             />
             <Button
               onClick={handleSend}
               disabled={!input.trim() || isLoading || !aiLimits.canUseAI}
               size="icon"
+              className="shrink-0"
             >
               <Send className="h-4 w-4" />
             </Button>
