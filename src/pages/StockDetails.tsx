@@ -10,10 +10,12 @@ import { StockTimeline } from "@/components/StockTimeline";
 import StockChart from "@/components/StockChart";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function StockDetails() {
   const { itemId } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const { data: item } = useQuery({
     queryKey: ["item-stock-details", itemId],
@@ -48,12 +50,12 @@ export default function StockDetails() {
           className="mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Voltar
+          {t('generic.back')}
         </Button>
 
         <PageHeader
-          title="Detalhes de Estoque"
-          description={item?.name || "Carregando..."}
+          title={t('stockDetails.title')}
+          description={item?.name || t('common.loading')}
           icon={<Package className="h-6 w-6 text-primary" />}
         />
 
@@ -62,18 +64,18 @@ export default function StockDetails() {
             <>
               <Card>
                 <CardHeader>
-                  <CardTitle>Visão Geral do Estoque</CardTitle>
+                  <CardTitle>{t('stockDetails.overview')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-muted-foreground">Quantidade Atual</p>
-                        <p className="text-2xl font-bold">{item.stock[0]?.units_left || 0} {item.stock[0]?.unit_label || "unidades"}</p>
+                        <p className="text-sm text-muted-foreground">{t('stockDetails.currentQty')}</p>
+                        <p className="text-2xl font-bold">{item.stock[0]?.units_left || 0} {item.stock[0]?.unit_label || t('generic.units')}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Dias Restantes</p>
-                        <p className="text-2xl font-bold">{stockProjection?.days_remaining || "N/A"} dias</p>
+                        <p className="text-sm text-muted-foreground">{t('stockDetails.daysRemaining')}</p>
+                        <p className="text-2xl font-bold">{stockProjection?.days_remaining || "N/A"} {t('generic.days')}</p>
                       </div>
                     </div>
                   </div>
@@ -82,7 +84,7 @@ export default function StockDetails() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Histórico de Consumo</CardTitle>
+                  <CardTitle>{t('stockDetails.consumptionHistory')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <StockTimeline

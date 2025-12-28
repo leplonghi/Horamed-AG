@@ -256,7 +256,7 @@ export default function MedicamentosHub() {
       setAdjustmentAmount(0);
     } catch (error) {
       console.error("Error updating stock:", error);
-      toast.error("Erro ao atualizar estoque");
+      toast.error(t('generic.stockUpdateError'));
     }
   };
 
@@ -270,11 +270,11 @@ export default function MedicamentosHub() {
 
       if (data?.url) {
         window.open(data.url, '_blank');
-        toast.success('Link aberto em nova aba');
+        toast.success(t('generic.openedNewTab'));
       }
     } catch (error) {
       console.error('Error handling restock:', error);
-      toast.error('Erro ao abrir link de reposição');
+      toast.error(t('generic.openLinkError'));
     }
   };
 
