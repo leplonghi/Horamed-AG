@@ -21,6 +21,8 @@ interface MedicationData {
   category: string;
   notes: string;
   supplementCategory?: string;
+  doseText: string;
+  withFood: boolean;
   frequency: "daily" | "specific_days" | "weekly";
   times: string[];
   daysOfWeek?: number[];
@@ -44,6 +46,8 @@ const INITIAL_DATA: MedicationData = {
   name: "",
   category: "medicamento",
   notes: "",
+  doseText: "",
+  withFood: false,
   frequency: "daily",
   times: ["08:00"],
   continuousUse: false,
@@ -121,6 +125,8 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         name: item.name || "",
         category: item.category || "medicamento",
         notes: item.notes || "",
+        doseText: item.dose_text || "",
+        withFood: item.with_food || false,
         frequency: freqType || "daily",
         times: scheduleTimes,
         daysOfWeek: schedule?.days_of_week || [],
@@ -319,6 +325,8 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             name: medicationData.name,
             category: medicationData.category,
             notes: medicationData.notes || null,
+            dose_text: medicationData.doseText || null,
+            with_food: medicationData.withFood,
             treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
             treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
             notification_type: medicationData.notificationType,
@@ -365,6 +373,8 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             name: medicationData.name,
             category: medicationData.category,
             notes: medicationData.notes || null,
+            dose_text: medicationData.doseText || null,
+            with_food: medicationData.withFood,
             is_active: true,
             treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
             treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
