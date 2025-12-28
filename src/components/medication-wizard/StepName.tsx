@@ -37,18 +37,18 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
     <TooltipProvider>
       <div className="space-y-4">
         <StepTooltip type="tip">
-          Digite o nome do medicamento, vitamina ou suplemento. Você pode selecionar da lista de medicamentos brasileiros ou digitar um nome personalizado.
+          {t('stepName.tooltip')}
         </StepTooltip>
 
         <div className="space-y-2">
           <Label htmlFor="med-name" className="text-sm font-medium flex items-center gap-2">
-            Nome do medicamento ou suplemento
+            {t('stepName.title')}
             <Tooltip>
               <TooltipTrigger>
                 <HelpCircle className="h-3.5 w-3.5 text-muted-foreground" />
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[220px]">
-                <p className="text-xs">Digite pelo menos 2 caracteres para buscar. Se não encontrar, pode usar qualquer nome.</p>
+                <p className="text-xs">{t('stepName.hint')}</p>
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -76,7 +76,7 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
                     )} />
                   </div>
                   <span className="truncate">
-                    {name || "Buscar medicamento..."}
+                    {name || t('stepName.placeholder')}
                   </span>
                 </div>
                 {name && (
@@ -89,7 +89,7 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 bg-popover z-50" align="start">
               <Command shouldFilter={false}>
                 <CommandInput 
-                  placeholder="Digite para buscar..." 
+                  placeholder={t('stepName.placeholder')} 
                   value={name}
                   onValueChange={onNameChange}
                   className="h-12"
@@ -98,7 +98,7 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
                   <CommandEmpty>
                     <div className="p-4 text-center">
                       <p className="text-sm text-muted-foreground mb-3">
-                        Não encontrado na lista de medicamentos
+                        {t('stepName.notFound')}
                       </p>
                       {name.length >= 2 && (
                         <Button 
@@ -106,7 +106,7 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
                           onClick={() => setOpen(false)}
                           className="w-full"
                         >
-                          ✓ Usar "{name}"
+                          ✓ {t('stepName.use')} "{name}"
                         </Button>
                       )}
                     </div>
@@ -149,7 +149,7 @@ export default function StepName({ name, onNameChange, onComplete }: StepNamePro
           disabled={!isValid}
           className="w-full h-12 text-base font-semibold"
         >
-          Continuar
+          {t('stepName.continue')}
         </Button>
       </div>
     </TooltipProvider>

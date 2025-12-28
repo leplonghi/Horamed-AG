@@ -12,6 +12,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Category {
   id: string;
@@ -22,6 +23,7 @@ interface Category {
 export default function CofreManualCreate() {
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
+  const { t } = useLanguage();
   
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,12 +53,12 @@ export default function CofreManualCreate() {
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
-      toast.error("Por favor, adicione um título");
+      toast.error(t('cofreManual.addTitle'));
       return;
     }
 
     if (!activeProfile?.id) {
-      toast.error("Selecione um perfil primeiro");
+      toast.error(t('cofreManual.selectProfile'));
       return;
     }
 
@@ -64,7 +66,7 @@ export default function CofreManualCreate() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user) throw new Error(t('errors.notAuthenticated'));
 
       const documentData = {
         user_id: user.id,
@@ -88,11 +90,11 @@ export default function CofreManualCreate() {
 
       if (error) throw error;
 
-      toast.success("Documento criado com sucesso!");
+      toast.success(t('cofreManual.success'));
       navigate(`/carteira/${data.id}`);
     } catch (error) {
       console.error("Erro ao salvar documento:", error);
-      toast.error("Erro ao criar documento");
+      toast.error(t('cofreManual.error'));
     } finally {
       setSaving(false);
     }
@@ -106,23 +108,23 @@ export default function CofreManualCreate() {
       <div className="container max-w-2xl mx-auto px-4 py-6 pt-24">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar
+          {t('common.back')}
         </Button>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">Adicionar Documento Manualmente</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('cofreManual.title')}</h1>
           <p className="text-muted-foreground text-sm">
-            Preencha as informações do documento sem fazer upload de arquivo
+            {t('cofreManual.subtitle')}
           </p>
         </div>
 
         <Card>
           <CardContent className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
+              <Label htmlFor="title">{t('cofreManual.docTitle')} *</Label>
               <Input
                 id="title"
-                placeholder="Ex: Receita médica, Exame de sangue..."
+                placeholder={t('cofreManual.docTitlePlaceholder')}
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 maxLength={200}
@@ -130,13 +132,13 @@ export default function CofreManualCreate() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="categoria">Categoria</Label>
+              <Label htmlFor="categoria">{t('cofreManual.category')}</Label>
               <Select
                 value={formData.categoria_id}
                 onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder={t('cofreManual.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -149,10 +151,10 @@ export default function CofreManualCreate() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="provider">Local/Médico</Label>
+              <Label htmlFor="provider">{t('cofreManual.provider')}</Label>
               <Input
                 id="provider"
-                placeholder="Ex: Hospital São Lucas, Dr. João Silva..."
+                placeholder={t('cofreManual.providerPlaceholder')}
                 value={formData.provider}
                 onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
                 maxLength={200}
@@ -161,7 +163,7 @@ export default function CofreManualCreate() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="issued_at">Data de Emissão</Label>
+                <Label htmlFor="issued_at">{t('cofreManual.issueDate')}</Label>
                 <Input
                   id="issued_at"
                   type="date"
@@ -171,7 +173,7 @@ export default function CofreManualCreate() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expires_at">Data de Validade</Label>
+                <Label htmlFor="expires_at">{t('cofreManual.expiryDate')}</Label>
                 <Input
                   id="expires_at"
                   type="date"
@@ -182,10 +184,10 @@ export default function CofreManualCreate() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Observações</Label>
+              <Label htmlFor="notes">{t('cofreManual.notes')}</Label>
               <Textarea
                 id="notes"
-                placeholder="Adicione qualquer informação relevante..."
+                placeholder={t('cofreManual.notesPlaceholder')}
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={4}
@@ -205,12 +207,12 @@ export default function CofreManualCreate() {
               {saving ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
-                  Salvando...
+                  {t('common.loading')}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Documento
+                  {t('cofreManual.save')}
                 </>
               )}
             </Button>

@@ -9,9 +9,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import { VaccineNotificationSettings } from "@/components/VaccineNotificationSettings";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [preferences, setPreferences] = useState({
     email_enabled: true,
@@ -55,7 +57,7 @@ export default function Notifications() {
 
   const handleTestWhatsApp = async () => {
     if (!preferences.whatsapp_number || !preferences.whatsapp_instance_id || !preferences.whatsapp_api_token) {
-      toast.error("Preencha todos os campos do WhatsApp");
+      toast.error(t('notifPage.fillWhatsApp'));
       return;
     }
 
@@ -66,7 +68,7 @@ export default function Notifications() {
       const { data, error } = await supabase.functions.invoke('send-whatsapp-reminder', {
         body: {
           phoneNumber: preferences.whatsapp_number,
-          message: "🧪 Teste do HoraMend!\n\nSe você recebeu esta mensagem, suas notificações por WhatsApp estão configuradas corretamente! ✅",
+          message: "🧪 Teste do HoraMed!\n\nSe você recebeu esta mensagem, suas notificações por WhatsApp estão configuradas corretamente! ✅",
           instanceId: preferences.whatsapp_instance_id,
           apiToken: preferences.whatsapp_api_token,
         },
@@ -76,10 +78,10 @@ export default function Notifications() {
       });
 
       if (error) throw error;
-      toast.success("Mensagem de teste enviada! Verifique seu WhatsApp.");
+      toast.success(t('notifPage.testSent'));
     } catch (error) {
       console.error("Error testing WhatsApp:", error);
-      toast.error("Erro ao enviar teste. Verifique suas credenciais.");
+      toast.error(t('notifPage.testError'));
     } finally {
       setTestingWhatsApp(false);
     }
@@ -99,10 +101,10 @@ export default function Notifications() {
         });
 
       if (error) throw error;
-      toast.success("Preferências salvas com sucesso!");
+      toast.success(t('notifPage.prefsSaved'));
     } catch (error) {
       console.error("Error saving preferences:", error);
-      toast.error("Erro ao salvar preferências");
+      toast.error(t('notifPage.prefsError'));
     } finally {
       setLoading(false);
     }
@@ -117,17 +119,17 @@ export default function Notifications() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h2 className="text-2xl font-bold text-foreground">Notificações</h2>
-              <p className="text-muted-foreground">Gerencie como deseja receber lembretes</p>
+              <h2 className="text-2xl font-bold text-foreground">{t('notifPage.title')}</h2>
+              <p className="text-muted-foreground">{t('notifPage.subtitle')}</p>
             </div>
           </div>
 
           <Card className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="email">E-mail</Label>
+                <Label htmlFor="email">{t('notifPage.email')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receber notificações por e-mail
+                  {t('notifPage.emailDesc')}
                 </p>
               </div>
               <Switch
@@ -141,9 +143,9 @@ export default function Notifications() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label htmlFor="push">Notificações Push</Label>
+                <Label htmlFor="push">{t('notifPage.push')}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Receber notificações no navegador
+                  {t('notifPage.pushDesc')}
                 </p>
               </div>
               <Switch
@@ -158,9 +160,9 @@ export default function Notifications() {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="whatsapp">WhatsApp (Backup)</Label>
+                  <Label htmlFor="whatsapp">{t('notifPage.whatsapp')} (Backup)</Label>
                   <p className="text-sm text-muted-foreground">
-                    Receber lembretes via WhatsApp se push falhar
+                    {t('notifPage.whatsappDesc')}
                   </p>
                 </div>
                 <Switch
@@ -175,11 +177,11 @@ export default function Notifications() {
               {preferences.whatsapp_enabled && (
                 <div className="space-y-3 pl-4 border-l-2 border-primary/20">
                   <div className="space-y-2">
-                    <Label htmlFor="whatsapp_number">Número do WhatsApp</Label>
+                    <Label htmlFor="whatsapp_number">{t('notifPage.whatsappNumber')}</Label>
                     <input
                       id="whatsapp_number"
                       type="tel"
-                      placeholder="(11) 99999-9999"
+                      placeholder={t('notifPage.whatsappNumberPlaceholder')}
                       className="w-full px-3 py-2 border rounded-md"
                       value={preferences.whatsapp_number}
                       onChange={(e) =>
@@ -189,7 +191,7 @@ export default function Notifications() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="instance_id">Green API Instance ID</Label>
+                    <Label htmlFor="instance_id">{t('notifPage.instanceId')}</Label>
                     <input
                       id="instance_id"
                       type="text"
@@ -203,7 +205,7 @@ export default function Notifications() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="api_token">Green API Token</Label>
+                    <Label htmlFor="api_token">{t('notifPage.apiToken')}</Label>
                     <input
                       id="api_token"
                       type="password"
@@ -223,11 +225,11 @@ export default function Notifications() {
                     disabled={testingWhatsApp}
                     className="w-full"
                   >
-                    {testingWhatsApp ? "Enviando..." : "Enviar Teste"}
+                    {testingWhatsApp ? t('notifPage.testing') : t('notifPage.testWhatsApp')}
                   </Button>
 
                   <p className="text-xs text-muted-foreground">
-                    💡 Crie uma conta gratuita em{" "}
+                    💡 {t('common.or')}{" "}
                     <a
                       href="https://green-api.com"
                       target="_blank"
@@ -236,7 +238,6 @@ export default function Notifications() {
                     >
                       green-api.com
                     </a>
-                    {" "}para obter suas credenciais
                   </p>
                 </div>
               )}
@@ -251,7 +252,7 @@ export default function Notifications() {
             disabled={loading}
             className="w-full"
           >
-            {loading ? "Salvando..." : "Salvar preferências"}
+            {loading ? t('notifPage.saving') : t('notifPage.save')}
           </Button>
         </div>
       </div>
