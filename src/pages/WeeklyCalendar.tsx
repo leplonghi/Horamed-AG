@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill, XCircle, SkipForward, TrendingUp, Calendar, Target } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO, isBefore } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import DoseStatusDialog from "@/components/DoseStatusDialog";
 import logo from "@/assets/horamed-logo-web.webp";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DoseInstance {
   id: string;
@@ -32,6 +33,8 @@ export default function WeeklyCalendar() {
   const [selectedDose, setSelectedDose] = useState<{ id: string; name: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const { activeProfile } = useUserProfiles();
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'pt' ? ptBR : enUS;
 
   useEffect(() => {
     fetchWeekDoses();
@@ -102,7 +105,7 @@ export default function WeeklyCalendar() {
       setDoses(data || []);
     } catch (error) {
       console.error("Error fetching week doses:", error);
-      toast.error("Erro ao carregar doses da semana");
+      toast.error(t('weeklyCalendar.loadError'));
     } finally {
       setLoading(false);
     }
@@ -136,12 +139,12 @@ export default function WeeklyCalendar() {
 
       if (error) throw error;
       
-      const statusText = newStatus === 'taken' ? 'tomada' : newStatus === 'missed' ? 'esquecida' : 'pulada';
-      toast.success(`Dose marcada como ${statusText}! ${newStatus === 'taken' ? '💚' : ''}`);
+      const statusText = newStatus === 'taken' ? t('weeklyCalendar.taken') : newStatus === 'missed' ? t('weeklyCalendar.missed') : t('weeklyCalendar.skipped');
+      toast.success(t('weeklyCalendar.markedAs', { status: statusText }) + (newStatus === 'taken' ? ' 💚' : ''));
       fetchWeekDoses();
     } catch (error) {
       console.error("Error updating dose status:", error);
-      toast.error("Erro ao atualizar status da dose");
+      toast.error(t('weeklyCalendar.updateError'));
     }
   };
 

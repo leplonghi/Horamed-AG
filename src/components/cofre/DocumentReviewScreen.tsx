@@ -9,7 +9,8 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS } from "date-fns/locale";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DocumentReviewScreenProps {
   documentId: string;
@@ -18,7 +19,8 @@ interface DocumentReviewScreenProps {
 }
 
 export default function DocumentReviewScreen({ documentId, extractedData, onComplete }: DocumentReviewScreenProps) {
-  const [title, setTitle] = useState(extractedData.title || "Documento de Saúde");
+  const { t, language } = useLanguage();
+  const [title, setTitle] = useState(extractedData.title || t('docReview.defaultTitle'));
   const [date, setDate] = useState(extractedData.issued_at || new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState(extractedData.notes || "");
   const [processing, setProcessing] = useState(false);
@@ -27,12 +29,12 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
 
   const handleSave = async () => {
     if (!title) {
-      toast.error("Título é obrigatório");
+      toast.error(t('docReview.titleRequired'));
       return;
     }
 
     setProcessing(true);
-    toast.loading("Salvando documento...", { id: "save-doc" });
+    toast.loading(t('docReview.saving'), { id: "save-doc" });
 
     try {
       // Update document
@@ -47,27 +49,30 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
         .eq('id', documentId);
 
       toast.dismiss("save-doc");
-      toast.success("✓ Documento salvo na Carteira de Saúde!");
+      toast.success(t('docReview.savedSuccess'));
 
       navigate(`/carteira/${documentId}`);
 
     } catch (error: any) {
-      console.error('Erro ao salvar documento:', error);
+      console.error('Error saving document:', error);
       toast.dismiss("save-doc");
-      toast.error("Erro ao salvar documento. Tente novamente.");
+      toast.error(t('docReview.saveError'));
     } finally {
       setProcessing(false);
     }
   };
+
+  const dateLocale = language === 'pt' ? ptBR : enUS;
+  const dateFormat = language === 'pt' ? "dd 'de' MMMM 'de' yyyy" : "MMMM dd, yyyy";
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="container max-w-3xl mx-auto px-4 pt-6 pb-6 space-y-6">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="heading-page">Revise seu documento</h1>
+          <h1 className="heading-page">{t('docReview.title')}</h1>
           <p className="text-description">
-            Confirme os dados antes de salvar
+            {t('docReview.subtitle')}
           </p>
         </div>
 
@@ -85,7 +90,7 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">📅</span>
                   <span className="text-sm">
-                    {format(new Date(extractedData.issued_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    {format(new Date(extractedData.issued_at), dateFormat, { locale: dateLocale })}
                   </span>
                 </div>
               )}
@@ -96,20 +101,20 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
         {/* Form */}
         <Card>
           <CardHeader>
-            <CardTitle>Informações do documento</CardTitle>
+            <CardTitle>{t('docReview.info')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Título *</Label>
+              <Label>{t('docReview.docTitle')} *</Label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Digite um título para o documento"
+                placeholder={t('docReview.titlePlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Data</Label>
+              <Label>{t('docReview.date')}</Label>
               <Input
                 type="date"
                 value={date}
@@ -118,11 +123,11 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
             </div>
 
             <div className="space-y-2">
-              <Label>Observações (opcional)</Label>
+              <Label>{t('docReview.observations')}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Adicione qualquer observação importante"
+                placeholder={t('docReview.observationsPlaceholder')}
                 rows={4}
               />
             </div>
@@ -135,7 +140,7 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
           disabled={processing || !title}
         >
           <Check className="mr-2 h-5 w-5" />
-          Salvar na Carteira de Saúde
+          {t('docReview.saveToWallet')}
         </Button>
       </div>
     </div>
