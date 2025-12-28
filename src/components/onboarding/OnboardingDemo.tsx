@@ -3,20 +3,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Clock, Heart } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   onComplete: () => void;
 }
 
-const demoItems = [
-  { name: "Aspirina 100mg", time: "08:00", taken: true },
-  { name: "Vitamina D", time: "12:00", taken: false },
-  { name: "Ômega 3", time: "20:00", taken: false },
-];
-
 export default function OnboardingDemo({ onComplete }: Props) {
   const [countdown, setCountdown] = useState(5);
   const [showOverlay, setShowOverlay] = useState(true);
+  const { t, language } = useLanguage();
+
+  const demoItems = [
+    { name: "Aspirina 100mg", time: "08:00", taken: true },
+    { name: language === 'pt' ? "Vitamina D" : "Vitamin D", time: "12:00", taken: false },
+    { name: language === 'pt' ? "Ômega 3" : "Omega 3", time: "20:00", taken: false },
+  ];
 
   useEffect(() => {
     if (countdown > 0) {
@@ -30,18 +32,22 @@ export default function OnboardingDemo({ onComplete }: Props) {
     }
   }, [countdown, onComplete]);
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  };
+
   return (
     <div className="relative min-h-[600px]">
       {/* Demo Content */}
       <div className="space-y-6">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Hoje</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t('onboardingDemo.today')}</h2>
           <p className="text-muted-foreground">
-            {new Date().toLocaleDateString("pt-BR", {
-              weekday: "long",
-              day: "numeric",
-              month: "long",
-            })}
+            {formatDate(new Date())}
           </p>
         </div>
 
@@ -78,7 +84,7 @@ export default function OnboardingDemo({ onComplete }: Props) {
                   </div>
                   {!item.taken && (
                     <Button size="sm" variant="outline">
-                      Marcar
+                      {t('onboardingDemo.mark')}
                     </Button>
                   )}
                 </div>
@@ -91,9 +97,9 @@ export default function OnboardingDemo({ onComplete }: Props) {
           <div className="flex items-center gap-3">
             <Heart className="h-6 w-6 text-primary" />
             <div>
-              <p className="font-semibold">Sequência de 5 dias! 🔥</p>
+              <p className="font-semibold">{t('onboardingDemo.streak', { days: '5' })}</p>
               <p className="text-sm text-muted-foreground">
-                Continue assim para manter seu compromisso
+                {t('onboardingDemo.keepGoing')}
               </p>
             </div>
           </div>
@@ -117,11 +123,10 @@ export default function OnboardingDemo({ onComplete }: Props) {
             >
               <div className="space-y-3">
                 <h2 className="text-3xl font-bold text-foreground">
-                  Assim será sua experiência
+                  {t('onboardingDemo.experienceTitle')}
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-md">
-                  Lembretes automáticos, acompanhamento visual e conquistas
-                  para te manter motivado
+                  {t('onboardingDemo.experienceDesc')}
                 </p>
               </div>
 
@@ -138,7 +143,10 @@ export default function OnboardingDemo({ onComplete }: Props) {
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Começando em {countdown} segundo{countdown !== 1 ? "s" : ""}...
+                {t('onboardingDemo.startingIn', { 
+                  count: String(countdown), 
+                  plural: countdown !== 1 ? 's' : '' 
+                })}
               </p>
             </motion.div>
           </motion.div>
