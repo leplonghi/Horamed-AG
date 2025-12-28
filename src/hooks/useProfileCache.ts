@@ -15,14 +15,44 @@ interface CacheStore {
   [profileId: string]: ProfileCache;
 }
 
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache validity
+const STORAGE_KEY = 'profileCacheStore';
+
+// Load initial cache from localStorage
+const loadCacheFromStorage = (): CacheStore => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Only use cache if less than 10 minutes old
+      const now = Date.now();
+      const validCache: CacheStore = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if ((value as ProfileCache).lastUpdated > now - 10 * 60 * 1000) {
+          validCache[key] = value as ProfileCache;
+        }
+      }
+      return validCache;
+    }
+  } catch (e) {
+    console.error('Error loading cache from storage:', e);
+  }
+  return {};
+};
+
 export function useProfileCache() {
-  const [cache, setCache] = useState<CacheStore>({});
+  const [cache, setCache] = useState<CacheStore>(loadCacheFromStorage);
   const isFetchingRef = useRef<Set<string>>(new Set());
 
   const prefetchProfileData = useCallback(async (profileId: string, userId: string) => {
-    // Evitar múltiplas requisições simultâneas para o mesmo perfil
+    // Check if we have fresh cache
+    const existingCache = cache[profileId];
+    if (existingCache && Date.now() - existingCache.lastUpdated < CACHE_TTL) {
+      return; // Skip if cache is still valid
+    }
+
+    // Avoid duplicate fetches
     if (isFetchingRef.current.has(profileId)) return;
-    
     isFetchingRef.current.add(profileId);
 
     try {
@@ -30,7 +60,7 @@ export function useProfileCache() {
       const startOfDay = `${today}T00:00:00`;
       const endOfDay = `${today}T23:59:59`;
 
-      // Buscar todos os dados em paralelo
+      // Fetch all data in parallel
       const [
         medicationsRes,
         dosesRes,
@@ -39,7 +69,6 @@ export function useProfileCache() {
         consultationsRes,
         healthEventsRes
       ] = await Promise.all([
-        // Medicamentos ativos
         supabase
           .from('items')
           .select('*')
@@ -47,59 +76,47 @@ export function useProfileCache() {
           .eq('profile_id', profileId)
           .eq('is_active', true),
         
-        // Doses de hoje
         supabase
           .from('dose_instances')
-          .select(`
-            *,
-            items!inner(
-              id,
-              name,
-              profile_id,
-              user_id
-            )
-          `)
+          .select(`*, items!inner(id, name, profile_id, user_id)`)
           .eq('items.user_id', userId)
           .eq('items.profile_id', profileId)
           .gte('due_at', startOfDay)
           .lte('due_at', endOfDay)
           .order('due_at'),
         
-        // Documentos recentes (últimos 30 dias)
         supabase
           .from('documentos_saude')
-          .select('*')
+          .select('id, title, created_at, categoria_id, mime_type')
           .eq('user_id', userId)
           .eq('profile_id', profileId)
           .order('created_at', { ascending: false })
-          .limit(50),
+          .limit(20),
         
-        // Sinais vitais recentes (últimos 30 dias)
         supabase
           .from('sinais_vitais')
-          .select('*')
+          .select('id, data_medicao, peso_kg, pressao_sistolica, pressao_diastolica')
           .eq('user_id', userId)
           .eq('profile_id', profileId)
           .order('data_medicao', { ascending: false })
-          .limit(30),
+          .limit(10),
         
-        // Consultas futuras e recentes
         supabase
           .from('consultas_medicas')
-          .select('*')
+          .select('id, data_consulta, medico_nome, especialidade, status')
           .eq('user_id', userId)
           .eq('profile_id', profileId)
           .order('data_consulta', { ascending: false })
-          .limit(20),
+          .limit(10),
         
-        // Eventos de saúde pendentes
         supabase
           .from('eventos_saude')
-          .select('*')
+          .select('id, title, due_date, type')
           .eq('user_id', userId)
           .eq('profile_id', profileId)
           .is('completed_at', null)
           .order('due_date')
+          .limit(10)
       ]);
 
       const profileCache: ProfileCache = {
@@ -112,22 +129,39 @@ export function useProfileCache() {
         lastUpdated: Date.now()
       };
 
-      setCache(prev => ({
-        ...prev,
-        [profileId]: profileCache
-      }));
+      setCache(prev => {
+        const newCache = { ...prev, [profileId]: profileCache };
+        // Persist to localStorage for faster reload
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(newCache));
+        } catch (e) {
+          // Ignore storage errors
+        }
+        return newCache;
+      });
     } catch (error) {
       console.error('Error prefetching profile data:', error);
     } finally {
       isFetchingRef.current.delete(profileId);
     }
-  }, []);
+  }, [cache]);
 
   const prefetchAllProfiles = useCallback(async (profiles: any[], userId: string) => {
-    // Pré-carregar dados de todos os perfis em paralelo
-    await Promise.all(
-      profiles.map(profile => prefetchProfileData(profile.id, userId))
-    );
+    // Only prefetch active profile first for speed, others in background
+    if (profiles.length === 0) return;
+    
+    const activeId = localStorage.getItem('activeProfileId');
+    const activeProfile = profiles.find(p => p.id === activeId) || profiles[0];
+    
+    // Prefetch active profile immediately
+    await prefetchProfileData(activeProfile.id, userId);
+    
+    // Prefetch others after delay to not block UI
+    setTimeout(() => {
+      profiles
+        .filter(p => p.id !== activeProfile.id)
+        .forEach(profile => prefetchProfileData(profile.id, userId));
+    }, 2000);
   }, [prefetchProfileData]);
 
   const getProfileCache = useCallback((profileId: string): ProfileCache | null => {
@@ -144,6 +178,7 @@ export function useProfileCache() {
 
   const invalidateAllCache = useCallback(() => {
     setCache({});
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const updateProfileCache = useCallback((profileId: string, updates: Partial<ProfileCache>) => {
