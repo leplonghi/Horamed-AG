@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,8 @@ interface WizardStepIdentityProps {
     category: string;
     notes: string;
     supplementCategory?: string;
+    doseText?: string;
+    withFood?: boolean;
   };
   updateData: (data: Partial<any>) => void;
 }
@@ -267,6 +270,31 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
           </div>
         </div>
       )}
+
+      {/* Dose */}
+      <div className="space-y-3">
+        <Label className="text-base font-semibold">{t('wizard.dose') || 'Dose'}</Label>
+        <Input
+          placeholder={t('wizard.dosePlaceholder') || 'Ex: 1 comprimido, 2 cápsulas, 10ml'}
+          value={data.doseText || ''}
+          onChange={(e) => updateData({ doseText: e.target.value })}
+          className="h-11"
+        />
+      </div>
+
+      {/* Tomar com comida */}
+      <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🍽️</span>
+          <Label className="text-sm font-medium cursor-pointer">
+            {t('wizard.withFood') || 'Tomar com alimentos'}
+          </Label>
+        </div>
+        <Switch
+          checked={data.withFood || false}
+          onCheckedChange={(checked) => updateData({ withFood: checked })}
+        />
+      </div>
 
       {/* Observações */}
       <div className="space-y-2">
