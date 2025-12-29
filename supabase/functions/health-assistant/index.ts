@@ -6,6 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting: 30 requests per user per minute (authenticated)
+const userRateLimiter = new Map<string, number[]>();
+const USER_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const USER_RATE_LIMIT_MAX_REQUESTS = 30;
+
+function checkUserRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const requests = userRateLimiter.get(userId) || [];
+  const recentRequests = requests.filter(t => now - t < USER_RATE_LIMIT_WINDOW_MS);
+  
+  if (recentRequests.length >= USER_RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  userRateLimiter.set(userId, [...recentRequests, now]);
+  
+  // Clean up old entries periodically
+  if (userRateLimiter.size > 1000) {
+    for (const [id, timestamps] of userRateLimiter.entries()) {
+      if (timestamps.every(t => now - t > USER_RATE_LIMIT_WINDOW_MS)) {
+        userRateLimiter.delete(id);
+      }
+    }
+  }
+  
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -35,169 +63,184 @@ serve(async (req) => {
 
     const { data: { user } } = await supabase.auth.getUser();
     
+    // Require authentication for this endpoint
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Apply rate limiting per user
+    if (!checkUserRateLimit(user.id)) {
+      console.log(`[health-assistant] Rate limit exceeded for user: ${user.id}`);
+      return new Response(
+        JSON.stringify({ error: "Limite de requisições atingido. Aguarde um momento e tente novamente." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     let contextInfo = "";
     let quickActions: string[] = [];
     
-    if (user) {
-      // Get health profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("birth_date, weight_kg, height_cm, full_name")
-        .eq("user_id", user.id)
-        .single();
+    // Get health profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("birth_date, weight_kg, height_cm, full_name")
+      .eq("user_id", user.id)
+      .single();
 
-      if (profile) {
-        const userName = profile.full_name?.split(' ')[0] || 'usuário';
-        contextInfo += `\nNome do usuário: ${userName}`;
+    if (profile) {
+      const userName = profile.full_name?.split(' ')[0] || 'usuário';
+      contextInfo += `\nNome do usuário: ${userName}`;
+      
+      if (profile.birth_date) {
+        const birthDate = new Date(profile.birth_date);
+        const today = new Date();
+        const age = today.getFullYear() - birthDate.getFullYear() - 
+          (today.getMonth() < birthDate.getMonth() || 
+           (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
+        contextInfo += `\nIdade: ${age} anos`;
         
-        if (profile.birth_date) {
-          const birthDate = new Date(profile.birth_date);
-          const today = new Date();
-          const age = today.getFullYear() - birthDate.getFullYear() - 
-            (today.getMonth() < birthDate.getMonth() || 
-             (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
-          contextInfo += `\nIdade: ${age} anos`;
-          
-          if (profile.weight_kg && profile.height_cm) {
-            const heightM = profile.height_cm / 100;
-            const bmi = (profile.weight_kg / (heightM * heightM)).toFixed(1);
-            contextInfo += `\nPeso: ${profile.weight_kg}kg | IMC: ${bmi}`;
-          }
+        if (profile.weight_kg && profile.height_cm) {
+          const heightM = profile.height_cm / 100;
+          const bmi = (profile.weight_kg / (heightM * heightM)).toFixed(1);
+          contextInfo += `\nPeso: ${profile.weight_kg}kg | IMC: ${bmi}`;
         }
       }
+    }
 
-      // Get medications with stock info
-      const { data: medications } = await supabase
-        .from("items")
-        .select(`
-          id, name, dose_text, with_food, category, notes,
-          stock(units_left, units_total, projected_end_at)
-        `)
-        .eq("user_id", user.id)
-        .eq("is_active", true);
+    // Get medications with stock info
+    const { data: medications } = await supabase
+      .from("items")
+      .select(`
+        id, name, dose_text, with_food, category, notes,
+        stock(units_left, units_total, projected_end_at)
+      `)
+      .eq("user_id", user.id)
+      .eq("is_active", true);
 
-      if (medications && medications.length > 0) {
-        contextInfo += "\n\n📋 MEDICAMENTOS ATIVOS:";
-        const lowStockItems: string[] = [];
+    if (medications && medications.length > 0) {
+      contextInfo += "\n\n📋 MEDICAMENTOS ATIVOS:";
+      const lowStockItems: string[] = [];
+      
+      medications.forEach((med: any) => {
+        const stockInfo = med.stock?.[0];
+        let stockStatus = "";
         
-        medications.forEach((med: any) => {
-          const stockInfo = med.stock?.[0];
-          let stockStatus = "";
+        if (stockInfo) {
+          const daysLeft = stockInfo.projected_end_at 
+            ? Math.ceil((new Date(stockInfo.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+            : null;
           
-          if (stockInfo) {
-            const daysLeft = stockInfo.projected_end_at 
-              ? Math.ceil((new Date(stockInfo.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-              : null;
-            
-            if (daysLeft !== null) {
-              if (daysLeft <= 5) {
-                stockStatus = ` ⚠️ ESTOQUE CRÍTICO (${daysLeft} dias)`;
-                lowStockItems.push(med.name);
-              } else if (daysLeft <= 15) {
-                stockStatus = ` (${daysLeft} dias de estoque)`;
-              }
+          if (daysLeft !== null) {
+            if (daysLeft <= 5) {
+              stockStatus = ` ⚠️ ESTOQUE CRÍTICO (${daysLeft} dias)`;
+              lowStockItems.push(med.name);
+            } else if (daysLeft <= 15) {
+              stockStatus = ` (${daysLeft} dias de estoque)`;
             }
           }
-          
-          contextInfo += `\n- ${med.name}${med.dose_text ? ` ${med.dose_text}` : ""}${med.category ? ` [${med.category}]` : ""}${stockStatus}`;
-        });
+        }
         
-        if (lowStockItems.length > 0) {
-          quickActions.push(`Alertar sobre estoque baixo de: ${lowStockItems.join(", ")}`);
-        }
+        contextInfo += `\n- ${med.name}${med.dose_text ? ` ${med.dose_text}` : ""}${med.category ? ` [${med.category}]` : ""}${stockStatus}`;
+      });
+      
+      if (lowStockItems.length > 0) {
+        quickActions.push(`Alertar sobre estoque baixo de: ${lowStockItems.join(", ")}`);
+      }
+    }
+
+    // Get today's doses
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const { data: todayDoses } = await supabase
+      .from("dose_instances")
+      .select(`
+        id, status, due_at, taken_at,
+        items!inner(name, user_id)
+      `)
+      .eq("items.user_id", user.id)
+      .gte("due_at", todayStart.toISOString())
+      .lte("due_at", todayEnd.toISOString())
+      .order("due_at", { ascending: true });
+
+    if (todayDoses && todayDoses.length > 0) {
+      const pending = todayDoses.filter((d: any) => d.status === "scheduled");
+      const taken = todayDoses.filter((d: any) => d.status === "taken");
+      const missed = todayDoses.filter((d: any) => d.status === "missed");
+      const overdue = pending.filter((d: any) => new Date(d.due_at) < new Date());
+      
+      contextInfo += `\n\n📅 DOSES DE HOJE:`;
+      contextInfo += `\n- Total: ${todayDoses.length} doses`;
+      contextInfo += `\n- Tomadas: ${taken.length}`;
+      contextInfo += `\n- Pendentes: ${pending.length}`;
+      if (overdue.length > 0) {
+        contextInfo += `\n- ⚠️ ATRASADAS: ${overdue.length}`;
+        const overdueNames = overdue.map((d: any) => d.items.name).join(", ");
+        quickActions.push(`Lembrar sobre doses atrasadas: ${overdueNames}`);
+      }
+      if (missed.length > 0) {
+        contextInfo += `\n- Perdidas: ${missed.length}`;
       }
 
-      // Get today's doses
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
-
-      const { data: todayDoses } = await supabase
-        .from("dose_instances")
-        .select(`
-          id, status, due_at, taken_at,
-          items!inner(name, user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", todayStart.toISOString())
-        .lte("due_at", todayEnd.toISOString())
-        .order("due_at", { ascending: true });
-
-      if (todayDoses && todayDoses.length > 0) {
-        const pending = todayDoses.filter((d: any) => d.status === "scheduled");
-        const taken = todayDoses.filter((d: any) => d.status === "taken");
-        const missed = todayDoses.filter((d: any) => d.status === "missed");
-        const overdue = pending.filter((d: any) => new Date(d.due_at) < new Date());
-        
-        contextInfo += `\n\n📅 DOSES DE HOJE:`;
-        contextInfo += `\n- Total: ${todayDoses.length} doses`;
-        contextInfo += `\n- Tomadas: ${taken.length}`;
-        contextInfo += `\n- Pendentes: ${pending.length}`;
-        if (overdue.length > 0) {
-          contextInfo += `\n- ⚠️ ATRASADAS: ${overdue.length}`;
-          const overdueNames = overdue.map((d: any) => d.items.name).join(", ");
-          quickActions.push(`Lembrar sobre doses atrasadas: ${overdueNames}`);
-        }
-        if (missed.length > 0) {
-          contextInfo += `\n- Perdidas: ${missed.length}`;
-        }
-
-        // Next pending dose
-        const nextPending = pending.find((d: any) => new Date(d.due_at) > new Date());
-        if (nextPending) {
-          const nextTime = new Date(nextPending.due_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-          contextInfo += `\n- Próxima dose: ${(nextPending as any).items.name} às ${nextTime}`;
-        }
+      // Next pending dose
+      const nextPending = pending.find((d: any) => new Date(d.due_at) > new Date());
+      if (nextPending) {
+        const nextTime = new Date(nextPending.due_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        contextInfo += `\n- Próxima dose: ${(nextPending as any).items.name} às ${nextTime}`;
       }
+    }
 
-      // Get recent adherence stats (last 7 days)
-      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const { data: recentDoses } = await supabase
-        .from("dose_instances")
-        .select("status, items!inner(user_id)")
-        .eq("items.user_id", user.id)
-        .gte("due_at", weekAgo.toISOString());
+    // Get recent adherence stats (last 7 days)
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const { data: recentDoses } = await supabase
+      .from("dose_instances")
+      .select("status, items!inner(user_id)")
+      .eq("items.user_id", user.id)
+      .gte("due_at", weekAgo.toISOString());
 
-      if (recentDoses && recentDoses.length > 0) {
-        const takenCount = recentDoses.filter((d: any) => d.status === "taken").length;
-        const adherenceRate = Math.round((takenCount / recentDoses.length) * 100);
-        contextInfo += `\n\n📊 PROGRESSO (7 dias): ${adherenceRate}% (${takenCount}/${recentDoses.length} doses)`;
-        
-        if (adherenceRate >= 90) {
-          quickActions.push("Parabenizar pelo excelente progresso!");
-        } else if (adherenceRate < 70) {
-          quickActions.push("Oferecer dicas para melhorar a rotina");
-        }
+    if (recentDoses && recentDoses.length > 0) {
+      const takenCount = recentDoses.filter((d: any) => d.status === "taken").length;
+      const adherenceRate = Math.round((takenCount / recentDoses.length) * 100);
+      contextInfo += `\n\n📊 PROGRESSO (7 dias): ${adherenceRate}% (${takenCount}/${recentDoses.length} doses)`;
+      
+      if (adherenceRate >= 90) {
+        quickActions.push("Parabenizar pelo excelente progresso!");
+      } else if (adherenceRate < 70) {
+        quickActions.push("Oferecer dicas para melhorar a rotina");
       }
+    }
 
-      // Get documents count
-      const { count: docsCount } = await supabase
-        .from("documentos_saude")
-        .select("*", { count: 'exact', head: true })
-        .eq("user_id", user.id);
+    // Get documents count
+    const { count: docsCount } = await supabase
+      .from("documentos_saude")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", user.id);
 
-      if (docsCount !== null && docsCount > 0) {
-        contextInfo += `\n\n📄 DOCUMENTOS: ${docsCount} salvos na Carteira de Saúde`;
-      }
+    if (docsCount !== null && docsCount > 0) {
+      contextInfo += `\n\n📄 DOCUMENTOS: ${docsCount} salvos na Carteira de Saúde`;
+    }
 
-      // Get upcoming vaccines
-      const { data: upcomingVaccines } = await supabase
-        .from("vaccination_records")
-        .select("vaccine_name, next_dose_date")
-        .eq("user_id", user.id)
-        .not("next_dose_date", "is", null)
-        .gte("next_dose_date", new Date().toISOString())
-        .order("next_dose_date", { ascending: true })
-        .limit(3);
+    // Get upcoming vaccines
+    const { data: upcomingVaccines } = await supabase
+      .from("vaccination_records")
+      .select("vaccine_name, next_dose_date")
+      .eq("user_id", user.id)
+      .not("next_dose_date", "is", null)
+      .gte("next_dose_date", new Date().toISOString())
+      .order("next_dose_date", { ascending: true })
+      .limit(3);
 
-      if (upcomingVaccines && upcomingVaccines.length > 0) {
-        contextInfo += `\n\n💉 VACINAS PENDENTES:`;
-        upcomingVaccines.forEach((v: any) => {
-          const date = new Date(v.next_dose_date).toLocaleDateString('pt-BR');
-          contextInfo += `\n- ${v.vaccine_name}: ${date}`;
-        });
-      }
+    if (upcomingVaccines && upcomingVaccines.length > 0) {
+      contextInfo += `\n\n💉 VACINAS PENDENTES:`;
+      upcomingVaccines.forEach((v: any) => {
+        const date = new Date(v.next_dose_date).toLocaleDateString('pt-BR');
+        contextInfo += `\n- ${v.vaccine_name}: ${date}`;
+      });
     }
 
     const systemPrompt = `Você é Clara, a assistente de organização e acompanhamento do HoraMed.
