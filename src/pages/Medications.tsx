@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Search, Plus, Pill, Leaf, Clock } from "lucide-react";
+import { Pencil, Trash2, Search, Plus, Pill, Leaf, Clock, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -17,6 +17,8 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { motion } from "framer-motion";
 import SupplementCategoryTag, { detectSupplementCategory } from "@/components/SupplementCategoryTag";
 import { useLanguage } from "@/contexts/LanguageContext";
+import MedicationInfoSheet from "@/components/MedicationInfoSheet";
+import { useMedicationInfo } from "@/hooks/useMedicationInfo";
 
 interface Item {
   id: string;
@@ -37,13 +39,30 @@ interface Item {
 
 export default function Medications() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { canAddMedication } = useSubscription();
   const { activeProfile } = useUserProfiles();
+  
+  // Medication info (bula) state
+  const [selectedMedForInfo, setSelectedMedForInfo] = useState<string | null>(null);
+  const { info, isLoading: infoLoading, error: infoError, fetchInfo, clearInfo } = useMedicationInfo();
+  
+  const handleOpenBula = (medName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedMedForInfo(medName);
+    fetchInfo(medName);
+  };
+  
+  const handleCloseBula = (open: boolean) => {
+    if (!open) {
+      setSelectedMedForInfo(null);
+      clearInfo();
+    }
+  };
 
   useEffect(() => {
     fetchItems();
@@ -186,6 +205,15 @@ export default function Medications() {
             </div>
             
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9"
+                title={language === 'pt' ? 'Ver bula' : 'View package insert'}
+                onClick={(e) => handleOpenBula(item.name, e)}
+              >
+                <BookOpen className="h-4 w-4" />
+              </Button>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -354,6 +382,15 @@ export default function Medications() {
       <FloatingActionButton />
       <Navigation />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} feature="medication" />
+      
+      <MedicationInfoSheet
+        open={!!selectedMedForInfo}
+        onOpenChange={handleCloseBula}
+        medicationName={selectedMedForInfo || ''}
+        info={info}
+        isLoading={infoLoading}
+        error={infoError}
+      />
     </>
   );
 }

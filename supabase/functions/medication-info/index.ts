@@ -43,18 +43,22 @@ serve(async (req) => {
 
     const systemPrompt = `Você é um assistente de saúde especializado em informações sobre medicamentos brasileiros.
 Responda SEMPRE em português brasileiro.
-Forneça informações concisas e úteis sobre o medicamento solicitado.
+Forneça informações concisas e úteis sobre o medicamento solicitado, similar a uma bula simplificada.
 NÃO forneça dosagens específicas ou recomendações de uso - apenas informações gerais.
 Sempre recomende consultar um médico ou farmacêutico para orientações específicas.`;
 
-    const userPrompt = `Forneça informações sobre o medicamento "${medicationName}".
+    const userPrompt = `Forneça informações detalhadas sobre o medicamento "${medicationName}" em formato de bula simplificada.
 Inclua:
-1. Para que serve (indicação principal)
+1. Para que serve (indicação principal e secundárias)
 2. Classe terapêutica
 3. Princípio ativo (se diferente do nome comercial)
-4. Cuidados gerais importantes
+4. Como usar (modo de uso geral, sem dosagens específicas)
+5. Contraindicações importantes
+6. Efeitos colaterais mais comuns
+7. Precauções e advertências
+8. Interações medicamentosas relevantes
 
-Responda de forma concisa e objetiva. Use no máximo 3-4 frases para cada item.`;
+Responda de forma concisa e objetiva.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -73,13 +77,13 @@ Responda de forma concisa e objetiva. Use no máximo 3-4 frases para cada item.`
             type: "function",
             function: {
               name: "medication_info",
-              description: "Return structured medication information",
+              description: "Return structured medication information like a simplified package insert (bula)",
               parameters: {
                 type: "object",
                 properties: {
                   indication: {
                     type: "string",
-                    description: "Para que serve o medicamento (indicação principal)"
+                    description: "Para que serve o medicamento (indicações principais e secundárias)"
                   },
                   therapeuticClass: {
                     type: "string",
@@ -89,12 +93,28 @@ Responda de forma concisa e objetiva. Use no máximo 3-4 frases para cada item.`
                     type: "string",
                     description: "Princípio ativo do medicamento"
                   },
+                  howToUse: {
+                    type: "string",
+                    description: "Como usar o medicamento (modo de uso geral sem dosagens específicas)"
+                  },
+                  contraindications: {
+                    type: "string",
+                    description: "Contraindicações - quando NÃO usar este medicamento"
+                  },
+                  sideEffects: {
+                    type: "string",
+                    description: "Efeitos colaterais mais comuns"
+                  },
                   warnings: {
                     type: "string",
-                    description: "Cuidados gerais importantes"
+                    description: "Precauções e advertências importantes"
+                  },
+                  interactions: {
+                    type: "string",
+                    description: "Interações medicamentosas relevantes"
                   }
                 },
-                required: ["indication", "therapeuticClass", "activeIngredient", "warnings"],
+                required: ["indication", "therapeuticClass", "activeIngredient", "howToUse", "contraindications", "sideEffects", "warnings", "interactions"],
                 additionalProperties: false
               }
             }

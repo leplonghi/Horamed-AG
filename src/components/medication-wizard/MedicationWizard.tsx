@@ -185,7 +185,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
       if (error) throw error;
 
       if (data?.name) {
-        // Create the medication immediately and redirect to edit
+        // Create the medication immediately with extracted data and redirect to edit
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Usuário não autenticado");
 
@@ -196,8 +196,10 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             profile_id: activeProfile?.id,
             name: data.name,
             category: data.category || "medicamento",
+            dose_text: data.dose || null, // Store extracted dose
             is_active: true,
             notification_type: "push",
+            treatment_duration_days: data.duration_days || null,
           })
           .select()
           .single();
@@ -212,7 +214,11 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           is_active: true,
         });
 
-        toast.success(t('wizard.createdComplete'));
+        const extractedInfo = [];
+        if (data.name) extractedInfo.push(data.name);
+        if (data.dose) extractedInfo.push(data.dose);
+        
+        toast.success(`${t('wizard.createdComplete')}: ${extractedInfo.join(' - ')}`);
         onOpenChange(false);
         navigate(`/adicionar?edit=${newItem.id}`);
       } else {
