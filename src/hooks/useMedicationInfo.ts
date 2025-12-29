@@ -5,7 +5,11 @@ export interface MedicationInfo {
   indication: string;
   therapeuticClass: string;
   activeIngredient: string;
+  howToUse?: string;
+  contraindications?: string;
+  sideEffects?: string;
   warnings: string;
+  interactions?: string;
   description?: string;
 }
 

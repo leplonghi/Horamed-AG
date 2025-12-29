@@ -135,9 +135,19 @@ serve(async (req) => {
           {
             role: "system",
             content: `Você é um assistente especializado em identificar medicamentos, suplementos e vitaminas a partir de imagens de caixas/rótulos/receitas.
-Analise a imagem e extraia:
-1. Nome do medicamento/suplemento
-2. Dosagem (mg, g, UI, etc.)
+
+IMPORTANTE - EXTRAÇÃO DE DOSE:
+Analise CUIDADOSAMENTE a imagem para extrair a dosagem. Procure por:
+- Texto grande na embalagem indicando a concentração (ex: "500mg", "1g", "10mg/ml")
+- Posologia na receita (ex: "1 comprimido de 12/12h", "2 cápsulas ao dia")
+- Informações de quantidade por unidade (ex: "20mg por comprimido")
+
+EXTRAIA:
+1. Nome do medicamento/suplemento (nome comercial ou genérico)
+2. Dosagem COMPLETA - inclua:
+   - Concentração (ex: 500mg, 10mg/ml, 1000UI)
+   - Forma farmacêutica (comprimido, cápsula, solução, gotas)
+   - Posologia se presente na receita (ex: "1 comprimido 2x ao dia")
 3. Categoria (medicamento, suplemento, vitamina, ou pet)
 4. Duração do tratamento em dias (se especificado na receita, ex: "por 7 dias", "durante 14 dias")
 5. Número total de doses (se especificado, ex: "21 doses", "tomar 30 comprimidos")
@@ -146,23 +156,22 @@ Analise a imagem e extraia:
 Retorne APENAS um JSON válido no formato:
 {
   "name": "Nome do produto",
-  "dose": "Dosagem completa",
+  "dose": "Dosagem completa com concentração e forma",
   "category": "medicamento|suplemento|vitamina|pet",
   "duration_days": número ou null,
   "total_doses": número ou null,
-  "start_date": "YYYY-MM-DD" ou null
+  "start_date": "YYYY-MM-DD" ou null,
+  "posology": "Posologia se indicada na receita ou null",
+  "form": "comprimido|capsula|solução|gotas|pomada|injetavel|outro"
 }
 
-Se não conseguir identificar algum campo, use null para campos numéricos/data e "" para strings.
-Exemplo:
-{
-  "name": "Amoxicilina",
-  "dose": "500mg",
-  "category": "medicamento",
-  "duration_days": 7,
-  "total_doses": 21,
-  "start_date": null
-}`
+Exemplos de dose bem extraída:
+- "500mg comprimido" (da caixa do medicamento)
+- "10mg/ml solução oral" (de um frasco)
+- "1 comprimido de 500mg 8/8h" (de uma receita)
+- "1000UI cápsula" (de vitamina D)
+
+Se não conseguir identificar algum campo, use null para campos numéricos/data e "" para strings.`
           },
           {
             role: "user",

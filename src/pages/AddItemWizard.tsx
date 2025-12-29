@@ -75,16 +75,26 @@ export default function AddItemWizard() {
   useEffect(() => {
     const name = searchParams.get("name");
     const category = searchParams.get("category") as Category;
+    const dose = searchParams.get("dose");
+    const duration = searchParams.get("duration_days");
+    const totalDoses = searchParams.get("total_doses");
     
     if (name) {
       setFormData(prev => ({
         ...prev,
         name,
-        category: category || prev.category
+        category: category || prev.category,
+        doseText: dose || prev.doseText,
+        treatmentDays: duration ? parseInt(duration) : prev.treatmentDays,
+        isContinuous: !duration,
       }));
-      // Auto-complete first step if name provided
-      setCompletedSteps(new Set(["name"]));
-      setActiveStep("category");
+      
+      // Auto-complete steps based on what data we have
+      const completed = new Set(["name"]);
+      if (category) completed.add("category");
+      
+      setCompletedSteps(completed);
+      setActiveStep(category ? "continuous" : "category");
     }
   }, [searchParams]);
 
