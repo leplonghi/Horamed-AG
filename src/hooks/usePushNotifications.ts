@@ -51,6 +51,18 @@ export const usePushNotifications = () => {
       // Sync any offline actions
       await syncOfflineActions();
       
+      // Schedule all notifications for the next 48 hours IMMEDIATELY
+      console.log("[Notifications] Scheduling all dose notifications...");
+      await scheduleNext48Hours();
+      
+      // Also trigger the backend to schedule push notifications
+      try {
+        await supabase.functions.invoke('schedule-dose-notifications');
+        console.log("[Notifications] ✓ Backend notifications scheduled");
+      } catch (error) {
+        console.error("[Notifications] Error scheduling backend notifications:", error);
+      }
+      
       console.log("[Notifications] ✓ Initialization complete");
     };
 
