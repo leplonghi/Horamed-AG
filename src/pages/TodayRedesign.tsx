@@ -84,8 +84,7 @@ export default function TodayRedesign() {
   } = useAdaptiveSuggestions();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("");
   const [motivationalQuote, setMotivationalQuote] = useState("");
   const [userName, setUserName] = useState("");
@@ -247,7 +246,7 @@ export default function TodayRedesign() {
       console.error("Error loading event counts:", error);
     }
   }, [selectedDate, activeProfile?.id]);
-  const loadData = useCallback(async (date: Date) => {
+  const loadData = useCallback(async (date: Date, forceLoading = false) => {
     try {
       const {
         data: { user },
@@ -275,8 +274,6 @@ export default function TodayRedesign() {
                 ? "missed"
                 : "pending",
             itemId: dose.item_id,
-            onMarkDone: () => markAsTaken(dose.id, dose.item_id, dose.items?.name),
-            onSnooze: () => snoozeDose(dose.id, dose.items?.name),
           }));
 
           setTimelineItems(cachedItems);
@@ -285,12 +282,13 @@ export default function TodayRedesign() {
             taken: cachedDoses.filter((d: any) => d.status === "taken").length,
           });
 
-          setDataLoaded(true);
-          setLoading(false);
+          if (!forceLoading) {
+            setLoading(false);
+          }
         }
       }
 
-      if (!dataLoaded) setLoading(true);
+      if (forceLoading) setLoading(true);
 
       const { data: profileData } = await supabase
         .from("profiles")
@@ -394,14 +392,15 @@ export default function TodayRedesign() {
         setTodayStats({ total, taken });
       }
 
-      setDataLoaded(true);
     } catch (error) {
       console.error("Error loading data:", error);
       toast.error(t("todayRedesign.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [activeProfile?.id, t, getProfileCache, dataLoaded]);
+  }, [activeProfile?.id, t, getProfileCache]);
+
+  // Load greeting/quote once on mount or when key dependencies change
   useEffect(() => {
     const hour = new Date().getHours();
     let quotes: string[] = [];
@@ -488,9 +487,13 @@ export default function TodayRedesign() {
     }
 
     setMotivationalQuote(quotes[Math.floor(Math.random() * quotes.length)]);
-    loadData(selectedDate);
+  }, [activeProfile, userName, language, t]);
+
+  // Load data when date or profile changes
+  useEffect(() => {
+    loadData(selectedDate, true);
     loadEventCounts();
-  }, [loadData, loadEventCounts, selectedDate, activeProfile?.id, userName, language, t]);
+  }, [selectedDate, activeProfile?.id]);
 
   // Agendar notificações apenas uma vez
   useEffect(() => {
