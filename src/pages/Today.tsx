@@ -279,8 +279,8 @@ export default function Today() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-subtle pb-28">
-        <div className="container-fluid pt-20">
+      <div className="min-h-screen bg-gradient-subtle page-container">
+        <div className="container-fluid">
           
           {/* Hero Header */}
           <motion.div 

@@ -132,10 +132,10 @@ export default function Progress() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col pb-20 bg-gradient-subtle">
+    <div className="min-h-screen flex flex-col bg-gradient-subtle">
       <Header />
 
-      <main className="flex-1 container mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 container mx-auto p-4 sm:p-6 space-y-6 page-container">
         <div className="flex items-start justify-between gap-4">
           <PageHeader
             title={t('progress.yourProgress')}
