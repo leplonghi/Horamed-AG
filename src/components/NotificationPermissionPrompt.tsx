@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Capacitor } from "@capacitor/core";
+import { PushNotifications } from "@capacitor/push-notifications";
+import { LocalNotifications } from "@capacitor/local-notifications";
+import { toast } from "sonner";
 
 interface NotificationPermissionPromptProps {
   onRequestPermission: () => Promise<boolean>;
@@ -14,27 +17,44 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
   const { language } = useLanguage();
   const [show, setShow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [loading, setLoading] = useState(false);
   
   const isNative = Capacitor.isNativePlatform();
   
   useEffect(() => {
-    // Don't show on native (native handles permission differently)
-    if (isNative) return;
-    
-    // Check if user already dismissed or has permission
-    const alreadyDismissed = localStorage.getItem('notification_prompt_dismissed');
-    if (alreadyDismissed) {
-      setDismissed(true);
-      return;
-    }
-    
-    if ('Notification' in window) {
-      if (Notification.permission === 'default') {
-        // Show prompt after a short delay
-        const timer = setTimeout(() => setShow(true), 3000);
-        return () => clearTimeout(timer);
+    const checkPermissions = async () => {
+      // Check if user already dismissed
+      const alreadyDismissed = localStorage.getItem('notification_prompt_dismissed');
+      if (alreadyDismissed) {
+        setDismissed(true);
+        return;
       }
-    }
+      
+      if (isNative) {
+        // Check native permissions
+        try {
+          const pushStatus = await PushNotifications.checkPermissions();
+          const localStatus = await LocalNotifications.checkPermissions();
+          
+          if (pushStatus.receive !== 'granted' || localStatus.display !== 'granted') {
+            // Show prompt after a short delay
+            setTimeout(() => setShow(true), 2000);
+          }
+        } catch (error) {
+          console.error("Error checking native permissions:", error);
+        }
+      } else {
+        // Web permissions
+        if ('Notification' in window) {
+          if (Notification.permission === 'default') {
+            // Show prompt after a short delay
+            setTimeout(() => setShow(true), 3000);
+          }
+        }
+      }
+    };
+    
+    checkPermissions();
     
     // Listen for the event from usePushNotifications
     const handleNeedPermission = () => {
@@ -48,9 +68,35 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
   }, [isNative, dismissed]);
   
   const handleEnable = async () => {
-    const granted = await onRequestPermission();
-    if (granted) {
-      setShow(false);
+    setLoading(true);
+    
+    try {
+      if (isNative) {
+        // Request native permissions
+        const pushResult = await PushNotifications.requestPermissions();
+        const localResult = await LocalNotifications.requestPermissions();
+        
+        if (pushResult.receive === 'granted' && localResult.display === 'granted') {
+          await PushNotifications.register();
+          toast.success(language === 'pt' ? "✓ Notificações ativadas!" : "✓ Notifications enabled!");
+          setShow(false);
+        } else {
+          toast.error(language === 'pt' 
+            ? "Permissão negada. Ative nas configurações do celular." 
+            : "Permission denied. Enable in phone settings.");
+        }
+      } else {
+        // Web permissions
+        const granted = await onRequestPermission();
+        if (granted) {
+          setShow(false);
+        }
+      }
+    } catch (error) {
+      console.error("Error requesting permission:", error);
+      toast.error(language === 'pt' ? "Erro ao ativar notificações" : "Error enabling notifications");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -77,13 +123,13 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
       >
         <Card className="p-4 shadow-lg border-primary/20 bg-card">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-full bg-primary/10 shrink-0">
+            <div className="p-2 rounded-full bg-primary/10 shrink-0 animate-pulse">
               <Bell className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold text-sm">
-                  {language === 'pt' ? 'Ativar notificações?' : 'Enable notifications?'}
+                  {language === 'pt' ? '🔔 Ativar lembretes?' : '🔔 Enable reminders?'}
                 </h3>
                 <Button 
                   variant="ghost" 
@@ -96,15 +142,21 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {language === 'pt' 
-                  ? 'Receba lembretes no horário dos seus medicamentos' 
-                  : 'Get reminders at your medication times'}
+                  ? 'Nunca esqueça de tomar seus medicamentos! Receba alertas nos horários certos.' 
+                  : 'Never forget your medications! Get alerts at the right times.'}
               </p>
               <div className="flex gap-2 mt-3">
-                <Button size="sm" onClick={handleEnable} className="flex-1">
-                  <Bell className="h-3 w-3 mr-1" />
-                  {language === 'pt' ? 'Ativar' : 'Enable'}
+                <Button size="sm" onClick={handleEnable} className="flex-1" disabled={loading}>
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Bell className="h-3 w-3 mr-1" />
+                      {language === 'pt' ? 'Ativar' : 'Enable'}
+                    </>
+                  )}
                 </Button>
-                <Button size="sm" variant="outline" onClick={handleLater}>
+                <Button size="sm" variant="outline" onClick={handleLater} disabled={loading}>
                   {language === 'pt' ? 'Depois' : 'Later'}
                 </Button>
               </div>
