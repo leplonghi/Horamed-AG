@@ -9,22 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { getReferralDiscountForUser } from "@/lib/referrals";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-// Pricing by currency
-const PRICING = {
-  BRL: {
-    monthly: 19.90,
-    annual: 199.90,
-    currency: "R$",
-    locale: "pt-BR",
-  },
-  USD: {
-    monthly: 4.99,
-    annual: 49.90,
-    currency: "$",
-    locale: "en-US",
-  }
-};
+import { PRICING } from "@/lib/stripeConfig";
 
 export default function Plans() {
   const navigate = useNavigate();
@@ -32,10 +17,31 @@ export default function Plans() {
   const [loading, setLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [referralDiscount, setReferralDiscount] = useState(0);
+  const [countryCode, setCountryCode] = useState<string>('BR');
   const { isPremium, subscription } = useSubscription();
 
-  // Get pricing based on language
-  const pricing = language === 'en' ? PRICING.USD : PRICING.BRL;
+  // Detect country from browser or use language as fallback
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        // Try to get country from timezone
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezone.includes('Sao_Paulo') || timezone.includes('Brasilia')) {
+          setCountryCode('BR');
+        } else {
+          // Default based on language
+          setCountryCode(language === 'pt' ? 'BR' : 'US');
+        }
+      } catch {
+        setCountryCode(language === 'pt' ? 'BR' : 'US');
+      }
+    };
+    detectCountry();
+  }, [language]);
+
+  // Get pricing based on country
+  const isBrazil = countryCode === 'BR';
+  const pricing = isBrazil ? PRICING.brl : PRICING.usd;
   const monthlyPrice = pricing.monthly;
   const annualPrice = pricing.annual;
   const annualMonthly = annualPrice / 12;
@@ -62,7 +68,7 @@ export default function Plans() {
     try {
       const planType = billingCycle === 'annual' ? 'annual' : 'monthly';
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planType }
+        body: { planType, countryCode }
       });
       if (error) throw error;
       if (data?.url) {
@@ -77,7 +83,10 @@ export default function Plans() {
   };
 
   const formatPrice = (price: number) => {
-    return `${pricing.currency}${price.toFixed(2).replace('.', language === 'en' ? '.' : ',')}`;
+    if (isBrazil) {
+      return `R$${price.toFixed(2).replace('.', ',')}`;
+    }
+    return `$${price.toFixed(2)}`;
   };
 
   const premiumFeatures = [
