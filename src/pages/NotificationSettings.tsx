@@ -16,6 +16,8 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { NotificationDiagnostics } from "@/components/NotificationDiagnostics";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import AlarmManager from "@/components/AlarmManager";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function NotificationSettings() {
   const navigate = useNavigate();
@@ -158,29 +160,39 @@ export default function NotificationSettings() {
           </div>
         </div>
 
-        <div className="space-y-5">
-          {/* Setup Banner for Mobile */}
-          {Capacitor.isNativePlatform() && (
-            <Card 
-              className="p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/30 cursor-pointer hover:shadow-md transition-all"
-              onClick={() => navigate('/configurar-notificacoes')}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/20 rounded-full">
-                  <Settings2 className="h-5 w-5 text-primary" />
+        <Tabs defaultValue="settings" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsTrigger value="alarms">Alarmes</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="alarms" className="space-y-4">
+            <AlarmManager />
+          </TabsContent>
+          
+          <TabsContent value="settings" className="space-y-5">
+            {/* Setup Banner for Mobile */}
+            {Capacitor.isNativePlatform() && (
+              <Card 
+                className="p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/30 cursor-pointer hover:shadow-md transition-all"
+                onClick={() => navigate('/configurar-notificacoes')}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/20 rounded-full">
+                    <Settings2 className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm">Configurar para funcionar com app fechado</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Passo a passo para garantir que os lembretes funcionem sempre
+                    </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm">Configurar para funcionar com app fechado</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Passo a passo para garantir que os lembretes funcionem sempre
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </div>
-            </Card>
-          )}
+              </Card>
+            )}
 
-          {!Capacitor.isNativePlatform() && (
+            {!Capacitor.isNativePlatform() && (
             <Alert>
               <Smartphone className="h-4 w-4" />
               <AlertDescription className="text-sm">
@@ -414,7 +426,8 @@ export default function NotificationSettings() {
               </div>
             </CardContent>
           </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
       <Navigation />
     </div>
