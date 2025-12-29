@@ -386,7 +386,7 @@ export default function MedicamentosHub() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-subtle pt-16 sm:pt-20 px-3 sm:p-6 pb-20">
+      <div className="min-h-screen bg-gradient-subtle page-container px-3 sm:px-6">
         <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6">
           {/* Header - Compact for mobile */}
           <div className="flex items-center justify-between py-2">

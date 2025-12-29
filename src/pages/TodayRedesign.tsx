@@ -595,7 +595,7 @@ export default function TodayRedesign() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="container mx-auto pt-24 pb-20 max-w-6xl px-[10px]">
+      <main className="page-container container mx-auto max-w-6xl px-4">
         {/* Overdue doses banner - inline, not fixed */}
         <OverdueDosesBanner />
 

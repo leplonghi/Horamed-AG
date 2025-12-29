@@ -171,10 +171,10 @@ export default function Cofre() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
+    <div className="min-h-screen bg-gradient-subtle">
       <Header />
       
-      <div className="container max-w-4xl mx-auto pt-20 sm:pt-24 pb-6 space-y-6 px-4 sm:px-6">
+      <div className="page-container container max-w-4xl mx-auto space-y-6 px-4 sm:px-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-2">

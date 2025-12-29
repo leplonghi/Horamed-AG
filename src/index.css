@@ -304,9 +304,30 @@ All colors MUST be HSL.
     @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
   }
   
-  /* Fluid container */
+  /* Fluid container with mobile-safe padding */
   .container-fluid {
     @apply w-full max-w-lg mx-auto px-4 sm:px-6;
+  }
+  
+  /* Safe area utilities for mobile */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Mobile page wrapper - accounts for header + nav + Clara button */
+  .page-container {
+    padding-top: calc(4rem + env(safe-area-inset-top));
+    padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+  }
+  
+  /* Alternate page padding for secondary pages */
+  .page-content {
+    padding-top: calc(5rem + env(safe-area-inset-top));
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom));
   }
   
   /* Stat number styling */

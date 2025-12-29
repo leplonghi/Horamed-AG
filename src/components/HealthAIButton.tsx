@@ -92,12 +92,12 @@ export default function HealthAIButton() {
 
   return (
     <>
-      {/* Floating Clara Avatar Button - positioned to avoid overlap */}
+      {/* Floating Clara Avatar Button - positioned above navigation + safe area */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button 
             onClick={() => setIsOpen(true)} 
-            className="fixed bottom-20 right-4 z-30"
+            className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}

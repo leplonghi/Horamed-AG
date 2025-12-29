@@ -101,10 +101,10 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
+    <div className="min-h-screen bg-gradient-subtle">
       <Header />
       
-      <main className="container max-w-2xl mx-auto px-4 py-6 pt-24 space-y-6">
+      <main className="page-container container max-w-2xl mx-auto px-4 space-y-6">
         <TutorialHint
           id="profile-overview"
           title={t('profile.yourProfile')}

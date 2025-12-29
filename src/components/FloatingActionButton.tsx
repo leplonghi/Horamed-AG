@@ -21,7 +21,7 @@ export default function FloatingActionButton() {
       <AnimatePresence>
         <motion.button
           onClick={() => setShowMenu(true)}
-          className="fixed bottom-24 right-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-xl"
+          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-xl"
           initial={{ scale: 0, opacity: 0 }}
           animate={{ 
             scale: 1, 

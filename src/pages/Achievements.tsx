@@ -50,7 +50,7 @@ export default function Achievements() {
   const lockedAchievements = achievements.filter((a) => !a.unlocked);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background page-container">
       <PageHeader
         title={t('achievements.title')}
         description={t('achievements.description')}
