@@ -14,10 +14,13 @@ interface Props {
 
 export default function OnboardingSetTime({ value, onChange, onNext, onBack }: Props) {
   const [selectedOffset, setSelectedOffset] = useState(2); // minutes from now
+  const [displayTime, setDisplayTime] = useState(value);
 
   useEffect(() => {
-    onChange(addMinutes(new Date(), selectedOffset));
-  }, [selectedOffset, onChange]);
+    const newTime = addMinutes(new Date(), selectedOffset);
+    setDisplayTime(newTime);
+    onChange(newTime);
+  }, [selectedOffset]); // Only trigger on offset change, not onChange
 
   const timeOptions = [
     { minutes: 1, label: "1 min" },
@@ -68,7 +71,7 @@ export default function OnboardingSetTime({ value, onChange, onNext, onBack }: P
         <div className="bg-muted/50 rounded-xl p-6 text-center">
           <p className="text-sm text-muted-foreground mb-2">Lembrete às</p>
           <p className="text-4xl font-bold text-primary">
-            {format(value, "HH:mm", { locale: ptBR })}
+            {format(displayTime, "HH:mm", { locale: ptBR })}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             daqui a {selectedOffset} {selectedOffset === 1 ? "minuto" : "minutos"}
