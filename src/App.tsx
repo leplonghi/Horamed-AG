@@ -61,7 +61,7 @@ const DataExport = lazy(() => import("./pages/DataExport"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Terms = lazy(() => import("./pages/Terms"));
 const Tutorial = lazy(() => import("./pages/Tutorial"));
-const SmartOnboarding = lazy(() => import("./components/onboarding/SmartOnboarding"));
+const OnboardingFlow = lazy(() => import("./components/onboarding/OnboardingFlow"));
 const QuickOnboarding = lazy(() => import("./components/onboarding/QuickOnboarding"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const HelpSupport = lazy(() => import("./pages/HelpSupport"));
@@ -180,8 +180,8 @@ function AppContent() {
           <Route path="/termos" element={<Terms />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
-          <Route path="/onboarding" element={<SmartOnboarding />} />
-          <Route path="/onboarding-rapido" element={<QuickOnboarding />} />
+                          <Route path="/onboarding" element={<OnboardingFlow />} />
+                          <Route path="/onboarding-rapido" element={<QuickOnboarding />} />
           <Route path="/bem-vindo" element={<Welcome />} />
           <Route path="/ajuda" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
           <Route path="/help-support" element={<ProtectedRoute><HelpSupport /></ProtectedRoute>} />
