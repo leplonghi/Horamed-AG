@@ -205,13 +205,13 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
               </p>
             )}
 
-            {/* Actions */}
+            {/* Actions - Botões grandes e óbvios */}
             {dose.status === 'scheduled' && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mt-1">
                 <DoseActionButton
                   variant="taken"
                   onClick={onTake}
-                  className="flex-1"
+                  className="flex-1 min-w-0"
                 />
                 <DoseActionButton
                   variant="more"

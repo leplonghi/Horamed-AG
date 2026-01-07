@@ -16,23 +16,23 @@ export default function DoseActionButton({
   disabled = false,
   className,
 }: DoseActionButtonProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   
   const config = {
     taken: {
       icon: CheckCircle2,
-      label: t('today.iTookIt'),
-      className: "bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm",
+      label: language === 'pt' ? 'Tomei' : 'Took it',
+      className: "bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md h-11 text-base px-5",
     },
     snooze: {
       icon: Clock,
-      label: t('today.snooze'),
-      className: "bg-secondary hover:bg-secondary/80 text-secondary-foreground",
+      label: language === 'pt' ? 'Depois' : 'Later',
+      className: "bg-secondary hover:bg-secondary/80 text-secondary-foreground h-11",
     },
     more: {
       icon: MoreHorizontal,
-      label: "⋯",
-      className: "bg-muted hover:bg-muted/80 text-foreground w-12 px-2",
+      label: "",
+      className: "bg-muted hover:bg-muted/80 text-foreground w-11 h-11 px-0",
     },
   };
 
