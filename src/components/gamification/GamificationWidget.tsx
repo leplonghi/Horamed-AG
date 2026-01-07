@@ -7,14 +7,22 @@ import { useNavigate } from "react-router-dom";
 import { useXPSystem } from "@/hooks/useXPSystem";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function GamificationWidget() {
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const { currentXP, level, xpToNextLevel, loading: xpLoading } = useXPSystem();
   const { currentStreak, loading: streakLoading } = useStreakCalculator();
   const { unlockedCount, loading: achievementsLoading } = useAchievements();
 
   const loading = xpLoading || streakLoading || achievementsLoading;
+  
+  const t = {
+    level: language === 'pt' ? 'Nível' : 'Level',
+    dailyChallenges: language === 'pt' ? 'Desafios diários' : 'Daily challenges',
+    ranking: language === 'pt' ? 'Ranking' : 'Ranking',
+  };
 
   if (loading) {
     return (
@@ -57,7 +65,7 @@ export function GamificationWidget() {
           {/* Progress Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium">Nível {level}</span>
+              <span className="text-sm font-medium">{t.level} {level}</span>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Flame className="h-3 w-3 text-orange-500" />
@@ -83,11 +91,11 @@ export function GamificationWidget() {
         <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t">
           <Badge variant="outline" className="gap-1 text-xs">
             <Zap className="h-3 w-3" />
-            Desafios diários
+            {t.dailyChallenges}
           </Badge>
           <Badge variant="outline" className="gap-1 text-xs">
             <Trophy className="h-3 w-3" />
-            Ranking
+            {t.ranking}
           </Badge>
         </div>
       </Card>
