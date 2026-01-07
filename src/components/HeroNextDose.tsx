@@ -56,27 +56,36 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
     onSnooze(dose.id, dose.items.name);
   }, [dose, onSnooze, isSubmitting]);
 
-  // Show success state immediately after optimistic update
+  // Show success state immediately after optimistic update - REFORÇO POSITIVO
   if (optimisticTaken) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <Card className="p-8 bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/40">
-          <div className="flex flex-col items-center text-center gap-3">
+        <Card className="p-10 bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/50">
+          <div className="flex flex-col items-center text-center gap-4">
             <motion.div 
-              className="h-16 w-16 rounded-full bg-green-500 flex items-center justify-center"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
             >
-              <Check className="h-8 w-8 text-white" />
+              <Check className="h-10 w-10 text-white" />
             </motion.div>
-            <h2 className="text-xl font-bold text-green-600 dark:text-green-400">
-              {language === 'pt' ? 'Dose registrada com sucesso.' : 'Dose recorded successfully.'}
-            </h2>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {language === 'pt' ? 'Boa! ✓' : 'Done! ✓'}
+              </h2>
+              <p className="text-base text-muted-foreground mt-1">
+                {language === 'pt' ? 'Dose registrada com sucesso' : 'Dose recorded successfully'}
+              </p>
+            </motion.div>
           </div>
         </Card>
       </motion.div>
@@ -214,33 +223,39 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
             </div>
 
             <div className="space-y-3">
-              {/* Botão principal: Marcar como tomado */}
+              {/* Botão principal: AÇÃO ÓBVIA - "Tomei agora" */}
               <Button 
                 size="lg" 
                 onClick={handleTake}
                 disabled={isSubmitting}
                 className={cn(
-                  "w-full h-16 text-lg font-bold rounded-2xl shadow-md transition-all active:scale-[0.98]",
+                  "w-full h-20 text-xl font-bold rounded-2xl shadow-lg transition-all active:scale-[0.97]",
+                  "flex flex-col items-center justify-center gap-1",
                   isOverdue 
-                    ? "bg-destructive hover:bg-destructive/90"
-                    : "bg-primary hover:bg-primary/90"
+                    ? "bg-destructive hover:bg-destructive/90 shadow-destructive/30"
+                    : "bg-primary hover:bg-primary/90 shadow-primary/30"
                 )}
               >
-                <Check className="h-6 w-6 mr-2" />
-                {language === 'pt' ? '✓ Marcar como tomado' : '✓ Mark as taken'}
+                <div className="flex items-center gap-2">
+                  <Check className="h-7 w-7" />
+                  <span>{language === 'pt' ? 'Tomei agora' : 'I took it'}</span>
+                </div>
+                <span className="text-xs font-normal opacity-80">
+                  {language === 'pt' ? 'Toque para confirmar' : 'Tap to confirm'}
+                </span>
               </Button>
 
-              {/* Botão secundário: Adiar */}
+              {/* Botão secundário: Adiar - mais discreto */}
               {onSnooze && (
                 <Button 
-                  variant="outline"
+                  variant="ghost"
                   size="lg"
                   onClick={handleSnooze}
                   disabled={isSubmitting}
-                  className="w-full h-12 text-base font-medium rounded-xl border-2 hover:bg-muted/50 transition-all active:scale-[0.98]"
+                  className="w-full h-11 text-sm font-medium rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                 >
-                  <Clock className="h-5 w-5 mr-2" />
-                  {language === 'pt' ? '⏰ Adiar' : '⏰ Snooze'}
+                  <Clock className="h-4 w-4 mr-2" />
+                  {language === 'pt' ? 'Lembrar depois (+15 min)' : 'Remind me later (+15 min)'}
                 </Button>
               )}
             </div>

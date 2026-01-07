@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays } from "date-fns";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
@@ -45,7 +46,7 @@ interface TimelineItem {
   itemId?: string;
 }
 
-// Memoized status card to prevent re-renders
+// Memoized status card - Progresso visual limpo
 const TodayStatusCard = memo(function TodayStatusCard({ 
   streak, 
   taken, 
@@ -59,32 +60,52 @@ const TodayStatusCard = memo(function TodayStatusCard({
 }) {
   if (total === 0) return null;
   
+  const progressPercent = Math.round((taken / total) * 100);
+  const isComplete = taken === total;
+  
   return (
-    <Card className="p-4 bg-muted/30 border-muted/50">
-      <div className="flex items-center justify-between">
+    <Card className={cn(
+      "p-4 border transition-colors",
+      isComplete 
+        ? "bg-green-500/10 border-green-500/30" 
+        : "bg-muted/30 border-muted/50"
+    )}>
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           {streak > 0 && (
-            <span className="px-2 py-0.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full text-xs font-semibold">
-              🔥 {streak}
+            <span className="px-2.5 py-1 bg-orange-500/15 text-orange-600 dark:text-orange-400 rounded-full text-sm font-bold">
+              🔥 {streak} {language === 'pt' ? 'dias' : 'days'}
             </span>
           )}
-          <span className="text-sm font-medium text-foreground">
-            {language === 'pt' ? 'Hoje' : 'Today'}
-          </span>
         </div>
-        <div className="text-sm text-muted-foreground">
-          <span className="font-bold text-foreground">{taken}</span>
-          /{total} {language === 'pt' ? 'doses' : 'doses'}
+        <div className="text-right">
+          <span className={cn(
+            "text-2xl font-bold",
+            isComplete ? "text-green-600 dark:text-green-400" : "text-foreground"
+          )}>
+            {taken}/{total}
+          </span>
+          <p className="text-xs text-muted-foreground">
+            {language === 'pt' ? 'doses hoje' : 'doses today'}
+          </p>
         </div>
       </div>
-      <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+      <div className="h-3 bg-muted rounded-full overflow-hidden">
         <motion.div 
-          className="h-full bg-primary rounded-full"
+          className={cn(
+            "h-full rounded-full transition-colors",
+            isComplete ? "bg-green-500" : "bg-primary"
+          )}
           initial={{ width: 0 }}
-          animate={{ width: `${total > 0 ? (taken / total) * 100 : 0}%` }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          animate={{ width: `${progressPercent}%` }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         />
       </div>
+      {isComplete && (
+        <p className="text-center text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
+          {language === 'pt' ? '✓ Tudo certo por hoje!' : '✓ All done for today!'}
+        </p>
+      )}
     </Card>
   );
 });
@@ -673,20 +694,14 @@ export default function TodayRedesign() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="page-container container mx-auto max-w-2xl px-4 space-y-5">
+      <main className="page-container container mx-auto max-w-2xl px-4 space-y-6">
         {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 📍 HEADER - Saudação dinâmica e contextual */}
+        {/* 📍 HEADER - Saudação simples e limpa */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <div className="pt-1">
+        <div className="pt-2">
           <h1 className="text-2xl font-bold text-foreground">
-            {greeting}{userName ? `, ${userName}` : ''} 👋
+            {greeting}{userName ? `, ${userName}` : ''}
           </h1>
-          <p className="text-base text-muted-foreground mt-0.5">
-            {nextPendingDose 
-              ? (language === 'pt' ? 'Você tem uma dose agora.' : 'You have a dose now.')
-              : (language === 'pt' ? 'Sua rotina está em dia hoje.' : 'Your routine is up to date.')
-            }
-          </p>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════ */}

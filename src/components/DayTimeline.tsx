@@ -273,25 +273,26 @@ export default function DayTimeline({
                                 </div>
                               </div>
 
-                              {/* Ações compactas - apenas para medicamentos pendentes */}
+                              {/* Ações - Botões claros e clicáveis */}
                               {item.type === "medication" && !isDone && !isMissed && (
-                                <div className="flex gap-1.5 shrink-0">
+                                <div className="flex gap-2 shrink-0">
                                   <Button
                                     size="sm"
                                     onClick={item.onMarkDone}
-                                    className="h-8 px-3 text-xs bg-primary hover:bg-primary/90"
+                                    className="h-10 px-4 text-sm font-bold bg-primary hover:bg-primary/90 shadow-sm"
                                   >
-                                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                                    {t('today.iTookIt')}
+                                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                                    {language === 'pt' ? 'Tomei' : 'Took it'}
                                   </Button>
                                   {item.onSnooze && (
                                     <Button
                                       size="sm"
-                                      variant="ghost"
+                                      variant="outline"
                                       onClick={item.onSnooze}
-                                      className="h-8 px-2"
+                                      className="h-10 px-3"
+                                      title={language === 'pt' ? 'Lembrar depois' : 'Remind later'}
                                     >
-                                      <Timer className="h-3.5 w-3.5" />
+                                      <Timer className="h-4 w-4" />
                                     </Button>
                                   )}
                                 </div>
