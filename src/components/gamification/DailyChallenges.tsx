@@ -31,10 +31,25 @@ interface Challenge {
 }
 
 export function DailyChallenges() {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+
+  const t = {
+    title: language === 'pt' ? 'Desafios Diários' : 'Daily Challenges',
+    dailyDose: language === 'pt' ? 'Dose do Dia' : 'Daily Dose',
+    dailyDoseDesc: language === 'pt' ? 'Tome sua primeira dose de hoje' : 'Take your first dose today',
+    onTimeChampion: language === 'pt' ? 'Campeão da Pontualidade' : 'On-Time Champion',
+    onTimeChampionDesc: language === 'pt' ? 'Tome 3 doses no horário correto' : 'Take 3 doses on time',
+    perfectDay: language === 'pt' ? 'Dia Perfeito' : 'Perfect Day',
+    perfectDayDesc: language === 'pt' ? 'Complete todas as doses do dia' : 'Complete all doses today',
+    bonus: language === 'pt' ? 'Bônus' : 'Bonus',
+    claim: language === 'pt' ? 'Resgatar' : 'Claim',
+    claimed: language === 'pt' ? 'Resgatado' : 'Claimed',
+    complete: language === 'pt' ? 'completos' : 'complete',
+    xpEarned: language === 'pt' ? 'XP ganhos!' : 'XP earned!',
+  };
 
   useEffect(() => {
     fetchChallenges();
@@ -71,8 +86,8 @@ export function DailyChallenges() {
       const dailyChallenges: Challenge[] = [
         {
           id: "daily_dose",
-          title: "Dose do Dia",
-          description: "Tome sua primeira dose de hoje",
+          title: t.dailyDose,
+          description: t.dailyDoseDesc,
           icon: <Target className="h-5 w-5 text-blue-500" />,
           current: Math.min(takenDoses.length, 1),
           target: 1,
@@ -83,8 +98,8 @@ export function DailyChallenges() {
         },
         {
           id: "on_time_champion",
-          title: "Campeão da Pontualidade",
-          description: "Tome 3 doses no horário correto",
+          title: t.onTimeChampion,
+          description: t.onTimeChampionDesc,
           icon: <Clock className="h-5 w-5 text-green-500" />,
           current: onTimeDoses,
           target: 3,
@@ -95,8 +110,8 @@ export function DailyChallenges() {
         },
         {
           id: "perfect_day",
-          title: "Dia Perfeito",
-          description: "Complete todas as doses do dia",
+          title: t.perfectDay,
+          description: t.perfectDayDesc,
           icon: <Sparkles className="h-5 w-5 text-purple-500" />,
           current: takenDoses.length,
           target: Math.max(totalDoses, 1),
@@ -129,7 +144,7 @@ export function DailyChallenges() {
     
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
-      toast.success(`+${challenge.xpReward} XP ganhos!`, {
+      toast.success(`+${challenge.xpReward} ${t.xpEarned}`, {
         icon: "🎉",
       });
     }
@@ -168,7 +183,7 @@ export function DailyChallenges() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Zap className="h-5 w-5 text-yellow-500" />
-          <h3 className="font-semibold">{t('challenges.title') || 'Desafios Diários'}</h3>
+          <h3 className="font-semibold">{t.title}</h3>
         </div>
         <Badge variant="outline" className="gap-1">
           <Timer className="h-3 w-3" />
@@ -180,7 +195,7 @@ export function DailyChallenges() {
       <div className="mb-4 p-3 bg-muted/50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium">
-            {completedCount}/{challenges.length} completos
+            {completedCount}/{challenges.length} {t.complete}
           </span>
           <span className="text-sm text-primary font-bold">
             +{totalXP} XP
@@ -221,7 +236,7 @@ export function DailyChallenges() {
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm">{challenge.title}</p>
                     {challenge.type === 'bonus' && (
-                      <Badge variant="secondary" className="text-xs">Bônus</Badge>
+                      <Badge variant="secondary" className="text-xs">{t.bonus}</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{challenge.description}</p>
@@ -257,7 +272,7 @@ export function DailyChallenges() {
                     ) : (
                       <>
                         <Gift className="h-4 w-4" />
-                        Resgatar
+                        {t.claim}
                       </>
                     )}
                   </Button>
@@ -265,7 +280,7 @@ export function DailyChallenges() {
 
                 {challenge.claimed && (
                   <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                    ✓ Resgatado
+                    ✓ {t.claimed}
                   </Badge>
                 )}
               </div>

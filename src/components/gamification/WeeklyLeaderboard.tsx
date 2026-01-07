@@ -18,10 +18,18 @@ interface LeaderboardEntry {
 }
 
 export function WeeklyLeaderboard() {
-  const { t } = useLanguage();
+  const { language } = useLanguage();
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [currentUserRank, setCurrentUserRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const t = {
+    title: language === 'pt' ? 'Ranking Semanal' : 'Weekly Ranking',
+    you: language === 'pt' ? 'Você' : 'You',
+    days: language === 'pt' ? 'dias' : 'days',
+    yourPosition: language === 'pt' ? 'Sua posição' : 'Your position',
+    keepGoing: language === 'pt' ? 'Continue para subir no ranking!' : 'Keep going to climb the ranking!',
+  };
 
   useEffect(() => {
     fetchLeaderboard();
@@ -38,7 +46,7 @@ export function WeeklyLeaderboard() {
         { rank: 1, userId: "1", nickname: "HealthHero", avatarUrl: null, weeklyXP: 850, streak: 42, isCurrentUser: false },
         { rank: 2, userId: "2", nickname: "MedMaster", avatarUrl: null, weeklyXP: 720, streak: 28, isCurrentUser: false },
         { rank: 3, userId: "3", nickname: "WellnessWin", avatarUrl: null, weeklyXP: 680, streak: 21, isCurrentUser: false },
-        { rank: 4, userId: user.id, nickname: "Você", avatarUrl: null, weeklyXP: 450, streak: 7, isCurrentUser: true },
+        { rank: 4, userId: user.id, nickname: t.you, avatarUrl: null, weeklyXP: 450, streak: 7, isCurrentUser: true },
         { rank: 5, userId: "5", nickname: "CareChamp", avatarUrl: null, weeklyXP: 420, streak: 14, isCurrentUser: false },
       ];
 
@@ -96,7 +104,7 @@ export function WeeklyLeaderboard() {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Trophy className="h-5 w-5 text-yellow-500" />
-          <h3 className="font-semibold">{t('leaderboard.title') || 'Ranking Semanal'}</h3>
+          <h3 className="font-semibold">{t.title}</h3>
         </div>
         <Badge variant="secondary" className="gap-1">
           <Users className="h-3 w-3" />
@@ -128,12 +136,12 @@ export function WeeklyLeaderboard() {
               <p className={`font-medium truncate ${entry.isCurrentUser ? 'text-primary' : ''}`}>
                 {entry.nickname}
                 {entry.isCurrentUser && (
-                  <span className="text-xs text-muted-foreground ml-2">(você)</span>
+                  <span className="text-xs text-muted-foreground ml-2">({language === 'pt' ? 'você' : 'you'})</span>
                 )}
               </p>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  🔥 {entry.streak} dias
+                  🔥 {entry.streak} {t.days}
                 </span>
               </div>
             </div>
@@ -149,11 +157,11 @@ export function WeeklyLeaderboard() {
       {currentUserRank && currentUserRank > 5 && (
         <div className="mt-4 p-3 bg-muted/50 rounded-lg text-center">
           <p className="text-sm text-muted-foreground">
-            Sua posição: <span className="font-bold text-foreground">#{currentUserRank}</span>
+            {t.yourPosition}: <span className="font-bold text-foreground">#{currentUserRank}</span>
           </p>
           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1 mt-1">
             <TrendingUp className="h-3 w-3" />
-            Continue para subir no ranking!
+            {t.keepGoing}
           </p>
         </div>
       )}
