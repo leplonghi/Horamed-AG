@@ -39,6 +39,7 @@ import HealthAssistantChat from "@/components/HealthAssistantChat";
 import MiniWeekCalendar from "@/components/MiniWeekCalendar";
 import LowStockQuickRefill from "@/components/LowStockQuickRefill";
 import NotificationPermissionPrompt from "@/components/NotificationPermissionPrompt";
+import { GamificationWidget } from "@/components/gamification/GamificationWidget";
 
 interface DoseItem {
   id: string;
@@ -409,6 +410,13 @@ export default function Today() {
 
           {/* Weight Widget - Only for GLP-1/Bariatric users */}
           <TodayWeightWidget profileId={activeProfile?.id} />
+
+          {/* Gamification Widget - XP and Level Progress */}
+          {hasAnyItems && (
+            <div className="mb-6">
+              <GamificationWidget />
+            </div>
+          )}
 
           {/* Tutorial for new users */}
           <TutorialHint
