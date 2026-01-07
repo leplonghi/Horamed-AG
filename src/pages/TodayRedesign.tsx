@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays } from "date-fns";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
@@ -29,6 +30,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import StockAlertWidget from "@/components/StockAlertWidget";
 import MonthlyReportWidget from "@/components/MonthlyReportWidget";
 import HeroNextDose from "@/components/HeroNextDose";
+import ClaraProactiveCard from "@/components/ClaraProactiveCard";
+import { useOverdueDoses } from "@/hooks/useOverdueDoses";
 
 interface TimelineItem {
   id: string;
@@ -86,6 +89,7 @@ const TodayStatusCard = memo(function TodayStatusCard({
   );
 });
 export default function TodayRedesign() {
+  const navigate = useNavigate();
   const {
     scheduleNotificationsForNextDay
   } = useMedicationAlarm();
@@ -109,6 +113,8 @@ export default function TodayRedesign() {
   const { getProfileCache } = useProfileCacheContext();
   const { t, language } = useLanguage();
   useSmartRedirect();
+  const { overdueDoses } = useOverdueDoses();
+  const [lowStockItems, setLowStockItems] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -130,6 +136,47 @@ export default function TodayRedesign() {
       setShowMilestoneReward(true);
     }
   }, [isNewMilestone, milestone]);
+
+  // Load low stock items for Clara
+  useEffect(() => {
+    const loadLowStock = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: stockData } = await supabase
+          .from('stock')
+          .select('current_qty, alert_threshold, items(name)')
+          .not('items', 'is', null);
+
+        if (stockData) {
+          const lowItems = stockData
+            .filter((s: any) => s.current_qty <= (s.alert_threshold || 5))
+            .map((s: any) => s.items?.name)
+            .filter(Boolean);
+          setLowStockItems(lowItems);
+        }
+      } catch (error) {
+        console.error("Error loading low stock:", error);
+      }
+    };
+    loadLowStock();
+  }, []);
+
+  // Handle Clara action clicks
+  const handleClaraAction = useCallback((action: string) => {
+    if (action === "overdue") {
+      // Scroll to overdue banner or open first overdue dose
+      const banner = document.getElementById("overdue-banner");
+      banner?.scrollIntoView({ behavior: "smooth" });
+    } else if (action.startsWith("/")) {
+      navigate(action);
+    }
+  }, [navigate]);
+
+  const openClara = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('openClara'));
+  }, []);
   const handleMilestoneClose = () => {
     setShowMilestoneReward(false);
     markAsSeen();
@@ -654,7 +701,21 @@ export default function TodayRedesign() {
         />
 
         {/* Banner de doses atrasadas */}
-        <OverdueDosesBanner />
+        <div id="overdue-banner">
+          <OverdueDosesBanner />
+        </div>
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* 🤖 CLARA PROATIVA - Sugestões contextuais inteligentes */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <ClaraProactiveCard
+          overdueDoses={overdueDoses.length}
+          lowStockItems={lowStockItems}
+          currentStreak={streakData.currentStreak}
+          todayProgress={todayStats}
+          onOpenClara={openClara}
+          onActionClick={handleClaraAction}
+        />
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* 📊 STATUS DO DIA - Memoizado */}

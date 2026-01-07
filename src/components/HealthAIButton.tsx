@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Send, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,6 @@ import { useHealthAgent } from "@/hooks/useHealthAgent";
 import { useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-// Lazy load the avatar image only when chat is opened
 const claraAvatarUrl = new URL('@/assets/clara-avatar.png', import.meta.url).href;
 
 interface Message {
@@ -18,7 +16,7 @@ interface Message {
 }
 
 export default function HealthAIButton() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -37,12 +35,28 @@ export default function HealthAIButton() {
     }]);
   }, [t]);
 
-  const quickSuggestions = [
-    t('clara.addMed'),
-    t('clara.myProgress'),
-    t('clara.whereStock'),
-    t('clara.howWallet'),
-  ];
+  // Dynamic quick suggestions based on time of day
+  const quickSuggestions = useMemo(() => {
+    const hour = new Date().getHours();
+    const baseSuggestions = [
+      t('clara.addMed'),
+      t('clara.myProgress'),
+      t('clara.whereStock'),
+      t('clara.howWallet'),
+    ];
+    
+    // Add contextual suggestions based on time
+    const contextual: string[] = [];
+    if (hour < 10) {
+      contextual.push(language === 'pt' ? "O que devo tomar pela manhã?" : "What should I take in the morning?");
+    } else if (hour >= 12 && hour < 14) {
+      contextual.push(language === 'pt' ? "Quais remédios tomo com comida?" : "Which meds do I take with food?");
+    } else if (hour >= 20) {
+      contextual.push(language === 'pt' ? "Posso tomar todos os da noite juntos?" : "Can I take all my night meds together?");
+    }
+    
+    return [...contextual, ...baseSuggestions].slice(0, 4);
+  }, [t, language]);
 
   // Listen for external open events (from QuickActionMenu)
   useEffect(() => {
