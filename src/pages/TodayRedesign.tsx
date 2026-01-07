@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format, startOfDay, endOfDay, addDays } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
@@ -14,27 +14,19 @@ import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import DayTimeline from "@/components/DayTimeline";
 import ImprovedCalendar from "@/components/ImprovedCalendar";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import StreakBadge from "@/components/StreakBadge";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
-import HealthInsightsCard from "@/components/HealthInsightsCard";
 import MilestoneReward from "@/components/gamification/MilestoneReward";
 import AchievementShareDialog from "@/components/gamification/AchievementShareDialog";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useProfileCacheContext } from "@/contexts/ProfileCacheContext";
-import QuickDoseWidget from "@/components/QuickDoseWidget";
 import { useSmartRedirect } from "@/hooks/useSmartRedirect";
-import { useAdaptiveSuggestions } from "@/hooks/useAdaptiveSuggestions";
 import { VaccineRemindersWidget } from "@/components/VaccineRemindersWidget";
 import { ExpiredPrescriptionsAlert } from "@/components/ExpiredPrescriptionsAlert";
-import EssentialShortcuts from "@/components/EssentialShortcuts";
-import SimpleAdherenceSummary from "@/components/SimpleAdherenceSummary";
-import { X, TrendingUp, Gift, HelpCircle } from "lucide-react";
+import { Gift, HelpCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
 import HydrationWidget from "@/components/fitness/HydrationWidget";
 import EnergyHintWidget from "@/components/fitness/EnergyHintWidget";
 import SupplementConsistencyWidget from "@/components/fitness/SupplementConsistencyWidget";
@@ -45,6 +37,12 @@ import { OverdueDosesBanner } from "@/components/OverdueDosesBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import StockAlertWidget from "@/components/StockAlertWidget";
 import MonthlyReportWidget from "@/components/MonthlyReportWidget";
+import HeroNextDose from "@/components/HeroNextDose";
+import RoutineStatusSummary from "@/components/RoutineStatusSummary";
+import { useRef } from "react";
+import { cn } from "@/lib/utils";
+import { TrendingUp } from "lucide-react";
+import QuickDoseWidget from "@/components/QuickDoseWidget";
 interface TimelineItem {
   id: string;
   time: string;
@@ -81,9 +79,6 @@ export default function TodayRedesign() {
   const { getProfileCache } = useProfileCacheContext();
   const { t, language } = useLanguage();
   useSmartRedirect();
-  const {
-    suggestions
-  } = useAdaptiveSuggestions();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,6 +95,8 @@ export default function TodayRedesign() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<any>(null);
   const [hasSupplements, setHasSupplements] = useState(false);
+  const [nextPendingDose, setNextPendingDose] = useState<any>(null);
+  const [nextDayDose, setNextDayDose] = useState<{ time: string; name: string } | null>(null);
   const {
     preferences
   } = useFitnessPreferences();
@@ -248,6 +245,49 @@ export default function TodayRedesign() {
       console.error("Error loading event counts:", error);
     }
   }, [selectedDate, activeProfile?.id]);
+
+  const loadTomorrowFirstDose = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const tomorrow = addDays(new Date(), 1);
+      const tomorrowStart = startOfDay(tomorrow);
+      const tomorrowEnd = endOfDay(tomorrow);
+
+      let itemsQuery = supabase.from("items").select("id");
+      if (activeProfile) {
+        itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
+      }
+      const { data: profileItems } = await itemsQuery;
+      const itemIds = profileItems?.map(item => item.id) || [];
+
+      if (itemIds.length > 0) {
+        const { data: tomorrowDoses } = await supabase
+          .from("dose_instances")
+          .select(`due_at, items (name)`)
+          .in("item_id", itemIds)
+          .gte("due_at", tomorrowStart.toISOString())
+          .lte("due_at", tomorrowEnd.toISOString())
+          .eq("status", "scheduled")
+          .order("due_at", { ascending: true })
+          .limit(1);
+
+        if (tomorrowDoses && tomorrowDoses.length > 0) {
+          const dose = tomorrowDoses[0] as any;
+          setNextDayDose({
+            time: format(new Date(dose.due_at), "HH:mm"),
+            name: dose.items?.name || ""
+          });
+        } else {
+          setNextDayDose(null);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading tomorrow doses:", error);
+    }
+  }, [activeProfile?.id]);
+
   const loadData = useCallback(async (date: Date, forceLoading = false) => {
     try {
       const {
@@ -392,6 +432,21 @@ export default function TodayRedesign() {
         const total = doses.length;
         const taken = doses.filter((d: any) => d.status === "taken").length;
         setTodayStats({ total, taken });
+        
+        // Find next pending dose for Hero widget
+        const now = new Date();
+        const pendingDoses = doses
+          .filter((d: any) => d.status === "scheduled")
+          .sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
+        
+        if (pendingDoses.length > 0) {
+          setNextPendingDose(pendingDoses[0]);
+          setNextDayDose(null);
+        } else {
+          setNextPendingDose(null);
+          // All done for today - fetch tomorrow's first dose
+          loadTomorrowFirstDose();
+        }
       }
 
     } catch (error) {
@@ -597,127 +652,62 @@ export default function TodayRedesign() {
     <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="page-container container mx-auto max-w-6xl px-4">
-        {/* Overdue doses banner - inline, not fixed */}
+      <main className="page-container container mx-auto max-w-2xl px-4 space-y-4">
+        {/* Overdue doses banner */}
         <OverdueDosesBanner />
 
-        {/* Compact Header with greeting */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl md:text-2xl font-bold truncate bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                {greeting}{userName && `, ${userName}`}!
-              </h1>
-              <p className="text-muted-foreground text-sm truncate">{motivationalQuote}</p>
-            </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Streak inline badge */}
-              {streakData.currentStreak > 0 && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium">
-                  🔥 {streakData.currentStreak}
-                </div>
-              )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={toggleTutorials}
-                      className="h-8 w-8"
-                    >
-                      <HelpCircle className={`h-4 w-4 ${tutorialsEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[200px]">
-                    <p className="text-sm font-medium">
-                      {tutorialsEnabled ? "Dicas ativadas" : "Dicas desativadas"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Toque para {tutorialsEnabled ? "ocultar" : "mostrar"} as dicas de uso
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
+        {/* Compact Greeting */}
+        <div className="flex items-center justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold truncate">
+              {greeting}{userName && `, ${userName}`}!
+            </h1>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            {streakData.currentStreak > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium">
+                🔥 {streakData.currentStreak}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Critical Alerts - Compact and dismissable */}
+        {/* ⭐ HERO: Next Dose - ALWAYS AT TOP */}
+        <HeroNextDose
+          dose={nextPendingDose}
+          nextDayDose={nextDayDose}
+          onTake={markAsTaken}
+          allDoneToday={todayStats.total > 0 && todayStats.taken === todayStats.total}
+        />
+
+        {/* Status Summary */}
+        <RoutineStatusSummary
+          streak={streakData.currentStreak}
+          todayProgress={todayStats}
+        />
+
+        {/* Critical Alerts - Compact */}
         {criticalAlerts.alerts.length > 0 && (
-          <motion.div
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            onDragEnd={(e, { offset, velocity }) => {
-              if (Math.abs(offset.x) > 100 || Math.abs(velocity.x) > 500) {
-                criticalAlerts.dismissAll();
-              }
-            }}
-            className="mb-3"
-          >
-            <CriticalAlertBanner
-              alerts={criticalAlerts.alerts}
-              onDismiss={(id) => criticalAlerts.dismissAlert(id)}
-              onDismissAll={() => criticalAlerts.dismissAll()}
-            />
-          </motion.div>
+          <CriticalAlertBanner
+            alerts={criticalAlerts.alerts}
+            onDismiss={(id) => criticalAlerts.dismissAlert(id)}
+            onDismissAll={() => criticalAlerts.dismissAll()}
+          />
         )}
 
-        {/* Expired Prescriptions & Vaccine Reminders - inline compact */}
-        <div className="flex flex-wrap gap-2 mb-3">
-          <ExpiredPrescriptionsAlert />
-          <VaccineRemindersWidget />
-        </div>
+        {/* Alerts compactos */}
+        <ExpiredPrescriptionsAlert />
+        <VaccineRemindersWidget />
 
-        {/* Stock & Report Widgets - Proactive companion */}
+        {/* Stock & Report */}
         <StockAlertWidget />
         <MonthlyReportWidget />
 
-        {/* MAIN: Timeline */}
-        <div className="mb-4">
-          <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
-        </div>
+        {/* Calendário simples */}
+        <ImprovedCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} eventCounts={eventCounts} />
 
-        {/* Simple Week Strip Calendar */}
-        <div className="mb-4">
-          <ImprovedCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} eventCounts={eventCounts} />
-        </div>
-
-        {/* Referral Card - if not already referred */}
-        <Card className="mb-4 p-3 bg-gradient-to-r from-primary/5 to-purple-500/5 border-primary/20">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Gift className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{t('todayRedesign.referralTitle')}</p>
-              <p className="text-xs text-muted-foreground truncate">{t('todayRedesign.referralDesc')}</p>
-            </div>
-            <Button size="sm" variant="outline" onClick={() => navigate("/recompensas")} className="shrink-0">
-              {t('todayRedesign.referralCta')}
-            </Button>
-          </div>
-        </Card>
-
-        {/* Quick Actions - Compact inline row */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/adicionar-medicamento")}
-            className="text-xs gap-1.5"
-          >
-            <span className="text-primary">+</span> {t('todayRedesign.quickAddMedication')}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/carteira")}
-            className="text-xs gap-1.5"
-          >
-            <span className="text-green-600">📄</span> {t('todayRedesign.quickAddDocument')}
-          </Button>
-        </div>
+        {/* Timeline do dia */}
+        <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
 
         {/* Secondary Stats Row - Colorful */}
         <div className="grid grid-cols-2 gap-2 mb-4">
