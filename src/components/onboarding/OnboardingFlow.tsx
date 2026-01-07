@@ -6,9 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { trackNotificationEvent, NotificationEvents } from "@/hooks/useNotificationMetrics";
-import { Capacitor } from "@capacitor/core";
-import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
+import notificationService from "@/services/NotificationService";
 
 // Step components
 import OnboardingWelcomeNew from "./steps/OnboardingWelcomeNew";
@@ -113,33 +112,32 @@ export default function OnboardingFlow() {
         doseId: doseInstance.id 
       });
 
-      // Schedule notification via edge function
-      await supabase.functions.invoke("schedule-dose-notifications", {
-        body: { 
-          dose_id: doseInstance.id, 
-          mode: "single" 
-        },
+      // Schedule notification via unified NotificationService
+      await notificationService.initialize();
+      const result = await notificationService.scheduleDoseAlarm({
+        doseId: doseInstance.id,
+        itemId: item.id,
+        itemName: data.itemName,
+        doseText: "1 dose",
+        scheduledAt: data.scheduledTime,
       });
 
       // Track first notification scheduled
       await trackNotificationEvent(NotificationEvents.FIRST_NOTIFICATION_SENT, {
         item_name: data.itemName,
         scheduled_at: data.scheduledTime.toISOString(),
+        method: result.method,
       });
 
-      // Schedule local notification as backup
-      if (Capacitor.isNativePlatform()) {
-        await LocalNotifications.schedule({
-          notifications: [{
-            id: Math.floor(Math.random() * 100000),
-            title: "🔔 Hora do remédio!",
-            body: `${data.itemName} - 1 dose`,
-            schedule: { at: data.scheduledTime },
-            sound: "notification.wav",
-            actionTypeId: "DOSE_ACTIONS",
-          }],
-        });
-      }
+      // Log telemetry
+      await supabase.from("app_metrics").insert({
+        event_name: "first_alarm_scheduled",
+        event_data: { 
+          method: result.method,
+          success: result.success,
+          notification_id: result.notificationId,
+        },
+      });
 
       return true;
     } catch (error) {

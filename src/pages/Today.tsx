@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
+import notificationService from "@/services/NotificationService";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import { useMilestoneDetector } from "@/hooks/useMilestoneDetector";
