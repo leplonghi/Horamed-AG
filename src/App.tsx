@@ -27,6 +27,7 @@ const TodayRedesign = lazy(() => import("./pages/TodayRedesign"));
 const MedicamentosHub = lazy(() => import("./pages/MedicamentosHub"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Achievements = lazy(() => import("./pages/Achievements"));
+const Gamification = lazy(() => import("./pages/Gamification"));
 const Cofre = lazy(() => import("./pages/Cofre"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -121,6 +122,7 @@ function AppContent() {
           <Route path="/rotina" element={<ProtectedRoute><MedicamentosHub /></ProtectedRoute>} />
           <Route path="/progresso" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
           <Route path="/conquistas" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+          <Route path="/jornada" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
           <Route path="/carteira" element={<ProtectedRoute><Cofre /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           
