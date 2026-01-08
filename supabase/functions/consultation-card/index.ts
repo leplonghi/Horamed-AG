@@ -6,6 +6,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiter for public view action
+const rateLimiter = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // 10 requests per minute per IP
+
+function checkRateLimit(clientIP: string): boolean {
+  const now = Date.now();
+  const requests = rateLimiter.get(clientIP) || [];
+  
+  // Clean up old entries
+  const recentRequests = requests.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  
+  if (recentRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  
+  rateLimiter.set(clientIP, [...recentRequests, now]);
+  return true;
+}
+
+// Periodic cleanup of old rate limit entries (every 5 minutes)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of rateLimiter.entries()) {
+    const recent = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (recent.length === 0) {
+      rateLimiter.delete(ip);
+    } else {
+      rateLimiter.set(ip, recent);
+    }
+  }
+}, 5 * 60 * 1000);
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,6 +96,21 @@ serve(async (req) => {
     }
 
     if (action === 'view') {
+      // Rate limit check for public view action
+      const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                       req.headers.get('cf-connecting-ip') || 
+                       'unknown';
+      
+      if (!checkRateLimit(clientIP)) {
+        console.warn(`Rate limit exceeded for IP: ${clientIP}`);
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again in a minute.' 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       // Visualizar cartão (público)
       const { data: card, error: cardError } = await supabase
         .from('consultation_cards')
@@ -82,6 +130,21 @@ serve(async (req) => {
         .from('consultation_cards')
         .update({ views_count: card.views_count + 1 })
         .eq('id', card.id);
+
+      // Log audit for access tracking
+      await supabase.from('audit_logs').insert({
+        user_id: card.user_id,
+        action: 'consultation_card_viewed',
+        resource: 'consultation_cards',
+        resource_id: card.id,
+        ip_address: clientIP !== 'unknown' ? clientIP : null,
+        user_agent: req.headers.get('user-agent') || 'unknown',
+        metadata: { 
+          card_id: card.id, 
+          views_count: card.views_count + 1,
+          profile_id: card.profile_id
+        }
+      });
 
       // Buscar medicamentos ativos
       const { data: medications } = await supabase
