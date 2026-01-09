@@ -12,6 +12,8 @@ import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import HealthQuickActions from "@/components/health/HealthQuickActions";
 import SmartHealthInsights from "@/components/health/SmartHealthInsights";
 import HealthStatsGrid from "@/components/health/HealthStatsGrid";
+import DrugInteractionAlert from "@/components/health/DrugInteractionAlert";
+import MedicalReportButton from "@/components/health/MedicalReportButton";
 
 export default function Saude() {
   const { t, language } = useLanguage();
@@ -157,6 +159,12 @@ export default function Saude() {
           onAddVaccine={() => navigate('/carteira-vacina')}
           onViewTimeline={() => navigate('/linha-do-tempo')}
         />
+
+        {/* Drug Interactions Alert */}
+        <DrugInteractionAlert className="w-full" />
+
+        {/* Medical Report Card */}
+        <MedicalReportButton variant="card" />
 
         {/* Smart Insights */}
         <SmartHealthInsights
