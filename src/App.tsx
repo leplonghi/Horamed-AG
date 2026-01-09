@@ -87,6 +87,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const HealthAIButton = lazy(() => import("./components/HealthAIButton"));
 const PWAInstallPrompt = lazy(() => import("./components/PWAInstallPrompt"));
 const NotificationPermissionPrompt = lazy(() => import("./components/NotificationPermissionPrompt"));
+const VoiceControlButton = lazy(() => import("./components/VoiceControlButton"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -226,6 +227,12 @@ function AppContent() {
       {showNavigation && (
         <Suspense fallback={null}>
           <HealthAIButton />
+        </Suspense>
+      )}
+      {/* Voice control button */}
+      {showNavigation && (
+        <Suspense fallback={null}>
+          <VoiceControlButton floating className="bottom-24 right-4" />
         </Suspense>
       )}
       {/* PWA prompt should always be available */}
