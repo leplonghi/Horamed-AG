@@ -39,7 +39,7 @@ const sheetVariants = cva(
     "shadow-[var(--shadow-xl)]",
     "transition-all ease-out",
     "data-[state=open]:animate-in data-[state=closed]:animate-out",
-    "data-[state=closed]:duration-300 data-[state=open]:duration-400",
+    "data-[state=closed]:duration-300 data-[state=open]:duration-500",
   ].join(" "),
   {
     variants: {
