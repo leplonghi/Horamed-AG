@@ -74,6 +74,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.copied': 'Copiado!',
     'common.perMonth': '/mês',
     'common.perYear': '/ano',
+    'common.start': 'Iniciar',
     
     // Today page
     'today.title': 'Hoje',
@@ -815,6 +816,22 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.biometricLogin': 'Login Biométrico',
     'profile.biometricEnabled': 'Ativado neste dispositivo',
     'profile.disable': 'Desativar',
+    'profile.activeMeds': 'Medicamentos Ativos',
+    'profile.documents': 'Documentos',
+    'profile.notificationsDisabled': 'Notificações desativadas',
+    'profile.enableNotificationsDesc': 'Ative para receber lembretes',
+    'profile.enable': 'Ativar',
+    'profile.trackYourWeight': 'Acompanhe seu peso',
+    'profile.trackYourWeightDesc': 'Registre e monitore sua evolução',
+    'profile.trialExpiringSoon': 'Período de teste expirando',
+    'profile.daysRemaining': 'dias restantes',
+    'profile.upgradeToUnlock': 'Faça upgrade para desbloquear todos os recursos',
+    'profile.addFamilyProfiles': 'Adicione perfis familiares',
+    'profile.addFamilyProfilesDesc': 'Gerencie medicamentos de toda a família',
+    'profile.referralSuccess': '{count} indicações ativas',
+    'profile.referralSuccessDesc': 'Continue indicando para ganhar mais descontos',
+    'profile.allConfigured': 'Tudo configurado!',
+    'profile.allConfiguredDesc': 'Seu perfil está completo',
     
     // Cofre page
     'cofre.title': 'Carteira de Saúde',
@@ -2950,6 +2967,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.copied': 'Copied!',
     'common.perMonth': '/month',
     'common.perYear': '/year',
+    'common.start': 'Start',
     
     // Today page
     'today.title': 'Today',
@@ -3405,6 +3423,22 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportData': 'Export data',
     'profile.deleteAccount': 'Delete account',
     'profile.daysLeft': 'days left',
+    'profile.activeMeds': 'Active Medications',
+    'profile.documents': 'Documents',
+    'profile.notificationsDisabled': 'Notifications disabled',
+    'profile.enableNotificationsDesc': 'Enable to receive reminders',
+    'profile.enable': 'Enable',
+    'profile.trackYourWeight': 'Track your weight',
+    'profile.trackYourWeightDesc': 'Record and monitor your progress',
+    'profile.trialExpiringSoon': 'Trial expiring soon',
+    'profile.daysRemaining': 'days remaining',
+    'profile.upgradeToUnlock': 'Upgrade to unlock all features',
+    'profile.addFamilyProfiles': 'Add family profiles',
+    'profile.addFamilyProfilesDesc': 'Manage medications for your whole family',
+    'profile.referralSuccess': '{count} active referrals',
+    'profile.referralSuccessDesc': 'Keep referring to earn more discounts',
+    'profile.allConfigured': 'All set up!',
+    'profile.allConfiguredDesc': 'Your profile is complete',
     
     // Wallet/Cofre
     'wallet.title': 'Health Wallet',
