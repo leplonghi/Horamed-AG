@@ -1,5 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface UseVoiceInputOptions {
@@ -8,122 +7,167 @@ interface UseVoiceInputOptions {
   language?: string;
 }
 
+// Extend Window interface for SpeechRecognition
+interface SpeechRecognitionEvent extends Event {
+  results: SpeechRecognitionResultList;
+  resultIndex: number;
+}
+
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+  message?: string;
+}
+
+type SpeechRecognitionType = new () => {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onstart: (() => void) | null;
+  onend: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+};
+
 export function useVoiceInput(options: UseVoiceInputOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState<string>('');
+  const [isSupported, setIsSupported] = useState(true);
   
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<InstanceType<SpeechRecognitionType> | null>(null);
+
+  // Check for Web Speech API support
+  useEffect(() => {
+    const SpeechRecognition = (window as unknown as { SpeechRecognition?: SpeechRecognitionType; webkitSpeechRecognition?: SpeechRecognitionType }).SpeechRecognition || 
+                              (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionType }).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      setIsSupported(false);
+      console.warn('Web Speech API not supported in this browser');
+    }
+  }, []);
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 16000,
-        }
-      });
+      const SpeechRecognition = (window as unknown as { SpeechRecognition?: SpeechRecognitionType; webkitSpeechRecognition?: SpeechRecognitionType }).SpeechRecognition || 
+                                (window as unknown as { webkitSpeechRecognition?: SpeechRecognitionType }).webkitSpeechRecognition;
 
-      // Try to use webm, fallback to other formats
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm')
-        ? 'audio/webm'
-        : 'audio/mp4';
-
-      const mediaRecorder = new MediaRecorder(stream, { mimeType });
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: mimeType });
-        stream.getTracks().forEach(track => track.stop());
-        await processAudio(audioBlob, mimeType);
-      };
-
-      mediaRecorder.start(100); // Collect data every 100ms
-      setIsRecording(true);
-      
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
+      if (!SpeechRecognition) {
+        toast.error('Reconhecimento de voz não suportado neste navegador');
+        options.onError?.('Web Speech API not supported');
+        return;
       }
+
+      // Request microphone permission first
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach(track => track.stop());
+      } catch {
+        toast.error('Não foi possível acessar o microfone');
+        options.onError?.('Microphone access denied');
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = options.language || 'pt-BR';
+
+      let finalTranscript = '';
+      let interimTranscript = '';
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        setIsProcessing(false);
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      };
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          if (result.isFinal) {
+            finalTranscript += result[0].transcript + ' ';
+          } else {
+            interimTranscript += result[0].transcript;
+          }
+        }
+
+        const currentText = (finalTranscript + interimTranscript).trim();
+        if (currentText) {
+          setTranscription(currentText);
+        }
+      };
+
+      recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+        console.error('Speech recognition error:', event.error);
+        
+        let errorMessage = 'Erro no reconhecimento de voz';
+        
+        switch (event.error) {
+          case 'not-allowed':
+            errorMessage = 'Permissão de microfone negada';
+            break;
+          case 'no-speech':
+            errorMessage = 'Nenhuma fala detectada';
+            break;
+          case 'network':
+            errorMessage = 'Erro de conexão';
+            break;
+          case 'aborted':
+            // User aborted, no need to show error
+            return;
+        }
+        
+        toast.error(errorMessage);
+        options.onError?.(event.error);
+        setIsRecording(false);
+        setIsProcessing(false);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        setIsProcessing(false);
+        
+        const finalText = finalTranscript.trim();
+        if (finalText) {
+          setTranscription(finalText);
+          options.onTranscription?.(finalText);
+        }
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([50, 50, 50]);
+        }
+      };
+
+      recognition.start();
+      
     } catch (error) {
       console.error('Error starting recording:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao acessar microfone';
-      toast.error('Não foi possível acessar o microfone');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao iniciar gravação';
+      toast.error('Não foi possível iniciar o reconhecimento de voz');
       options.onError?.(errorMessage);
+      setIsRecording(false);
     }
   }, [options]);
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      
-      // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate([50, 50, 50]);
-      }
+    if (recognitionRef.current && isRecording) {
+      setIsProcessing(true);
+      recognitionRef.current.stop();
     }
   }, [isRecording]);
-
-  const processAudio = async (audioBlob: Blob, mimeType: string) => {
-    setIsProcessing(true);
-    
-    try {
-      // Convert blob to base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(audioBlob);
-      
-      const base64Audio = await base64Promise;
-
-      console.log('Sending audio for transcription, size:', audioBlob.size);
-
-      const { data, error } = await supabase.functions.invoke('voice-to-text', {
-        body: { 
-          audio: base64Audio,
-          mimeType: mimeType.split(';')[0] // Send just the base mime type
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const text = data?.text?.trim() || '';
-      
-      if (text) {
-        setTranscription(text);
-        options.onTranscription?.(text);
-      } else {
-        toast.error('Não foi possível entender o áudio. Tente novamente.');
-      }
-    } catch (error) {
-      console.error('Error processing audio:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar áudio';
-      toast.error('Erro ao processar áudio');
-      options.onError?.(errorMessage);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -141,6 +185,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
     isRecording,
     isProcessing,
     transcription,
+    isSupported,
     startRecording,
     stopRecording,
     toggleRecording,
