@@ -190,8 +190,8 @@ export default function Auth() {
       duration: 0.6
     }} className="hidden lg:flex relative lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-12 flex-col justify-between overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden bg-blue-500 text-destructive shadow-xl rounded-3xl">
-          <motion.div className="absolute -top-32 -right-32 w-96 h-96 rounded-full blur-3xl bg-warning-foreground text-warning" animate={{
+        <div className="absolute inset-0 overflow-hidden text-destructive bg-primary rounded shadow-glow">
+          <motion.div className="absolute -top-32 -right-32 w-96 h-96 blur-3xl bg-warning-foreground text-warning rounded" animate={{
           scale: [1, 1.2, 1],
           opacity: [0.2, 0.3, 0.2]
         }} transition={{
@@ -225,8 +225,9 @@ export default function Auth() {
         }} transition={{
           delay: 0.2
         }}>
-            <img alt="HoraMed" className="h-14 w-auto" src="/lovable-uploads/52339868-05cd-43fe-9215-02eec16de922.png" />
-            <span className="text-2xl font-bold text-white tracking-tight">HoraMed</span>
+            <img alt="HoraMed" className="h-14 w-auto object-cover" src="/lovable-uploads/52339868-05cd-43fe-9215-02eec16de922.png" />
+            <span className="text-2xl font-bold text-white tracking-tight">
+          </span>
           </motion.div>
           
           <motion.h1 className="text-4xl font-bold text-white leading-tight mb-4" initial={{
@@ -239,7 +240,7 @@ export default function Auth() {
           delay: 0.3
         }}>
             Sua saúde,{" "}
-            <span className="bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-transparent">organizada.</span>
+            <span className="bg-gradient-to-r from-primary to-cyan-400 bg-clip-text text-secondary">organizada.</span>
           </motion.h1>
           
           <motion.p className="text-white/60 text-lg max-w-md" initial={{
@@ -256,7 +257,7 @@ export default function Auth() {
         </div>
 
         {/* Features */}
-        <motion.div className="relative z-10 flex flex-wrap gap-4" initial={{
+        <motion.div className="relative z-10 flex flex-wrap gap-4 bg-primary" initial={{
         y: 20,
         opacity: 0
       }} animate={{
