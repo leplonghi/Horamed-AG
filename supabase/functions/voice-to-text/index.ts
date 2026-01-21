@@ -5,6 +5,95 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function callGeminiWithRetry(
+  apiKey: string, 
+  audio: string, 
+  mimeType: string, 
+  maxRetries = 3
+): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Você é um transcritor de áudio profissional. Transcreva o áudio a seguir para texto em português brasileiro.
+
+REGRAS IMPORTANTES:
+- Retorne APENAS o texto transcrito, sem explicações, prefixos ou formatação
+- Corrija erros de gramática óbvios
+- Use pontuação apropriada
+- Se não conseguir entender o áudio, retorne exatamente: [inaudível]
+- Não adicione nada além da transcrição`
+                },
+                {
+                  inlineData: {
+                    mimeType: mimeType.includes('opus') ? 'audio/webm' : mimeType,
+                    data: audio
+                  }
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2000
+          }
+        }),
+      }
+    );
+
+    if (response.ok) {
+      return response;
+    }
+
+    // Check for rate limit error
+    if (response.status === 429) {
+      const errorText = await response.text();
+      console.log(`Rate limited (attempt ${attempt + 1}/${maxRetries}):`, errorText);
+      
+      // Parse retry delay from response if available
+      let retryDelay = 5000 * (attempt + 1); // Default exponential backoff
+      try {
+        const errorJson = JSON.parse(errorText);
+        const retryInfo = errorJson.error?.details?.find(
+          (d: any) => d['@type']?.includes('RetryInfo')
+        );
+        if (retryInfo?.retryDelay) {
+          const seconds = parseInt(retryInfo.retryDelay.replace('s', ''));
+          if (!isNaN(seconds)) {
+            retryDelay = (seconds + 1) * 1000;
+          }
+        }
+      } catch {
+        // Use default delay
+      }
+      
+      if (attempt < maxRetries - 1) {
+        console.log(`Waiting ${retryDelay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        continue;
+      }
+      
+      lastError = new Error('Rate limit exceeded. Please try again in a few seconds.');
+    } else {
+      // Non-retryable error
+      return response;
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -19,64 +108,38 @@ serve(async (req) => {
 
     console.log('Processing audio for transcription, mime type:', mimeType);
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_AI_API_KEY');
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    if (!GOOGLE_API_KEY) {
+      throw new Error('GOOGLE_AI_API_KEY not configured');
     }
 
-    // Decode base64 audio to binary
-    const binaryAudio = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
-    
-    // Determine file extension from mime type
-    let fileExtension = 'webm';
-    if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
-      fileExtension = 'mp4';
-    } else if (mimeType.includes('wav')) {
-      fileExtension = 'wav';
-    } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
-      fileExtension = 'mp3';
-    }
-
-    // Create FormData for the audio file
-    const formData = new FormData();
-    const blob = new Blob([binaryAudio], { type: mimeType });
-    formData.append('file', blob, `audio.${fileExtension}`);
-    formData.append('model', 'whisper-1');
-    formData.append('language', 'pt');
-    formData.append('response_format', 'json');
-
-    // Use Lovable AI Gateway's audio transcription endpoint (Whisper)
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      },
-      body: formData,
-    });
+    const response = await callGeminiWithRetry(GOOGLE_API_KEY, audio, mimeType);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Whisper API error:', response.status, errorText);
+      console.error('Gemini API error:', response.status, errorText);
       
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.error('Error details:', JSON.stringify(errorJson, null, 2));
-      } catch {
-        // Not JSON, already logged
+      if (response.status === 429) {
+        throw new Error('Serviço temporariamente ocupado. Tente novamente em alguns segundos.');
       }
       
-      throw new Error(`Whisper API error: ${response.status}`);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const result = await response.json();
-    console.log('Whisper response received');
+    console.log('Gemini response received');
     
-    const transcribedText = result.text?.trim() || '';
+    const transcribedText = result.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
 
-    // Check for empty or very short transcription
-    let cleanText = transcribedText;
-    if (cleanText.length < 2) {
+    // Clean up the transcription
+    let cleanText = transcribedText
+      .replace(/^(transcrição|texto|áudio):\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+
+    // Check for inaudible marker
+    if (cleanText.toLowerCase().includes('[inaudível]') || cleanText.length < 2) {
       cleanText = '';
     }
 
