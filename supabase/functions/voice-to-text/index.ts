@@ -25,14 +25,12 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    // Use Gemini 2.5 Flash for audio transcription (supports audio natively)
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    // Use Lovable AI Gateway with Gemini 2.5 Flash for audio transcription
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://lovable.dev',
-        'X-Title': 'HoraMed Voice Transcription',
       },
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
