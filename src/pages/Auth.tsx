@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { Fingerprint, Shield, ArrowLeft, Sparkles, Users, Bell, Eye, EyeOff, Clock } from "lucide-react";
+import { Fingerprint, Shield, ArrowLeft, Users, Bell, Eye, EyeOff, Clock, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,17 +15,27 @@ import { useDeviceFingerprint } from "@/hooks/useDeviceFingerprint";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/horamed-logo-web.webp";
-
-const features = [
-  { icon: Bell, text: "Lembretes", color: "from-blue-500 to-cyan-400" },
-  { icon: Users, text: "Família", color: "from-emerald-500 to-teal-400" },
-  { icon: Shield, text: "Seguro", color: "from-violet-500 to-purple-400" },
-];
-
+const features = [{
+  icon: Bell,
+  text: "Lembretes",
+  color: "from-blue-500 to-cyan-400"
+}, {
+  icon: Users,
+  text: "Família",
+  color: "from-emerald-500 to-teal-400"
+}, {
+  icon: Shield,
+  text: "Seguro",
+  color: "from-violet-500 to-purple-400"
+}];
 export default function Auth() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { t } = useLanguage();
+  const {
+    user
+  } = useAuth();
+  const {
+    t
+  } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -33,9 +43,16 @@ export default function Auth() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [isLogin, setIsLogin] = useState(true);
-  const { isAvailable, isLoading: biometricLoading, loginWithBiometric, isBiometricEnabled, setupBiometricLogin } = useBiometricAuth();
-  const { fingerprint } = useDeviceFingerprint();
-
+  const {
+    isAvailable,
+    isLoading: biometricLoading,
+    loginWithBiometric,
+    isBiometricEnabled,
+    setupBiometricLogin
+  } = useBiometricAuth();
+  const {
+    fingerprint
+  } = useDeviceFingerprint();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get('ref');
@@ -43,48 +60,43 @@ export default function Auth() {
       setReferralCode(refCode);
     }
   }, []);
-
   useEffect(() => {
     if (user) {
       navigate("/");
     }
   }, [user, navigate]);
-
   const handleGoogleLogin = useCallback(async () => {
     try {
       setLoading(true);
       const redirectUrl = `${APP_DOMAIN}/`;
-      
-      const { error } = await supabase.auth.signInWithOAuth({
+      const {
+        error
+      } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
+            prompt: 'consent'
+          }
+        }
       });
-
       if (error) throw error;
     } catch (error: any) {
       toast.error(error.message || t('auth.googleError'));
       setLoading(false);
     }
   }, [t]);
-
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error(t('auth.fillAllFields'));
       return;
     }
-
     if (!acceptedTerms) {
       toast.error(t('auth.acceptTerms'));
       return;
     }
-
     if (password.length < 8) {
       toast.error(t('auth.passwordMin'));
       return;
@@ -101,19 +113,19 @@ export default function Auth() {
       toast.error(t('auth.passwordNumber'));
       return;
     }
-
     try {
       setLoading(true);
-      const { data, error } = await supabase.auth.signUp({
+      const {
+        data,
+        error
+      } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${APP_DOMAIN}/`,
-        },
+          emailRedirectTo: `${APP_DOMAIN}/`
+        }
       });
-
       if (error) throw error;
-      
       if (data.user && referralCode) {
         try {
           await supabase.rpc('validate_referral_signup', {
@@ -126,13 +138,11 @@ export default function Auth() {
           console.error('Error processing referral:', refError);
         }
       }
-      
       if (data.user) {
         toast.success(t('auth.accountCreated'));
         navigate("/bem-vindo");
         return;
       }
-      
       toast.success(t('auth.accountCreatedLogin'));
     } catch (error: any) {
       toast.error(error.message || t('auth.signupError'));
@@ -140,25 +150,22 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       toast.error(t('auth.fillAllFields'));
       return;
     }
-
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const {
+        error
+      } = await supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       });
-
       if (error) throw error;
-      
       toast.success(t('auth.loginSuccess'));
-      
       if (isAvailable && !isBiometricEnabled) {
         setTimeout(() => {
           if (window.confirm(t('auth.enableBiometric'))) {
@@ -166,7 +173,6 @@ export default function Auth() {
           }
         }, 1000);
       }
-      
       navigate("/");
     } catch (error: any) {
       toast.error(error.message || t('auth.loginError'));
@@ -174,23 +180,25 @@ export default function Auth() {
       setLoading(false);
     }
   };
-
-  return (
-    <div className="h-[100dvh] bg-background flex flex-col lg:flex-row overflow-hidden">
+  return <div className="h-[100dvh] bg-background flex flex-col lg:flex-row overflow-hidden">
       {/* Left Panel - Branding (hidden on mobile, compact on tablet) */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="hidden md:flex relative lg:w-1/2 md:w-2/5 bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-6 lg:p-12 flex-col justify-between overflow-hidden"
-      >
+      <motion.div initial={{
+      opacity: 0
+    }} animate={{
+      opacity: 1
+    }} transition={{
+      duration: 0.6
+    }} className="hidden md:flex relative lg:w-1/2 md:w-2/5 bg-gradient-to-br from-primary via-primary/90 to-primary/80 p-6 lg:p-12 flex-col justify-between overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            className="absolute -top-32 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl"
-            animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.2, 0.1] }}
-            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-          />
+          <motion.div className="absolute -top-32 -right-32 w-96 h-96 bg-white/10 rounded-full blur-3xl" animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.1, 0.2, 0.1]
+        }} transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }} />
         </div>
 
         <div className="relative z-10">
@@ -200,68 +208,84 @@ export default function Auth() {
           </Link>
           
           {/* Logo/Brand */}
-          <motion.div 
-            className="flex items-center gap-3 mb-4"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            <img src={logo} alt="HoraMed" className="h-12 w-auto" />
+          <motion.div className="flex items-center gap-3 mb-4" initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          delay: 0.2
+        }}>
+            <img alt="HoraMed" className="h-12 w-auto" src="/lovable-uploads/aa6ccf70-c03a-4569-91a0-2fe30916afbf.png" />
             <span className="text-2xl font-bold text-white tracking-tight">HoraMed</span>
           </motion.div>
           
-          <motion.h1 
-            className="text-2xl lg:text-4xl font-bold text-white leading-tight mb-4"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
+          <motion.h1 className="text-2xl lg:text-4xl font-bold text-white leading-tight mb-4" initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          delay: 0.3
+        }}>
             Sua saúde,{" "}
             <span className="text-white/80">organizada.</span>
           </motion.h1>
           
-          <motion.p 
-            className="text-white/70 text-base lg:text-lg max-w-md hidden lg:block"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
+          <motion.p className="text-white/70 text-base lg:text-lg max-w-md hidden lg:block" initial={{
+          y: 20,
+          opacity: 0
+        }} animate={{
+          y: 0,
+          opacity: 1
+        }} transition={{
+          delay: 0.4
+        }}>
             Gerencie medicamentos, exames e consultas. Nunca mais esqueça uma dose importante.
           </motion.p>
         </div>
 
         {/* Features */}
-        <motion.div 
-          className="relative z-10 flex flex-wrap gap-2 lg:gap-4"
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          {features.map((feature, i) => (
-            <motion.div
-              key={feature.text}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.6 + i * 0.1 }}
-            >
+        <motion.div className="relative z-10 flex flex-wrap gap-2 lg:gap-4" initial={{
+        y: 20,
+        opacity: 0
+      }} animate={{
+        y: 0,
+        opacity: 1
+      }} transition={{
+        delay: 0.5
+      }}>
+          {features.map((feature, i) => <motion.div key={feature.text} className="flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full" initial={{
+          scale: 0.8,
+          opacity: 0
+        }} animate={{
+          scale: 1,
+          opacity: 1
+        }} transition={{
+          delay: 0.6 + i * 0.1
+        }}>
               <div className={cn("p-1 rounded-full bg-gradient-to-br", feature.color)}>
                 <feature.icon className="h-3 w-3 text-white" />
               </div>
               <span className="text-xs text-white/90 font-medium">{feature.text}</span>
-            </motion.div>
-          ))}
+            </motion.div>)}
         </motion.div>
       </motion.div>
 
       {/* Right Panel - Form */}
       <div className="flex-1 flex flex-col justify-center p-4 sm:p-6 lg:p-12 overflow-y-auto">
-        <motion.div 
-          className="w-full max-w-md mx-auto"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        <motion.div className="w-full max-w-md mx-auto" initial={{
+        opacity: 0,
+        x: 20
+      }} animate={{
+        opacity: 1,
+        x: 0
+      }} transition={{
+        duration: 0.5,
+        delay: 0.2
+      }}>
           {/* Mobile Header with Logo */}
           <div className="md:hidden flex items-center justify-center gap-2 mb-4">
             <img src={logo} alt="HoraMed" className="h-10 w-auto" />
@@ -270,13 +294,16 @@ export default function Auth() {
 
           {/* Header */}
           <div className="text-center lg:text-left mb-4 sm:mb-6">
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full mb-2"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Sparkles className="h-3 w-3 text-primary" />
+            <motion.div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full mb-2" initial={{
+            scale: 0.9,
+            opacity: 0
+          }} animate={{
+            scale: 1,
+            opacity: 1
+          }} transition={{
+            delay: 0.3
+          }}>
+              <Sun className="h-3 w-3 text-primary" />
               <span className="text-xs font-medium text-primary">7 dias grátis Premium</span>
             </motion.div>
             
@@ -284,22 +311,14 @@ export default function Auth() {
               {isLogin ? "Bem-vindo de volta!" : "Crie sua conta"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {isLogin 
-                ? "Entre para continuar cuidando da sua saúde" 
-                : "Comece a organizar seus medicamentos hoje"
-              }
+              {isLogin ? "Entre para continuar cuidando da sua saúde" : "Comece a organizar seus medicamentos hoje"}
             </p>
           </div>
 
           {/* Auth Buttons */}
           <div className="space-y-3">
             {/* Google */}
-            <Button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full h-11 bg-background hover:bg-muted text-foreground border border-border shadow-sm transition-all hover:shadow-md rounded-xl font-medium text-sm"
-            >
+            <Button type="button" onClick={handleGoogleLogin} disabled={loading} className="w-full h-11 bg-background hover:bg-muted text-foreground border border-border shadow-sm transition-all hover:shadow-md rounded-xl font-medium text-sm">
               <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -310,24 +329,16 @@ export default function Auth() {
             </Button>
 
             {/* Biometric */}
-            {isAvailable && isBiometricEnabled && isLogin && (
-              <Button
-                type="button"
-                onClick={async () => {
-                  const result = await loginWithBiometric();
-                  if (result && typeof result === 'object' && 'email' in result) {
-                    setEmail(result.email);
-                    toast.info(t('auth.biometricConfirmed'));
-                  }
-                }}
-                disabled={biometricLoading}
-                variant="outline"
-                className="w-full h-11 rounded-xl font-medium text-sm"
-              >
+            {isAvailable && isBiometricEnabled && isLogin && <Button type="button" onClick={async () => {
+            const result = await loginWithBiometric();
+            if (result && typeof result === 'object' && 'email' in result) {
+              setEmail(result.email);
+              toast.info(t('auth.biometricConfirmed'));
+            }
+          }} disabled={biometricLoading} variant="outline" className="w-full h-11 rounded-xl font-medium text-sm">
                 <Fingerprint className="h-4 w-4 mr-2" />
                 {biometricLoading ? "Autenticando..." : "Entrar com biometria"}
-              </Button>
-            )}
+              </Button>}
 
             {/* Divider */}
             <div className="relative py-2">
@@ -343,110 +354,74 @@ export default function Auth() {
             <form onSubmit={isLogin ? handleEmailSignIn : handleEmailSignUp} className="space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-11 rounded-xl bg-muted/30 border-border/50 focus:border-primary transition-colors"
-                />
+                <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="h-11 rounded-xl bg-muted/30 border-border/50 focus:border-primary transition-colors" />
               </div>
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
-                  {isLogin && (
-                    <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  {isLogin && <Link to="/forgot-password" className="text-xs text-primary hover:underline">
                       Esqueceu?
-                    </Link>
-                  )}
+                    </Link>}
                 </div>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="h-11 rounded-xl bg-muted/30 border-border/50 focus:border-primary transition-colors pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="h-11 rounded-xl bg-muted/30 border-border/50 focus:border-primary transition-colors pr-10" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                {!isLogin && (
-                  <p className="text-[10px] text-muted-foreground">
+                {!isLogin && <p className="text-[10px] text-muted-foreground">
                     Mín. 8 caracteres, maiúscula, minúscula e número
-                  </p>
-                )}
+                  </p>}
               </div>
 
               {/* Terms checkbox for signup */}
               <AnimatePresence>
-                {!isLogin && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="flex items-start gap-2 pt-1"
-                  >
-                    <Checkbox
-                      id="terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked as boolean)}
-                      className="mt-0.5"
-                    />
+                {!isLogin && <motion.div initial={{
+                opacity: 0,
+                height: 0
+              }} animate={{
+                opacity: 1,
+                height: "auto"
+              }} exit={{
+                opacity: 0,
+                height: 0
+              }} className="flex items-start gap-2 pt-1">
+                    <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={checked => setAcceptedTerms(checked as boolean)} className="mt-0.5" />
                     <Label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
                       Aceito os{" "}
                       <Link to="/termos" className="text-primary hover:underline">Termos</Link>
                       {" "}e{" "}
                       <Link to="/privacidade" className="text-primary hover:underline">Privacidade</Link>
                     </Label>
-                  </motion.div>
-                )}
+                  </motion.div>}
               </AnimatePresence>
 
-              <Button
-                type="submit"
-                disabled={loading || (!isLogin && !acceptedTerms)}
-                className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
+              <Button type="submit" disabled={loading || !isLogin && !acceptedTerms} className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30">
+                {loading ? <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     <span>Aguarde...</span>
-                  </div>
-                ) : isLogin ? "Entrar" : "Criar conta grátis"}
+                  </div> : isLogin ? "Entrar" : "Criar conta grátis"}
               </Button>
             </form>
 
             {/* Toggle Login/Signup */}
             <p className="text-center text-xs text-muted-foreground pt-3">
               {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary font-medium hover:underline"
-              >
+              <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-primary font-medium hover:underline">
                 {isLogin ? "Criar" : "Entrar"}
               </button>
             </p>
           </div>
 
           {/* Trust badges - hidden on very small screens */}
-          <motion.div 
-            className="hidden sm:flex items-center justify-center gap-4 mt-4 pt-4 border-t border-border/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
+          <motion.div className="hidden sm:flex items-center justify-center gap-4 mt-4 pt-4 border-t border-border/50" initial={{
+          opacity: 0
+        }} animate={{
+          opacity: 1
+        }} transition={{
+          delay: 0.6
+        }}>
             <div className="flex items-center gap-1 text-muted-foreground">
               <Shield className="h-3 w-3" />
               <span className="text-[10px]">Criptografado</span>
@@ -458,6 +433,5 @@ export default function Auth() {
           </motion.div>
         </motion.div>
       </div>
-    </div>
-  );
+    </div>;
 }
