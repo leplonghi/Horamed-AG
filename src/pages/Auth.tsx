@@ -285,8 +285,8 @@ export default function Auth() {
 
       {/* Right Panel - Form (with gradient on mobile) */}
       <div className="flex-1 flex flex-col justify-center relative overflow-hidden">
-        {/* Mobile gradient background */}
-        <div className="absolute inset-0 lg:hidden bg-gradient-to-br from-primary/5 via-background to-emerald-500/5">
+        {/* Mobile gradient background - blue at bottom, white at top */}
+        <div className="absolute inset-0 lg:hidden bg-gradient-to-t from-primary/20 via-primary/5 to-white">
           <motion.div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" animate={{
           scale: [1, 1.2, 1],
           opacity: [0.3, 0.5, 0.3]
