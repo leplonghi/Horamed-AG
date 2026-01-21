@@ -190,8 +190,8 @@ export default function Auth() {
       duration: 0.6
     }} className="hidden lg:flex relative lg:w-1/2 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-12 flex-col justify-between overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div className="absolute -top-32 -right-32 w-96 h-96 bg-primary/20 rounded-full blur-3xl" animate={{
+        <div className="absolute inset-0 overflow-hidden bg-blue-500 text-destructive shadow-xl rounded-3xl">
+          <motion.div className="absolute -top-32 -right-32 w-96 h-96 rounded-full blur-3xl bg-warning-foreground text-warning" animate={{
           scale: [1, 1.2, 1],
           opacity: [0.2, 0.3, 0.2]
         }} transition={{
@@ -225,7 +225,7 @@ export default function Auth() {
         }} transition={{
           delay: 0.2
         }}>
-            <img alt="HoraMed" className="h-14 w-auto" src={logo} />
+            <img alt="HoraMed" className="h-14 w-auto" src="/lovable-uploads/52339868-05cd-43fe-9215-02eec16de922.png" />
             <span className="text-2xl font-bold text-white tracking-tight">HoraMed</span>
           </motion.div>
           
@@ -286,30 +286,22 @@ export default function Auth() {
       <div className="flex-1 flex flex-col justify-center relative overflow-hidden">
         {/* Mobile gradient background */}
         <div className="absolute inset-0 lg:hidden bg-gradient-to-br from-primary/5 via-background to-emerald-500/5">
-          <motion.div 
-            className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.3, 0.5, 0.3]
-            }}
-            transition={{
-              duration: 6,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          <motion.div 
-            className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl"
-            animate={{
-              scale: [1, 1.3, 1],
-              opacity: [0.2, 0.4, 0.2]
-            }}
-            transition={{
-              duration: 8,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
+          <motion.div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl" animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3]
+        }} transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }} />
+          <motion.div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl" animate={{
+          scale: [1, 1.3, 1],
+          opacity: [0.2, 0.4, 0.2]
+        }} transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }} />
         </div>
         
         <motion.div className="relative z-10 w-full max-w-md mx-auto p-4 sm:p-6 lg:p-12" initial={{
@@ -324,13 +316,16 @@ export default function Auth() {
       }}>
           {/* Mobile Header with Logo */}
           <div className="lg:hidden flex flex-col items-center justify-center gap-2 mb-6">
-            <motion.div 
-              className="p-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-primary/10"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.1 }}
-            >
-              <img src={logo} alt="HoraMed" className="h-12 w-auto" />
+            <motion.div className="p-3 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg shadow-primary/10" initial={{
+            scale: 0.8,
+            opacity: 0
+          }} animate={{
+            scale: 1,
+            opacity: 1
+          }} transition={{
+            delay: 0.1
+          }}>
+              <img alt="HoraMed" className="h-12 w-auto" src="/lovable-uploads/c1440d3b-2638-409a-8761-9ce3834a1fb1.png" />
             </motion.div>
             <span className="text-xl font-bold text-foreground">HoraMed</span>
           </div>
