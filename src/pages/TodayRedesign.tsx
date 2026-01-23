@@ -14,7 +14,7 @@ import { useMilestoneDetector } from "@/hooks/useMilestoneDetector";
 import { useCriticalAlerts } from "@/hooks/useCriticalAlerts";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import DayTimeline from "@/components/DayTimeline";
-import ImprovedCalendar from "@/components/ImprovedCalendar";
+import ModernWeekCalendar from "@/components/ModernWeekCalendar";
 import { Card } from "@/components/ui/card";
 import CriticalAlertBanner from "@/components/CriticalAlertBanner";
 import MilestoneReward from "@/components/gamification/MilestoneReward";
@@ -762,12 +762,11 @@ export default function TodayRedesign() {
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* 📅 CALENDÁRIO (SECUNDÁRIO - Abaixo da ação principal) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <Card className="p-4 border-muted/40">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-semibold mb-3">
-            {language === 'pt' ? 'Calendário' : 'Calendar'}
-          </p>
-          <ImprovedCalendar selectedDate={selectedDate} onDateSelect={setSelectedDate} eventCounts={eventCounts} />
-        </Card>
+        <ModernWeekCalendar 
+          selectedDate={selectedDate} 
+          onDateSelect={setSelectedDate} 
+          profileId={activeProfile?.id}
+        />
 
         {/* Timeline para dias selecionados (não hoje) */}
         {format(selectedDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
