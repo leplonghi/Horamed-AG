@@ -206,9 +206,13 @@ const Landing = () => {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-24 pb-16 md:pb-24 px-4">
-        <div className="container mx-auto max-w-6xl">
+      {/* Hero Section with Fluid Background */}
+      <section className="relative pt-24 pb-16 md:pb-24 px-4 overflow-hidden">
+        {/* Fluid gradient background */}
+        <div className="absolute inset-0 bg-gradient-fluid opacity-[0.08]" />
+        <div className="absolute -top-1/2 -right-1/4 w-[80%] h-[80%] rounded-full bg-gradient-blob-1 opacity-20 blur-3xl animate-blob" />
+        <div className="absolute -bottom-1/4 -left-1/4 w-[60%] h-[60%] rounded-full bg-gradient-blob-2 opacity-15 blur-3xl animate-blob-slow" />
+        <div className="container mx-auto max-w-6xl relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div 
               className="space-y-6"

@@ -55,6 +55,13 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Fluid gradient colors
+        gradient: {
+          start: "hsl(var(--gradient-start))",
+          mid: "hsl(var(--gradient-mid))",
+          end: "hsl(var(--gradient-end))",
+          accent: "hsl(var(--gradient-accent))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -201,6 +208,17 @@ export default {
           "42%": { transform: "scale(1.1)" },
           "70%": { transform: "scale(1)" },
         },
+        // Fluid blob animations
+        "blob": {
+          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
+          "25%": { transform: "translate(20px, -30px) scale(1.1)" },
+          "50%": { transform: "translate(-20px, 20px) scale(0.9)" },
+          "75%": { transform: "translate(30px, 10px) scale(1.05)" },
+        },
+        "wave": {
+          "0%, 100%": { transform: "translateX(0) translateY(0)" },
+          "50%": { transform: "translateX(-25%) translateY(5%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -222,6 +240,10 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "shake": "shake 0.5s ease-in-out",
         "heartbeat": "heartbeat 1.5s ease-in-out infinite",
+        // Fluid animations
+        "blob": "blob 8s ease-in-out infinite",
+        "blob-slow": "blob 12s ease-in-out infinite",
+        "wave": "wave 6s ease-in-out infinite",
       },
     },
   },
