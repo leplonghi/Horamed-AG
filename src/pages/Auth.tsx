@@ -313,7 +313,7 @@ export default function Auth() {
           }} transition={{
             delay: 0.1
           }}>
-              <img alt="HoraMed" className="h-12 w-auto" src="/lovable-uploads/c1440d3b-2638-409a-8761-9ce3834a1fb1.png" />
+              <img alt="HoraMed" className="h-12 w-auto" src="/lovable-uploads/c1440d3b-2638-409a-8761-9ce3834a1fb1.png" width={51} height={48} fetchPriority="high" />
             </motion.div>
             <span className="text-xl font-bold text-foreground">HoraMed</span>
           </div>

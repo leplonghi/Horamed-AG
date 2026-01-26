@@ -53,6 +53,7 @@ const SplashScreen = ({ onComplete, minimumDisplayTime = 800 }: SplashScreenProp
               className="w-48 h-auto"
               loading="eager"
               decoding="async"
+              fetchPriority="high"
             />
           </motion.div>
 
