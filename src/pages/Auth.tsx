@@ -214,7 +214,7 @@ export default function Auth() {
         }} transition={{
           delay: 0.2
         }}>
-            <img alt="HoraMed" className="h-16 w-auto object-cover" src={logo} />
+            <img alt="HoraMed" className="h-16 w-auto object-cover" src={logo} width={68} height={64} />
           </motion.div>
           
           <motion.h1 className="text-4xl font-bold text-white leading-tight mb-4" initial={{
