@@ -55,17 +55,146 @@ npm install
 # Build do frontend
 npm run build
 
+# Adicionar plataforma Android (se ainda não existir)
+npx cap add android
+
 # Sincronizar com Android
 npx cap sync android
 ```
 
-### Passo 3: Build do AAB (Android App Bundle)
+### Passo 3: Verificar Arquivos do Gradle
+
+Após `npx cap sync android`, verifique se estes arquivos existem:
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `android/variables.gradle` | Define versões do SDK e dependências |
+| `android/build.gradle` | Configuração raiz (importa variables.gradle) |
+| `android/app/build.gradle` | Configuração do app |
+
+O arquivo `android/variables.gradle` deve conter:
+```groovy
+ext {
+    minSdkVersion = 23
+    compileSdkVersion = 35
+    targetSdkVersion = 35
+    androidxActivityVersion = '1.8.0'
+    androidxAppCompatVersion = '1.6.1'
+    androidxCoordinatorLayoutVersion = '1.2.0'
+    androidxCoreVersion = '1.12.0'
+    androidxFragmentVersion = '1.6.2'
+    coreSplashScreenVersion = '1.0.1'
+    androidxWebkitVersion = '1.9.0'
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.1.5'
+    androidxEspressoCoreVersion = '3.5.1'
+    cordovaAndroidVersion = '10.1.1'
+}
+```
+
+O arquivo `android/build.gradle` deve começar com:
+```groovy
+apply from: "variables.gradle"
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.2.1'
+        classpath 'com.google.gms:google-services:4.4.0'
+    }
+}
+```
+
+### Passo 4: Configurar app/build.gradle
+
+O arquivo `android/app/build.gradle` deve ter:
+
+```groovy
+apply plugin: 'com.android.application'
+
+android {
+    namespace "dev.horamed.app"  // OBRIGATÓRIO para Gradle 8+
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "dev.horamed.app"  // DEVE ser igual ao capacitor.config.ts
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file('../horamed-release.keystore')
+            storePassword 'SUA_SENHA'
+            keyAlias 'horamed'
+            keyPassword 'SUA_SENHA'
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+```
+
+### Passo 5: Build do AAB (Android App Bundle)
 ```bash
 cd android
+./gradlew clean
 ./gradlew bundleRelease
 ```
 
 O arquivo AAB estará em: `android/app/build/outputs/bundle/release/app-release.aab`
+
+---
+
+## 🔧 Solução de Problemas
+
+### Erro: "Could not find property 'compileSdkVersion'"
+
+**Causa**: O arquivo `variables.gradle` não existe ou não foi importado.
+
+**Solução**:
+```bash
+# Recriar projeto Android
+rm -rf android
+npm run build
+npx cap add android
+npx cap sync android
+```
+
+### Erro: "Namespace not specified"
+
+**Causa**: O namespace é obrigatório para Android Gradle Plugin 8+.
+
+**Solução**: Adicione no `android/app/build.gradle`:
+```groovy
+android {
+    namespace "dev.horamed.app"
+    // ...
+}
+```
+
+### Erro: applicationId diferente do appId
+
+**Causa**: O `applicationId` no build.gradle não corresponde ao `appId` no capacitor.config.ts.
+
+**Solução**: Ambos devem ser `dev.horamed.app`:
+- `capacitor.config.ts`: `appId: 'dev.horamed.app'`
+- `android/app/build.gradle`: `applicationId "dev.horamed.app"`
 
 ---
 
