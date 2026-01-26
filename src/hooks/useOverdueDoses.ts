@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { differenceInMinutes } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface OverdueDose {
   id: string;
@@ -13,37 +14,36 @@ interface OverdueDose {
   profileName: string;
 }
 
-export const useOverdueDoses = () => {
-  const [overdueDoses, setOverdueDoses] = useState<OverdueDose[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { activeProfile } = useUserProfiles();
+const CACHE_KEY = "overdue-doses";
 
-  const loadOverdueDoses = useCallback(async () => {
-    try {
+export const useOverdueDoses = () => {
+  const { activeProfile } = useUserProfiles();
+  const queryClient = useQueryClient();
+
+  const profileId = activeProfile?.id;
+
+  const { data: overdueDoses = [], isLoading: loading } = useQuery({
+    queryKey: [CACHE_KEY, profileId],
+    queryFn: async (): Promise<OverdueDose[]> => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return [];
 
       const now = new Date();
       const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
 
-      // Get items for active profile or all profiles
       let itemsQuery = supabase.from("items").select("id, name, profile_id, user_profiles(name)");
       
-      if (activeProfile) {
-        itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
+      if (profileId) {
+        itemsQuery = itemsQuery.eq("profile_id", profileId);
       } else {
         itemsQuery = itemsQuery.eq("user_id", user.id);
       }
 
       const { data: items } = await itemsQuery;
-      if (!items || items.length === 0) {
-        setOverdueDoses([]);
-        return;
-      }
+      if (!items || items.length === 0) return [];
 
       const itemIds = items.map(i => i.id);
 
-      // Get overdue doses (scheduled, past due, within 2 hours)
       const { data: doses } = await supabase
         .from("dose_instances")
         .select("id, due_at, item_id, items(name, dose_text)")
@@ -53,12 +53,9 @@ export const useOverdueDoses = () => {
         .gte("due_at", twoHoursAgo.toISOString())
         .order("due_at", { ascending: true });
 
-      if (!doses) {
-        setOverdueDoses([]);
-        return;
-      }
+      if (!doses) return [];
 
-      const overdue: OverdueDose[] = doses.map((dose: any) => {
+      return doses.map((dose: any) => {
         const dueAt = new Date(dose.due_at);
         const item = items.find(i => i.id === dose.item_id);
         
@@ -72,39 +69,40 @@ export const useOverdueDoses = () => {
           profileName: (item?.user_profiles as any)?.name || "Você",
         };
       });
+    },
+    staleTime: 60 * 1000, // 1 minute
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: 3 * 60 * 1000, // 3 minutes
+  });
 
-      setOverdueDoses(overdue);
-    } catch (error) {
-      console.error("Error loading overdue doses:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeProfile]);
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [CACHE_KEY, profileId] });
+  }, [queryClient, profileId]);
 
-  useEffect(() => {
-    loadOverdueDoses();
-    
-    // Refresh every 3 minutes instead of 1 minute
-    const interval = setInterval(loadOverdueDoses, 3 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [loadOverdueDoses]);
-
-  const markAsTaken = async (doseId: string) => {
+  const markAsTaken = useCallback(async (doseId: string) => {
     try {
+      // Optimistic update
+      queryClient.setQueryData([CACHE_KEY, profileId], (old: OverdueDose[] | undefined) => 
+        old?.filter(d => d.id !== doseId) ?? []
+      );
+      
       await supabase.functions.invoke('handle-dose-action', {
         body: { doseId, action: 'taken' }
       });
-      loadOverdueDoses();
     } catch (error) {
       console.error("Error marking dose:", error);
+      refresh(); // Revert on error
     }
-  };
+  }, [queryClient, profileId, refresh]);
+
+  const hasOverdue = useMemo(() => overdueDoses.length > 0, [overdueDoses.length]);
 
   return {
     overdueDoses,
     loading,
-    refresh: loadOverdueDoses,
+    refresh,
     markAsTaken,
-    hasOverdue: overdueDoses.length > 0,
+    hasOverdue,
   };
 };

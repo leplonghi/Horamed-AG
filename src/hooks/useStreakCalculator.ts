@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, subDays, differenceInDays } from "date-fns";
+import { startOfDay, subDays } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface StreakData {
   currentStreak: number;
@@ -10,24 +11,24 @@ interface StreakData {
   thisWeekAverage: number;
 }
 
+const CACHE_KEY = "streak-data";
+
 export function useStreakCalculator() {
-  const [streakData, setStreakData] = useState<StreakData>({
-    currentStreak: 0,
-    longestStreak: 0,
-    isImproving: false,
-    lastWeekAverage: 0,
-    thisWeekAverage: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const lastFetchRef = useRef<number>(0);
 
-  useEffect(() => {
-    calculateStreaks();
-  }, []);
+  const calculateStreaks = useCallback(async (): Promise<StreakData> => {
+    const defaultData: StreakData = {
+      currentStreak: 0,
+      longestStreak: 0,
+      isImproving: false,
+      lastWeekAverage: 0,
+      thisWeekAverage: 0,
+    };
 
-  const calculateStreaks = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) return defaultData;
 
       // Get all doses for the last 90 days
       const startDate = startOfDay(subDays(new Date(), 90));
@@ -35,17 +36,15 @@ export function useStreakCalculator() {
       const { data: doses } = await supabase
         .from("dose_instances")
         .select(`
-          *,
+          due_at,
+          status,
           items!inner(user_id)
         `)
         .eq("items.user_id", user.id)
         .gte("due_at", startDate.toISOString())
         .order("due_at", { ascending: true });
 
-      if (!doses || doses.length === 0) {
-        setLoading(false);
-        return;
-      }
+      if (!doses || doses.length === 0) return defaultData;
 
       // Group doses by day and calculate adherence
       const dayMap = new Map<string, { total: number; taken: number }>();
@@ -69,7 +68,7 @@ export function useStreakCalculator() {
         if (!dayData) break;
         
         const adherence = dayData.taken / dayData.total;
-        if (adherence >= 0.8) { // 80% adherence counts as a streak day
+        if (adherence >= 0.8) {
           currentStreak++;
           checkDate = subDays(checkDate, 1);
         } else {
@@ -115,19 +114,43 @@ export function useStreakCalculator() {
       const thisWeekAverage = thisWeekTotal > 0 ? (thisWeekTaken / thisWeekTotal) * 100 : 0;
       const lastWeekAverage = lastWeekTotal > 0 ? (lastWeekTaken / lastWeekTotal) * 100 : 0;
 
-      setStreakData({
+      return {
         currentStreak,
         longestStreak: Math.max(longestStreak, currentStreak),
         isImproving: thisWeekAverage > lastWeekAverage,
         lastWeekAverage: Math.round(lastWeekAverage),
         thisWeekAverage: Math.round(thisWeekAverage),
-      });
+      };
     } catch (error) {
       console.error("Error calculating streaks:", error);
-    } finally {
-      setLoading(false);
+      return defaultData;
     }
-  };
+  }, []);
 
-  return { ...streakData, loading, refresh: calculateStreaks };
+  const { data: streakData, isLoading: loading } = useQuery({
+    queryKey: [CACHE_KEY],
+    queryFn: calculateStreaks,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 30 * 60 * 1000, // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+
+  const refresh = useCallback(() => {
+    // Throttle refreshes to prevent excessive calls
+    const now = Date.now();
+    if (now - lastFetchRef.current < 5000) return; // 5 second throttle
+    lastFetchRef.current = now;
+    queryClient.invalidateQueries({ queryKey: [CACHE_KEY] });
+  }, [queryClient]);
+
+  return { 
+    currentStreak: streakData?.currentStreak ?? 0,
+    longestStreak: streakData?.longestStreak ?? 0,
+    isImproving: streakData?.isImproving ?? false,
+    lastWeekAverage: streakData?.lastWeekAverage ?? 0,
+    thisWeekAverage: streakData?.thisWeekAverage ?? 0,
+    loading, 
+    refresh 
+  };
 }

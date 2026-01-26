@@ -1,44 +1,44 @@
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, Download, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function MonthlyReportWidget() {
+function MonthlyReportWidget() {
   const navigate = useNavigate();
   const { language } = useLanguage();
-  const [hasEnoughData, setHasEnoughData] = useState(false);
-  const [lastReportDate, setLastReportDate] = useState<Date | null>(null);
 
   const locale = language === 'pt' ? ptBR : enUS;
   const lastMonth = subMonths(new Date(), 1);
   const monthName = format(lastMonth, 'MMMM', { locale });
 
-  useEffect(() => {
-    checkReportData();
-  }, []);
+  const { data: hasEnoughData = false } = useQuery({
+    queryKey: ["monthly-report-eligibility"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
 
-  const checkReportData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+      const monthStart = startOfMonth(lastMonth);
+      const monthEnd = endOfMonth(lastMonth);
 
-    // Check if user has any dose data from last month
-    const monthStart = startOfMonth(lastMonth);
-    const monthEnd = endOfMonth(lastMonth);
+      const { count } = await supabase
+        .from('dose_instances')
+        .select('id', { count: 'exact', head: true })
+        .gte('due_at', monthStart.toISOString())
+        .lte('due_at', monthEnd.toISOString());
 
-    const { count } = await supabase
-      .from('dose_instances')
-      .select('id', { count: 'exact', head: true })
-      .gte('due_at', monthStart.toISOString())
-      .lte('due_at', monthEnd.toISOString());
-
-    setHasEnoughData((count || 0) >= 7); // At least a week of data
-  };
+      return (count || 0) >= 7;
+    },
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   if (!hasEnoughData) return null;
 
@@ -82,3 +82,5 @@ export default function MonthlyReportWidget() {
     </motion.div>
   );
 }
+
+export default memo(MonthlyReportWidget);
