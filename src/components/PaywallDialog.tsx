@@ -53,9 +53,9 @@ export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDi
       case "active_items":
         return {
           title: "Você precisa de mais medicamentos",
-          desc: "73% dos usuários que tomam mais de 1 medicamento fazem upgrade no primeiro mês.",
-          stat: "73%",
-          statLabel: "fazem upgrade"
+          desc: "Usuários Premium gerenciam em média 5 medicamentos e ganham 2x mais XP com os desafios semanais.",
+          stat: "5x",
+          statLabel: "mais organização"
         };
       case "documents":
         return {
@@ -136,9 +136,10 @@ export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDi
           <div className="space-y-2">
             {[
               "Medicamentos ilimitados",
-              "IA liberada sem limites",
-              "Relatório mensal para consultas",
-              "WhatsApp + Push + Alarme"
+              "Clara IA + controle por voz",
+              "Relatórios para o médico",
+              "Desafios semanais e XP",
+              "Comparação de preços de farmácias"
             ].map((f, i) => (
               <div key={i} className="flex items-center gap-2">
                 <Check className="h-5 w-5 text-green-500 flex-shrink-0" />

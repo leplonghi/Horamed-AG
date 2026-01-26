@@ -345,9 +345,11 @@ export default function SubscriptionManagement() {
                       <p className="font-semibold text-sm">Você perderá acesso a:</p>
                       <ul className="text-xs text-muted-foreground mt-1 space-y-1">
                         <li>• Medicamentos ilimitados</li>
+                        <li>• Clara IA + controle por voz</li>
                         <li>• OCR de receitas médicas</li>
-                        <li>• Assistente de saúde com IA</li>
-                        <li>• Relatórios mensais detalhados</li>
+                        <li>• Desafios semanais e sistema de XP</li>
+                        <li>• Comparação de preços de farmácias</li>
+                        <li>• Relatórios para consultas</li>
                       </ul>
                     </div>
                   </div>

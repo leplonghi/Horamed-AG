@@ -22,7 +22,11 @@ import {
   User,
   Baby,
   HeartPulse,
-  UserRound
+  UserRound,
+  Mic,
+  ClipboardList,
+  DollarSign,
+  Trophy
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { getAuthRedirectUrl } from "@/lib/domainConfig";
@@ -146,9 +150,24 @@ const Landing = () => {
       description: t('landing.newFeature2Desc')
     },
     {
-      icon: Zap,
-      title: t('landing.newFeature3Title'),
-      description: t('landing.newFeature3Desc')
+      icon: Mic,
+      title: t('landing.newFeature4Title'),
+      description: t('landing.newFeature4Desc')
+    },
+    {
+      icon: ClipboardList,
+      title: t('landing.newFeature5Title'),
+      description: t('landing.newFeature5Desc')
+    },
+    {
+      icon: DollarSign,
+      title: t('landing.newFeature6Title'),
+      description: t('landing.newFeature6Desc')
+    },
+    {
+      icon: Trophy,
+      title: t('landing.newFeature7Title'),
+      description: t('landing.newFeature7Desc')
     }
   ];
 
@@ -396,7 +415,7 @@ const Landing = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {newFeatures.map((feature, i) => (
               <motion.div
                 key={i}
