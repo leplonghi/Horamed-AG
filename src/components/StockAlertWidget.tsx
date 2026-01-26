@@ -1,12 +1,13 @@
+import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, AlertTriangle, ShoppingCart, TrendingDown } from "lucide-react";
+import { Package, AlertTriangle, ShoppingCart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useStockProjection, StockProjection } from "@/hooks/useStockProjection";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function StockAlertWidget() {
+function StockAlertWidget() {
   const navigate = useNavigate();
   const { data: stockData, isLoading } = useStockProjection();
   const { language } = useLanguage();
@@ -46,58 +47,57 @@ export default function StockAlertWidget() {
   const config = urgencyConfig[urgencyLevel];
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-      >
-        <Card className={`${config.bg} ${config.border} border mb-4 hover:shadow-[var(--shadow-glass-hover)] transition-all`}>
-          <CardContent className="p-3">
-            <div className="flex items-start gap-3">
-              <div className={`p-2 rounded-xl bg-background/60 backdrop-blur-sm ${config.icon}`}>
-                {urgencyLevel === 'critical' ? (
-                  <AlertTriangle className="h-5 w-5" />
-                ) : (
-                  <Package className="h-5 w-5" />
-                )}
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <p className={`text-sm font-semibold ${config.text}`}>
-                  {urgencyLevel === 'critical' 
-                    ? (language === 'pt' ? '⚠️ Estoque acabando!' : '⚠️ Stock running out!')
-                    : (language === 'pt' ? '📦 Atenção ao estoque' : '📦 Stock attention needed')}
-                </p>
-                
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {language === 'pt' 
-                    ? `${mostUrgent.item_name}: ${mostUrgent.days_remaining} dias restantes`
-                    : `${mostUrgent.item_name}: ${mostUrgent.days_remaining} days left`}
-                </p>
-                
-                {criticalItems.length > 1 && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    {language === 'pt'
-                      ? `+${criticalItems.length - 1} outros itens com estoque baixo`
-                      : `+${criticalItems.length - 1} other items low on stock`}
-                  </p>
-                )}
-              </div>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/estoque')}
-                className="shrink-0 text-xs h-8 px-2"
-              >
-                <ShoppingCart className="h-3.5 w-3.5 mr-1" />
-                {language === 'pt' ? 'Ver' : 'View'}
-              </Button>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      <Card className={`${config.bg} ${config.border} border mb-4 hover:shadow-[var(--shadow-glass-hover)] transition-all`}>
+        <CardContent className="p-3">
+          <div className="flex items-start gap-3">
+            <div className={`p-2 rounded-xl bg-background/60 backdrop-blur-sm ${config.icon}`}>
+              {urgencyLevel === 'critical' ? (
+                <AlertTriangle className="h-5 w-5" />
+              ) : (
+                <Package className="h-5 w-5" />
+              )}
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-    </AnimatePresence>
+            
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-semibold ${config.text}`}>
+                {urgencyLevel === 'critical' 
+                  ? (language === 'pt' ? '⚠️ Estoque acabando!' : '⚠️ Stock running out!')
+                  : (language === 'pt' ? '📦 Atenção ao estoque' : '📦 Stock attention needed')}
+              </p>
+              
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {language === 'pt' 
+                  ? `${mostUrgent.item_name}: ${mostUrgent.days_remaining} dias restantes`
+                  : `${mostUrgent.item_name}: ${mostUrgent.days_remaining} days left`}
+              </p>
+              
+              {criticalItems.length > 1 && (
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {language === 'pt'
+                    ? `+${criticalItems.length - 1} outros itens com estoque baixo`
+                    : `+${criticalItems.length - 1} other items low on stock`}
+                </p>
+              )}
+            </div>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/estoque')}
+              className="shrink-0 text-xs h-8 px-2"
+            >
+              <ShoppingCart className="h-3.5 w-3.5 mr-1" />
+              {language === 'pt' ? 'Ver' : 'View'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
+
+export default memo(StockAlertWidget);

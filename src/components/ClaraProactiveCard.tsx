@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MessageCircle, 
@@ -43,7 +43,7 @@ interface ClaraInsight {
   priority: number;
 }
 
-export default function ClaraProactiveCard({
+function ClaraProactiveCard({
   overdueDoses = 0,
   lowStockItems = [],
   currentStreak = 0,
@@ -53,12 +53,9 @@ export default function ClaraProactiveCard({
   className
 }: ClaraProactiveCardProps) {
   const { language } = useLanguage();
-  const [dismissed, setDismissed] = useState(false);
-  const [currentInsightIndex, setCurrentInsightIndex] = useState(0);
   
-  // Generate contextual insights based on user data
-  const insights = useMemo<ClaraInsight[]>(() => {
-    const result: ClaraInsight[] = [];
+  // Generate single highest priority insight - no rotation needed
+  const currentInsight = useMemo<ClaraInsight | null>(() => {
     const hour = new Date().getHours();
     const progressPercent = todayProgress.total > 0 
       ? (todayProgress.taken / todayProgress.total) * 100 
@@ -67,7 +64,7 @@ export default function ClaraProactiveCard({
     // Priority 1: Overdue doses alert
     if (overdueDoses > 0) {
       const plural = overdueDoses > 1;
-      result.push({
+      return {
         id: "overdue",
         type: "alert",
         message: language === 'pt' 
@@ -82,14 +79,14 @@ export default function ClaraProactiveCard({
         },
         icon: Clock,
         priority: 1
-      });
+      };
     }
 
     // Priority 2: Low stock warning
     if (lowStockItems.length > 0) {
       const itemName = lowStockItems[0];
       const moreCount = lowStockItems.length - 1;
-      result.push({
+      return {
         id: "low_stock",
         type: "reminder",
         message: language === 'pt' 
@@ -104,12 +101,12 @@ export default function ClaraProactiveCard({
         },
         icon: Package,
         priority: 2
-      });
+      };
     }
 
     // Priority 3: Celebration for streaks
     if (currentStreak >= 7 && currentStreak % 7 === 0) {
-      result.push({
+      return {
         id: "streak_celebration",
         type: "celebration",
         message: language === 'pt' 
@@ -120,12 +117,12 @@ export default function ClaraProactiveCard({
           : "You're crushing your routine!",
         icon: Sparkles,
         priority: 3
-      });
+      };
     }
 
     // Priority 4: Progress encouragement
     if (todayProgress.total > 0 && progressPercent >= 50 && progressPercent < 100) {
-      result.push({
+      return {
         id: "progress",
         type: "motivation",
         message: language === 'pt' 
@@ -136,91 +133,35 @@ export default function ClaraProactiveCard({
           : "Keep going, you're almost there!",
         icon: TrendingUp,
         priority: 4
-      });
+      };
     }
 
-    // Priority 5: Contextual greetings and tips
-    if (result.length === 0) {
-      // Time-based personalized message
-      if (hour < 10) {
-        result.push({
-          id: "morning",
-          type: "greeting",
-          message: language === 'pt' 
-            ? "Bom dia! Pronta para começar?" 
-            : "Good morning! Ready to start?",
-          subtext: language === 'pt' 
-            ? "Estou aqui se precisar de ajuda!" 
-            : "I'm here if you need help!",
-          icon: Heart,
-          priority: 5
-        });
-      } else if (hour >= 12 && hour < 14) {
-        result.push({
-          id: "lunch",
-          type: "tip",
-          message: language === 'pt' 
-            ? "Hora do almoço! 🍽️" 
-            : "Lunch time! 🍽️",
-          subtext: language === 'pt' 
-            ? "Lembre dos remédios que precisa tomar com comida." 
-            : "Remember meds you need to take with food.",
-          icon: Lightbulb,
-          priority: 5
-        });
-      } else if (hour >= 20) {
-        result.push({
-          id: "night",
-          type: "greeting",
-          message: language === 'pt' 
-            ? "Boa noite! Última checagem do dia?" 
-            : "Good evening! Final check for today?",
-          subtext: language === 'pt' 
-            ? "Garanta que tomou tudo antes de dormir." 
-            : "Make sure you've taken everything before bed.",
-          icon: Calendar,
-          priority: 5
-        });
-      } else {
-        // Default tip
-        const tips = language === 'pt' ? [
-          "Posso te ajudar a organizar sua rotina!",
-          "Quer saber sobre interações de medicamentos?",
-          "Precisa de ajuda com seus documentos de saúde?",
-        ] : [
-          "I can help you organize your routine!",
-          "Want to know about drug interactions?",
-          "Need help with your health documents?",
-        ];
-        const randomTip = tips[Math.floor(Math.random() * tips.length)];
-        result.push({
-          id: "default_tip",
-          type: "tip",
-          message: language === 'pt' ? "Olá! 👋" : "Hello! 👋",
-          subtext: randomTip,
-          icon: MessageCircle,
-          priority: 5
-        });
-      }
+    // Priority 5: Contextual greetings (simplified)
+    if (hour < 10) {
+      return {
+        id: "morning",
+        type: "greeting",
+        message: language === 'pt' ? "Bom dia! Pronta para começar?" : "Good morning! Ready to start?",
+        subtext: language === 'pt' ? "Estou aqui se precisar de ajuda!" : "I'm here if you need help!",
+        icon: Heart,
+        priority: 5
+      };
+    } else if (hour >= 20) {
+      return {
+        id: "night",
+        type: "greeting",
+        message: language === 'pt' ? "Boa noite! Última checagem do dia?" : "Good evening! Final check?",
+        subtext: language === 'pt' ? "Garanta que tomou tudo antes de dormir." : "Make sure you've taken everything.",
+        icon: Calendar,
+        priority: 5
+      };
     }
-
-    return result.sort((a, b) => a.priority - b.priority);
-  }, [overdueDoses, lowStockItems, currentStreak, todayProgress, language, onActionClick]);
-
-  // Rotate through insights every 8 seconds if there are multiple
-  useEffect(() => {
-    if (insights.length <= 1) return;
     
-    const interval = setInterval(() => {
-      setCurrentInsightIndex(prev => (prev + 1) % insights.length);
-    }, 8000);
+    // Default - don't show card
+    return null;
+  }, [overdueDoses, lowStockItems, currentStreak, todayProgress.taken, todayProgress.total, language, onActionClick]);
 
-    return () => clearInterval(interval);
-  }, [insights.length]);
-
-  const currentInsight = insights[currentInsightIndex];
-
-  if (dismissed || !currentInsight) return null;
+  if (!currentInsight) return null;
 
   const getTypeColors = (type: InsightType) => {
     switch (type) {
@@ -244,7 +185,6 @@ export default function ClaraProactiveCard({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
       className={cn("relative", className)}
     >
       <Card 
@@ -264,7 +204,6 @@ export default function ClaraProactiveCard({
         }}
       >
         <div className="flex items-start gap-3">
-          {/* Clara avatar indicator */}
           <div className={cn(
             "shrink-0 w-10 h-10 rounded-full flex items-center justify-center",
             colors.split(' ')[0]
@@ -275,21 +214,6 @@ export default function ClaraProactiveCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="font-semibold text-sm">Clara</span>
-              {insights.length > 1 && (
-                <div className="flex gap-0.5 ml-1">
-                  {insights.map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "w-1 h-1 rounded-full transition-colors",
-                        idx === currentInsightIndex 
-                          ? "bg-current opacity-80" 
-                          : "bg-current opacity-30"
-                      )}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
             
             <p className="text-sm font-medium leading-tight">
@@ -303,39 +227,28 @@ export default function ClaraProactiveCard({
             )}
           </div>
 
-          <div className="shrink-0 flex items-center gap-1">
-            {currentInsight.action && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-xs hover:bg-white/50"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (currentInsight.action?.handler) {
-                    currentInsight.action.handler();
-                  } else if (currentInsight.action?.route) {
-                    onActionClick?.(currentInsight.action.route);
-                  }
-                }}
-              >
-                {currentInsight.action.label}
-                <ChevronRight className="w-3 h-3 ml-0.5" />
-              </Button>
-            )}
-          </div>
+          {currentInsight.action && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="shrink-0 h-7 px-2 text-xs hover:bg-white/50"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (currentInsight.action?.handler) {
+                  currentInsight.action.handler();
+                } else if (currentInsight.action?.route) {
+                  onActionClick?.(currentInsight.action.route);
+                }
+              }}
+            >
+              {currentInsight.action.label}
+              <ChevronRight className="w-3 h-3 ml-0.5" />
+            </Button>
+          )}
         </div>
       </Card>
-
-      {/* Dismiss button */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setDismissed(true);
-        }}
-        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
-      >
-        <X className="w-3 h-3 text-muted-foreground" />
-      </button>
     </motion.div>
   );
 }
+
+export default memo(ClaraProactiveCard);

@@ -255,7 +255,22 @@ function AppContent() {
   );
 }
 
-const queryClient = new QueryClient();
+// Optimized QueryClient with aggressive caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches
+      gcTime: 30 * 60 * 1000, // 30 minutes cache
+      refetchOnWindowFocus: false, // Prevent ghost refetches
+      refetchOnReconnect: false,
+      retry: 1, // Reduce retry attempts
+      retryDelay: 1000,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(true);

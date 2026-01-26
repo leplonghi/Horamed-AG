@@ -2,79 +2,131 @@ import { Home, User, FileText, Pill } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { useDocumentos } from "@/hooks/useCofre";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { motion } from "framer-motion";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { memo, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-export default function Navigation() {
+// Memoized nav item to prevent unnecessary re-renders
+const NavItem = memo(function NavItem({ 
+  path, 
+  icon: Icon, 
+  label, 
+  badge, 
+  isActive, 
+  index,
+  onTap 
+}: { 
+  path: string;
+  icon: typeof Home;
+  label: string;
+  badge?: number;
+  isActive: boolean;
+  index: number;
+  onTap: () => void;
+}) {
+  return (
+    <Link
+      to={path}
+      onClick={onTap}
+      className={cn(
+        "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 relative group",
+        isActive
+          ? "text-primary font-semibold scale-110"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+      )}
+    >
+      {isActive && (
+        <motion.div 
+          className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl"
+          layoutId="activeTab"
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+        />
+      )}
+      <div className="relative">
+        <Icon
+          className={cn(
+            "h-6 w-6 transition-transform duration-200 relative z-10",
+            isActive && "scale-110"
+          )}
+        />
+        {badge && badge > 0 && (
+          <Badge 
+            variant="destructive" 
+            className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center z-20"
+          >
+            {badge}
+          </Badge>
+        )}
+      </div>
+      <span className={cn(
+        "text-[10px] relative z-10",
+        isActive && "font-bold"
+      )}>{label}</span>
+    </Link>
+  );
+});
+
+function Navigation() {
   const location = useLocation();
   const { triggerLight } = useHapticFeedback();
-  const { data: docsExpirando } = useDocumentos({ exp: "30" });
   const { t } = useTranslation();
-  const expiringCount = docsExpirando?.length || 0;
 
-  const navItems = [
+  // Optimized query - fetch expiring docs count only (not full documents)
+  const { data: expiringCount = 0 } = useQuery({
+    queryKey: ["expiring-docs-count"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const { count } = await supabase
+        .from("documentos_saude")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .lte("expires_at", thirtyDaysFromNow.toISOString())
+        .gte("expires_at", new Date().toISOString());
+      
+      return count || 0;
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes - docs don't change often
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Memoize nav items to prevent recreating on each render
+  const navItems = useMemo(() => [
     { path: "/hoje", icon: Home, labelKey: "nav.today" },
     { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
     { path: "/carteira", icon: FileText, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
     { path: "/perfil", icon: User, labelKey: "nav.profile" },
-  ];
+  ], [expiringCount]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)] animate-slide-up">
+    <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)]">
       <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/90 to-card/80 backdrop-blur-xl border-t border-border/40" />
-      <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/5 dark:to-white/[0.02]" />
       <div className="relative max-w-4xl mx-auto px-2">
         <div className="flex items-center justify-around h-16">
-          {navItems.map((item, index) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => triggerLight()}
-                style={{ animationDelay: `${index * 50}ms` }}
-                className={cn(
-                  "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group animate-fade-in",
-                  isActive
-                    ? "text-primary font-semibold scale-110"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50 hover:scale-105"
-                )}
-              >
-                {isActive && (
-                  <motion.div 
-                    className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl"
-                    layoutId="activeTab"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-                <div className="relative">
-                  <item.icon
-                    className={cn(
-                      "h-6 w-6 transition-all duration-300 relative z-10",
-                      isActive && "scale-110 drop-shadow-lg",
-                      !isActive && "group-hover:scale-110"
-                    )}
-                  />
-                  {item.badge && item.badge > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center z-20 animate-pulse"
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </div>
-                <span className={cn(
-                  "text-[10px] relative z-10 transition-all duration-300",
-                  isActive && "font-bold"
-                )}>{t(item.labelKey)}</span>
-              </Link>
-            );
-          })}
+          {navItems.map((item, index) => (
+            <NavItem
+              key={item.path}
+              path={item.path}
+              icon={item.icon}
+              label={t(item.labelKey)}
+              badge={item.badge}
+              isActive={location.pathname === item.path}
+              index={index}
+              onTap={triggerLight}
+            />
+          ))}
         </div>
       </div>
     </nav>
   );
 }
+
+export default memo(Navigation);
