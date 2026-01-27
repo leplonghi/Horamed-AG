@@ -14,6 +14,7 @@ import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProfileCacheProvider } from "./contexts/ProfileCacheContext";
 import { trackAppOpened } from "./hooks/useAppMetrics";
 import { usePushNotifications } from "./hooks/usePushNotifications";
+import { useDoseGeneration } from "./hooks/useDoseGeneration";
 
 // Critical components loaded immediately
 import Index from "./pages/Index";
@@ -102,6 +103,9 @@ const PageLoader = () => (
 function AppContent() {
   // Initialize push notifications and get the permission request function
   const { requestNotificationPermission } = usePushNotifications();
+  
+  // Initialize dose generation to ensure doses are always up-to-date
+  useDoseGeneration();
   
   // Track app opened
   useEffect(() => {

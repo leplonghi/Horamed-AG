@@ -92,3 +92,6 @@ verify_jwt = false
 
 [functions.check-interactions]
 verify_jwt = true
+
+[functions.generate-dose-instances]
+verify_jwt = false
