@@ -5,16 +5,16 @@
  * Separate products for BRL (Brazil) and USD (International).
  */
 
-// Brazilian prices (BRL)
+// Brazilian prices (BRL) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_BRL = {
   monthly: 'price_1Stun3AY2hnWxlHuDEEMRVTs', // R$ 19,90/mês
-  annual: 'price_1StuprHh4P8HSV4YRO4eI5YE',  // R$ 199,90/ano
+  annual: 'price_1SuWEwAY2hnWxlHuG2WrgNhx',  // R$ 199,90/ano
 } as const;
 
-// International prices (USD)
+// International prices (USD) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_USD = {
   monthly: 'price_1SturuAY2hnWxlHuHVLxgKae', // $3.99/month
-  annual: 'price_1StusNHh4P8HSV4YF0mk0mcI',  // $39.99/year
+  annual: 'price_1SuWdlHh4P8HSV4YsApnqZxY',  // $39.99/year
 } as const;
 
 // Legacy export for backward compatibility
