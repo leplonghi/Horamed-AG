@@ -1,187 +1,209 @@
 
 
-# Guia de Acesso ao Supabase para Migração ao Antigravity
+# Plano de Migração HoraMed: Lovable Cloud → Antigravity
 
-## Situação Atual
+## Visão Geral do Projeto
 
-O projeto HoraMed está rodando no **Lovable Cloud**, que é uma camada gerenciada sobre o Supabase. Isso significa que:
-- O Supabase está **provisionado automaticamente** pela Lovable
-- O acesso direto ao Dashboard do Supabase **não está disponível** pela interface padrão da Lovable
-- As credenciais sensíveis (como `SERVICE_ROLE_KEY`) estão protegidas
+O HoraMed é um aplicativo de gestão de medicamentos com:
+- **36 usuários** cadastrados
+- **13 medicamentos** ativos
+- **431 doses** registradas
+- **36 assinaturas** (Stripe integrado)
+- **48 Edge Functions** serverless
+- **49 tabelas** no banco de dados (47 BASE TABLE + 2 VIEW)
+- **3 buckets** de storage privados
 
 ---
 
-## Informações que Você JÁ Possui
+## Parte 1: Informações Disponíveis para Exportar
 
-### Credenciais Públicas (seguras para usar no frontend)
-| Item | Valor |
-|------|-------|
-| **Project ID** | `zmsuqdwleyqpdthaqvbi` |
-| **URL do Supabase** | `https://zmsuqdwleyqpdthaqvbi.supabase.co` |
-| **Anon Key** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inptc3VxZHdsZXlxcGR0aGFxdmJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzNzkzMzYsImV4cCI6MjA3NDk1NTMzNn0.Ce-xbOtP5d1kJPQ8aOQqfm-P1QMM_e50ZAWiO0kWQr8` |
+### Credenciais Públicas (você já tem acesso)
+| Recurso | Valor |
+|---------|-------|
+| Project ID | `zmsuqdwleyqpdthaqvbi` |
+| Supabase URL | `https://zmsuqdwleyqpdthaqvbi.supabase.co` |
+| Anon Key | `eyJhbGci...0kWQr8` (completa no .env) |
 
-### URLs de Produção
-| Ambiente | URL |
-|----------|-----|
-| App (Produto) | `https://app.horamed.net` |
+### Domínios Configurados
+| Tipo | URL |
+|------|-----|
+| App Principal | `https://app.horamed.net` |
 | Landing Page | `https://horamed.net` |
-| Preview Lovable | `https://id-preview--281a4314-4cea-4c93-9b25-b97f8d39e706.lovable.app` |
-| Publicado Lovable | `https://horamed.lovable.app` |
+| Preview | `https://id-preview--281a4314-4cea-4c93-9b25-b97f8d39e706.lovable.app` |
 
 ---
 
-## Secrets Configurados (Nomes - valores estão criptografados)
+## Parte 2: Lista Completa de Tabelas (49 total)
 
-Você precisará **recoletar os valores** destes secrets para reconfigurar no novo ambiente:
-
-| Secret | Uso |
-|--------|-----|
-| `STRIPE_SECRET_KEY` | Integração pagamentos Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Validação webhooks Stripe |
-| `GOOGLE_AI_API_KEY` | Funcionalidades de IA |
-| `GOOGLE_CALENDAR_CLIENT_ID` | Integração Google Calendar |
-| `GOOGLE_CALENDAR_CLIENT_SECRET` | Integração Google Calendar |
-| `VAPID_PUBLIC_KEY` | Push notifications |
-| `VAPID_PRIVATE_KEY` | Push notifications |
-| `SMTP_HOST` | Envio de emails |
-| `SMTP_PORT` | Envio de emails |
-| `SMTP_USER` | Envio de emails |
-| `SMTP_PASSWORD` | Envio de emails |
-| `SMTP_FROM_EMAIL` | Envio de emails |
-| `FIREBASE_SERVER_KEY` | Push (legacy) |
-| `CRON_SECRET` | Jobs agendados |
-
----
-
-## Edge Functions (48 funções serverless)
-
+### Tabelas Core do Negócio
 ```text
-├── affiliate-click/
-├── agendar-lembretes-saude/
-├── analyze-drug-interactions/
-├── audit-log/
-├── cancel-subscription/
-├── caregiver-invite/
-├── check-interactions/
-├── clara-consultation-prep/
-├── clara-weekly-summary/
-├── compartilhar-historico/
-├── consultation-card/
-├── create-checkout/
-├── customer-portal/
-├── emergency-guidance/
-├── export-user-data/
-├── extract-document/
-├── extract-exam/
-├── extract-medication/
-├── extrair-metadados-documento/
-├── generate-dose-instances/
-├── generate-monthly-report/
-├── gerar-link-compartilhamento/
-├── get-payment-method/
-├── get-vapid-key/
-├── google-calendar-sync/
-├── handle-dose-action/
-├── health-assistant/
-├── medication-info/
-├── pharmacy-prices/
-├── predictive-health-analysis/
-├── process-referral/
-├── process-scheduled-alarms/
-├── process-scheduled-notifications/
-├── revogar-link-compartilhamento/
-├── schedule-dose-notifications/
-├── schedule-vaccine-reminders/
-├── send-dose-notification/
-├── send-email-smtp/
-├── send-multi-channel-notification/
-├── send-smart-notifications/
-├── send-whatsapp-evolution/
-├── send-whatsapp-reminder/
-├── stripe-webhook/
-├── sync-subscription/
-├── update-payment-method/
-├── validar-compartilhamento/
-├── visualizar-historico/
-└── voice-to-text/
+items                    → Medicamentos cadastrados (13 registros)
+schedules                → Horários programados
+dose_instances           → Histórico de doses (431 registros)
+stock                    → Controle de estoque
+alarms                   → Alarmes/lembretes
+```
+
+### Tabelas de Usuários
+```text
+user_profiles            → Perfis de usuários
+profiles                 → Dados de perfil
+subscriptions            → Assinaturas Stripe (36 registros)
+consents                 → Consentimentos LGPD
+health_history           → Histórico de saúde
+weight_logs              → Registro de peso
+sinais_vitais            → Sinais vitais
+```
+
+### Tabelas de Documentos Médicos
+```text
+documentos_saude         → Documentos de saúde
+exames_laboratoriais     → Exames de laboratório
+valores_exames           → Resultados de exames
+medical_exams            → Exames médicos
+consultas_medicas        → Consultas agendadas
+vaccination_records      → Carteira de vacinação
+document_extraction_logs → Logs de extração IA
+extraction_cache         → Cache de extrações
+categorias_saude         → Categorias de documentos
+```
+
+### Tabelas de Compartilhamento
+```text
+medical_shares           → Compartilhamentos médicos
+document_shares          → Compartilhamento de docs
+compartilhamentos_doc    → Links de compartilhamento
+consultation_cards       → Cartões de consulta (QR)
+caregiver_links          → Vínculos de cuidadores
+caregivers               → Cuidadores
+```
+
+### Tabelas de Referral/Afiliados
+```text
+referrals                → Indicações
+referral_goals           → Metas de indicações
+referral_discounts       → Descontos
+referral_rewards         → Recompensas
+referral_fraud_logs      → Anti-fraude
+affiliates               → Afiliados
+affiliate_events         → Eventos de afiliados
+```
+
+### Tabelas de Notificações
+```text
+notification_preferences → Preferências
+notification_logs        → Logs de envio
+notification_metrics     → Métricas
+push_subscriptions       → Web Push tokens
+local_reminders          → Lembretes locais
+```
+
+### Tabelas de Interações/Medicamentos
+```text
+drug_interactions        → Interações básicas
+medication_interactions  → Interações detalhadas
+user_interaction_alerts  → Alertas do usuário
+```
+
+### Tabelas de Sistema
+```text
+feature_flags            → Feature toggles
+audit_logs               → Logs de auditoria
+app_metrics              → Métricas do app
+premium_emails           → E-mails VIP
+eventos_saude            → Eventos de saúde
+health_insights          → Insights IA
+side_effects_log         → Efeitos colaterais
+```
+
+### Views
+```text
+medical_exams_v          → View de exames
+user_adherence_streaks   → View de aderência
 ```
 
 ---
 
-## Tabelas no Banco de Dados (30+ tabelas)
+## Parte 3: Secrets que Precisam ser Reconfigurados
 
-| Tabela | Descrição |
-|--------|-----------|
-| `items` | Medicamentos cadastrados |
-| `schedules` | Horários dos medicamentos |
-| `dose_instances` | Histórico de doses |
-| `user_profiles` | Perfis de usuários (pacientes) |
-| `subscriptions` | Assinaturas Stripe |
-| `notification_preferences` | Config de notificações |
-| `documentos_saude` | Documentos médicos |
-| `exames_laboratoriais` | Exames de laboratório |
-| `valores_exames` | Resultados de exames |
-| `consultas_medicas` | Consultas agendadas |
-| `sinais_vitais` | Sinais vitais registrados |
-| `medical_shares` | Compartilhamentos médicos |
-| `referrals` | Sistema de indicações |
-| `referral_goals` | Metas de indicações |
-| `referral_discounts` | Descontos de indicações |
-| `stock` | Estoque de medicamentos |
-| `alarms` | Alarmes e lembretes |
-| `audit_logs` | Logs de auditoria |
-| `drug_interactions` | Interações medicamentosas |
-| `feature_flags` | Flags de funcionalidades |
-| `consents` | Consentimentos LGPD |
-| `caregiver_links` | Vínculos de cuidadores |
-| `health_history` | Histórico de saúde |
-| E mais... | |
+Você precisará recuperar os valores originais destes secrets:
+
+| Secret | Onde Obter |
+|--------|------------|
+| `STRIPE_SECRET_KEY` | Dashboard Stripe → Developers → API Keys |
+| `STRIPE_WEBHOOK_SECRET` | Dashboard Stripe → Webhooks |
+| `GOOGLE_AI_API_KEY` | Google Cloud Console → Credentials |
+| `GOOGLE_CALENDAR_CLIENT_ID` | Google Cloud Console → OAuth |
+| `GOOGLE_CALENDAR_CLIENT_SECRET` | Google Cloud Console → OAuth |
+| `VAPID_PUBLIC_KEY` | Gerado localmente (pode regenerar) |
+| `VAPID_PRIVATE_KEY` | Gerado localmente (pode regenerar) |
+| `SMTP_HOST` | Seu provedor de e-mail |
+| `SMTP_PORT` | Seu provedor de e-mail |
+| `SMTP_USER` | Seu provedor de e-mail |
+| `SMTP_PASSWORD` | Seu provedor de e-mail |
+| `SMTP_FROM_EMAIL` | Seu provedor de e-mail |
+| `FIREBASE_SERVER_KEY` | Firebase Console (legacy) |
+| `CRON_SECRET` | Pode gerar novo |
 
 ---
 
-## Storage Buckets
+## Parte 4: Opções de Migração
 
-| Bucket | Público | Uso |
-|--------|---------|-----|
-| `medical-exams` | Não | Exames médicos |
-| `cofre-saude` | Não | Documentos de saúde |
-| `avatars` | Não | Fotos de perfil |
+### Opção A: Solicitar Transfer do Projeto (Recomendado)
 
----
+1. **Contate o suporte Lovable** via Discord ou email
+2. Solicite: "Transfer ownership of Supabase project zmsuqdwleyqpdthaqvbi to my Supabase account"
+3. Forneça o e-mail da sua conta Supabase
+4. Após transferência, você terá acesso total ao Dashboard
 
-## Como Conseguir Acesso Completo ao Supabase
+**Vantagens**: Mantém todos os dados, usuários, e configurações intactos
 
-### Opção 1: Contatar Suporte Lovable
-1. Acesse o Discord da Lovable ou suporte
-2. Solicite "transfer" do projeto Supabase para sua conta pessoal
-3. Você precisará ter uma conta no supabase.com
+### Opção B: Exportar e Recriar
 
-### Opção 2: Exportar Dados e Recriar
-1. Posso exportar todas as tabelas em formato SQL
-2. Posso gerar scripts de migração completos
-3. Você cria um novo projeto Supabase e importa tudo
+1. Eu posso gerar SQL completo de todas as tabelas
+2. Você cria novo projeto Supabase
+3. Importa estrutura + dados
+4. Reconfigura secrets e Edge Functions
 
-### Opção 3: Acesso via CLI (requer SERVICE_ROLE_KEY)
-- O `SERVICE_ROLE_KEY` está configurado como secret no projeto
-- Com ele, você pode acessar 100% do banco via API
-- Mas precisamos extrair esse valor primeiro
+**Desvantagens**: Perde IDs de usuários (auth.users), precisa migrar manualmente
 
----
+### Opção C: Conectar via API (Acesso Parcial)
 
-## Próximos Passos Recomendados
+Com a Anon Key você já pode:
+- Ler dados públicos
+- Executar operações como usuário autenticado
+- Chamar Edge Functions
 
-1. **Confirmar qual caminho você quer seguir** (transfer, exportar, ou CLI)
-2. **Coletar os valores dos secrets** que você configurou (Stripe, SMTP, etc.)
-3. **Decidir se vai manter o domínio** `horamed.net` apontando para novo ambiente
+Não pode:
+- Acessar dados de outros usuários
+- Modificar estrutura do banco
+- Ver logs do sistema
 
 ---
 
-## Informações que você NÃO tem acesso direto
+## Parte 5: O que eu Posso Fazer Agora
 
-| Item | Status |
-|------|--------|
-| Dashboard Supabase | ❌ Gerenciado pela Lovable |
-| SERVICE_ROLE_KEY | ❌ Criptografado |
-| DB Connection String | ❌ Não exposto |
-| Logs de Banco | ❌ Via edge function logs apenas |
+### Imediatamente Disponível
+1. **Gerar SQL de schema** - Todas as tabelas com estrutura
+2. **Exportar dados em JSON** - Via queries SELECT
+3. **Documentar Edge Functions** - Código completo já no repositório
+4. **Gerar script de migração** - SQL pronto para importar
+
+### Requer Acesso Adicional
+1. **Exportar auth.users** - Precisa SERVICE_ROLE_KEY
+2. **Baixar arquivos Storage** - Precisa SERVICE_ROLE_KEY
+3. **Acessar Dashboard** - Precisa transfer do projeto
+
+---
+
+## Próximos Passos Sugeridos
+
+1. **Decidir caminho**: Transfer ou Exportar?
+2. **Recuperar secrets**: Acesse Stripe, Google, SMTP
+3. **Me avisar** para eu gerar os scripts necessários
+
+Posso começar gerando:
+- Script SQL completo de migração
+- Documentação das Edge Functions
+- Mapa de dependências entre tabelas
 
