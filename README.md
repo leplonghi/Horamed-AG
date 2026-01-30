@@ -1,73 +1,156 @@
-# Welcome to your Lovable project
+# HoraMed - Seu Assistente de Saúde Pessoal 🏥
 
-## Project info
+## 📱 Sobre o Projeto
 
-**URL**: https://lovable.dev/projects/281a4314-4cea-4c93-9b25-b97f8d39e706
+HoraMed é um aplicativo de saúde completo que ajuda você a gerenciar medicamentos, consultas, exames e muito mais. Desenvolvido com tecnologias modernas para oferecer a melhor experiência ao usuário.
 
-## How can I edit this code?
+## 🚀 Repositório
 
-There are several ways of editing your application.
+**GitHub**: https://github.com/leplonghi/horamed
 
-**Use Lovable**
+## 🛠️ Tecnologias
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/281a4314-4cea-4c93-9b25-b97f8d39e706) and start prompting.
+Este projeto utiliza as seguintes tecnologias:
 
-Changes made via Lovable will be committed automatically to this repo.
+- **React** - Biblioteca UI
+- **TypeScript** - Tipagem estática
+- **Vite** - Build tool e dev server
+- **Tailwind CSS** - Framework CSS
+- **shadcn/ui** - Componentes UI
+- **Firebase** - Backend (Firestore, Storage, Auth, Functions)
+- **Capacitor** - Build mobile (iOS/Android)
+- **React Router** - Navegação
+- **React Query** - Gerenciamento de estado
+- **Framer Motion** - Animações
 
-**Use your preferred IDE**
+## 💻 Desenvolvimento Local
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Pré-requisitos
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- Node.js (versão LTS recomendada) - [instalar com nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- npm ou yarn
 
-Follow these steps:
+### Instalação
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+git clone https://github.com/leplonghi/horamed.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Entre no diretório
+cd horamed
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Instale as dependências
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O aplicativo estará disponível em `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Scripts Disponíveis
 
-**Use GitHub Codespaces**
+```sh
+npm run dev              # Inicia servidor de desenvolvimento
+npm run build            # Build de produção
+npm run build:dev        # Build de desenvolvimento
+npm run preview          # Preview do build
+npm run lint             # Executa linter
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Scripts de Migração (Firebase)
 
-## What technologies are used for this project?
+```sh
+npm run migrate:export   # Exporta dados do Supabase
+npm run migrate:import   # Importa dados para Firebase
+npm run migrate:storage  # Migra arquivos de storage
+npm run migrate:full     # Execução completa da migração
+```
 
-This project is built with:
+### Scripts Firebase
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```sh
+npm run firebase:deploy              # Deploy completo
+npm run firebase:deploy:rules        # Deploy apenas das regras
+```
 
-## How can I deploy this project?
+## 📦 Build Mobile
 
-Simply open [Lovable](https://lovable.dev/projects/281a4314-4cea-4c93-9b25-b97f8d39e706) and click on Share -> Publish.
+```sh
+# iOS
+npx cap sync ios
+npx cap open ios
 
-## Can I connect a custom domain to my Lovable project?
+# Android
+npx cap sync android
+npx cap open android
+```
 
-Yes, you can!
+## 🔧 Configuração
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Variáveis de Ambiente
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
+
+```env
+# Firebase
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+
+# Stripe (opcional)
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
+```
+
+## 🐛 Solução de Problemas
+
+### Erro: Cannot find module @rollup/rollup-[os-arch]
+
+**Solução 1: Limpar cache e reinstalar**
+```sh
+rm -rf node_modules
+rm package-lock.json
+npm install
+```
+
+**Solução 2: Instalar o binário específico do Rollup**
+```sh
+npm install @rollup/rollup-[your-os-arch]
+```
+
+Substitua `[your-os-arch]` pela arquitetura do seu sistema (ex: `linux-x64`, `darwin-arm64`, `win32-x64`).
+
+**Solução 3: Usar versão LTS do Node.js**
+
+Certifique-se de estar usando uma versão LTS do Node.js.
+
+## 📝 Estrutura do Projeto
+
+```
+horamed/
+├── src/
+│   ├── components/      # Componentes React
+│   ├── pages/          # Páginas/Rotas
+│   ├── hooks/          # Custom hooks
+│   ├── lib/            # Utilitários e helpers
+│   ├── integrations/   # Integrações (Firebase, etc)
+│   └── contexts/       # Context providers
+├── public/             # Arquivos estáticos
+├── functions/          # Firebase Cloud Functions
+└── docs/              # Documentação
+```
+
+## 🤝 Contribuindo
+
+Este é um projeto privado. Para contribuir, entre em contato com o mantenedor.
+
+## 📄 Licença
+
+Todos os direitos reservados © 2026 HoraMed
+
+## 📧 Contato
+
+Para dúvidas ou suporte, entre em contato através do repositório GitHub.
