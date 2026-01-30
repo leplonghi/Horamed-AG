@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Clock, Plus, X, Bell, BellOff, Volume2, Vibrate, Trash2,
-    Sun, Moon, Sunrise, Sunset, Edit3, Check, AlertCircle
+    Sun, Moon, Sunrise, Sunset, Edit3, Check, AlertCircle, Copy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -34,20 +34,6 @@ interface NotificationScheduleEditorProps {
     medicationName?: string;
 }
 
-const QUICK_TIMES = [
-    { label: "Manhã", time: "08:00", icon: Sunrise, color: "text-orange-500" },
-    { label: "Almoço", time: "12:00", icon: Sun, color: "text-yellow-500" },
-    { label: "Tarde", time: "18:00", icon: Sunset, color: "text-purple-500" },
-    { label: "Noite", time: "22:00", icon: Moon, color: "text-blue-500" },
-];
-
-const SOUND_OPTIONS = [
-    { value: "default", label: "Padrão do sistema" },
-    { value: "gentle", label: "Suave" },
-    { value: "alert", label: "Alerta" },
-    { value: "urgent", label: "Urgente" },
-];
-
 export default function NotificationScheduleEditor({
     open,
     onOpenChange,
@@ -61,6 +47,38 @@ export default function NotificationScheduleEditor({
     const [showAddTime, setShowAddTime] = useState(false);
     const [newTime, setNewTime] = useState("");
 
+    const QUICK_TIMES = [
+        { label: t('time.morning'), time: "08:00", icon: Sunrise, color: "text-orange-500" },
+        { label: t('time.lunch'), time: "12:00", icon: Sun, color: "text-yellow-500" },
+        { label: t('time.afternoon'), time: "18:00", icon: Sunset, color: "text-purple-500" },
+        { label: t('time.night'), time: "22:00", icon: Moon, color: "text-blue-500" },
+    ];
+
+    const SOUND_OPTIONS = [
+        { value: "default", label: t('sound.default') },
+        { value: "gentle", label: t('sound.gentle') },
+        { value: "alert", label: t('sound.alert') },
+        { value: "urgent", label: t('sound.urgent') },
+    ];
+
+    const SCHEDULE_TEMPLATES = [
+        {
+            label: language === 'pt' ? '3x ao dia' : '3x a day',
+            times: ["08:00", "14:00", "20:00"],
+            icon: Sun
+        },
+        {
+            label: language === 'pt' ? 'Antes das refeições' : 'Before meals',
+            times: ["07:30", "12:30", "19:30"],
+            icon: Sunrise
+        },
+        {
+            label: language === 'pt' ? 'Manhã e Noite' : 'Morning & Night',
+            times: ["08:00", "22:00"],
+            icon: Moon
+        },
+    ];
+
     const getTimeIcon = (time: string) => {
         const hour = parseInt(time.split(":")[0]);
         if (hour >= 5 && hour < 12) return Sunrise;
@@ -69,9 +87,34 @@ export default function NotificationScheduleEditor({
         return Moon;
     };
 
+    const duplicateSchedule = (schedule: NotificationSchedule) => {
+        const newSchedule: NotificationSchedule = {
+            ...schedule,
+            id: `schedule-${Date.now()}`,
+            time: schedule.time, // User will need to change this
+        };
+        setSchedules([...schedules, newSchedule].sort((a, b) => a.time.localeCompare(b.time)));
+        setEditingId(newSchedule.id);
+        toast.success(language === 'pt' ? 'Horário duplicado! Altere o horário.' : 'Schedule duplicated! Change the time.');
+    };
+
+    const applyTemplate = (template: typeof SCHEDULE_TEMPLATES[0]) => {
+        const newSchedules: NotificationSchedule[] = template.times.map((time, index) => ({
+            id: `schedule-${Date.now()}-${index}`,
+            time,
+            type: "push",
+            vibrate: true,
+            sound: "default",
+            enabled: true,
+        }));
+        setSchedules(newSchedules);
+        toast.success(language === 'pt' ? 'Template aplicado!' : 'Template applied!');
+    };
+
+
     const addSchedule = (time: string) => {
         if (schedules.some(s => s.time === time)) {
-            toast.error(language === 'pt' ? 'Horário já existe' : 'Time already exists');
+            toast.error(t('scheduler.timeExists'));
             return;
         }
 
@@ -87,16 +130,16 @@ export default function NotificationScheduleEditor({
         setSchedules([...schedules, newSchedule].sort((a, b) => a.time.localeCompare(b.time)));
         setShowAddTime(false);
         setNewTime("");
-        toast.success(language === 'pt' ? 'Horário adicionado' : 'Time added');
+        toast.success(t('scheduler.timeAdded'));
     };
 
     const removeSchedule = (id: string) => {
         if (schedules.length === 1) {
-            toast.error(language === 'pt' ? 'Mantenha pelo menos um horário' : 'Keep at least one time');
+            toast.error(t('scheduler.keepOneTime'));
             return;
         }
         setSchedules(schedules.filter(s => s.id !== id));
-        toast.success(language === 'pt' ? 'Horário removido' : 'Time removed');
+        toast.success(t('scheduler.timeRemoved'));
     };
 
     const updateSchedule = (id: string, updates: Partial<NotificationSchedule>) => {
@@ -105,12 +148,12 @@ export default function NotificationScheduleEditor({
 
     const handleSave = () => {
         if (schedules.length === 0) {
-            toast.error(language === 'pt' ? 'Adicione pelo menos um horário' : 'Add at least one time');
+            toast.error(t('scheduler.addOneTime'));
             return;
         }
         onSave(schedules);
         onOpenChange(false);
-        toast.success(language === 'pt' ? 'Horários salvos com sucesso!' : 'Schedules saved successfully!');
+        toast.success(t('scheduler.schedulesSaved'));
     };
 
     const getNotificationTypeIcon = (type: string) => {
@@ -139,26 +182,48 @@ export default function NotificationScheduleEditor({
                             <div className="p-2 bg-primary/10 rounded-xl">
                                 <Clock className="h-6 w-6 text-primary" />
                             </div>
-                            {language === 'pt' ? 'Gerenciar Alarmes' : 'Manage Alarms'}
+                            {t('scheduler.manageAlarms')}
                         </DialogTitle>
                         <DialogDescription className="text-base mt-2">
                             {medicationName && (
                                 <span className="font-semibold text-foreground">{medicationName}</span>
                             )}
-                            {language === 'pt'
-                                ? ' - Configure horários e tipos de notificação individuais'
-                                : ' - Configure individual times and notification types'
-                            }
+                            {' - ' + t('scheduler.configureIndividual')}
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    {/* Templates */}
+                    <div className="space-y-3">
+                        <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+                            {language === 'pt' ? 'Templates Rápidos' : 'Quick Templates'}
+                        </Label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {SCHEDULE_TEMPLATES.map((template) => {
+                                const Icon = template.icon;
+                                return (
+                                    <Button
+                                        key={template.label}
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => applyTemplate(template)}
+                                        className="flex-col h-auto py-3 gap-1.5 rounded-xl hover:scale-105 hover:border-primary/50 transition-all"
+                                    >
+                                        <Icon className="w-5 h-5 text-primary" />
+                                        <span className="text-xs font-bold">{template.label}</span>
+                                        <span className="text-[10px] opacity-70">{template.times.length} {language === 'pt' ? 'horários' : 'times'}</span>
+                                    </Button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     {/* Quick Add Times */}
                     <div className="space-y-3">
                         <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
-                            {language === 'pt' ? 'Adição Rápida' : 'Quick Add'}
+                            {t('scheduler.quickAdd')}
                         </Label>
                         <div className="grid grid-cols-4 gap-2">
                             {QUICK_TIMES.map((qt) => {
@@ -229,7 +294,7 @@ export default function NotificationScheduleEditor({
                                 className="w-full h-12 border-dashed border-2 hover:border-primary/50 hover:bg-primary/5 rounded-xl"
                             >
                                 <Plus className="w-4 h-4 mr-2" />
-                                {language === 'pt' ? 'Adicionar Horário Personalizado' : 'Add Custom Time'}
+                                {t('scheduler.customTime')}
                             </Button>
                         )}
                     </div>
@@ -238,7 +303,7 @@ export default function NotificationScheduleEditor({
                     <div className="space-y-3 pt-4">
                         <Label className="text-sm font-bold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
                             <Bell className="w-4 h-4" />
-                            {language === 'pt' ? 'Horários Configurados' : 'Configured Times'} ({schedules.length})
+                            {t('scheduler.configuredTimes')} ({schedules.length})
                         </Label>
 
                         <AnimatePresence mode="popLayout">
@@ -251,10 +316,7 @@ export default function NotificationScheduleEditor({
                                 >
                                     <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
                                     <p className="text-sm">
-                                        {language === 'pt'
-                                            ? 'Nenhum horário configurado. Adicione pelo menos um.'
-                                            : 'No times configured. Add at least one.'
-                                        }
+                                        {t('scheduler.noTimes')}
                                     </p>
                                 </motion.div>
                             ) : (
@@ -303,6 +365,15 @@ export default function NotificationScheduleEditor({
                                                                 checked={schedule.enabled}
                                                                 onCheckedChange={(checked) => updateSchedule(schedule.id, { enabled: checked })}
                                                             />
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                onClick={() => duplicateSchedule(schedule)}
+                                                                className="h-9 w-9 hover:bg-primary/10 hover:text-primary"
+                                                                title={language === 'pt' ? 'Duplicar horário' : 'Duplicate schedule'}
+                                                            >
+                                                                <Copy className="w-4 h-4" />
+                                                            </Button>
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"

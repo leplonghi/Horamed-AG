@@ -879,14 +879,12 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.avatarUpdateError': 'Erro ao atualizar foto',
     'profile.changePhoto': 'Mudar foto',
     'profile.alarmsLabel': 'Alarmes',
-    'profile.caregivers': 'Cuidadores',
-    'profile.notifications': 'Notificações',
-    'profile.helpLabel': 'Ajuda e Suporte',
     'profile.termsLabel': 'Termos de Uso',
     'profile.logout': 'Sair',
     'profile.support': 'Suporte',
     'profile.logoutSuccess': 'Logout realizado com sucesso!',
     'profile.logoutError': 'Erro ao fazer logout',
+
 
     'profile.unlimitedAccess': 'Acesso Ilimitado',
     'profile.createProfile': 'Criar Perfil',
@@ -3844,6 +3842,41 @@ const translations: Record<Language, Record<string, string>> = {
     'toast.general.loadError': 'Error loading data',
     'toast.general.unknownError': 'Unknown error',
 
+    // Advanced Notification Scheduler
+    'scheduler.manageAlarms': 'Manage Alarms',
+    'scheduler.configureIndividual': 'Configure individual times and notification types',
+    'scheduler.quickAdd': 'Quick Add',
+    'scheduler.customTime': 'Add Custom Time',
+    'scheduler.configuredTimes': 'Configured Times',
+    'scheduler.noTimes': 'No times configured. Add at least one.',
+    'scheduler.notificationType': 'Notification Type',
+    'scheduler.sound': 'Sound',
+    'scheduler.vibration': 'Vibration',
+    'scheduler.vibrateOnNotification': 'Vibrate on notification',
+    'scheduler.labelOptional': 'Label (Optional)',
+    'scheduler.labelPlaceholder': 'E.g., After breakfast',
+    'scheduler.saveChanges': 'Save Changes',
+    'scheduler.timeExists': 'Time already exists',
+    'scheduler.timeAdded': 'Time added',
+    'scheduler.timeRemoved': 'Time removed',
+    'scheduler.keepOneTime': 'Keep at least one time',
+    'scheduler.addOneTime': 'Add at least one time',
+    'scheduler.schedulesSaved': 'Schedules saved successfully!',
+    'scheduler.schedulesUpdated': 'Schedules updated!',
+    'scheduler.manageAdvanced': 'Manage Advanced Alarms',
+
+    // Notification Sounds
+    'sound.default': 'System default',
+    'sound.gentle': 'Gentle',
+    'sound.alert': 'Alert',
+    'sound.urgent': 'Urgent',
+
+    // Time Periods
+    'time.morning': 'Morning',
+    'time.lunch': 'Lunch',
+    'time.afternoon': 'Afternoon',
+    'time.night': 'Night',
+
     // Wallet/Cofre
     'wallet.title': 'Health Wallet',
     'wallet.documents': 'Documents',
@@ -3853,6 +3886,37 @@ const translations: Record<Language, Record<string, string>> = {
     'wallet.upload': 'Upload document',
     'wallet.scan': 'Scan',
     'wallet.noDocuments': 'No documents',
+
+    // Placeholders - Common
+    'placeholder.weight': 'Ex: 70.5',
+    'placeholder.height': 'Ex: 175',
+    'placeholder.bloodPressure': 'Ex: 120/80',
+    'placeholder.glucose': 'Ex: 95',
+    'placeholder.notes': 'Ex: Dizziness, overate...',
+    'placeholder.quantity': 'Ex: 30',
+    'placeholder.days': 'Ex: 7, 14, 30',
+    'placeholder.medications': 'Ex: Losartan, Metformin...',
+    'placeholder.treatment': 'Ex: Blood pressure, Vitamin D, Daily treatment',
+    'placeholder.documentName': 'Document name',
+    'placeholder.institution': 'Ex: Sabin Laboratory, Albert Einstein Hospital',
+    'placeholder.vaccineName': 'COVID-19, Influenza...',
+    'placeholder.doctorName': 'Dr. John Smith',
+    'placeholder.specialty': 'Ex: Cardiology, Dermatology',
+    'placeholder.documentNotes': 'Add notes or observations about this document',
+    'placeholder.alarmTitle': 'Ex: Take medication',
+    'placeholder.alarmDescription': 'Additional description',
+    'placeholder.aiQuery': 'How can I help? (e.g.: organize my medication schedules)',
+    'placeholder.profileName': 'My main profile',
+
+    // Aria Labels
+    'aria.close': 'Close',
+    'aria.skipDose': 'Skip dose',
+    'aria.markTaken': 'Mark as taken',
+    'aria.bmiInfo': 'BMI information',
+    'aria.toggleSidebar': 'Toggle sidebar',
+    'aria.previousPage': 'Go to previous page',
+    'aria.nextPage': 'Go to next page',
+    'aria.syncCloud': 'Sync with cloud',
 
     // Progress
     'progress.title': 'Progress',

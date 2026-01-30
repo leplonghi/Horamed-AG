@@ -172,15 +172,38 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         controlStock: !!(stock?.unitsTotal),
       });
 
-      // Initialize notification schedules from times
-      const initialSchedules: NotificationSchedule[] = scheduleTimes.map((time, index) => ({
-        id: `schedule-${index}`,
-        time,
-        type: (item.notificationType as "silent" | "push" | "alarm") || "push",
-        vibrate: true,
-        sound: "default",
-        enabled: true,
-      }));
+      // Load advanced notification settings from Firestore
+      const { data: savedSettings } = await fetchCollection<any>(
+        `users/${user.uid}/notificationSettings`,
+        [where('itemId', '==', itemId)]
+      );
+
+      // Initialize notification schedules from saved settings or create defaults
+      let initialSchedules: NotificationSchedule[];
+
+      if (savedSettings && savedSettings.length > 0) {
+        // Use saved advanced settings
+        initialSchedules = savedSettings.map((setting, index) => ({
+          id: setting.id || `schedule-${index}`,
+          time: setting.time,
+          type: setting.type || "push",
+          vibrate: setting.vibrate !== undefined ? setting.vibrate : true,
+          sound: setting.sound || "default",
+          enabled: setting.enabled !== undefined ? setting.enabled : true,
+          label: setting.label || undefined,
+        }));
+      } else {
+        // Create default schedules from times
+        initialSchedules = scheduleTimes.map((time, index) => ({
+          id: `schedule-${index}`,
+          time,
+          type: (item.notificationType as "silent" | "push" | "alarm") || "push",
+          vibrate: true,
+          sound: "default",
+          enabled: true,
+        }));
+      }
+
       setNotificationSchedules(initialSchedules);
 
       // Se já existir estoque, marcar controlStock como true nos dados
@@ -303,7 +326,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
     // Update times in medicationData with enabled schedules only
     const enabledTimes = schedules.filter(s => s.enabled).map(s => s.time);
     updateData({ times: enabledTimes });
-    toast.success(t('wizard.schedulesUpdated') || 'Horários atualizados!');
+    toast.success(t('scheduler.schedulesUpdated'));
   };
 
 
@@ -443,6 +466,26 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         daysOfWeek: medicationData.frequency === 'specific_days' ? medicationData.daysOfWeek : [],
       });
 
+      // Save advanced notification settings if configured
+      if (notificationSchedules.length > 0) {
+        const settingsToSave = notificationSchedules.map(schedule => ({
+          itemId: itemId,
+          userId: user.uid,
+          time: schedule.time,
+          type: schedule.type,
+          vibrate: schedule.vibrate,
+          sound: schedule.sound,
+          enabled: schedule.enabled,
+          label: schedule.label || null,
+          createdAt: new Date().toISOString(),
+        }));
+
+        // Save each notification setting
+        for (const setting of settingsToSave) {
+          await addDocument(`users/${user.uid}/notificationSettings`, setting);
+        }
+      }
+
       // Generate dose instances
       const doseInstances: any[] = [];
       const now = new Date();
@@ -494,14 +537,43 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           itemName: medicationData.name,
           userId: user.uid,
           unitsTotal: medicationData.unitsTotal,
-          currentQty: medicationData.unitsTotal, // Or unitsLeft if editing?
-          // Logic: if editing and keeping stock, we might want to preserve currentQty.
-          // But here we deleted old stock. So we reset it.
-          // User likely expects this if they are editing stock settings in Wizard.
+          currentQty: medicationData.unitsTotal,
           unitLabel: medicationData.unitLabel,
           lastRefillAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
+      }
+
+      // Update advanced notification settings
+      if (notificationSchedules.length > 0) {
+        // Delete old notification settings
+        const { data: oldSettings } = await fetchCollection<any>(
+          `users/${user.uid}/notificationSettings`,
+          [where('itemId', '==', itemIdToEdit)]
+        );
+
+        if (oldSettings && oldSettings.length > 0) {
+          for (const setting of oldSettings) {
+            await deleteDocument(`users/${user.uid}/notificationSettings`, setting.id);
+          }
+        }
+
+        // Save new notification settings
+        const settingsToSave = notificationSchedules.map(schedule => ({
+          itemId: itemIdToEdit,
+          userId: user.uid,
+          time: schedule.time,
+          type: schedule.type,
+          vibrate: schedule.vibrate,
+          sound: schedule.sound,
+          enabled: schedule.enabled,
+          label: schedule.label || null,
+          updatedAt: new Date().toISOString(),
+        }));
+
+        for (const setting of settingsToSave) {
+          await addDocument(`users/${user.uid}/notificationSettings`, setting);
+        }
       }
 
       const remainingMedications = location.state?.remainingMedications;

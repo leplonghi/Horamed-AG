@@ -30,6 +30,9 @@ export interface DoseNotification {
   itemName: string;
   doseText?: string;
   scheduledAt: Date;
+  sound?: string; // "default" | "gentle" | "alert" | "urgent"
+  vibrate?: boolean;
+  notificationType?: "silent" | "push" | "alarm";
 }
 
 export interface NotificationResult {
@@ -38,6 +41,14 @@ export interface NotificationResult {
   notificationId: number;
   error?: string;
 }
+
+// Sound mapping for different notification types
+const SOUND_MAP: Record<string, string | undefined> = {
+  default: undefined, // Use system default
+  gentle: "gentle_notification.wav",
+  alert: "alert_notification.wav",
+  urgent: "urgent_alarm.wav",
+};
 
 class NotificationService {
   private static instance: NotificationService;
@@ -173,17 +184,18 @@ class NotificationService {
       return { success: true, method: "local", notificationId };
     }
 
-    const title = "⏰ Hora do remédio!";
-    const body = dose.doseText
-      ? `${dose.itemName} - ${dose.doseText}`
-      : dose.itemName;
-
     const isNative = Capacitor.isNativePlatform();
     const isAndroid = Capacitor.getPlatform() === "android";
 
     // 1. Try LOCAL ALARM first (PRIMARY)
     if (isNative) {
       try {
+        const title = `💊 ${dose.itemName}`;
+        const body = dose.doseText || "Hora de tomar seu medicamento";
+        // Get custom sound and vibration settings
+        const soundFile = SOUND_MAP[dose.sound || "default"];
+        const shouldVibrate = dose.vibrate !== false; // Default to true if not specified
+
         const scheduleOptions: ScheduleOptions = {
           notifications: [{
             id: notificationId,
@@ -193,20 +205,29 @@ class NotificationService {
               at: dose.scheduledAt,
               allowWhileIdle: true, // CRITICAL: Works in Doze mode
             },
-            channelId: isAndroid ? ALARM_CHANNEL_ID : undefined,
-            smallIcon: isAndroid ? "ic_stat_icon" : undefined,
-            largeIcon: isAndroid ? "ic_launcher" : undefined,
-            sound: undefined, // Use default system sound instead of missing file
+            channelId: ALARM_CHANNEL_ID,
+            sound: soundFile,
+            smallIcon: "ic_stat_icon",
+            largeIcon: "ic_launcher",
+            iconColor: "#10B981",
+            ongoing: true,
             extra: {
               doseId: dose.doseId,
               itemId: dose.itemId,
               itemName: dose.itemName,
               scheduledAt: dose.scheduledAt.toISOString(),
-              notificationType: "dose_alarm",
+              notificationType: dose.notificationType || "dose_alarm",
             },
             autoCancel: false,
           }],
         };
+
+        // Apply vibration setting for Android
+        if (isAndroid && !shouldVibrate) {
+          // Note: Capacitor LocalNotifications doesn't have direct vibration control per notification
+          // Vibration is controlled by the channel settings
+          // For per-notification control, we'd need to create separate channels
+        }
 
         await LocalNotifications.schedule(scheduleOptions);
         this.scheduledAlarms.add(alarmKey);
@@ -251,6 +272,8 @@ class NotificationService {
 
     // Web fallback
     if ("Notification" in window && Notification.permission === "granted") {
+      const title = `💊 ${dose.itemName}`;
+      const body = dose.doseText || "Hora de tomar seu medicamento";
       const delay = dose.scheduledAt.getTime() - Date.now();
       if (delay > 0) {
         setTimeout(() => {
