@@ -40,7 +40,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.add': 'Adicionar',
     'common.search': 'Buscar',
     'common.loading': 'Carregando...',
-    'common.error': 'Erro',
+    'common.error': 'Ops! Ocorreu um erro',
     'common.success': 'Sucesso',
     'common.confirm': 'Confirmar',
     'common.back': 'Voltar',
@@ -59,6 +59,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.upgrade': 'Fazer Upgrade',
     'common.new': 'Novo',
     'common.view': 'Ver',
+    'common.manage': 'Gerenciar',
     'common.close': 'Fechar',
     'common.share': 'Compartilhar',
     'common.download': 'Baixar',
@@ -696,6 +697,24 @@ const translations: Record<Language, Record<string, string>> = {
     'rewards.viewPlans': 'Ver planos',
     'rewards.shareMessage': 'Use meu código {code} no HoraMed e ganhe 7 dias Premium grátis!',
 
+    // Tutorial - Rewards
+    'tutorial.rewards': 'Recompensas',
+    'tutorial.referralQ': 'Como Indicar',
+    'tutorial.referralStep1': 'Acesse Perfil > Minhas Recompensas',
+    'tutorial.referralStep2': 'Copie seu código exclusivo',
+    'tutorial.referralStep3': 'Envie para amigos e familiares',
+    'tutorial.referralTip': 'Seu amigo ganha 7 dias Premium na hora!',
+    'tutorial.streakQ': 'Sequência Diária',
+    'tutorial.streakStep1': 'Use o app todos os dias',
+    'tutorial.streakStep2': 'Ao completar 7, 14 ou 30 dias...',
+    'tutorial.streakStep3': 'Você desbloqueia prêmios exclusivos!',
+
+    // FAQ - Rewards
+    'help.faq11Q': 'Como funcionam as Recompensas?',
+    'help.faq11A': 'Você ganha dias Premium mantendo sua sequência (streak) 7, 14, 30 dias. Ao indicar amigos, você ganha créditos (se for Premium) ou dias Premium (se for Grátis).',
+    'help.faq12Q': 'Posso sacar os créditos?',
+    'help.faq12A': 'Não. Os créditos acumulados servem exclusivamente como desconto automático na renovação da sua assinatura Premium.',
+
     // Landing page
     'landing.heroTitle': 'Nunca mais esqueça de tomar seu medicamento',
     'landing.heroHighlight': 'de tomar seu medicamento',
@@ -878,12 +897,6 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.avatarUpdated': 'Foto de perfil atualizada!',
     'profile.avatarUpdateError': 'Erro ao atualizar foto',
     'profile.changePhoto': 'Mudar foto',
-    'profile.alarmsLabel': 'Alarmes',
-    'profile.termsLabel': 'Termos de Uso',
-    'profile.logout': 'Sair',
-    'profile.support': 'Suporte',
-    'profile.logoutSuccess': 'Logout realizado com sucesso!',
-    'profile.logoutError': 'Erro ao fazer logout',
 
 
     'profile.unlimitedAccess': 'Acesso Ilimitado',
@@ -1018,14 +1031,65 @@ const translations: Record<Language, Record<string, string>> = {
     'toast.general.saveError': 'Erro ao salvar',
     'toast.general.deleteSuccess': 'Excluído com sucesso!',
     'toast.general.deleteError': 'Erro ao excluir',
-    'toast.general.loadError': 'Erro ao carregar dados',
-    'toast.general.unknownError': 'Erro desconhecido',
+
+
+    // Alt Texts
+    'alt.preview': 'Preview',
+    'alt.documentPreview': 'Preview do documento',
+    'alt.avatar': 'Avatar',
+
+    // Gamification
+    'gamification.myRewards': 'Minhas Recompensas',
 
     // Advanced Notification Scheduler
     'scheduler.manageAlarms': 'Gerenciar Alarmes',
     'scheduler.configureIndividual': 'Configure horários e tipos de notificação individuais',
     'scheduler.quickAdd': 'Adição Rápida',
+
+    // Weekly Calendar
+    'calendar.weeklyTitle': 'Calendário Semanal',
+    'calendar.legend': 'Legenda do Calendário',
+    'calendar.medicationStatus': 'Status das medicações',
+    'calendar.noDoses': 'Sem doses para este dia',
+
+    // Status & Stats
+    'stats.adherence': 'Adesão',
+    'stats.taken': 'Tomadas',
+    'stats.missed': 'Esquecidas',
+    'stats.skipped': 'Puladas',
+    'stats.scheduled': 'Agendadas',
+    'stats.requiresAttention': 'requer atenção',
+    'stats.intentionally': 'intencionalmente',
+    'status.taken': 'Tomado',
+    'status.missed': 'Esquecido',
+    'status.skipped': 'Pulado',
+    'status.scheduled': 'Agendado',
+
     'scheduler.customTime': 'Adicionar Horário Personalizado',
+
+    // Notification Page (Missing Keys)
+    'notifPage.title': 'Notificações',
+    'notifPage.subtitle': 'Gerencie como você recebe alertas',
+    'notifPage.email': 'Notificações por Email',
+    'notifPage.emailDesc': 'Receba resumos semanais e alertas importantes',
+    'notifPage.push': 'Notificações Push',
+    'notifPage.pushDesc': 'Receba alertas instantâneos no dispositivo',
+    'notifPage.whatsapp': 'WhatsApp (Backup)',
+    'notifPage.whatsappDesc': 'Use como backup se estiver offline',
+    'notifPage.whatsappNumber': 'Número do WhatsApp',
+    'notifPage.whatsappNumberPlaceholder': 'Ex: 5511999999999',
+    'notifPage.instanceId': 'ID da Instância',
+    'notifPage.apiToken': 'Token da API',
+    'notifPage.testing': 'Testando...',
+    'notifPage.testWhatsApp': 'Testar Integração',
+    'notifPage.saving': 'Salvando...',
+    'notifPage.save': 'Salvar Preferências',
+    'notifPage.fillWhatsApp': 'Preencha todos os campos do WhatsApp',
+    'notifPage.testSent': 'Mensagem de teste enviada!',
+    'notifPage.testError': 'Erro ao enviar teste',
+    'notifPage.prefsSaved': 'Preferências salvas!',
+    'notifPage.prefsError': 'Erro ao salvar preferências',
+
     'scheduler.configuredTimes': 'Horários Configurados',
     'scheduler.noTimes': 'Nenhum horário configurado. Adicione pelo menos um.',
     'scheduler.notificationType': 'Tipo de Notificação',
@@ -1050,11 +1114,6 @@ const translations: Record<Language, Record<string, string>> = {
     'sound.alert': 'Alerta',
     'sound.urgent': 'Urgente',
 
-    // Time Periods
-    'time.morning': 'Manhã',
-    'time.lunch': 'Almoço',
-    'time.afternoon': 'Tarde',
-    'time.night': 'Noite',
 
     // Placeholders - Common
     'placeholder.weight': 'Ex: 70.5',
@@ -1085,6 +1144,88 @@ const translations: Record<Language, Record<string, string>> = {
     'aria.toggleSidebar': 'Alternar barra lateral',
     'aria.previousPage': 'Ir para página anterior',
     'aria.nextPage': 'Ir para próxima página',
+
+    // Alarm Manager
+    'alarm.recurrence.once': 'Uma vez',
+    'alarm.recurrence.hourly': 'A cada hora',
+    'alarm.recurrence.daily': 'Diariamente',
+    'alarm.recurrence.weekly': 'Semanalmente',
+    'alarm.recurrence.monthly': 'Mensalmente',
+    'alarm.status.disabled': 'Desativado',
+    'alarm.status.expired': 'Expirado',
+    'alarm.status.active': 'Ativo',
+    'alarm.ios.title': 'Importante para iOS',
+    'alarm.ios.message': 'No iPhone/iPad, as notificações só funcionam se o app estiver instalado na tela inicial (Compartilhar → Adicionar à Tela de Início). Safari requer iOS 16.4 ou superior.',
+    'alarm.todayAt': 'Hoje às',
+    'alarm.tomorrowAt': 'Amanhã às',
+    'alarm.at': 'às',
+
+    // Alarm Permissions
+    'alarm.perm.unsupported': 'Seu navegador não suporta notificações. Use Chrome, Firefox, Edge ou Safari 16.4+.',
+    'alarm.perm.blocked': 'Notificações bloqueadas. Ative nas configurações do navegador para receber alarmes.',
+    'alarm.perm.enable': 'Ative as notificações para receber alarmes',
+    'alarm.perm.btnEnable': 'Ativar',
+
+    // Alarm Header
+    'alarm.header.title': 'Alarmes e Lembretes',
+    'alarm.header.desc': 'Agende notificações para lembrar de medicamentos e compromissos',
+    'alarm.header.test': 'Testar',
+    'alarm.header.new': 'Novo Alarme',
+
+    // Alarm Form
+    'alarm.form.createTitle': 'Criar Novo Alarme',
+    'alarm.form.createDesc': 'Configure quando você quer ser lembrado',
+    'alarm.form.title': 'Título *',
+    'alarm.form.message': 'Mensagem (opcional)',
+    'alarm.form.date': 'Data',
+    'alarm.form.time': 'Hora',
+    'alarm.form.repeat': 'Repetir',
+    'alarm.form.sound': 'Som',
+    'alarm.form.vibrate': 'Vibrar',
+    'alarm.form.persistent': 'Persistente',
+    'alarm.form.cancel': 'Cancelar',
+    'alarm.form.submit': 'Criar Alarme',
+    'alarm.form.submitting': 'Criando...',
+
+    // Alarm Stats
+    'alarm.stats.active': 'Ativos',
+    'alarm.stats.recurring': 'Recorrentes',
+    'alarm.stats.total': 'Total',
+
+    // Alarm List
+    'alarm.list.title': 'Alarmes Agendados',
+    'alarm.list.loading': 'Carregando alarmes...',
+    'alarm.list.empty': 'Nenhum alarme agendado',
+    'alarm.list.createFirst': 'Criar primeiro alarme',
+
+    // Vitals
+    'vitals.title': 'Sinais Vitais',
+    'vitals.subtitle': 'Acompanhe sua pressão, peso, glicemia e outros indicadores de saúde',
+    'vitals.viewHistory': 'Ver Histórico',
+    'vitals.lastReading': 'Último registro',
+    'vitals.notRecorded': 'Não registrado',
+    'vitals.newReading': 'Novo registro',
+
+    'vitals.bloodPressure': 'Pressão Arterial',
+    'vitals.systolic': 'Sistólica',
+    'vitals.diastolic': 'Diastólica',
+    'vitals.weight': 'Peso',
+    'vitals.heartRate': 'Frequência Cardíaca',
+    'vitals.bloodSugar': 'Glicemia',
+    'vitals.temperature': 'Temperatura',
+    'vitals.oxygenSaturation': 'Saturação O₂',
+
+    'vitals.observations': 'Observações',
+    'vitals.observationsDesc': 'Anotações sobre como você está se sentindo',
+    'vitals.observationsPlaceholder': 'Ex: Medição após acordar, em jejum...',
+
+    'vitals.save': 'Salvar Sinais Vitais',
+    'vitals.saved': 'Sinais vitais salvos!',
+    'vitals.fillOne': 'Preencha pelo menos um campo',
+
+    'vitals.tip': '💡 Dica: Meça sua pressão sempre no mesmo horário e posição para resultados mais consistentes.',
+
+
     'aria.syncCloud': 'Sincronizar com a nuvem',
 
     // Cofre page
@@ -3049,28 +3190,7 @@ const translations: Record<Language, Record<string, string>> = {
     'alarm.allowNotif': 'Permitir Notificações',
     'alarm.permGranted': 'Permissão concedida!',
 
-    // Notifications Page
-    'notifPage.title': 'Notificações',
-    'notifPage.subtitle': 'Gerencie como você recebe lembretes',
-    'notifPage.fillWhatsApp': 'Preencha todos os campos do WhatsApp',
-    'notifPage.testSent': 'Mensagem de teste enviada! Verifique seu WhatsApp.',
-    'notifPage.testError': 'Erro ao enviar teste. Verifique suas credenciais.',
-    'notifPage.prefsSaved': 'Preferências salvas com sucesso!',
-    'notifPage.prefsError': 'Erro ao salvar preferências',
-    'notifPage.email': 'Notificações por Email',
-    'notifPage.emailDesc': 'Receba lembretes por email',
-    'notifPage.push': 'Notificações Push',
-    'notifPage.pushDesc': 'Receba alertas no seu dispositivo',
-    'notifPage.whatsapp': 'WhatsApp',
-    'notifPage.whatsappDesc': 'Receba lembretes pelo WhatsApp (Evolution API)',
-    'notifPage.whatsappNumber': 'Número WhatsApp',
-    'notifPage.whatsappNumberPlaceholder': '+5511999999999',
-    'notifPage.instanceId': 'Instance ID',
-    'notifPage.apiToken': 'API Token',
-    'notifPage.testWhatsApp': 'Testar WhatsApp',
-    'notifPage.testing': 'Testando...',
-    'notifPage.save': 'Salvar Preferências',
-    'notifPage.saving': 'Salvando...',
+
 
     // Drug Interactions
     'interactions.title': 'Interações Medicamentosas',
@@ -3177,7 +3297,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.add': 'Add',
     'common.search': 'Search',
     'common.loading': 'Loading...',
-    'common.error': 'Error',
+    'common.error': 'Oops! An error occurred',
     'common.success': 'Success',
     'common.confirm': 'Confirm',
     'common.back': 'Back',
@@ -3196,6 +3316,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.upgrade': 'Upgrade',
     'common.new': 'New',
     'common.view': 'View',
+    'common.manage': 'Manage',
     'common.close': 'Close',
     'common.share': 'Share',
     'common.download': 'Download',
@@ -3698,8 +3819,6 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.avatarUpdateError': 'Error updating photo',
     'profile.changePhoto': 'Change photo',
     'profile.alarmsLabel': 'Alarms',
-    'profile.caregivers': 'Caregivers',
-    'profile.notifications': 'Notifications',
     'profile.helpLabel': 'Help & Support',
     'profile.termsLabel': 'Terms of Use',
     'profile.logout': 'Logout',
@@ -3842,11 +3961,41 @@ const translations: Record<Language, Record<string, string>> = {
     'toast.general.loadError': 'Error loading data',
     'toast.general.unknownError': 'Unknown error',
 
+    // Alt Texts
+    'alt.preview': 'Preview',
+    'alt.documentPreview': 'Document preview',
+    'alt.avatar': 'Avatar',
+
+    // Gamification
+    'gamification.myRewards': 'My Rewards',
+
     // Advanced Notification Scheduler
     'scheduler.manageAlarms': 'Manage Alarms',
     'scheduler.configureIndividual': 'Configure individual times and notification types',
     'scheduler.quickAdd': 'Quick Add',
+
+    // Weekly Calendar
+    'calendar.weeklyTitle': 'Weekly Calendar',
+    'calendar.legend': 'Calendar Legend',
+    'calendar.medicationStatus': 'Medication status',
+    'calendar.noDoses': 'No doses for this day',
+
+    // Status & Stats
+    'stats.adherence': 'Adherence',
+    'stats.taken': 'Taken',
+    'stats.missed': 'Missed',
+    'stats.skipped': 'Skipped',
+    'stats.scheduled': 'Scheduled',
+    'stats.requiresAttention': 'requires attention',
+    'stats.intentionally': 'intentionally',
+    'status.taken': 'Taken',
+    'status.missed': 'Missed',
+    'status.skipped': 'Skipped',
+    'status.scheduled': 'Scheduled',
+
     'scheduler.customTime': 'Add Custom Time',
+
+
     'scheduler.configuredTimes': 'Configured Times',
     'scheduler.noTimes': 'No times configured. Add at least one.',
     'scheduler.notificationType': 'Notification Type',
@@ -3871,11 +4020,6 @@ const translations: Record<Language, Record<string, string>> = {
     'sound.alert': 'Alert',
     'sound.urgent': 'Urgent',
 
-    // Time Periods
-    'time.morning': 'Morning',
-    'time.lunch': 'Lunch',
-    'time.afternoon': 'Afternoon',
-    'time.night': 'Night',
 
     // Wallet/Cofre
     'wallet.title': 'Health Wallet',
@@ -4172,8 +4316,6 @@ const translations: Record<Language, Record<string, string>> = {
     // Profile page
     'profile.whatCanYouDo': 'What can you do here?',
     'profile.whatCanYouDoDesc': 'Manage your <strong>account</strong>, create <strong>family profiles</strong> (Premium), configure <strong>notifications</strong> and view your <strong>subscription plan</strong>.',
-    'profile.logoutSuccess': 'Logged out successfully',
-    'profile.logoutError': 'Error logging out',
     'profile.relationSelf': 'You',
     'profile.relationChild': 'Child',
     'profile.relationParent': 'Parent',
@@ -4216,11 +4358,9 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportDesc': 'Download your data in PDF',
     'profile.tutorialLabel': 'Tutorial',
     'profile.tutorialDesc': 'Learn how to use the app',
-    'profile.helpLabel': 'Help & Support',
     'profile.helpDesc': 'Questions and contact',
     'profile.privacyLabel': 'Privacy',
     'profile.privacyDesc': 'Privacy policy',
-    'profile.termsLabel': 'Terms of Use',
     'profile.termsDesc': 'Terms and conditions',
     'profile.biometricLogin': 'Biometric Login',
     'profile.biometricEnabled': 'Enabled on this device',
@@ -6401,6 +6541,86 @@ const translations: Record<Language, Record<string, string>> = {
     'onboardingDemo.experienceTitle': 'This is your experience',
     'onboardingDemo.experienceDesc': 'Automatic reminders, visual tracking, and achievements to keep you motivated',
     'onboardingDemo.startingIn': 'Starting in {count} second{plural}...',
+
+    // Alarm Manager
+    'alarm.recurrence.once': 'Once',
+    'alarm.recurrence.hourly': 'Hourly',
+    'alarm.recurrence.daily': 'Daily',
+    'alarm.recurrence.weekly': 'Weekly',
+    'alarm.recurrence.monthly': 'Monthly',
+    'alarm.status.disabled': 'Disabled',
+    'alarm.status.expired': 'Expired',
+    'alarm.status.active': 'Active',
+    'alarm.ios.title': 'Important for iOS',
+    'alarm.ios.message': 'On iPhone/iPad, notifications only work if the app is installed to the Home Screen (Share → Add to Home Screen). Safari requires iOS 16.4 or higher.',
+    'alarm.todayAt': 'Today at',
+    'alarm.tomorrowAt': 'Tomorrow at',
+    'alarm.at': 'at',
+
+    // Alarm Permissions
+    'alarm.perm.unsupported': 'Your browser does not support notifications. Use Chrome, Firefox, Edge, or Safari 16.4+.',
+    'alarm.perm.blocked': 'Notifications blocked. Enable in browser settings to receive alarms.',
+    'alarm.perm.enable': 'Enable notifications to receive alarms',
+    'alarm.perm.btnEnable': 'Enable',
+
+    // Alarm Header
+    'alarm.header.title': 'Alarms & Reminders',
+    'alarm.header.desc': 'Schedule notifications for medications and appointments',
+    'alarm.header.test': 'Test',
+    'alarm.header.new': 'New Alarm',
+
+    // Alarm Form
+    'alarm.form.createTitle': 'Create New Alarm',
+    'alarm.form.createDesc': 'Configure when you want to be reminded',
+    'alarm.form.title': 'Title *',
+    'alarm.form.message': 'Message (optional)',
+    'alarm.form.date': 'Date',
+    'alarm.form.time': 'Time',
+    'alarm.form.repeat': 'Repeat',
+    'alarm.form.sound': 'Sound',
+    'alarm.form.vibrate': 'Vibrate',
+    'alarm.form.persistent': 'Persistent',
+    'alarm.form.cancel': 'Cancel',
+    'alarm.form.submit': 'Create Alarm',
+    'alarm.form.submitting': 'Creating...',
+
+    // Alarm Stats
+    'alarm.stats.active': 'Active',
+    'alarm.stats.recurring': 'Recurring',
+    'alarm.stats.total': 'Total',
+
+    // Alarm List
+    'alarm.list.title': 'Scheduled Alarms',
+    'alarm.list.loading': 'Loading alarms...',
+    'alarm.list.empty': 'No scheduled alarms',
+    'alarm.list.createFirst': 'Create first alarm',
+
+    // Vitals
+    'vitals.title': 'Vital Signs',
+    'vitals.subtitle': 'Track your blood pressure, weight, blood sugar, and other health indicators',
+    'vitals.viewHistory': 'View History',
+    'vitals.lastReading': 'Last reading',
+    'vitals.notRecorded': 'Not recorded',
+    'vitals.newReading': 'New reading',
+
+    'vitals.bloodPressure': 'Blood Pressure',
+    'vitals.systolic': 'Systolic',
+    'vitals.diastolic': 'Diastolic',
+    'vitals.weight': 'Weight',
+    'vitals.heartRate': 'Heart Rate',
+    'vitals.bloodSugar': 'Blood Sugar',
+    'vitals.temperature': 'Temperature',
+    'vitals.oxygenSaturation': 'Oxygen Saturation',
+
+    'vitals.observations': 'Observations',
+    'vitals.observationsDesc': 'Notes about how you are feeling',
+    'vitals.observationsPlaceholder': 'E.g.: Measurement after waking up, fasting...',
+
+    'vitals.save': 'Save Vital Signs',
+    'vitals.saved': 'Vital signs saved!',
+    'vitals.fillOne': 'Fill at least one field',
+
+    'vitals.tip': '💡 Tip: Measure your blood pressure at the same time and position for more consistent results.',
   }
 };
 
