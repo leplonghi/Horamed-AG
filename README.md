@@ -6,7 +6,7 @@ HoraMed é um aplicativo de saúde completo que ajuda você a gerenciar medicame
 
 ## 🚀 Repositório
 
-**GitHub**: https://github.com/leplonghi/horamed
+**GitHub**: https://github.com/leplonghi/horamed-AG
 
 ## 🛠️ Tecnologias
 
@@ -34,7 +34,7 @@ Este projeto utiliza as seguintes tecnologias:
 
 ```sh
 # 1. Clone o repositório
-git clone https://github.com/leplonghi/horamed.git
+git clone https://github.com/leplonghi/horamed-AG.git
 
 # 2. Entre no diretório
 cd horamed
