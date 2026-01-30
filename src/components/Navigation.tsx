@@ -1,4 +1,4 @@
-import { Home, User, FileText, Pill } from "lucide-react";
+import { Home, User, FileText, Pill, Activity } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -7,18 +7,18 @@ import { motion } from "framer-motion";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where } from "@/integrations/firebase";
 
 // Memoized nav item to prevent unnecessary re-renders
-const NavItem = memo(function NavItem({ 
-  path, 
-  icon: Icon, 
-  label, 
-  badge, 
-  isActive, 
+const NavItem = memo(function NavItem({
+  path,
+  icon: Icon,
+  label,
+  badge,
+  isActive,
   index,
-  onTap 
-}: { 
+  onTap
+}: {
   path: string;
   icon: typeof Home;
   label: string;
@@ -39,7 +39,7 @@ const NavItem = memo(function NavItem({
       )}
     >
       {isActive && (
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl"
           layoutId="activeTab"
           transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -53,8 +53,8 @@ const NavItem = memo(function NavItem({
           )}
         />
         {badge && badge > 0 && (
-          <Badge 
-            variant="destructive" 
+          <Badge
+            variant="destructive"
             className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center z-20"
           >
             {badge}
@@ -74,26 +74,26 @@ function Navigation() {
   const { triggerLight } = useHapticFeedback();
   const { t } = useTranslation();
 
-  // Optimized query - fetch expiring docs count only (not full documents)
+  // Optimized query - fetch expiring docs count only
   const { data: expiringCount = 0 } = useQuery({
     queryKey: ["expiring-docs-count"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return 0;
-      
+
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      
-      const { count } = await supabase
-        .from("documentos_saude")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .lte("expires_at", thirtyDaysFromNow.toISOString())
-        .gte("expires_at", new Date().toISOString());
-      
-      return count || 0;
+
+      // We fetch the collection and filter locally for simplicity since we don't have a count-only re-export yet
+      // In a real app we'd use a server-side count or specialized helper
+      const { data: documents } = await fetchCollection<any>(`users/${user.uid}/documents`, [
+        where("expiresAt", "<=", thirtyDaysFromNow.toISOString()),
+        where("expiresAt", ">=", new Date().toISOString())
+      ]);
+
+      return documents?.length || 0;
     },
-    staleTime: 10 * 60 * 1000, // 10 minutes - docs don't change often
+    staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
@@ -102,6 +102,7 @@ function Navigation() {
   const navItems = useMemo(() => [
     { path: "/hoje", icon: Home, labelKey: "nav.today" },
     { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
+    { path: "/dashboard-saude", icon: Activity, labelKey: "nav.health" },
     { path: "/carteira", icon: FileText, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
     { path: "/perfil", icon: User, labelKey: "nav.profile" },
   ], [expiringCount]);

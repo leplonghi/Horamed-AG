@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Calendar } from "./ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -42,11 +42,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchEvents(selectedDate);
-  }, [selectedDate]);
-
-  const fetchEvents = async (date: Date) => {
+  const fetchEvents = useCallback(async (date: Date) => {
     setLoading(true);
     try {
       const start = startOfMonth(date);
@@ -72,7 +68,11 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t, toast]);
+
+  useEffect(() => {
+    fetchEvents(selectedDate);
+  }, [selectedDate, fetchEvents]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -144,11 +144,11 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
     return colors[color] || 'bg-gray-500/10 text-gray-700 border-gray-200';
   };
 
-  const filteredEvents = filterType === "all" 
-    ? events 
+  const filteredEvents = filterType === "all"
+    ? events
     : events.filter(e => e.type === filterType);
 
-  const selectedDateEvents = filteredEvents.filter(event => 
+  const selectedDateEvents = filteredEvents.filter(event =>
     format(new Date(event.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   );
 
@@ -170,15 +170,15 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
     setSelectedDate(today);
   };
 
-  const weekDays = viewMode === "week" 
+  const weekDays = viewMode === "week"
     ? eachDayOfInterval({
-        start: startOfWeek(selectedDate, { locale: dateLocale }),
-        end: endOfWeek(selectedDate, { locale: dateLocale })
-      })
+      start: startOfWeek(selectedDate, { locale: dateLocale }),
+      end: endOfWeek(selectedDate, { locale: dateLocale })
+    })
     : [];
 
   const getEventsForDay = (day: Date) => {
-    return filteredEvents.filter(event => 
+    return filteredEvents.filter(event =>
       isSameDay(new Date(event.date), day)
     );
   };
@@ -316,14 +316,14 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                     {selectedDateEvents.length} {selectedDateEvents.length === 1 ? t('cofreDoc.event') : t('cofreDoc.events')}
                   </Badge>
                 </div>
-                
+
                 <ScrollArea className="h-[400px] pr-4">
                   {loading ? (
                     <p className="text-muted-foreground text-center py-8">{t('healthCalendar.loading')}</p>
                   ) : selectedDateEvents.length === 0 ? (
                     <div className="text-center py-8 space-y-3">
                       <p className="text-muted-foreground">{t('healthCalendar.noEvents')}</p>
-                      <Button size="sm" onClick={() => navigate('/saude/consultas')}>
+                      <Button size="sm" onClick={() => navigate('/consultas')}>
                         <Plus className="h-4 w-4 mr-2" />
                         {t('healthCalendar.addEvent')}
                       </Button>
@@ -331,14 +331,13 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                   ) : (
                     <div className="space-y-3">
                       {selectedDateEvents.map(event => (
-                        <Card 
+                        <Card
                           key={event.id}
-                          className={`border-l-4 ${
-                            event.color === 'blue' ? 'border-l-blue-500' :
+                          className={`border-l-4 ${event.color === 'blue' ? 'border-l-blue-500' :
                             event.color === 'green' ? 'border-l-green-500' :
-                            event.color === 'orange' ? 'border-l-orange-500' :
-                            'border-l-purple-500'
-                          } hover:shadow-md transition-shadow cursor-pointer`}
+                              event.color === 'orange' ? 'border-l-orange-500' :
+                                'border-l-purple-500'
+                            } hover:shadow-md transition-shadow cursor-pointer`}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
@@ -385,11 +384,10 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                 {weekDays.map((day) => {
                   const dayEvents = getEventsForDay(day);
                   return (
-                    <Card 
+                    <Card
                       key={day.toISOString()}
-                      className={`cursor-pointer transition-all hover:shadow-md ${
-                        isSameDay(day, selectedDate) ? 'ring-2 ring-primary' : ''
-                      } ${isToday(day) ? 'bg-primary/5' : ''}`}
+                      className={`cursor-pointer transition-all hover:shadow-md ${isSameDay(day, selectedDate) ? 'ring-2 ring-primary' : ''
+                        } ${isToday(day) ? 'bg-primary/5' : ''}`}
                       onClick={() => handleDateSelect(day)}
                     >
                       <CardContent className="p-3">

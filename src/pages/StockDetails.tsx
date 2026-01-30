@@ -1,13 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchDocument } from "@/integrations/firebase";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Package } from "lucide-react";
 import { StockTimeline } from "@/components/StockTimeline";
-import StockChart from "@/components/StockChart";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -20,28 +19,23 @@ export default function StockDetails() {
   const { data: item } = useQuery({
     queryKey: ["item-stock-details", itemId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("items")
-        .select(`
-          *,
-          stock (*)
-        `)
-        .eq("id", itemId)
-        .single();
-
-      if (error) throw error;
+      const user = auth.currentUser;
+      if (!user || !itemId) return null;
+      const { data } = await fetchDocument<any>(`users/${user.uid}/medications`, itemId);
       return data;
     },
     enabled: !!itemId,
   });
 
-  const { data: stockProjections = [] } = useStockProjection(item?.profile_id);
-  const stockProjection = stockProjections.find(sp => sp.item_id === itemId);
+  // Fetch all projections (undefined profileId) or filter if we had profileId
+  // Passing undefined fetches all, then we find by itemId
+  const { data: stockProjections = [] } = useStockProjection(item?.profileId);
+  const stockProjection = stockProjections.find(sp => sp.itemId === itemId);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-6 pb-24 max-w-4xl pt-24">
         <Button
           variant="ghost"
@@ -60,7 +54,7 @@ export default function StockDetails() {
         />
 
         <div className="space-y-6 mt-6">
-          {item?.stock && stockProjection && (
+          {stockProjection && (
             <>
               <Card>
                 <CardHeader>
@@ -71,11 +65,11 @@ export default function StockDetails() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-sm text-muted-foreground">{t('stockDetails.currentQty')}</p>
-                        <p className="text-2xl font-bold">{item.stock[0]?.units_left || 0} {item.stock[0]?.unit_label || t('generic.units')}</p>
+                        <p className="text-2xl font-bold">{stockProjection.currentQty} {stockProjection.unitLabel || t('generic.units')}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">{t('stockDetails.daysRemaining')}</p>
-                        <p className="text-2xl font-bold">{stockProjection?.days_remaining || "N/A"} {t('generic.days')}</p>
+                        <p className="text-2xl font-bold">{stockProjection.daysRemaining !== null ? stockProjection.daysRemaining : "N/A"} {t('generic.days')}</p>
                       </div>
                     </div>
                   </div>
@@ -88,10 +82,10 @@ export default function StockDetails() {
                 </CardHeader>
                 <CardContent>
                   <StockTimeline
-                    itemName={item.name}
-                    consumptionHistory={stockProjection?.consumption_history || []}
-                    dailyAvg={stockProjection?.daily_consumption_avg || 0}
-                    daysRemaining={stockProjection?.days_remaining || null}
+                    itemName={stockProjection.itemName}
+                    consumptionHistory={stockProjection.consumptionHistory || []}
+                    dailyAvg={stockProjection.dailyConsumptionAvg || 0}
+                    daysRemaining={stockProjection.daysRemaining || null}
                   />
                 </CardContent>
               </Card>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/integrations/firebase';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,13 @@ import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
+import { useTranslation } from "@/contexts/LanguageContext";
 type ScanType = 'medication' | 'exam' | 'document';
 
 export default function DocumentScan() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [scanning, setScanning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -24,7 +27,7 @@ export default function DocumentScan() {
     if (file) {
       // Check file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
-        toast.error('Arquivo muito grande. Máximo 10MB');
+        toast.error(t("toast.document.fileTooLarge"));
         return;
       }
       setSelectedFile(file);
@@ -34,7 +37,7 @@ export default function DocumentScan() {
 
   const scanDocument = async () => {
     if (!selectedFile) {
-      toast.error('Selecione um arquivo primeiro');
+      toast.error(t("toast.document.selectFile"));
       return;
     }
 
@@ -43,35 +46,36 @@ export default function DocumentScan() {
       // Convert file to base64
       const reader = new FileReader();
       reader.readAsDataURL(selectedFile);
-      
+
       await new Promise((resolve) => {
         reader.onloadend = resolve;
       });
 
       const base64 = (reader.result as string).split(',')[1];
 
-      // Select the appropriate edge function
+      // Select the appropriate cloud function
       let functionName = '';
       switch (activeTab) {
         case 'medication':
-          functionName = 'extract-medication';
+          functionName = 'extractMedication';
           break;
         case 'exam':
-          functionName = 'extract-exam';
+          functionName = 'extractExam';
           break;
         case 'document':
-          functionName = 'extract-document';
+          functionName = 'extractDocument';
           break;
       }
 
-      const { data, error } = await supabase.functions.invoke(functionName, {
-        body: { image: base64 }
-      });
+      const { functions } = await import("@/integrations/firebase/client");
+      const { httpsCallable } = await import("firebase/functions");
 
-      if (error) throw error;
+      const scanFunc = httpsCallable(functions, functionName);
+      const result = await scanFunc({ image: base64 });
+      const data = result.data as any;
 
       setScanResult(data);
-      toast.success('Documento processado com sucesso!');
+      toast.success(t("toast.document.processedSuccess"));
 
       // If medication, offer to add to list
       if (activeTab === 'medication' && data.medications) {
@@ -116,7 +120,7 @@ export default function DocumentScan() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container max-w-4xl mx-auto px-4 py-6 pt-24 space-y-6">{/* pt-24 para compensar o header fixo */}
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -175,7 +179,7 @@ export default function DocumentScan() {
                     Arquivo selecionado: {selectedFile.name}
                   </div>
                 )}
-                <Button 
+                <Button
                   onClick={scanDocument}
                   disabled={!selectedFile || scanning}
                   className="w-full"
@@ -224,7 +228,7 @@ export default function DocumentScan() {
                     Arquivo selecionado: {selectedFile.name}
                   </div>
                 )}
-                <Button 
+                <Button
                   onClick={scanDocument}
                   disabled={!selectedFile || scanning}
                   className="w-full"
@@ -273,7 +277,7 @@ export default function DocumentScan() {
                     Arquivo selecionado: {selectedFile.name}
                   </div>
                 )}
-                <Button 
+                <Button
                   onClick={scanDocument}
                   disabled={!selectedFile || scanning}
                   className="w-full"
@@ -308,9 +312,9 @@ export default function DocumentScan() {
               <pre className="text-sm bg-muted p-4 rounded-md overflow-auto max-h-96">
                 {JSON.stringify(scanResult, null, 2)}
               </pre>
-              
+
               {activeTab === 'medication' && scanResult.medications && (
-                <Button 
+                <Button
                   className="w-full mt-4"
                   onClick={() => navigate('/adicionar', { state: { ocrData: scanResult.medications } })}
                 >
@@ -319,7 +323,7 @@ export default function DocumentScan() {
               )}
 
               {activeTab === 'exam' && (
-                <Button 
+                <Button
                   className="w-full mt-4"
                   onClick={() => navigate('/carteira/upload', { state: { ocrData: scanResult } })}
                 >

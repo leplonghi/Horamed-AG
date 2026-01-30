@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, query, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TrendingUp, Calendar, Pill, Target, Clock, AlertCircle, Lightbulb, Activity, Award, Package, AlertTriangle } from "lucide-react";
@@ -77,24 +77,31 @@ export default function Charts() {
 
   const loadHealthHistory = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      // Get health history from the last 30 days
       const thirtyDaysAgo = subDays(new Date(), 30);
-      
-      const { data: history } = await supabase
-        .from("health_history")
-        .select("weight_kg, height_cm, recorded_at")
-        .eq("user_id", user.id)
-        .gte("recorded_at", thirtyDaysAgo.toISOString())
-        .order("recorded_at", { ascending: true });
+
+      const { data: history } = await fetchCollection<any>(
+        `users/${user.uid}/healthHistory`,
+        [
+          where("recordedAt", ">=", thirtyDaysAgo.toISOString()),
+          orderBy("recordedAt", "asc")
+        ]
+      );
 
       if (history && history.length > 0) {
+        // Filter by user_id check irrelevant as validation done in security rules / path
+        // but wait, healthHistory might be mixed? No, path contains uid.
+        // We might want to filter by activeProfile if health history is profile specific?
+        // HealthProfileSetup sets userId but doesn't explicitly link to profileId (it uses updateProfile too).
+        // Assuming health history is user-wide or profile-wide. 
+        // Current impl writes userId.
+
         const formattedHistory = history.map(h => ({
-          date: h.recorded_at,
-          weight_kg: h.weight_kg,
-          height_cm: h.height_cm,
+          date: h.recordedAt,
+          weight_kg: h.weightKg,
+          height_cm: h.heightCm,
         }));
         setHealthHistory(formattedHistory);
       }
@@ -105,27 +112,28 @@ export default function Charts() {
 
   const loadStats = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const daysBack = period === "week" ? 7 : 30;
       const startDate = subDays(new Date(), daysBack);
+      const startDateStr = startDate.toISOString();
 
-      // Get all doses from the selected period
-      let dosesQuery = supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id, name, profile_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startDate.toISOString());
-
+      // Fetch doses
+      let filters = [where("dueAt", ">=", startDateStr)];
       if (activeProfile) {
-        dosesQuery = dosesQuery.eq("items.profile_id", activeProfile.id);
+        filters.push(where("profileId", "==", activeProfile.id));
       }
 
-      const { data: doses } = await dosesQuery;
+      const { data: doses } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        filters
+      );
+
+      // We need medication names. Fetch medications.
+      // Optimization: Fetch only needed meds? Or all. All is cleaner usually.
+      const { data: medications } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const medMap = new Map(medications.map((m: any) => [m.id, m.name]));
 
       if (doses) {
         const total = doses.length;
@@ -143,12 +151,12 @@ export default function Charts() {
           periodEnd = endOfMonth(new Date());
           dateFormat = "dd/MM";
         }
-        
+
         const daysInPeriod = eachDayOfInterval({ start: periodStart, end: periodEnd });
-        
+
         const dailyStats = daysInPeriod.map(day => {
           const dayDoses = doses.filter(d => {
-            const doseDate = new Date(d.due_at);
+            const doseDate = new Date(d.dueAt); // camelCase
             return doseDate.toDateString() === day.toDateString();
           });
           return {
@@ -160,16 +168,18 @@ export default function Charts() {
         setWeeklyData(dailyStats);
 
         // Calculate time slot stats
+        const getHour = (dateStr: string) => new Date(dateStr).getHours();
+
         const morningDoses = doses.filter(d => {
-          const hour = new Date(d.due_at).getHours();
+          const hour = getHour(d.dueAt);
           return hour >= 6 && hour < 12;
         });
         const afternoonDoses = doses.filter(d => {
-          const hour = new Date(d.due_at).getHours();
+          const hour = getHour(d.dueAt);
           return hour >= 12 && hour < 18;
         });
         const nightDoses = doses.filter(d => {
-          const hour = new Date(d.due_at).getHours();
+          const hour = getHour(d.dueAt);
           return hour >= 18 || hour < 6;
         });
 
@@ -178,7 +188,7 @@ export default function Charts() {
             label: t('charts.morning'),
             period: "6h - 12h",
             count: morningDoses.length,
-            adherence: morningDoses.length > 0 
+            adherence: morningDoses.length > 0
               ? Math.round((morningDoses.filter(d => d.status === "taken").length / morningDoses.length) * 100)
               : 0
           },
@@ -203,10 +213,10 @@ export default function Charts() {
         // Calculate missed/skipped items (items not taken)
         const notTakenDoses = doses.filter(d => d.status === "missed" || d.status === "skipped");
         const itemCounts: Record<string, { count: number; time: string }> = {};
-        
+
         notTakenDoses.forEach(dose => {
-          const itemName = dose.items.name;
-          const hour = format(new Date(dose.due_at), "HH:mm");
+          const itemName = medMap.get(dose.itemId) || 'Unknown'; // Look up name
+          const hour = format(new Date(dose.dueAt), "HH:mm");
           if (!itemCounts[itemName]) {
             itemCounts[itemName] = { count: 0, time: hour };
           }
@@ -222,13 +232,13 @@ export default function Charts() {
         const calculateStreak = () => {
           let streak = 0;
           const today = new Date();
-          
+
           for (let i = 0; i < 30; i++) {
             const checkDate = format(subDays(today, i), 'yyyy-MM-dd');
-            const dayDoses = doses.filter(d => format(new Date(d.due_at), 'yyyy-MM-dd') === checkDate);
-            
+            const dayDoses = doses.filter(d => format(new Date(d.dueAt), 'yyyy-MM-dd') === checkDate);
+
             if (dayDoses.length === 0) continue;
-            
+
             const allTaken = dayDoses.every(d => d.status === 'taken');
             if (allTaken) {
               streak++;
@@ -238,7 +248,7 @@ export default function Charts() {
           }
           return streak;
         };
-        
+
         setStats({
           weeklyAdherence: adherence,
           totalDoses: total,
@@ -280,8 +290,8 @@ export default function Charts() {
             </Button>
           </div>
         </div>
-        <UpgradeModal 
-          open={showUpgradeModal} 
+        <UpgradeModal
+          open={showUpgradeModal}
           onOpenChange={setShowUpgradeModal}
           feature={t('charts.advancedCharts')}
         />
@@ -304,7 +314,7 @@ export default function Charts() {
                 {t('charts.subtitle')}
               </p>
             </div>
-            
+
             <Tabs value={period} onValueChange={(v) => setPeriod(v as "week" | "month")} className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-2">
                 <TabsTrigger value="week">{t('charts.weekly')}</TabsTrigger>
@@ -313,322 +323,318 @@ export default function Charts() {
             </Tabs>
           </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm text-muted-foreground font-medium">{t('charts.totalDoses')}</p>
-                  <InfoDialog
-                    title={t('charts.totalDoses')}
-                    description={t('charts.totalDosesDesc')}
-                    triggerClassName="h-4 w-4"
-                  />
-                </div>
-                <p className="text-4xl font-bold text-foreground mt-1">{stats.totalDoses}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {period === "week" ? t('charts.last7Days') : t('charts.lastMonth')}
-                </p>
-              </div>
-              <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
-                <Pill className="h-7 w-7 text-primary" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm text-muted-foreground font-medium">{t('charts.dosesTaken')}</p>
-                  <InfoDialog
-                    title={t('charts.dosesTaken')}
-                    description={t('charts.dosesTakenDesc')}
-                    triggerClassName="h-4 w-4"
-                  />
-                </div>
-                <p className="text-4xl font-bold text-foreground mt-1">{stats.takenDoses}</p>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {stats.totalDoses - stats.takenDoses} {t('charts.notTaken')}
-                </p>
-              </div>
-              <div className="h-14 w-14 rounded-full bg-success/20 flex items-center justify-center">
-                <Target className="h-7 w-7 text-success" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 bg-gradient-to-br from-accent/30 to-accent/10 border-accent-foreground/20 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm text-muted-foreground font-medium">{t('charts.adherenceRate')}</p>
-                  <InfoDialog
-                    title={t('charts.adherenceRate')}
-                    description={t('charts.adherenceRateDesc')}
-                    triggerClassName="h-4 w-4"
-                  />
-                </div>
-                <p className="text-4xl font-bold text-foreground mt-1">{stats.weeklyAdherence}%</p>
-                <p className={`text-xs mt-2 font-semibold ${
-                  stats.weeklyAdherence >= 90 ? 'text-success' : 
-                  stats.weeklyAdherence >= 80 ? 'text-primary' : 
-                  stats.weeklyAdherence >= 70 ? 'text-warning' : 
-                  'text-destructive'
-                }`}>
-                  {stats.weeklyAdherence >= 90 ? `🎯 ${t('charts.excellent')}` : 
-                   stats.weeklyAdherence >= 80 ? `👍 ${t('charts.veryGood')}` : 
-                   stats.weeklyAdherence >= 70 ? `💪 ${t('charts.good')}` : 
-                   `⚠️ ${t('charts.needsImprovement')}`}
-                </p>
-              </div>
-              <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
-                <TrendingUp className="h-7 w-7 text-primary" />
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-5 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:shadow-lg transition-all">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm text-muted-foreground font-medium">{t('charts.bestPeriod')}</p>
-                  <InfoDialog
-                    title={t('charts.bestPeriod')}
-                    description={t('charts.bestPeriodDesc')}
-                    triggerClassName="h-4 w-4"
-                  />
-                </div>
-                <p className="text-2xl font-bold text-foreground mt-1">
-                  {timeSlotStats.length > 0 ? timeSlotStats.reduce((prev, curr) => prev.adherence > curr.adherence ? prev : curr).label : '-'}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2">{t('charts.bestAdherence')}</p>
-              </div>
-              <div className="h-14 w-14 rounded-full bg-warning/20 flex items-center justify-center">
-                <Award className="h-7 w-7 text-warning" />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Adherence Chart */}
-        {weeklyData.length > 0 && (
-          <ProgressChart 
-            weeklyData={weeklyData} 
-            period={period}
-          />
-        )}
-
-        {/* Stock Management */}
-        <StockChart />
-
-        {/* Time Slot Analysis */}
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            {t('charts.timeAnalysis')}
-          </h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            {t('charts.timeAnalysisDesc')}
-          </p>
-          <div className="space-y-4">
-            {timeSlotStats.map((slot, i) => {
-              const takenCount = Math.round((slot.count * slot.adherence) / 100);
-              const missedCount = slot.count - takenCount;
-              
-              return (
-                <div key={i} className="space-y-2 p-4 rounded-lg border bg-card">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-lg">{slot.label}</p>
-                        <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
-                          {slot.period}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-muted-foreground">{slot.count} doses totais</span>
-                        <span className="text-primary">{takenCount} tomadas</span>
-                        {missedCount > 0 && <span className="text-destructive">{missedCount} perdidas</span>}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className={`text-3xl font-bold ${
-                        slot.adherence >= 90 ? "text-primary" :
-                        slot.adherence >= 70 ? "text-primary/70" : "text-destructive"
-                      }`}>
-                        {slot.adherence}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">adesao</p>
-                    </div>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground font-medium">{t('charts.totalDoses')}</p>
+                    <InfoDialog
+                      title={t('charts.totalDoses')}
+                      description={t('charts.totalDosesDesc')}
+                      triggerClassName="h-4 w-4"
+                    />
                   </div>
-                  <div className="relative">
-                    <div className="h-3 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          slot.adherence >= 90 ? "bg-primary" :
-                          slot.adherence >= 70 ? "bg-primary/70" : "bg-destructive"
-                        }`}
-                        style={{ width: `${slot.adherence}%` }}
-                      />
-                    </div>
-                  </div>
-                  {slot.adherence < 70 && (
-                    <p className="text-xs text-destructive flex items-center gap-1 mt-2">
-                      <AlertCircle className="h-3 w-3" />
-                      Atencao: Este periodo precisa de mais foco
-                    </p>
-                  )}
-                  {slot.adherence >= 90 && (
-                    <p className="text-xs text-primary flex items-center gap-1 mt-2">
-                      <Award className="h-3 w-3" />
-                      Excelente! Continue assim
-                    </p>
-                  )}
+                  <p className="text-4xl font-bold text-foreground mt-1">{stats.totalDoses}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {period === "week" ? t('charts.last7Days') : t('charts.lastMonth')}
+                  </p>
                 </div>
-              );
-            })}
+                <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Pill className="h-7 w-7 text-primary" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-success/10 to-success/5 border-success/20 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground font-medium">{t('charts.dosesTaken')}</p>
+                    <InfoDialog
+                      title={t('charts.dosesTaken')}
+                      description={t('charts.dosesTakenDesc')}
+                      triggerClassName="h-4 w-4"
+                    />
+                  </div>
+                  <p className="text-4xl font-bold text-foreground mt-1">{stats.takenDoses}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {stats.totalDoses - stats.takenDoses} {t('charts.notTaken')}
+                  </p>
+                </div>
+                <div className="h-14 w-14 rounded-full bg-success/20 flex items-center justify-center">
+                  <Target className="h-7 w-7 text-success" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-accent/30 to-accent/10 border-accent-foreground/20 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground font-medium">{t('charts.adherenceRate')}</p>
+                    <InfoDialog
+                      title={t('charts.adherenceRate')}
+                      description={t('charts.adherenceRateDesc')}
+                      triggerClassName="h-4 w-4"
+                    />
+                  </div>
+                  <p className="text-4xl font-bold text-foreground mt-1">{stats.weeklyAdherence}%</p>
+                  <p className={`text-xs mt-2 font-semibold ${stats.weeklyAdherence >= 90 ? 'text-success' :
+                      stats.weeklyAdherence >= 80 ? 'text-primary' :
+                        stats.weeklyAdherence >= 70 ? 'text-warning' :
+                          'text-destructive'
+                    }`}>
+                    {stats.weeklyAdherence >= 90 ? `🎯 ${t('charts.excellent')}` :
+                      stats.weeklyAdherence >= 80 ? `👍 ${t('charts.veryGood')}` :
+                        stats.weeklyAdherence >= 70 ? `💪 ${t('charts.good')}` :
+                          `⚠️ ${t('charts.needsImprovement')}`}
+                  </p>
+                </div>
+                <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
+                  <TrendingUp className="h-7 w-7 text-primary" />
+                </div>
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/20 hover:shadow-lg transition-all">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="text-sm text-muted-foreground font-medium">{t('charts.bestPeriod')}</p>
+                    <InfoDialog
+                      title={t('charts.bestPeriod')}
+                      description={t('charts.bestPeriodDesc')}
+                      triggerClassName="h-4 w-4"
+                    />
+                  </div>
+                  <p className="text-2xl font-bold text-foreground mt-1">
+                    {timeSlotStats.length > 0 ? timeSlotStats.reduce((prev, curr) => prev.adherence > curr.adherence ? prev : curr).label : '-'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('charts.bestAdherence')}</p>
+                </div>
+                <div className="h-14 w-14 rounded-full bg-warning/20 flex items-center justify-center">
+                  <Award className="h-7 w-7 text-warning" />
+                </div>
+              </div>
+            </Card>
           </div>
-        </Card>
 
-        {/* Missed/Skipped Items */}
-        {missedItems.length > 0 && (
+          {/* Adherence Chart */}
+          {weeklyData.length > 0 && (
+            <ProgressChart
+              weeklyData={weeklyData}
+              period={period}
+            />
+          )}
+
+          {/* Stock Management */}
+          <StockChart />
+
+          {/* Time Slot Analysis */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              Medicamentos que Precisam de Atencao
+              <Clock className="h-5 w-5 text-primary" />
+              {t('charts.timeAnalysis')}
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Estes sao os medicamentos que voce tem esquecido ou pulado com mais frequencia nos ultimos 7 dias
+              {t('charts.timeAnalysisDesc')}
             </p>
-            <div className="space-y-3">
-              {missedItems.map((item, i) => {
-                const badgeColors = ['bg-destructive/10 border-destructive/30', 'bg-destructive/5 border-destructive/20', 'bg-muted border-muted'];
+            <div className="space-y-4">
+              {timeSlotStats.map((slot, i) => {
+                const takenCount = Math.round((slot.count * slot.adherence) / 100);
+                const missedCount = slot.count - takenCount;
+
                 return (
-                  <div key={i} className={`p-4 rounded-lg border ${badgeColors[i] || 'bg-card'}`}>
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                          i === 0 ? 'bg-destructive text-destructive-foreground' :
-                          i === 1 ? 'bg-destructive/70 text-white' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {i + 1}
+                  <div key={i} className="space-y-2 p-4 rounded-lg border bg-card">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-semibold text-lg">{slot.label}</p>
+                          <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded-full">
+                            {slot.period}
+                          </span>
                         </div>
-                        <div>
-                          <p className="font-semibold text-lg">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">Horario habitual: {item.time}</p>
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-muted-foreground">{slot.count} doses totais</span>
+                          <span className="text-primary">{takenCount} tomadas</span>
+                          {missedCount > 0 && <span className="text-destructive">{missedCount} perdidas</span>}
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-destructive">{item.count}</p>
-                        <p className="text-xs text-muted-foreground">vezes</p>
+                        <p className={`text-3xl font-bold ${slot.adherence >= 90 ? "text-primary" :
+                            slot.adherence >= 70 ? "text-primary/70" : "text-destructive"
+                          }`}>
+                          {slot.adherence}%
+                        </p>
+                        <p className="text-xs text-muted-foreground">adesao</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3 p-2 bg-background/50 rounded">
-                      <Lightbulb className="h-3 w-3 text-primary" />
-                      <span>
-                        {i === 0 ? 'Configure um alarme extra para este medicamento' :
-                         i === 1 ? 'Tente mudar o horario ou definir um lembrete' :
-                         'Considere associar a toma com uma rotina diaria'}
-                      </span>
+                    <div className="relative">
+                      <div className="h-3 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${slot.adherence >= 90 ? "bg-primary" :
+                              slot.adherence >= 70 ? "bg-primary/70" : "bg-destructive"
+                            }`}
+                          style={{ width: `${slot.adherence}%` }}
+                        />
+                      </div>
                     </div>
+                    {slot.adherence < 70 && (
+                      <p className="text-xs text-destructive flex items-center gap-1 mt-2">
+                        <AlertCircle className="h-3 w-3" />
+                        Atencao: Este periodo precisa de mais foco
+                      </p>
+                    )}
+                    {slot.adherence >= 90 && (
+                      <p className="text-xs text-primary flex items-center gap-1 mt-2">
+                        <Award className="h-3 w-3" />
+                        Excelente! Continue assim
+                      </p>
+                    )}
                   </div>
                 );
               })}
             </div>
-            <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-              <p className="text-xs text-muted-foreground flex items-start gap-2">
-                <Activity className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
-                <span>
-                  <strong>Dica:</strong> Doses puladas nao reduzem o estoque, mas afetam diretamente sua taxa de adesao. 
-                  Se voce esquece frequentemente um medicamento, considere ajustar o horario ou configurar multiplos lembretes.
-                </span>
+          </Card>
+
+          {/* Missed/Skipped Items */}
+          {missedItems.length > 0 && (
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <AlertCircle className="h-5 w-5 text-destructive" />
+                Medicamentos que Precisam de Atencao
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Estes sao os medicamentos que voce tem esquecido ou pulado com mais frequencia nos ultimos 7 dias
               </p>
+              <div className="space-y-3">
+                {missedItems.map((item, i) => {
+                  const badgeColors = ['bg-destructive/10 border-destructive/30', 'bg-destructive/5 border-destructive/20', 'bg-muted border-muted'];
+                  return (
+                    <div key={i} className={`p-4 rounded-lg border ${badgeColors[i] || 'bg-card'}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${i === 0 ? 'bg-destructive text-destructive-foreground' :
+                              i === 1 ? 'bg-destructive/70 text-white' :
+                                'bg-muted text-muted-foreground'
+                            }`}>
+                            {i + 1}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-lg">{item.name}</p>
+                            <p className="text-sm text-muted-foreground">Horario habitual: {item.time}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-destructive">{item.count}</p>
+                          <p className="text-xs text-muted-foreground">vezes</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3 p-2 bg-background/50 rounded">
+                        <Lightbulb className="h-3 w-3 text-primary" />
+                        <span>
+                          {i === 0 ? 'Configure um alarme extra para este medicamento' :
+                            i === 1 ? 'Tente mudar o horario ou definir um lembrete' :
+                              'Considere associar a toma com uma rotina diaria'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-xs text-muted-foreground flex items-start gap-2">
+                  <Activity className="h-4 w-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span>
+                    <strong>Dica:</strong> Doses puladas nao reduzem o estoque, mas afetam diretamente sua taxa de adesao.
+                    Se voce esquece frequentemente um medicamento, considere ajustar o horario ou configurar multiplos lembretes.
+                  </span>
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* Insights */}
+          <Card className="p-6 bg-primary/5 border-primary/20">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-primary">
+              <Lightbulb className="h-5 w-5" />
+              Insights Personalizados
+            </h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-background rounded-lg">
+                <p className="font-medium mb-1 flex items-center gap-2">
+                  {stats.weeklyAdherence >= 90 ? '🌟' : stats.weeklyAdherence >= 80 ? '👍' : stats.weeklyAdherence >= 70 ? '😊' : '⚠️'}
+                  <span>Status Geral</span>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {stats.weeklyAdherence >= 90 && 'Excelente! Sua adesao esta incrivel. Voce esta no caminho certo para uma saude melhor!'}
+                  {stats.weeklyAdherence >= 80 && stats.weeklyAdherence < 90 && 'Muito bom! Sua adesao esta acima da media. Continue assim!'}
+                  {stats.weeklyAdherence >= 70 && stats.weeklyAdherence < 80 && 'Bom trabalho! Mas ha espaco para melhorias. Vamos tentar chegar aos 80%?'}
+                  {stats.weeklyAdherence < 70 && 'Sua adesao precisa de atencao. Vamos trabalhar juntos para melhorar isso!'}
+                </p>
+              </div>
+
+              {timeSlotStats.find(s => s.adherence < 70) && (
+                <div className="p-3 bg-background rounded-lg">
+                  <p className="font-medium mb-1 flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-destructive" />
+                    <span>Horario Critico</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    O periodo da {timeSlotStats.find(s => s.adherence < 70)?.label.toLowerCase()} ({timeSlotStats.find(s => s.adherence < 70)?.period})
+                    tem a menor adesao ({timeSlotStats.find(s => s.adherence < 70)?.adherence}%).
+                    Configure lembretes adicionais ou tente ajustar os horarios dos medicamentos.
+                  </p>
+                </div>
+              )}
+
+              {timeSlotStats.find(s => s.adherence >= 90) && (
+                <div className="p-3 bg-background rounded-lg">
+                  <p className="font-medium mb-1 flex items-center gap-2">
+                    <Award className="h-4 w-4 text-primary" />
+                    <span>Ponto Forte</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Voce tem excelente adesao no periodo da {timeSlotStats.find(s => s.adherence >= 90)?.label.toLowerCase()} ({timeSlotStats.find(s => s.adherence >= 90)?.adherence}%)!
+                    Tente aplicar a mesma estrategia nos outros horarios.
+                  </p>
+                </div>
+              )}
+
+              {missedItems.length > 0 && (
+                <div className="p-3 bg-background rounded-lg">
+                  <p className="font-medium mb-1 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-destructive" />
+                    <span>Atencao Especial</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {missedItems[0].name} foi esquecido {missedItems[0].count} vezes.
+                    Sugestao: Configure multiplos alarmes ou associe a toma com uma atividade diaria (ex: apos cafe da manha).
+                  </p>
+                </div>
+              )}
+
+              {stats.weeklyAdherence >= 80 && missedItems.length === 0 && (
+                <div className="p-3 bg-background rounded-lg">
+                  <p className="font-medium mb-1 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-primary" />
+                    <span>Continue Assim!</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Voce esta mantendo uma excelente consistencia sem esquecimentos significativos.
+                    Sua dedicacao ao tratamento e inspiradora!
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
-        )}
 
-        {/* Insights */}
-        <Card className="p-6 bg-primary/5 border-primary/20">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-primary">
-            <Lightbulb className="h-5 w-5" />
-            Insights Personalizados
-          </h3>
-          <div className="space-y-3">
-            <div className="p-3 bg-background rounded-lg">
-              <p className="font-medium mb-1 flex items-center gap-2">
-                {stats.weeklyAdherence >= 90 ? '🌟' : stats.weeklyAdherence >= 80 ? '👍' : stats.weeklyAdherence >= 70 ? '😊' : '⚠️'}
-                <span>Status Geral</span>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {stats.weeklyAdherence >= 90 && 'Excelente! Sua adesao esta incrivel. Voce esta no caminho certo para uma saude melhor!'}
-                {stats.weeklyAdherence >= 80 && stats.weeklyAdherence < 90 && 'Muito bom! Sua adesao esta acima da media. Continue assim!'}
-                {stats.weeklyAdherence >= 70 && stats.weeklyAdherence < 80 && 'Bom trabalho! Mas ha espaco para melhorias. Vamos tentar chegar aos 80%?'}
-                {stats.weeklyAdherence < 70 && 'Sua adesao precisa de atencao. Vamos trabalhar juntos para melhorar isso!'}
-              </p>
-            </div>
-
-            {timeSlotStats.find(s => s.adherence < 70) && (
-              <div className="p-3 bg-background rounded-lg">
-                <p className="font-medium mb-1 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-destructive" />
-                  <span>Horario Critico</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  O periodo da {timeSlotStats.find(s => s.adherence < 70)?.label.toLowerCase()} ({timeSlotStats.find(s => s.adherence < 70)?.period}) 
-                  tem a menor adesao ({timeSlotStats.find(s => s.adherence < 70)?.adherence}%). 
-                  Configure lembretes adicionais ou tente ajustar os horarios dos medicamentos.
-                </p>
-              </div>
-            )}
-
-            {timeSlotStats.find(s => s.adherence >= 90) && (
-              <div className="p-3 bg-background rounded-lg">
-                <p className="font-medium mb-1 flex items-center gap-2">
-                  <Award className="h-4 w-4 text-primary" />
-                  <span>Ponto Forte</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Voce tem excelente adesao no periodo da {timeSlotStats.find(s => s.adherence >= 90)?.label.toLowerCase()} ({timeSlotStats.find(s => s.adherence >= 90)?.adherence}%)! 
-                  Tente aplicar a mesma estrategia nos outros horarios.
-                </p>
-              </div>
-            )}
-
-            {missedItems.length > 0 && (
-              <div className="p-3 bg-background rounded-lg">
-                <p className="font-medium mb-1 flex items-center gap-2">
-                  <Target className="h-4 w-4 text-destructive" />
-                  <span>Atencao Especial</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {missedItems[0].name} foi esquecido {missedItems[0].count} vezes. 
-                  Sugestao: Configure multiplos alarmes ou associe a toma com uma atividade diaria (ex: apos cafe da manha).
-                </p>
-              </div>
-            )}
-
-            {stats.weeklyAdherence >= 80 && missedItems.length === 0 && (
-              <div className="p-3 bg-background rounded-lg">
-                <p className="font-medium mb-1 flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-primary" />
-                  <span>Continue Assim!</span>
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Voce esta mantendo uma excelente consistencia sem esquecimentos significativos. 
-                  Sua dedicacao ao tratamento e inspiradora!
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {/* Health Evolution Chart */}
-        <HealthDataChart data={healthHistory} />
+          {/* Health Evolution Chart */}
+          <HealthDataChart data={healthHistory} />
+        </div>
       </div>
-    </div>
     </>
   );
 }

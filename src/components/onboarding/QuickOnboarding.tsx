@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { 
-  Pill, 
-  FileText, 
-  Users, 
+import { auth, updateDocument, fetchCollection, setDocument } from "@/integrations/firebase";
+import {
+  Pill,
+  FileText,
+  Users,
   Sparkles,
   ArrowRight,
   Check
@@ -28,31 +28,31 @@ export default function QuickOnboarding({ onComplete }: QuickOnboardingProps) {
   const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
   const goals = [
-    { 
-      id: "medications", 
-      icon: Pill, 
-      title: t('quickOnboarding.rememberMeds'), 
+    {
+      id: "medications",
+      icon: Pill,
+      title: t('quickOnboarding.rememberMeds'),
       desc: t('quickOnboarding.neverForget'),
       color: "bg-blue-500/10 text-blue-500"
     },
-    { 
-      id: "documents", 
-      icon: FileText, 
-      title: t('quickOnboarding.organizeDocs'), 
+    {
+      id: "documents",
+      icon: FileText,
+      title: t('quickOnboarding.organizeDocs'),
       desc: t('quickOnboarding.prescExamsVax'),
       color: "bg-green-500/10 text-green-500"
     },
-    { 
-      id: "family", 
-      icon: Users, 
-      title: t('quickOnboarding.careFamily'), 
+    {
+      id: "family",
+      icon: Users,
+      title: t('quickOnboarding.careFamily'),
       desc: t('quickOnboarding.manageAll'),
       color: "bg-purple-500/10 text-purple-500"
     },
-    { 
-      id: "all", 
-      icon: Sparkles, 
-      title: t('quickOnboarding.allThis'), 
+    {
+      id: "all",
+      icon: Sparkles,
+      title: t('quickOnboarding.allThis'),
       desc: t('quickOnboarding.fullPackage'),
       color: "bg-primary/10 text-primary"
     },
@@ -61,63 +61,65 @@ export default function QuickOnboarding({ onComplete }: QuickOnboardingProps) {
   const handleGoalSelect = (goalId: string) => {
     triggerLight();
     setSelectedGoal(goalId);
-    
+
     // Auto-advance after selection
     setTimeout(() => {
       setStep(1);
     }, 300);
   };
 
-  const handleComplete = async () => {
+  const markOnboardingComplete = async () => {
     try {
-      triggerSuccess();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({
-            tutorial_flags: {
-              quickOnboarding: true,
-              selectedGoal,
-              completedAt: new Date().toISOString(),
-            },
-            onboarding_completed: true,
-          })
-          .eq("user_id", user.id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+          onboardingCompleted: true,
+          tutorialFlags: {
+            quickOnboarding: true,
+            selectedGoal: selectedGoal || 'skipped',
+            completedAt: new Date().toISOString(),
+          },
+        });
       }
 
-      if (onComplete) {
-        onComplete();
-      } else {
-        // Route based on goal
-        if (selectedGoal === "medications" || selectedGoal === "all") {
-          navigate("/adicionar");
-        } else if (selectedGoal === "documents") {
-          navigate("/cofre/upload");
-        } else {
-          navigate("/hoje");
-        }
-      }
+      await setDocument(`users/${user.uid}/settings`, 'onboarding', {
+        isCompleted: true,
+        completedAt: new Date().toISOString(),
+        flowVersion: 'quick',
+        selectedGoal: selectedGoal || 'skipped'
+      });
+
     } catch (error) {
       console.error("Error completing onboarding:", error);
-      navigate("/hoje");
+    }
+  };
+
+  const handleComplete = async () => {
+    await markOnboardingComplete();
+    triggerSuccess();
+
+    if (onComplete) {
+      onComplete();
+    } else {
+      // Route based on goal
+      if (selectedGoal === "medications" || selectedGoal === "all") {
+        navigate("/adicionar");
+      } else if (selectedGoal === "documents") {
+        navigate("/carteira/upload"); // Corrected path from /cofre/upload to /carteira/upload based on App.tsx
+      } else {
+        navigate("/hoje");
+      }
     }
   };
 
   const handleSkip = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({ onboarding_completed: true })
-          .eq("user_id", user.id);
-      }
-      navigate("/hoje");
-    } catch (error) {
-      navigate("/hoje");
-    }
+    await markOnboardingComplete();
+    navigate("/hoje");
   };
 
   return (
@@ -151,11 +153,10 @@ export default function QuickOnboarding({ onComplete }: QuickOnboardingProps) {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleGoalSelect(goal.id)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      selectedGoal === goal.id
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${selectedGoal === goal.id
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
-                    }`}
+                      }`}
                   >
                     <div className={`w-10 h-10 rounded-lg ${goal.color} flex items-center justify-center mb-3`}>
                       <goal.icon className="w-5 h-5" />

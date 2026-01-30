@@ -1,38 +1,38 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, fetchCollection, setDocument, updateDocument, deleteDocument, where, orderBy, fetchDocument } from '@/integrations/firebase';
 
 export interface SideEffectLog {
   id: string;
-  user_id: string;
-  profile_id: string | null;
-  dose_id: string | null;
-  item_id: string | null;
-  recorded_at: string;
-  overall_feeling: number | null;
-  energy_level: number | null;
-  pain_level: number | null;
-  nausea_level: number | null;
-  sleep_quality: number | null;
-  side_effect_tags: string[];
+  userId: string; // user_id
+  profileId: string | null; // profile_id
+  doseId: string | null; // dose_id
+  itemId: string | null; // item_id
+  recordedAt: string; // recorded_at
+  overallFeeling: number | null; // overall_feeling
+  energyLevel: number | null; // energy_level
+  painLevel: number | null; // pain_level
+  nauseaLevel: number | null; // nausea_level
+  sleepQuality: number | null; // sleep_quality
+  sideEffectTags: string[]; // side_effect_tags
   notes: string | null;
-  created_at: string;
+  createdAt: string; // created_at
+  // Denormalized/Fetched data
   items?: {
     name: string;
-    dose_text: string | null;
+    doseText: string | null; // dose_text
   };
 }
 
 export interface SideEffectInput {
-  dose_id?: string;
-  item_id: string;
-  profile_id?: string;
-  overall_feeling?: number;
-  energy_level?: number;
-  pain_level?: number;
-  nausea_level?: number;
-  sleep_quality?: number;
-  side_effect_tags?: string[];
+  doseId?: string; // dose_id
+  itemId: string; // item_id
+  profileId?: string; // profile_id
+  overallFeeling?: number; // overall_feeling
+  energyLevel?: number; // energy_level
+  painLevel?: number; // pain_level
+  nauseaLevel?: number; // nausea_level
+  sleepQuality?: number; // sleep_quality
+  sideEffectTags?: string[]; // side_effect_tags
   notes?: string;
 }
 
@@ -64,34 +64,60 @@ export function useSideEffectsLog() {
 
     setIsLoading(true);
     try {
-      let query = supabase
-        .from('side_effects_log')
-        .select(`
-          *,
-          items (
-            name,
-            dose_text
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('recorded_at', { ascending: false });
+      const constraints: any[] = [orderBy('recordedAt', 'desc')]; // Using any to avoid complicated union type matching issues quickly
+
 
       if (itemId) {
-        query = query.eq('item_id', itemId);
+        constraints.push(where('itemId', '==', itemId));
       }
 
       if (startDate) {
-        query = query.gte('recorded_at', startDate.toISOString());
+        constraints.push(where('recordedAt', '>=', startDate.toISOString()));
       }
 
       if (endDate) {
-        query = query.lte('recorded_at', endDate.toISOString());
+        constraints.push(where('recordedAt', '<=', endDate.toISOString()));
       }
 
-      const { data, error } = await query;
+      const { data: logsData, error } = await fetchCollection<any>(
+        `users/${user.uid}/sideEffects`,
+        constraints
+      );
 
       if (error) throw error;
-      setLogs(data || []);
+
+      // Need to fetch item details manually since we don't have joins
+      // Optimization: Fetch unique items
+      const uniqueItemIds = [...new Set((logsData || []).map(l => l.itemId).filter(Boolean))];
+      const itemsMap: Record<string, any> = {};
+
+      await Promise.all(uniqueItemIds.map(async (id) => {
+        const { data } = await fetchDocument(`users/${user.uid}/medications`, id);
+        if (data) itemsMap[id] = data;
+      }));
+
+      const enrichedLogs = (logsData || []).map(log => ({
+        id: log.id,
+        userId: log.userId,
+        profileId: log.profileId,
+        doseId: log.doseId,
+        itemId: log.itemId,
+        recordedAt: log.recordedAt,
+        overallFeeling: log.overallFeeling,
+        energyLevel: log.energyLevel,
+        painLevel: log.painLevel,
+        nauseaLevel: log.nauseaLevel,
+        sleepQuality: log.sleepQuality,
+        sideEffectTags: log.sideEffectTags || [],
+        notes: log.notes,
+        createdAt: log.createdAt,
+        items: log.itemId && itemsMap[log.itemId] ? {
+          name: itemsMap[log.itemId].name,
+          doseText: itemsMap[log.itemId].doseText || null
+        } : undefined
+      }));
+
+      setLogs(enrichedLogs);
     } catch (error) {
       console.error('Error fetching side effects logs:', error);
     } finally {
@@ -102,51 +128,60 @@ export function useSideEffectsLog() {
   const createLog = async (input: SideEffectInput) => {
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('side_effects_log')
-      .insert({
-        user_id: user.id,
-        profile_id: input.profile_id,
-        dose_id: input.dose_id,
-        item_id: input.item_id,
-        overall_feeling: input.overall_feeling,
-        energy_level: input.energy_level,
-        pain_level: input.pain_level,
-        nausea_level: input.nausea_level,
-        sleep_quality: input.sleep_quality,
-        side_effect_tags: input.side_effect_tags || [],
-        notes: input.notes,
-      })
-      .select()
-      .single();
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    const newLog = {
+      id,
+      userId: user.uid,
+      profileId: input.profileId || null,
+      doseId: input.doseId || null,
+      itemId: input.itemId,
+      overallFeeling: input.overallFeeling || null,
+      energyLevel: input.energyLevel || null,
+      painLevel: input.painLevel || null,
+      nauseaLevel: input.nauseaLevel || null,
+      sleepQuality: input.sleepQuality || null,
+      sideEffectTags: input.sideEffectTags || [],
+      notes: input.notes || null,
+      recordedAt: now,
+      createdAt: now
+    };
+
+    const { error } = await setDocument(
+      `users/${user.uid}/sideEffects`,
+      id,
+      newLog
+    );
 
     if (error) throw error;
-    return data;
+    return newLog;
   };
 
   const updateLog = async (logId: string, updates: Partial<SideEffectInput>) => {
     if (!user) throw new Error('User not authenticated');
 
-    const { data, error } = await supabase
-      .from('side_effects_log')
-      .update(updates)
-      .eq('id', logId)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    // Convert input camelCase to match Firestore
+    const firestoreUpdates: any = { ...updates };
+    // Mapped fields already match if input is typed correctly
+
+    const { error } = await updateDocument(
+      `users/${user.uid}/sideEffects`,
+      logId,
+      firestoreUpdates
+    );
 
     if (error) throw error;
-    return data;
+    return { id: logId, ...updates };
   };
 
   const deleteLog = async (logId: string) => {
     if (!user) throw new Error('User not authenticated');
 
-    const { error } = await supabase
-      .from('side_effects_log')
-      .delete()
-      .eq('id', logId)
-      .eq('user_id', user.id);
+    const { error } = await deleteDocument(
+      `users/${user.uid}/sideEffects`,
+      logId
+    );
 
     if (error) throw error;
   };
@@ -154,20 +189,38 @@ export function useSideEffectsLog() {
   const getCorrelationData = async (itemId: string, metric: keyof SideEffectLog) => {
     if (!user) return [];
 
-    const { data, error } = await supabase
-      .from('side_effects_log')
-      .select('recorded_at, ' + metric)
-      .eq('user_id', user.id)
-      .eq('item_id', itemId)
-      .not(metric, 'is', null)
-      .order('recorded_at', { ascending: true });
+    // Map metric name if necessary (it matches interface so logic is fine)
+    // metric passed is camelCase
 
-    if (error) {
-      console.error('Error fetching correlation data:', error);
-      return [];
-    }
+    const { data, error } = await fetchCollection<any>(
+      `users/${user.uid}/sideEffects`,
+      [
+        where('itemId', '==', itemId),
+        where(metric as string, '!=', null),
+        orderBy(metric as string),
+        orderBy('recordedAt', 'asc') // Firestore requires composite index for inequality
+      ]
+    );
+    // Note: If inequality on metric, sort must start with metric. 
+    // If just checking not-null, sometimes standard queries work but safest is simple fetch and filter in memory if volume is low.
 
-    return data || [];
+    // Fallback: simple query by itemId and filter in memory
+    const { data: allLogs } = await fetchCollection<any>(
+      `users/${user.uid}/sideEffects`,
+      [
+        where('itemId', '==', itemId),
+        orderBy('recordedAt', 'asc')
+      ]
+    );
+
+    if (!allLogs) return [];
+
+    return allLogs
+      .filter(log => log[metric] != null)
+      .map(log => ({
+        recordedAt: log.recordedAt, // mapped to camelCase
+        [metric]: log[metric]
+      }));
   };
 
   useEffect(() => {

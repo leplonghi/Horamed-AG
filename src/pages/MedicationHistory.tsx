@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, fetchDocument, where, orderBy } from "@/integrations/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Progress } from "@/components/ui/progress";
@@ -13,10 +13,12 @@ import { Link } from "react-router-dom";
 import { startOfMonth, endOfMonth } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 export default function MedicationHistory() {
   const { id } = useParams();
   const { t, language } = useLanguage();
+  const { activeProfile } = useUserProfiles();
   const [medication, setMedication] = useState<any>(null);
   const [doses, setDoses] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -24,20 +26,22 @@ export default function MedicationHistory() {
 
   useEffect(() => {
     loadMedicationData();
-  }, [id, selectedDate]);
+  }, [id, selectedDate, activeProfile?.id]);
 
   const loadMedicationData = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user || !id) return;
 
+      const userId = user.uid;
+      const profileId = activeProfile?.id;
+
       // Load medication info
-      const { data: medData } = await supabase
-        .from('items')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data: medData } = await fetchDocument<any>(
+        `users/${userId}/medications`,
+        id
+      );
 
       setMedication(medData);
 
@@ -45,25 +49,31 @@ export default function MedicationHistory() {
       const startDate = startOfMonth(selectedDate);
       const endDate = endOfMonth(selectedDate);
 
-      const { data: dosesData } = await supabase
-        .from('dose_instances')
-        .select(`
-          id,
-          item_id,
-          due_at,
-          status,
-          taken_at,
-          items!inner(
-            name,
-            dose_text
-          )
-        `)
-        .eq('item_id', id)
-        .gte('due_at', startDate.toISOString())
-        .lte('due_at', endDate.toISOString())
-        .order('due_at', { ascending: false });
+      // Determine doses path
+      const dosesPath = profileId
+        ? `users/${userId}/profiles/${profileId}/doses`
+        : `users/${userId}/doses`;
 
-      setDoses(dosesData || []);
+      const { data: dosesData } = await fetchCollection<any>(
+        dosesPath,
+        [
+          where('itemId', '==', id),
+          where('dueAt', '>=', startDate.toISOString()),
+          where('dueAt', '<=', endDate.toISOString()),
+          orderBy('dueAt', 'desc')
+        ]
+      );
+
+      // Map to match DoseTimeline expectations (Firebase already has items info usually, but let's be safe)
+      const formattedDoses = (dosesData || []).map(dose => ({
+        ...dose,
+        items: {
+          name: dose.itemName || medData?.name || '',
+          doseText: dose.doseText || medData?.doseText || ''
+        }
+      }));
+
+      setDoses(formattedDoses);
     } catch (error) {
       console.error('Error loading history:', error);
     } finally {
@@ -85,7 +95,7 @@ export default function MedicationHistory() {
 
   // Create heatmap data for calendar
   const dosesByDate = doses.reduce((acc, dose) => {
-    const date = new Date(dose.due_at).toDateString();
+    const date = new Date(dose.dueAt).toDateString();
     if (!acc[date]) acc[date] = { taken: 0, missed: 0, total: 0 };
     acc[date].total++;
     if (dose.status === 'taken') acc[date].taken++;
@@ -102,7 +112,7 @@ export default function MedicationHistory() {
 
       <main className="container max-w-4xl mx-auto px-4 pt-20 pb-8">
         <div className="mb-6">
-          <Link to="/doses">
+          <Link to="/rotina">
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('medHistory.back')}

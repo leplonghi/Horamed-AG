@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Pill, Sparkles, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
@@ -65,7 +65,7 @@ export default function AddItemWizard() {
   const [searchParams] = useSearchParams();
   const { activeProfile } = useUserProfiles();
   const { t, language } = useLanguage();
-  
+
   const [formData, setFormData] = useState<FormData>(INITIAL_DATA);
   const [activeStep, setActiveStep] = useState<string>("name");
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
@@ -78,7 +78,7 @@ export default function AddItemWizard() {
     const dose = searchParams.get("dose");
     const duration = searchParams.get("duration_days");
     const totalDoses = searchParams.get("total_doses");
-    
+
     if (name) {
       setFormData(prev => ({
         ...prev,
@@ -88,11 +88,11 @@ export default function AddItemWizard() {
         treatmentDays: duration ? parseInt(duration) : prev.treatmentDays,
         isContinuous: !duration,
       }));
-      
+
       // Auto-complete steps based on what data we have
       const completed = new Set(["name"]);
       if (category) completed.add("category");
-      
+
       setCompletedSteps(completed);
       setActiveStep(category ? "continuous" : "category");
     }
@@ -108,7 +108,7 @@ export default function AddItemWizard() {
     const stepOrder = ["name", "category", "continuous", "frequency", "times", "details", "stock"];
     const stepIndex = stepOrder.indexOf(stepId);
     const lastCompletedIndex = Math.max(...stepOrder.map((s, i) => completedSteps.has(s) ? i : -1));
-    
+
     if (stepIndex <= lastCompletedIndex + 1) {
       setActiveStep(stepId);
     }
@@ -159,7 +159,7 @@ export default function AddItemWizard() {
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Não autenticado");
 
       // Calculate end date for temporary treatments
@@ -168,58 +168,54 @@ export default function AddItemWizard() {
         : null;
 
       // Create item
-      const { data: item, error: itemError } = await supabase
-        .from("items")
-        .insert({
-          user_id: user.id,
-          profile_id: activeProfile?.id || null,
-          name: formData.name,
-          category: formData.category,
-          dose_text: formData.doseText || null,
-          with_food: formData.withFood,
-          notes: formData.notes || null,
-          treatment_duration_days: formData.isContinuous ? null : formData.treatmentDays,
-          treatment_start_date: formData.isContinuous ? null : formData.startDate,
-          treatment_end_date: treatmentEndDate,
-        })
-        .select()
-        .single();
+      const itemData = {
+        userId: user.uid,
+        profileId: activeProfile?.id || null,
+        name: formData.name,
+        category: formData.category,
+        doseText: formData.doseText || null,
+        withFood: formData.withFood,
+        notes: formData.notes || null,
+        treatmentDurationDays: formData.isContinuous ? null : formData.treatmentDays,
+        treatmentStartDate: formData.isContinuous ? null : formData.startDate,
+        treatmentEndDate: treatmentEndDate,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        // Stock fields
+        unitsTotal: formData.stock.enabled ? formData.stock.unitsTotal : 0,
+        unitsLeft: formData.stock.enabled ? formData.stock.unitsTotal : 0,
+        unitLabel: formData.stock.enabled ? formData.stock.unitLabel : null,
+      };
+
+      const { data: item, error: itemError } = await addDocument(`users/${user.uid}/medications`, itemData);
 
       if (itemError) {
-        if (itemError.message?.includes('Limite de medicamentos')) {
-          toast.error("Limite de medicamentos atingido no plano gratuito", {
-            action: {
-              label: "Ver planos",
-              onClick: () => navigate('/planos'),
-            },
-          });
-          return;
-        }
-        throw itemError;
+        throw new Error("Erro ao criar medicamento: " + itemError.message);
       }
+      if (!item) throw new Error("Erro desconhecido ao criar medicamento");
+
 
       // Create schedule
-      const { data: schedule, error: scheduleError } = await supabase
-        .from("schedules")
-        .insert({
-          item_id: item.id,
-          freq_type: formData.frequency,
-          days_of_week: formData.frequency !== "daily" ? formData.daysOfWeek : null,
-          times: formData.times,
-        })
-        .select()
-        .single();
+      const scheduleData = {
+        itemId: item.id,
+        freqType: formData.frequency,
+        daysOfWeek: formData.frequency !== "daily" ? formData.daysOfWeek : null,
+        times: formData.times,
+        isActive: true
+      };
 
-      if (scheduleError) throw scheduleError;
+      const { data: schedule, error: scheduleError } = await addDocument(`users/${user.uid}/schedules`, scheduleData);
+
+      if (scheduleError) throw new Error("Erro ao criar agendamento");
 
       // Generate dose instances for next 7 days
-      const doseInstances = [];
+      const batchPromises = [];
       const now = new Date();
 
       for (let day = 0; day < 7; day++) {
         const date = new Date(now);
         date.setDate(date.getDate() + day);
-        
+
         // Check if this day matches the schedule
         const dayOfWeek = date.getDay();
         if (formData.frequency === "specific_days" && !formData.daysOfWeek.includes(dayOfWeek)) continue;
@@ -231,28 +227,18 @@ export default function AddItemWizard() {
           dueAt.setHours(hours, minutes, 0, 0);
 
           if (dueAt > now) {
-            doseInstances.push({
-              schedule_id: schedule.id,
-              item_id: item.id,
-              due_at: dueAt.toISOString(),
+            batchPromises.push(addDocument(`users/${user.uid}/doses`, {
+              scheduleId: schedule?.id || item.id,
+              itemId: item.id,
+              dueAt: dueAt.toISOString(),
               status: "scheduled",
-            });
+            }));
           }
         }
       }
 
-      if (doseInstances.length > 0) {
-        await supabase.from("dose_instances").insert(doseInstances);
-      }
-
-      // Create stock if enabled
-      if (formData.stock.enabled && formData.stock.unitsTotal > 0) {
-        await supabase.from("stock").insert({
-          item_id: item.id,
-          units_total: formData.stock.unitsTotal,
-          units_left: formData.stock.unitsTotal,
-          unit_label: formData.stock.unitLabel,
-        });
+      if (batchPromises.length > 0) {
+        await Promise.all(batchPromises);
       }
 
       toast.success(`${formData.name} ${t('wizardStep.addedSuccess')}`);
@@ -311,8 +297,8 @@ export default function AddItemWizard() {
       isComplete: completedSteps.has("continuous"),
       isActive: activeStep === "continuous",
       isLocked: !completedSteps.has("category"),
-      summary: completedSteps.has("continuous") 
-        ? (formData.isContinuous ? `♾️ ${t('wizardStep.continuousUse')}` : `📅 ${formData.treatmentDays} ${t('wizardStep.daysCount')}`) 
+      summary: completedSteps.has("continuous")
+        ? (formData.isContinuous ? `♾️ ${t('wizardStep.continuousUse')}` : `📅 ${formData.treatmentDays} ${t('wizardStep.daysCount')}`)
         : undefined,
       content: (
         <StepContinuous
@@ -418,9 +404,9 @@ export default function AddItemWizard() {
         <div className="max-w-lg mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center gap-3">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => navigate(-1)}
               className="shrink-0"
             >
@@ -444,19 +430,18 @@ export default function AddItemWizard() {
               <div key={num} className="flex items-center">
                 <div className={`
                   w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-all
-                  ${completedSteps.has(steps[i]?.id) 
-                    ? "bg-primary text-primary-foreground" 
-                    : activeStep === steps[i]?.id 
-                      ? "bg-primary/20 text-primary border-2 border-primary" 
+                  ${completedSteps.has(steps[i]?.id)
+                    ? "bg-primary text-primary-foreground"
+                    : activeStep === steps[i]?.id
+                      ? "bg-primary/20 text-primary border-2 border-primary"
                       : "bg-muted text-muted-foreground"
                   }
                 `}>
                   {completedSteps.has(steps[i]?.id) ? <Check className="h-3 w-3" /> : num}
                 </div>
                 {i < 6 && (
-                  <div className={`w-4 h-0.5 mx-0.5 rounded ${
-                    completedSteps.has(steps[i]?.id) ? "bg-primary" : "bg-muted"
-                  }`} />
+                  <div className={`w-4 h-0.5 mx-0.5 rounded ${completedSteps.has(steps[i]?.id) ? "bg-primary" : "bg-muted"
+                    }`} />
                 )}
               </div>
             ))}
@@ -464,8 +449,8 @@ export default function AddItemWizard() {
 
           {/* Steps */}
           {!allStepsComplete ? (
-            <ProgressiveWizard 
-              steps={steps} 
+            <ProgressiveWizard
+              steps={steps}
               onStepClick={goToStep}
             />
           ) : (
@@ -516,8 +501,8 @@ export default function AddItemWizard() {
                   <div className="flex justify-between py-2">
                     <span className="text-muted-foreground">{t('wizardStep.stock')}</span>
                     <span className="font-medium">
-                      {formData.stock.enabled 
-                        ? `${formData.stock.unitsTotal} ${formData.stock.unitLabel}` 
+                      {formData.stock.enabled
+                        ? `${formData.stock.unitsTotal} ${formData.stock.unitLabel}`
                         : language === 'pt' ? 'Não controlado' : 'Not tracked'}
                     </span>
                   </div>

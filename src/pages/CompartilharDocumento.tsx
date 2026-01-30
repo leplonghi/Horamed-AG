@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { functions } from "@/integrations/firebase";
+import { httpsCallable } from "firebase/functions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -26,12 +27,11 @@ export default function CompartilharDocumento() {
         }
 
         // Call secure Edge Function to validate token
-        const { data, error: validationError } = await supabase.functions.invoke(
-          "validar-compartilhamento",
-          { body: { token } }
-        );
+        const validateShareLink = httpsCallable(functions, 'validateShareLink');
+        const result = await validateShareLink({ token });
+        const data = result.data as any;
 
-        if (validationError || !data?.success) {
+        if (!data?.success) {
           setError(data?.error || "Link de compartilhamento não encontrado");
           return;
         }
@@ -39,10 +39,10 @@ export default function CompartilharDocumento() {
         // Set data from secure response
         setDocumento(data.document);
         setCompartilhamento({
-          expires_at: data.expires_at,
-          allow_download: data.allow_download,
+          expiresAt: data.expiresAt,
+          allowDownload: data.allowDownload,
         });
-        setSignedUrl(data.signed_url || "");
+        setSignedUrl(data.signedUrl || "");
       } catch (err: any) {
         setError("Erro ao carregar documento");
         console.error(err);
@@ -92,21 +92,21 @@ export default function CompartilharDocumento() {
           <CardHeader>
             <CardTitle>{documento?.title || "Documento sem título"}</CardTitle>
             <div className="flex gap-2 mt-2">
-              {compartilhamento.expires_at && (
+              {compartilhamento.expiresAt && (
                 <Badge variant="outline">
                   Válido até{" "}
-                  {format(new Date(compartilhamento.expires_at), "dd/MM/yyyy", { locale: ptBR })}
+                  {format(new Date(compartilhamento.expiresAt), "dd/MM/yyyy", { locale: ptBR })}
                 </Badge>
               )}
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {documento?.issued_at && (
+              {documento?.issuedAt && (
                 <div>
                   <p className="text-sm text-muted-foreground">Data de Emissão</p>
                   <p className="font-medium">
-                    {format(new Date(documento.issued_at), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(new Date(documento.issuedAt), "dd/MM/yyyy", { locale: ptBR })}
                   </p>
                 </div>
               )}
@@ -118,7 +118,7 @@ export default function CompartilharDocumento() {
                 </div>
               )}
 
-              {compartilhamento.allow_download && signedUrl && (
+              {compartilhamento.allowDownload && signedUrl && (
                 <Button asChild className="w-full">
                   <a href={signedUrl} download target="_blank" rel="noopener noreferrer">
                     <Download className="w-4 h-4 mr-2" />
@@ -133,7 +133,7 @@ export default function CompartilharDocumento() {
         {signedUrl && (
           <Card>
             <CardContent className="p-4">
-              {documento?.mime_type === "application/pdf" ? (
+              {documento?.mimeType === "application/pdf" ? (
                 <iframe src={signedUrl} className="w-full h-[600px] rounded" />
               ) : (
                 <img

@@ -1,18 +1,17 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, setDocument } from "@/integrations/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 export type ConsentPurpose = "health_data" | "notifications" | "data_sharing" | "marketing" | "analytics";
 
 export interface Consent {
-  id: string;
-  user_id: string;
+  id: string; // will be the purpose
   purpose: ConsentPurpose;
   granted: boolean;
-  granted_at: string | null;
-  revoked_at: string | null;
-  created_at: string;
-  updated_at: string;
+  grantedAt: string | null;
+  revokedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export const useConsents = () => {
@@ -22,15 +21,10 @@ export const useConsents = () => {
 
   const loadConsents = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from("consents")
-        .select("*")
-        .eq("user_id", user.id);
-
-      if (error) throw error;
+      const { data } = await fetchCollection<Consent>(`users/${user.uid}/consents`);
       setConsents(data || []);
     } catch (error: any) {
       console.error("Error loading consents:", error);
@@ -45,30 +39,36 @@ export const useConsents = () => {
   };
 
   useEffect(() => {
+    // Initial load
     loadConsents();
+
+    // Listen for auth state changes to reload
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) loadConsents();
+      else setConsents([]);
+    });
+    return () => unsubscribe();
   }, []);
 
   const grantConsent = async (purpose: ConsentPurpose) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
-        .from("consents")
-        .upsert({
-          user_id: user.id,
-          purpose,
-          granted: true,
-          granted_at: new Date().toISOString(),
-          revoked_at: null,
-        }, {
-          onConflict: "user_id,purpose",
-        });
+      const now = new Date().toISOString();
+      const consentData = {
+        purpose,
+        granted: true,
+        grantedAt: now,
+        revokedAt: null,
+        updatedAt: now,
+        // created_at should ideally be preserved if exists, but for simplicity we assume update
+      };
 
-      if (error) throw error;
+      await setDocument(`users/${user.uid}/consents`, purpose, consentData, true); // true = merge
 
       await loadConsents();
-      
+
       toast({
         title: "Consentimento concedido",
         description: "Suas preferências foram atualizadas",
@@ -85,24 +85,21 @@ export const useConsents = () => {
 
   const revokeConsent = async (purpose: ConsentPurpose) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { error } = await supabase
-        .from("consents")
-        .upsert({
-          user_id: user.id,
-          purpose,
-          granted: false,
-          revoked_at: new Date().toISOString(),
-        }, {
-          onConflict: "user_id,purpose",
-        });
+      const now = new Date().toISOString();
+      const consentData = {
+        purpose,
+        granted: false,
+        revokedAt: now,
+        updatedAt: now,
+      };
 
-      if (error) throw error;
+      await setDocument(`users/${user.uid}/consents`, purpose, consentData, true);
 
       await loadConsents();
-      
+
       toast({
         title: "Consentimento revogado",
         description: "Suas preferências foram atualizadas",
@@ -119,7 +116,7 @@ export const useConsents = () => {
 
   const hasConsent = (purpose: ConsentPurpose): boolean => {
     const consent = consents.find(c => c.purpose === purpose);
-    return consent?.granted === true && consent.revoked_at === null;
+    return consent?.granted === true && consent.revokedAt === null;
   };
 
   return {

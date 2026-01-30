@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where } from "@/integrations/firebase";
 import { useSubscription } from "./useSubscription";
 import { useUserProfiles } from "./useUserProfiles";
 
@@ -17,7 +17,7 @@ interface MedicationLimitsStats {
  * FREE users: Max 1 active medication
  * PREMIUM users: Unlimited medications
  * 
- * Enforces limits on items table where is_active = true
+ * Enforces limits on medications collection where isActive = true
  */
 export function useMedicationLimits() {
   const { subscription, loading: subLoading } = useSubscription();
@@ -39,15 +39,15 @@ export function useMedicationLimits() {
     if (subLoading) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         setIsLoading(false);
         return;
       }
 
-      const planType = subscription?.plan_type || 'free';
+      const planType = subscription?.planType || 'free';
       const status = subscription?.status || 'active';
-      const isPremium = planType === 'premium' && status === 'active';
+      const isPremium = (planType === 'premium' || planType === 'premium_individual' || planType === 'premium_family') && status === 'active';
 
       // Premium users have unlimited medications
       if (isPremium) {
@@ -63,21 +63,19 @@ export function useMedicationLimits() {
       }
 
       // Free users: count active medications for current profile
-      let query = supabase
-        .from('items')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('is_active', true);
+      const userId = user.uid;
+      const medsPath = `users/${userId}/medications`;
 
+      const constraints = [where("isActive", "==", true)];
       if (activeProfile) {
-        query = query.eq('profile_id', activeProfile.id);
+        constraints.push(where("profileId", "==", activeProfile.id));
       }
 
-      const { count, error } = await query;
+      const { data: medsData, error } = await fetchCollection(medsPath, constraints);
 
       if (error) throw error;
 
-      const activeCount = count || 0;
+      const activeCount = medsData?.length || 0;
       const maxActive = 1;
       const remaining = Math.max(0, maxActive - activeCount);
 

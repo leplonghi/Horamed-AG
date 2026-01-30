@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, fetchDocument, updateDocument, where, orderBy, query, limit, serverTimestamp } from "@/integrations/firebase";
+import { onSnapshot, collection, doc, query as firestoreQuery } from "firebase/firestore";
+import { db } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays } from "date-fns";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import Navigation from "@/components/Navigation";
+
 import Header from "@/components/Header";
 import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -38,6 +40,7 @@ import OceanBackground from "@/components/ui/OceanBackground";
 import SocialProofBanner from "@/components/fomo/SocialProofBanner";
 import StreakRiskAlert from "@/components/fomo/StreakRiskAlert";
 import PremiumBenefitsMini from "@/components/fomo/PremiumBenefitsMini";
+import VitalsGlanceWidget from "@/components/VitalsGlanceWidget";
 
 interface TimelineItem {
   id: string;
@@ -52,27 +55,27 @@ interface TimelineItem {
 }
 
 // Memoized status card - Progresso visual limpo
-const TodayStatusCard = memo(function TodayStatusCard({ 
-  streak, 
-  taken, 
-  total, 
-  language 
-}: { 
-  streak: number; 
-  taken: number; 
-  total: number; 
+const TodayStatusCard = memo(function TodayStatusCard({
+  streak,
+  taken,
+  total,
+  language
+}: {
+  streak: number;
+  taken: number;
+  total: number;
   language: string;
 }) {
   if (total === 0) return null;
-  
+
   const progressPercent = Math.round((taken / total) * 100);
   const isComplete = taken === total;
-  
+
   return (
     <Card className={cn(
       "p-4 border transition-all backdrop-blur-xl shadow-[var(--shadow-glass)]",
-      isComplete 
-        ? "bg-gradient-to-br from-green-500/15 to-emerald-500/5 border-green-500/30" 
+      isComplete
+        ? "bg-gradient-to-br from-green-500/15 to-emerald-500/5 border-green-500/30"
         : "bg-gradient-to-br from-muted/50 to-muted/30 border-border/40"
     )}>
       <div className="flex items-center justify-between mb-3">
@@ -96,7 +99,7 @@ const TodayStatusCard = memo(function TodayStatusCard({
         </div>
       </div>
       <div className="h-3 bg-muted rounded-full overflow-hidden">
-        <motion.div 
+        <motion.div
           className={cn(
             "h-full rounded-full transition-colors",
             isComplete ? "bg-green-500" : "bg-primary"
@@ -163,31 +166,32 @@ export default function TodayRedesign() {
     }
   }, [isNewMilestone, milestone]);
 
-  // Load low stock items for Clara
-  useEffect(() => {
-    const loadLowStock = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+  // Load low stock items for Clara - memoized
+  const loadLowStock = useCallback(async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
 
-        const { data: stockData } = await supabase
-          .from('stock')
-          .select('current_qty, alert_threshold, items(name)')
-          .not('items', 'is', null);
+      const { data: stockData } = await fetchCollection<any>(
+        `users/${user.uid}/stock`,
+        []
+      );
 
-        if (stockData) {
-          const lowItems = stockData
-            .filter((s: any) => s.current_qty <= (s.alert_threshold || 5))
-            .map((s: any) => s.items?.name)
-            .filter(Boolean);
-          setLowStockItems(lowItems);
-        }
-      } catch (error) {
-        console.error("Error loading low stock:", error);
+      if (stockData) {
+        const lowItems = stockData
+          .filter((s: any) => s.currentQty <= (s.alertThreshold || 5))
+          .map((s: any) => s.itemName)
+          .filter(Boolean);
+        setLowStockItems(lowItems);
       }
-    };
-    loadLowStock();
+    } catch (error) {
+      console.error("Error loading low stock:", error);
+    }
   }, []);
+
+  useEffect(() => {
+    loadLowStock();
+  }, [loadLowStock]);
 
   // Handle Clara action clicks
   const handleClaraAction = useCallback((action: string) => {
@@ -224,50 +228,45 @@ export default function TodayRedesign() {
   };
   const loadEventCounts = useCallback(async () => {
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
       const monthStart = startOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
       const monthEnd = endOfDay(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0));
-      let itemsQuery = supabase.from("items").select("id");
-      if (activeProfile) {
-        itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
-      }
-      const {
-        data: profileItems
-      } = await itemsQuery;
-      const itemIds = profileItems?.map(item => item.id) || [];
-      let dosesPromise;
-      if (itemIds.length > 0) {
-        dosesPromise = supabase.from("dose_instances").select("due_at").in("item_id", itemIds).gte("due_at", monthStart.toISOString()).lte("due_at", monthEnd.toISOString());
-      } else {
-        dosesPromise = Promise.resolve({
-          data: []
-        });
-      }
-      let appointmentsQuery = supabase.from("consultas_medicas").select("data_consulta").eq("user_id", user.id).gte("data_consulta", monthStart.toISOString()).lte("data_consulta", monthEnd.toISOString());
-      if (activeProfile) {
-        appointmentsQuery = appointmentsQuery.eq("profile_id", activeProfile.id);
-      }
-      let eventsQuery = supabase.from("eventos_saude").select("due_date").eq("user_id", user.id).eq("type", "renovacao_exame").gte("due_date", format(monthStart, "yyyy-MM-dd")).lte("due_date", format(monthEnd, "yyyy-MM-dd"));
-      if (activeProfile) {
-        eventsQuery = eventsQuery.eq("profile_id", activeProfile.id);
-      }
-      const [dosesData, appointmentsData, eventsData] = await Promise.all([dosesPromise, appointmentsQuery, eventsQuery]);
+
+      const userId = user.uid;
+      const profileId = activeProfile?.id;
+
+      const dosesPath = profileId ? `users/${userId}/profiles/${profileId}/doses` : `users/${userId}/doses`;
+      const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
+      const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
+
+      const [dosesResult, appointmentsResult, eventsResult] = await Promise.all([
+        fetchCollection<any>(dosesPath, [
+          where("dueAt", ">=", monthStart.toISOString()),
+          where("dueAt", "<=", monthEnd.toISOString())
+        ]),
+        fetchCollection<any>(appointmentsPath, [
+          where("date", ">=", monthStart.toISOString()),
+          where("date", "<=", monthEnd.toISOString())
+        ]),
+        fetchCollection<any>(eventsPath, [
+          where("type", "==", "renovacao_exame"),
+          where("dueDate", ">=", format(monthStart, "yyyy-MM-dd")),
+          where("dueDate", "<=", format(monthEnd, "yyyy-MM-dd"))
+        ])
+      ]);
+
       const counts: Record<string, number> = {};
-      dosesData.data?.forEach((dose: any) => {
-        const key = format(new Date(dose.due_at), "yyyy-MM-dd");
+      dosesResult.data?.forEach((dose: any) => {
+        const key = format(new Date(dose.dueAt), "yyyy-MM-dd");
         counts[key] = (counts[key] || 0) + 1;
       });
-      appointmentsData.data?.forEach((apt: any) => {
-        const key = format(new Date(apt.data_consulta), "yyyy-MM-dd");
+      appointmentsResult.data?.forEach((apt: any) => {
+        const key = format(new Date(apt.date), "yyyy-MM-dd");
         counts[key] = (counts[key] || 0) + 1;
       });
-      eventsData.data?.forEach((event: any) => {
-        const key = event.due_date;
+      eventsResult.data?.forEach((event: any) => {
+        const key = event.dueDate;
         counts[key] = (counts[key] || 0) + 1;
       });
       setEventCounts(counts);
@@ -278,40 +277,34 @@ export default function TodayRedesign() {
 
   const loadTomorrowFirstDose = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const tomorrow = addDays(new Date(), 1);
       const tomorrowStart = startOfDay(tomorrow);
       const tomorrowEnd = endOfDay(tomorrow);
 
-      let itemsQuery = supabase.from("items").select("id");
-      if (activeProfile) {
-        itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
-      }
-      const { data: profileItems } = await itemsQuery;
-      const itemIds = profileItems?.map(item => item.id) || [];
+      const userId = user.uid;
+      const profileId = activeProfile?.id;
 
-      if (itemIds.length > 0) {
-        const { data: tomorrowDoses } = await supabase
-          .from("dose_instances")
-          .select(`due_at, items (name)`)
-          .in("item_id", itemIds)
-          .gte("due_at", tomorrowStart.toISOString())
-          .lte("due_at", tomorrowEnd.toISOString())
-          .eq("status", "scheduled")
-          .order("due_at", { ascending: true })
-          .limit(1);
+      const dosesPath = profileId ? `users/${userId}/profiles/${profileId}/doses` : `users/${userId}/doses`;
 
-        if (tomorrowDoses && tomorrowDoses.length > 0) {
-          const dose = tomorrowDoses[0] as any;
-          setNextDayDose({
-            time: format(new Date(dose.due_at), "HH:mm"),
-            name: dose.items?.name || ""
-          });
-        } else {
-          setNextDayDose(null);
-        }
+      const { data: tomorrowDoses } = await fetchCollection<any>(dosesPath, [
+        where("dueAt", ">=", tomorrowStart.toISOString()),
+        where("dueAt", "<=", tomorrowEnd.toISOString()),
+        where("status", "==", "scheduled"),
+        orderBy("dueAt", "asc"),
+        limit(1)
+      ]);
+
+      if (tomorrowDoses && tomorrowDoses.length > 0) {
+        const dose = tomorrowDoses[0];
+        setNextDayDose({
+          time: format(new Date(dose.dueAt), "HH:mm"),
+          name: dose.itemName || ""
+        });
+      } else {
+        setNextDayDose(null);
       }
     } catch (error) {
       console.error("Error loading tomorrow doses:", error);
@@ -320,32 +313,32 @@ export default function TodayRedesign() {
 
   const loadData = useCallback(async (date: Date, forceLoading = false) => {
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
+
+      const userId = user.uid;
+      const profileId = activeProfile?.id;
 
       // Evita "ghost" na troca de perfil: aplica cache do perfil (apenas hoje)
       const isToday = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-      if (activeProfile?.id && isToday) {
-        const cached = getProfileCache(activeProfile.id);
+      if (profileId && isToday) {
+        const cached = getProfileCache(profileId);
         if (cached) {
           // Cache found, apply it
-
           const cachedDoses = (cached.todayDoses || []) as any[];
           const cachedItems: TimelineItem[] = cachedDoses.map((dose: any) => ({
             id: dose.id,
-            time: format(new Date(dose.due_at), "HH:mm"),
+            time: format(new Date(dose.dueAt), "HH:mm"),
             type: "medication",
-            title: dose.items?.name,
-            subtitle: dose.items?.dose_text || undefined,
+            title: dose.itemName,
+            subtitle: dose.doseText || undefined,
             status:
               dose.status === "taken"
                 ? "done"
                 : dose.status === "missed"
-                ? "missed"
-                : "pending",
-            itemId: dose.item_id,
+                  ? "missed"
+                  : "pending",
+            itemId: dose.itemId,
           }));
 
           setTimelineItems(cachedItems);
@@ -362,113 +355,102 @@ export default function TodayRedesign() {
 
       if (forceLoading) setLoading(true);
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("nickname, full_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // Load user/profile name
+      let profileData: any = null;
+      if (profileId) {
+        const result = await fetchDocument<any>(`users/${userId}/profiles`, profileId as string);
+        profileData = result.data;
+      } else {
+        const result = await fetchDocument<any>(`users`, userId);
+        profileData = result.data;
+      }
 
       if (profileData) {
-        setUserName(profileData.nickname || profileData.full_name || "");
+        setUserName(profileData.nickname || profileData.fullName || "");
       }
-      let allItemsQuery = supabase.from("items").select("id", {
-        count: "exact",
-        head: true
-      });
-      if (activeProfile) {
-        allItemsQuery = allItemsQuery.eq("profile_id", activeProfile.id);
-      }
-      const {
-        count: itemCount
-      } = await allItemsQuery;
-      // Items loaded
+
       const dayStart = startOfDay(date);
       const dayEnd = endOfDay(date);
-      let itemsQuery = supabase.from("items").select("id");
-      if (activeProfile) {
-        itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
-      }
-      const {
-        data: profileItems
-      } = await itemsQuery;
-      const itemIds = profileItems?.map(item => item.id) || [];
-      let doses = null;
-      if (itemIds.length > 0) {
-        const {
-          data: dosesData
-        } = await supabase.from("dose_instances").select(`id, due_at, status, item_id, items (name, dose_text, with_food, category)`).in("item_id", itemIds).gte("due_at", dayStart.toISOString()).lte("due_at", dayEnd.toISOString()).order("due_at", {
-          ascending: true
-        });
-        doses = dosesData;
-      } else {
-        doses = [];
-      }
-      let appointmentsQuery = supabase.from("consultas_medicas").select("*").eq("user_id", user.id).gte("data_consulta", dayStart.toISOString()).lte("data_consulta", dayEnd.toISOString());
-      if (activeProfile) {
-        appointmentsQuery = appointmentsQuery.eq("profile_id", activeProfile.id);
-      }
-      const {
-        data: appointments
-      } = await appointmentsQuery.order("data_consulta", {
-        ascending: true
-      });
-      let eventsQuery = supabase.from("eventos_saude").select("*").eq("user_id", user.id).eq("type", "renovacao_exame").gte("due_date", format(dayStart, "yyyy-MM-dd")).lte("due_date", format(dayEnd, "yyyy-MM-dd"));
-      if (activeProfile) {
-        eventsQuery = eventsQuery.eq("profile_id", activeProfile.id);
-      }
-      const {
-        data: events
-      } = await eventsQuery.order("due_date", {
-        ascending: true
-      });
+
+      // Paths
+      const dosesPath = profileId ? `users/${userId}/profiles/${profileId}/doses` : `users/${userId}/doses`;
+      const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
+      const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
+
+      const [dosesResult, appointmentsResult, eventsResult] = await Promise.all([
+        fetchCollection<any>(dosesPath, [
+          where("dueAt", ">=", dayStart.toISOString()),
+          where("dueAt", "<=", dayEnd.toISOString()),
+          orderBy("dueAt", "asc")
+        ]),
+        fetchCollection<any>(appointmentsPath, [
+          where("date", ">=", dayStart.toISOString()),
+          where("date", "<=", dayEnd.toISOString()),
+          orderBy("date", "asc")
+        ]),
+        fetchCollection<any>(eventsPath, [
+          where("type", "==", "renovacao_exame"),
+          where("dueDate", ">=", format(dayStart, "yyyy-MM-dd")),
+          where("dueDate", "<=", format(dayEnd, "yyyy-MM-dd")),
+          orderBy("dueDate", "asc")
+        ])
+      ]);
+
+      const doses = dosesResult.data || [];
+      const appointments = appointmentsResult.data || [];
+      const events = eventsResult.data || [];
       const items: TimelineItem[] = [];
-      doses?.forEach((dose: any) => {
+
+      doses.forEach((dose: any) => {
         items.push({
           id: dose.id,
-          time: format(new Date(dose.due_at), "HH:mm"),
+          time: format(new Date(dose.dueAt), "HH:mm"),
           type: "medication",
-          title: dose.items.name,
-          subtitle: dose.items.dose_text || undefined,
+          title: dose.itemName,
+          subtitle: dose.doseText || undefined,
           status: dose.status === "taken" ? "done" : dose.status === "missed" ? "missed" : "pending",
-          itemId: dose.item_id,
-          onMarkDone: () => markAsTaken(dose.id, dose.item_id, dose.items.name),
-          onSnooze: () => snoozeDose(dose.id, dose.items.name)
+          itemId: dose.itemId,
+          onMarkDone: () => markAsTaken(dose.id, dose.itemId, dose.itemName),
+          onSnooze: () => snoozeDose(dose.id, dose.itemName)
         });
       });
-      appointments?.forEach((apt: any) => {
+
+      appointments.forEach((apt: any) => {
         items.push({
           id: apt.id,
-          time: format(new Date(apt.data_consulta), "HH:mm"),
+          time: format(new Date(apt.date), "HH:mm"),
           type: "appointment",
-          title: apt.especialidade || t('todayRedesign.appointmentDefault'),
-          subtitle: apt.medico_nome ? t('todayRedesign.doctorPrefix', { name: apt.medico_nome }) : apt.local,
-          status: apt.status === "realizada" ? "done" : "pending"
+          title: apt.specialty || t('todayRedesign.appointmentDefault'),
+          subtitle: apt.doctorName ? t('todayRedesign.doctorPrefix', { name: apt.doctorName }) : apt.location,
+          status: apt.status === "done" ? "done" : "pending"
         });
       });
-      events?.forEach((event: any) => {
+
+      events.forEach((event: any) => {
         items.push({
           id: event.id,
           time: "09:00",
           type: "exam",
           title: event.title,
           subtitle: event.notes || undefined,
-          status: event.completed_at ? "done" : "pending"
+          status: event.completedAt ? "done" : "pending"
         });
       });
+
       items.sort((a, b) => a.time.localeCompare(b.time));
       setTimelineItems(items);
+
       const isToday2 = format(date, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
-      if (isToday2 && doses) {
+      if (isToday2 && doses.length > 0) {
         const total = doses.length;
         const taken = doses.filter((d: any) => d.status === "taken").length;
         setTodayStats({ total, taken });
-        
+
         // Find next pending dose for Hero widget
-        const now = new Date();
         const pendingDoses = doses
           .filter((d: any) => d.status === "scheduled")
-          .sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
-        
+          .sort((a: any, b: any) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+
         if (pendingDoses.length > 0) {
           setNextPendingDose(pendingDoses[0]);
           setNextDayDose(null);
@@ -485,7 +467,7 @@ export default function TodayRedesign() {
     } finally {
       setLoading(false);
     }
-  }, [activeProfile?.id, t, getProfileCache]);
+  }, [activeProfile?.id, t, getProfileCache, loadTomorrowFirstDose]);
 
   // Load greeting/quote once on mount or when key dependencies change
   useEffect(() => {
@@ -501,85 +483,90 @@ export default function TodayRedesign() {
       if (isSelf) {
         quotes = language === 'pt'
           ? [
-              "Vamos começar o dia cuidando da sua saúde!",
-              "Suas doses da manhã estão te esperando.",
-              "Bom dia! Como está se sentindo hoje?"
-            ]
+            "Vamos começar o dia cuidando da sua saúde!",
+            "Suas doses da manhã estão te esperando.",
+            "Bom dia! Como está se sentindo hoje?"
+          ]
           : [
-              "Let's start the day taking care of your health!",
-              "Your morning doses are waiting for you.",
-              "Good morning! How are you feeling today?"
-            ];
+            "Let's start the day taking care of your health!",
+            "Your morning doses are waiting for you.",
+            "Good morning! How are you feeling today?"
+          ];
       } else {
         quotes = language === 'pt'
           ? [
-              `${profileName} já tomou os remédios da manhã?`,
-              `Confira se ${profileName} está em dia com os medicamentos.`
-            ]
+            `${profileName} já tomou os remédios da manhã?`,
+            `Confira se ${profileName} está em dia com os medicamentos.`
+          ]
           : [
-              `Has ${profileName} taken the morning meds?`,
-              `Check if ${profileName} is up to date with medications.`
-            ];
+            `Has ${profileName} taken the morning meds?`,
+            `Check if ${profileName} is up to date with medications.`
+          ];
       }
     } else if (hour < 18) {
       setGreeting(t('today.goodAfternoon'));
       if (isSelf) {
         quotes = language === 'pt'
           ? [
-              "Continue firme! Você está cuidando bem de você.",
-              "Mantenha o foco na sua saúde.",
-              "Não esqueça das doses da tarde!"
-            ]
+            "Continue firme! Você está cuidando bem de você.",
+            "Mantenha o foco na sua saúde.",
+            "Não esqueça das doses da tarde!"
+          ]
           : [
-              "Keep going — you're taking great care of yourself.",
-              "Stay focused on your health.",
-              "Don't forget your afternoon doses!"
-            ];
+            "Keep going — you're taking great care of yourself.",
+            "Stay focused on your health.",
+            "Don't forget your afternoon doses!"
+          ];
       } else {
         quotes = language === 'pt'
           ? [
-              `Como está ${profileName}? Confira as doses.`,
-              `${profileName} tomou o remédio do almoço?`
-            ]
+            `Como está ${profileName}? Confira as doses.`,
+            `${profileName} tomou o remédio do almoço?`
+          ]
           : [
-              `How is ${profileName}? Check today's doses.`,
-              `Did ${profileName} take the midday dose?`
-            ];
+            `How is ${profileName}? Check today's doses.`,
+            `Did ${profileName} take the midday dose?`
+          ];
       }
     } else {
       setGreeting(t('today.goodEvening'));
       if (isSelf) {
         quotes = language === 'pt'
           ? [
-              "Não esqueça dos remédios da noite!",
-              "Finalize o dia em dia com sua saúde.",
-              "Quase lá! Últimas doses do dia."
-            ]
+            "Não esqueça dos remédios da noite!",
+            "Finalize o dia em dia com sua saúde.",
+            "Quase lá! Últimas doses do dia."
+          ]
           : [
-              "Don't forget your evening meds!",
-              "Finish the day with your health on track.",
-              "Almost there — last doses of the day."
-            ];
+            "Don't forget your evening meds!",
+            "Finish the day with your health on track.",
+            "Almost there — last doses of the day."
+          ];
       } else {
         quotes = language === 'pt'
           ? [
-              `${profileName} já tomou os remédios da noite?`,
-              `Confirme as doses de ${profileName} antes de dormir.`
-            ]
+            `${profileName} já tomou os remédios da noite?`,
+            `Confirme as doses de ${profileName} antes de dormir.`
+          ]
           : [
-              `Has ${profileName} taken the evening meds?`,
-              `Confirm ${profileName}'s doses before bedtime.`
-            ];
+            `Has ${profileName} taken the evening meds?`,
+            `Confirm ${profileName}'s doses before bedtime.`
+          ];
       }
     }
 
     // Greeting set
   }, [activeProfile, userName, language, t]);
 
-  // Load data when date or profile changes
+  // Load data when date or profile changes - combined for performance
   useEffect(() => {
-    loadData(selectedDate, true);
-    loadEventCounts();
+    const loadAll = async () => {
+      await Promise.all([
+        loadData(selectedDate, true),
+        loadEventCounts()
+      ]);
+    };
+    loadAll();
   }, [selectedDate, activeProfile?.id, loadData, loadEventCounts]);
 
   // Agendar notificações apenas uma vez
@@ -595,91 +582,112 @@ export default function TodayRedesign() {
       window.clearTimeout(realtimeDebounceRef.current);
     }
 
+    // Increased debounce to 1s to reduce unnecessary renders
     realtimeDebounceRef.current = window.setTimeout(() => {
       loadData(selectedDate);
-    }, 600);
+    }, 1000);
   }, [loadData, selectedDate]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("timeline-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "dose_instances" },
-        handleRealtimeChange
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "consultas_medicas" },
-        handleRealtimeChange
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "eventos_saude" },
-        handleRealtimeChange
-      )
-      .subscribe();
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userId = user.uid;
+    const profileId = activeProfile?.id;
+
+    // Realtime changes using onSnapshot
+    const dosesPath = profileId ? `users/${userId}/profiles/${profileId}/doses` : `users/${userId}/doses`;
+    const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
+    const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
+
+    const qDoses = firestoreQuery(collection(db, dosesPath));
+    const qApts = firestoreQuery(collection(db, appointmentsPath));
+    const qEvents = firestoreQuery(collection(db, eventsPath));
+
+    const unsubDoses = onSnapshot(qDoses, handleRealtimeChange);
+    const unsubApts = onSnapshot(qApts, handleRealtimeChange);
+    const unsubEvents = onSnapshot(qEvents, handleRealtimeChange);
 
     return () => {
+      unsubDoses();
+      unsubApts();
+      unsubEvents();
       if (realtimeDebounceRef.current) {
         window.clearTimeout(realtimeDebounceRef.current);
       }
-      supabase.removeChannel(channel);
     };
   }, [activeProfile?.id, handleRealtimeChange]);
   // Memoized callbacks para evitar re-render do HeroNextDose
   const markAsTaken = useCallback(async (doseId: string, itemId: string, itemName: string) => {
     try {
-      const {
-        data: stockData
-      } = await supabase.from("stock").select("units_left").eq("item_id", itemId).single();
-      if (stockData && stockData.units_left === 0) {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userId = user.uid;
+      const stockRef = `users/${userId}/stock`;
+
+      const { data: stockData } = await fetchDocument<any>(stockRef, itemId);
+
+      if (stockData && stockData.currentQty === 0) {
         toast.error(t('todayRedesign.stockEmpty'));
         return;
       }
-      
+
       // Update dose status
-      await supabase.from("dose_instances").update({
+      const dosePath = activeProfile?.id
+        ? `users/${userId}/profiles/${activeProfile.id}/doses`
+        : `users/${userId}/doses`;
+
+      await updateDocument(dosePath, doseId, {
         status: "taken",
-        taken_at: new Date().toISOString()
-      }).eq("id", doseId);
-      
+        takenAt: serverTimestamp()
+      });
+
       // Update stock if needed
-      if (stockData && stockData.units_left > 0) {
-        await supabase.from("stock").update({
-          units_left: stockData.units_left - 1
-        }).eq("item_id", itemId);
+      if (stockData && stockData.currentQty > 0) {
+        await updateDocument(stockRef, itemId, {
+          currentQty: stockData.currentQty - 1
+        });
       }
-      
+
       // Track metric
       trackDoseTaken(doseId, itemName);
-      
+
       showFeedback("dose-taken", {
         medicationName: itemName
       });
-      
-      // Reload data in background - don't block UI
+
+      // Reload data in background
       loadData(selectedDate);
       streakData.refresh();
       criticalAlerts.refresh();
     } catch (error) {
       console.error("Error marking dose:", error);
       toast.error(t('todayRedesign.confirmDoseError'));
-      throw error; // Re-throw for optimistic update rollback
+      throw error;
     }
-  }, [t, selectedDate, showFeedback, loadData, streakData, criticalAlerts]);
+  }, [t, selectedDate, showFeedback, loadData, streakData, criticalAlerts, activeProfile?.id]);
 
   const snoozeDose = useCallback(async (doseId: string, itemName: string) => {
     try {
-      const {
-        data: dose
-      } = await supabase.from("dose_instances").select("due_at").eq("id", doseId).single();
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userId = user.uid;
+      const dosePath = activeProfile?.id
+        ? `users/${userId}/profiles/${activeProfile.id}/doses`
+        : `users/${userId}/doses`;
+
+      const { data: dose } = await fetchDocument<any>(dosePath, doseId);
+
       if (dose) {
-        const newDueAt = new Date(dose.due_at);
+        const newDueAt = new Date(dose.dueAt);
         newDueAt.setMinutes(newDueAt.getMinutes() + 15);
-        await supabase.from("dose_instances").update({
-          due_at: newDueAt.toISOString()
-        }).eq("id", doseId);
+
+        await updateDocument(dosePath, doseId, {
+          dueAt: newDueAt.toISOString()
+        });
+
         toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
         loadData(selectedDate);
       }
@@ -687,10 +695,10 @@ export default function TodayRedesign() {
       console.error("Error snoozing dose:", error);
       toast.error(t('todayRedesign.snoozeError'));
     }
-  }, [t, selectedDate, loadData]);
+  }, [t, selectedDate, loadData, activeProfile?.id]);
 
   // Memoize allDoneToday to avoid HeroNextDose re-render
-  const allDoneToday = useMemo(() => 
+  const allDoneToday = useMemo(() =>
     todayStats.total > 0 && todayStats.taken === todayStats.total,
     [todayStats.total, todayStats.taken]
   );
@@ -741,12 +749,17 @@ export default function TodayRedesign() {
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* 📊 STATUS DO DIA - Memoizado */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <TodayStatusCard 
+        <TodayStatusCard
           streak={streakData.currentStreak}
           taken={todayStats.taken}
           total={todayStats.total}
           language={language}
         />
+
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* 🏥 VITAL SIGNS GLANCE (Quick Stats) */}
+        {/* ═══════════════════════════════════════════════════════════════ */}
+        <VitalsGlanceWidget profileId={activeProfile?.id} />
 
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* ⚠️ ALERTAS (Compactos, não competem com ação principal) */}
@@ -767,9 +780,9 @@ export default function TodayRedesign() {
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* 📅 CALENDÁRIO (SECUNDÁRIO - Abaixo da ação principal) */}
         {/* ═══════════════════════════════════════════════════════════════ */}
-        <ModernWeekCalendar 
-          selectedDate={selectedDate} 
-          onDateSelect={setSelectedDate} 
+        <ModernWeekCalendar
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
           profileId={activeProfile?.id}
         />
 
@@ -784,7 +797,7 @@ export default function TodayRedesign() {
         <MonthlyReportWidget />
 
         {/* 🎯 FOMO - Streak risk alert */}
-        <StreakRiskAlert 
+        <StreakRiskAlert
           currentStreak={streakData.currentStreak}
           hasPendingDoses={todayStats.total > todayStats.taken}
         />
@@ -812,7 +825,7 @@ export default function TodayRedesign() {
         )}
       </main>
 
-      <Navigation />
+
     </div>
   );
 }

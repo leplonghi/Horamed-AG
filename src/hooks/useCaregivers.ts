@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface Caregiver {
   id: string;
-  email_or_phone: string;
+  emailOrPhone: string; // email_or_phone
   role: 'viewer' | 'helper';
-  invited_at: string;
-  accepted_at: string | null;
-  caregiver_user_id: string | null;
+  invitedAt: string; // invited_at
+  acceptedAt: string | null; // accepted_at
+  caregiverUserId: string | null; // caregiver_user_id
 }
 
 export function useCaregivers() {
@@ -18,13 +19,12 @@ export function useCaregivers() {
 
   const loadCaregivers = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('caregiver-invite', {
-        body: { action: 'list' }
-      });
+      const caregiverInviteFn = httpsCallable(functions, 'caregiverInvite');
+      const result = await caregiverInviteFn({ action: 'list' });
+      const data = result.data as any;
 
-      if (error) throw error;
       setCaregivers(data.caregivers || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading caregivers:', error);
       toast({
         title: 'Erro ao carregar cuidadores',
@@ -40,13 +40,15 @@ export function useCaregivers() {
     loadCaregivers();
   }, []);
 
-  const inviteCaregiver = async (email_or_phone: string, role: 'viewer' | 'helper' = 'viewer') => {
+  const inviteCaregiver = async (emailOrPhone: string, role: 'viewer' | 'helper' = 'viewer') => {
     try {
-      const { data, error } = await supabase.functions.invoke('caregiver-invite', {
-        body: { action: 'create', email_or_phone, role }
+      const caregiverInviteFn = httpsCallable(functions, 'caregiverInvite');
+      const result = await caregiverInviteFn({
+        action: 'create',
+        emailOrPhone, // camelCase format for backend
+        role
       });
-
-      if (error) throw error;
+      const data = result.data as any;
 
       toast({
         title: 'Convite enviado',
@@ -55,7 +57,7 @@ export function useCaregivers() {
 
       await loadCaregivers();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error inviting caregiver:', error);
       toast({
         title: 'Erro ao convidar cuidador',
@@ -66,13 +68,13 @@ export function useCaregivers() {
     }
   };
 
-  const revokeCaregiver = async (caregiver_id: string) => {
+  const revokeCaregiver = async (caregiverId: string) => {
     try {
-      const { error } = await supabase.functions.invoke('caregiver-invite', {
-        body: { action: 'revoke', caregiver_id }
+      const caregiverInviteFn = httpsCallable(functions, 'caregiverInvite');
+      await caregiverInviteFn({
+        action: 'revoke',
+        caregiverId
       });
-
-      if (error) throw error;
 
       toast({
         title: 'Cuidador removido',
@@ -80,7 +82,7 @@ export function useCaregivers() {
       });
 
       await loadCaregivers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error revoking caregiver:', error);
       toast({
         title: 'Erro ao remover cuidador',
@@ -93,11 +95,11 @@ export function useCaregivers() {
 
   const acceptInvite = async (token: string) => {
     try {
-      const { error } = await supabase.functions.invoke('caregiver-invite', {
-        body: { action: 'accept', token }
+      const caregiverInviteFn = httpsCallable(functions, 'caregiverInvite');
+      await caregiverInviteFn({
+        action: 'accept',
+        token
       });
-
-      if (error) throw error;
 
       toast({
         title: 'Convite aceito',
@@ -105,7 +107,7 @@ export function useCaregivers() {
       });
 
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting invite:', error);
       toast({
         title: 'Erro ao aceitar convite',

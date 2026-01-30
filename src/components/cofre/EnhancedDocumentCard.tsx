@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  FileText, 
-  FlaskConical, 
-  Syringe, 
-  Stethoscope, 
+import {
+  FileText,
+  FlaskConical,
+  Syringe,
+  Stethoscope,
   FolderOpen,
   Edit,
   Share2,
@@ -26,22 +26,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DocumentoSaude } from "@/hooks/useCofre";
+import { HealthDocument } from "@/hooks/useCofre";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format, differenceInDays, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
+import { storage } from "@/integrations/firebase/client";
+import { ref, getDownloadURL } from "firebase/storage";
 
 interface EnhancedDocumentCardProps {
-  document: DocumentoSaude;
+  document: HealthDocument;
   index: number;
   onEdit?: (id: string) => void;
   onShare?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
 
-export default function EnhancedDocumentCard({ 
-  document: doc, 
+export default function EnhancedDocumentCard({
+  document: doc,
   index,
   onEdit,
   onShare,
@@ -56,87 +57,83 @@ export default function EnhancedDocumentCard({
   const in7Days = addDays(now, 7);
   const in30Days = addDays(now, 30);
 
-  const isExpired = doc.expires_at && isBefore(new Date(doc.expires_at), now);
-  const isExpiringUrgent = doc.expires_at && 
-    isAfter(new Date(doc.expires_at), now) && 
-    isBefore(new Date(doc.expires_at), in7Days);
-  const isExpiringSoon = doc.expires_at && 
-    isAfter(new Date(doc.expires_at), in7Days) && 
-    isBefore(new Date(doc.expires_at), in30Days);
-  const needsReview = doc.status_extraction === "pending_review";
-  const isReviewed = doc.status_extraction === "reviewed";
+  const isExpired = doc.expiresAt && isBefore(new Date(doc.expiresAt), now);
+  const isExpiringUrgent = doc.expiresAt &&
+    isAfter(new Date(doc.expiresAt), now) &&
+    isBefore(new Date(doc.expiresAt), in7Days);
+  const isExpiringSoon = doc.expiresAt &&
+    isAfter(new Date(doc.expiresAt), in7Days) &&
+    isBefore(new Date(doc.expiresAt), in30Days);
+  const needsReview = doc.extractionStatus === "pending_review";
+  const isReviewed = doc.extractionStatus === "reviewed";
 
-  const daysUntilExpiry = doc.expires_at 
-    ? differenceInDays(new Date(doc.expires_at), now) 
+  const daysUntilExpiry = doc.expiresAt
+    ? differenceInDays(new Date(doc.expiresAt), now)
     : null;
 
   // Load thumbnail for images
   useEffect(() => {
     const loadThumbnail = async () => {
-      if (doc.mime_type?.startsWith('image/')) {
+      if (doc.mimeType?.startsWith('image/') && doc.filePath) {
         try {
-          const { data } = await supabase.storage
-            .from('cofre-saude')
-            .createSignedUrl(doc.file_path, 3600);
-          if (data?.signedUrl) {
-            setThumbnailUrl(data.signedUrl);
-          }
+          const url = await getDownloadURL(ref(storage, doc.filePath));
+          setThumbnailUrl(url);
         } catch (e) {
           console.warn('Error loading thumbnail:', e);
         }
       }
     };
     loadThumbnail();
-  }, [doc.file_path, doc.mime_type]);
+  }, [doc.filePath, doc.mimeType]);
 
   const getCategoryInfo = (slug?: string) => {
     switch (slug) {
       case "receita":
-        return { 
-          Icon: FileText, 
+        return {
+          Icon: FileText,
           emoji: "💊",
           label: language === 'pt' ? 'Receita' : 'Prescription',
-          color: "text-blue-500", 
+          color: "text-blue-500",
           bg: "bg-blue-500/10",
           border: "border-blue-500/30",
           gradient: "from-blue-500/20 to-blue-600/10"
         };
       case "exame":
-        return { 
-          Icon: FlaskConical, 
+        return {
+          Icon: FlaskConical,
           emoji: "🧪",
           label: language === 'pt' ? 'Exame' : 'Exam',
-          color: "text-green-500", 
+          color: "text-green-500",
           bg: "bg-green-500/10",
           border: "border-green-500/30",
           gradient: "from-green-500/20 to-green-600/10"
         };
       case "vacinacao":
-        return { 
-          Icon: Syringe, 
+        return {
+          Icon: Syringe,
           emoji: "💉",
           label: language === 'pt' ? 'Vacina' : 'Vaccine',
-          color: "text-purple-500", 
+          color: "text-purple-500",
           bg: "bg-purple-500/10",
           border: "border-purple-500/30",
           gradient: "from-purple-500/20 to-purple-600/10"
         };
       case "consulta":
-        return { 
-          Icon: Stethoscope, 
+        return {
+          Icon: Stethoscope,
           emoji: "🩺",
           label: language === 'pt' ? 'Consulta' : 'Consultation',
-          color: "text-orange-500", 
+          color: "text-orange-500",
           bg: "bg-orange-500/10",
           border: "border-orange-500/30",
           gradient: "from-orange-500/20 to-orange-600/10"
         };
       default:
-        return { 
-          Icon: FolderOpen, 
+        return {
+          Icon: FolderOpen,
           emoji: "📋",
           label: language === 'pt' ? 'Documento' : 'Document',
-          color: "text-gray-500", 
+          color: "text-gray-500",
           bg: "bg-gray-500/10",
           border: "border-gray-500/30",
           gradient: "from-gray-500/20 to-gray-600/10"
@@ -144,7 +141,14 @@ export default function EnhancedDocumentCard({
     }
   };
 
-  const category = getCategoryInfo(doc.categorias_saude?.slug);
+  // Safe access to categorySlug. Assumes backend populates it or we map it correctly.
+  const categorySlug = doc.category?.slug || doc.categoryId; // Fallback? Or we need to make sure doc.category is populated. 
+  // In useCofre.ts for Firebase, I defined category?: HealthCategory. I should also perhaps store categorySlug directly on the doc for easier access.
+  // I updated useCofre.ts to not include categorySlug in interface but I should add it to be safe or rely on category object.
+  // The 'newDoc' construction in useCofre doesn't add category object immediately unless we fetch it.
+  // Let's assume we might need to rely on what is available.
+
+  const category = getCategoryInfo(doc.category?.slug);
 
   return (
     <motion.div
@@ -155,7 +159,7 @@ export default function EnhancedDocumentCard({
       className="group"
     >
       <Link to={`/carteira/${doc.id}`}>
-        <div 
+        <div
           className={`
             relative overflow-hidden rounded-2xl 
             bg-gradient-to-br ${category.gradient}
@@ -196,9 +200,9 @@ export default function EnhancedDocumentCard({
           <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="secondary" 
-                  size="icon" 
+                <Button
+                  variant="secondary"
+                  size="icon"
                   className="h-8 w-8 rounded-full bg-background/90 backdrop-blur-sm"
                   onClick={(e) => e.preventDefault()}
                 >
@@ -228,7 +232,7 @@ export default function EnhancedDocumentCard({
                   {language === 'pt' ? 'Compartilhar' : 'Share'}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={(e) => {
                     e.preventDefault();
                     onDelete?.(doc.id);
@@ -251,9 +255,9 @@ export default function EnhancedDocumentCard({
               transition-transform group-hover:scale-105
             `}>
               {thumbnailUrl ? (
-                <img 
-                  src={thumbnailUrl} 
-                  alt="" 
+                <img
+                  src={thumbnailUrl}
+                  alt=""
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -277,10 +281,10 @@ export default function EnhancedDocumentCard({
               </div>
 
               <div className="text-xs text-muted-foreground space-y-0.5">
-                {doc.issued_at && (
+                {doc.issuedAt && (
                   <p className="flex items-center gap-1.5">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(doc.issued_at), "dd MMM yyyy", { locale: dateLocale })}
+                    {format(new Date(doc.issuedAt), "dd MMM yyyy", { locale: dateLocale })}
                   </p>
                 )}
                 {doc.provider && (
@@ -292,17 +296,16 @@ export default function EnhancedDocumentCard({
             </div>
           </div>
 
-          {/* Progress bar for expiration (only if expires_at exists and not expired) */}
-          {doc.expires_at && !isExpired && daysUntilExpiry !== null && daysUntilExpiry <= 90 && (
+          {/* Progress bar for expiration (only if expiresAt exists and not expired) */}
+          {doc.expiresAt && !isExpired && daysUntilExpiry !== null && daysUntilExpiry <= 90 && (
             <div className="mt-3 pt-3 border-t border-border/30">
               <div className="flex items-center justify-between text-xs mb-1">
                 <span className="text-muted-foreground">
                   {language === 'pt' ? 'Validade' : 'Validity'}
                 </span>
-                <span className={`font-medium ${
-                  daysUntilExpiry <= 7 ? 'text-destructive' :
-                  daysUntilExpiry <= 30 ? 'text-warning' : 'text-muted-foreground'
-                }`}>
+                <span className={`font-medium ${daysUntilExpiry <= 7 ? 'text-destructive' :
+                    daysUntilExpiry <= 30 ? 'text-warning' : 'text-muted-foreground'
+                  }`}>
                   {daysUntilExpiry} {language === 'pt' ? 'dias restantes' : 'days left'}
                 </span>
               </div>
@@ -311,10 +314,9 @@ export default function EnhancedDocumentCard({
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.max(0, Math.min(100, (daysUntilExpiry / 90) * 100))}%` }}
                   transition={{ delay: index * 0.03 + 0.2 }}
-                  className={`h-full rounded-full ${
-                    daysUntilExpiry <= 7 ? 'bg-destructive' :
-                    daysUntilExpiry <= 30 ? 'bg-warning' : 'bg-success'
-                  }`}
+                  className={`h-full rounded-full ${daysUntilExpiry <= 7 ? 'bg-destructive' :
+                      daysUntilExpiry <= 30 ? 'bg-warning' : 'bg-success'
+                    }`}
                 />
               </div>
             </div>

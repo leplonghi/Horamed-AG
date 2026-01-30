@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument, fetchCollection, setDocument } from "@/integrations/firebase";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { trackNotificationEvent, NotificationEvents } from "@/hooks/useNotificationMetrics";
 import { toast } from "sonner";
@@ -62,61 +61,51 @@ export default function OnboardingFlow() {
 
   const createFirstItem = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
       // Create the item
-      const { data: item, error: itemError } = await supabase
-        .from("items")
-        .insert({
-          user_id: user.id,
-          name: data.itemName,
-          dose_text: "1 dose",
-          is_active: true,
-          category: "medicamento",
-        })
-        .select()
-        .single();
+      // Create the item
+      const { data: itemData, error: itemError } = await addDocument(`users/${user.uid}/medications`, {
+        userId: user.uid,
+        name: data.itemName,
+        doseText: "1 dose",
+        isActive: true,
+        category: "medicamento",
+        createdAt: new Date().toISOString()
+      });
 
-      if (itemError) throw itemError;
+      if (itemError || !itemData?.id) throw itemError || new Error("Failed to create medication");
 
       // Create schedule
       const timeString = data.scheduledTime.toTimeString().slice(0, 5);
-      const { error: scheduleError } = await supabase
-        .from("schedules")
-        .insert({
-          item_id: item.id,
-          freq_type: "daily",
-          times: [timeString],
-          is_active: true,
-        });
-
-      if (scheduleError) throw scheduleError;
+      const { data: scheduleData } = await addDocument(`users/${user.uid}/schedules`, {
+        itemId: itemData.id,
+        freqType: "daily",
+        times: [timeString],
+        isActive: true
+      });
 
       // Create dose instance for today
-      const { data: doseInstance, error: doseError } = await supabase
-        .from("dose_instances")
-        .insert({
-          item_id: item.id,
-          schedule_id: item.id, // Will be updated
-          due_at: data.scheduledTime.toISOString(),
-          status: "scheduled",
-        })
-        .select()
-        .single();
+      const { data: doseData, error: doseError } = await addDocument(`users/${user.uid}/doses`, {
+        itemId: itemData.id,
+        scheduleId: scheduleData?.id || itemData.id,
+        dueAt: data.scheduledTime.toISOString(),
+        status: "scheduled",
+      });
 
-      if (doseError) throw doseError;
+      if (doseError || !doseData?.id) throw doseError || new Error("Failed to create dose");
 
-      updateData({ 
-        itemId: item.id, 
-        doseId: doseInstance.id 
+      updateData({
+        itemId: itemData.id,
+        doseId: doseData.id
       });
 
       // Schedule notification via unified NotificationService
       await notificationService.initialize();
       const result = await notificationService.scheduleDoseAlarm({
-        doseId: doseInstance.id,
-        itemId: item.id,
+        doseId: doseData.id,
+        itemId: itemData.id,
         itemName: data.itemName,
         doseText: "1 dose",
         scheduledAt: data.scheduledTime,
@@ -130,13 +119,14 @@ export default function OnboardingFlow() {
       });
 
       // Log telemetry
-      await supabase.from("app_metrics").insert({
-        event_name: "first_alarm_scheduled",
-        event_data: { 
+      await addDocument(`users/${user.uid}/appMetrics`, {
+        eventName: "first_alarm_scheduled",
+        eventData: {
           method: result.method,
           success: result.success,
-          notification_id: result.notificationId,
+          notificationId: result.notificationId,
         },
+        createdAt: new Date().toISOString()
       });
 
       return true;
@@ -151,20 +141,21 @@ export default function OnboardingFlow() {
     if (!data.doseId) return;
 
     try {
-      await supabase
-        .from("dose_instances")
-        .update({ 
-          status: "taken", 
-          taken_at: new Date().toISOString() 
-        })
-        .eq("id", data.doseId);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      await updateDocument(`users/${user.uid}/doses`, data.doseId, {
+        status: "taken",
+        takenAt: new Date().toISOString()
+      });
 
       triggerSuccess();
 
       // Track event
-      await supabase.from("app_metrics").insert({
-        event_name: "first_dose_confirmed",
-        event_data: { onboarding: true },
+      await addDocument(`users/${user.uid}/appMetrics`, {
+        eventName: "first_dose_confirmed",
+        eventData: { onboarding: true },
+        createdAt: new Date().toISOString()
       });
 
       handleNext();
@@ -176,15 +167,15 @@ export default function OnboardingFlow() {
   const handleDoseSnooze = async () => {
     if (!data.doseId) return;
 
+    const user = auth.currentUser;
+    if (!user) return;
+
     const newTime = new Date(Date.now() + 10 * 60 * 1000);
-    
-    await supabase
-      .from("dose_instances")
-      .update({ 
-        due_at: newTime.toISOString(),
-        delay_minutes: 10,
-      })
-      .eq("id", data.doseId);
+
+    await updateDocument(`users/${user.uid}/doses`, data.doseId, {
+      dueAt: newTime.toISOString(),
+      delayMinutes: 10,
+    });
 
     updateData({ scheduledTime: newTime });
     toast.info("Lembrete adiado em 10 minutos");
@@ -192,29 +183,43 @@ export default function OnboardingFlow() {
 
   const completeOnboarding = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      await supabase
-        .from("profiles")
-        .update({
-          onboarding_completed: true,
-          onboarding_completed_at: new Date().toISOString(),
-          tutorial_flags: {
+      // Update the user's settings/onboarding state
+      // Also update primary profile if exists
+
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+          onboardingCompleted: true,
+          onboardingCompletedAt: new Date().toISOString(),
+          tutorialFlags: {
             flow_v2: true,
             completedAt: new Date().toISOString(),
             firstItem: data.itemName,
           },
-        })
-        .eq("user_id", user.id);
+        });
+      } else {
+        // Create an initial profile if none exists? 
+        // Or store in settings/onboarding as fallback
+        await setDocument(`users/${user.uid}/settings`, 'onboarding', {
+          isCompleted: true,
+          completedAt: new Date().toISOString(),
+          flowVersion: 'v2'
+        });
+      }
 
       // Track completion
-      await supabase.from("app_metrics").insert({
-        event_name: "onboarding_completed",
-        event_data: { 
+      await addDocument(`users/${user.uid}/appMetrics`, {
+        eventName: "onboarding_completed",
+        eventData: {
           version: "v2_flow",
           item_created: !!data.itemId,
         },
+        createdAt: new Date().toISOString()
       });
 
       triggerHeavy();
@@ -227,13 +232,17 @@ export default function OnboardingFlow() {
 
   const handleSkip = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      await supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("user_id", user.id);
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+          onboardingCompleted: true
+        });
+      }
 
       navigate("/hoje");
     } catch {
@@ -243,10 +252,14 @@ export default function OnboardingFlow() {
 
   // Track onboarding started
   useEffect(() => {
-    supabase.from("app_metrics").insert({
-      event_name: "onboarding_started",
-      event_data: { version: "v2_flow" },
-    });
+    const user = auth.currentUser;
+    if (user) {
+      addDocument(`users/${user.uid}/appMetrics`, {
+        eventName: "onboarding_started",
+        eventData: { version: "v2_flow" },
+        createdAt: new Date().toISOString()
+      }).catch(console.error);
+    }
   }, []);
 
   const progressValue = currentStep > 0 ? (currentStep / (TOTAL_STEPS - 1)) * 100 : 0;

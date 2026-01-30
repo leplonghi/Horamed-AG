@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 
 /**
  * Hook para redirecionamento inteligente baseado em doses pendentes
@@ -10,6 +10,8 @@ export const useSmartRedirect = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const { user } = useAuth();
+
   useEffect(() => {
     const checkPendingDoses = async () => {
       // Only check on app entry (landing pages like /perfil, /evolucao, etc)
@@ -18,28 +20,22 @@ export const useSmartRedirect = () => {
       }
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
         const now = new Date();
         const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
 
         // Check for pending doses in the next 30 minutes or already overdue
-        const { data: doses, error } = await supabase
-          .from('dose_instances')
-          .select(`
-            id,
-            due_at,
-            status,
-            items!inner (
-              user_id,
-              name
-            )
-          `)
-          .eq('status', 'scheduled')
-          .lte('due_at', thirtyMinutesFromNow.toISOString())
-          .order('due_at', { ascending: true })
-          .limit(1);
+        // In Firebase, doses are in users/{userId}/doses
+        const { data: doses, error } = await fetchCollection(
+          `users/${user.uid}/doses`,
+          [
+            where('status', '==', 'scheduled'),
+            where('dueAt', '<=', thirtyMinutesFromNow), // Changed due_at to dueAt
+            orderBy('dueAt', 'asc'),
+            limit(1)
+          ]
+        );
 
         if (error) {
           console.error('Error checking pending doses:', error);
@@ -60,5 +56,5 @@ export const useSmartRedirect = () => {
     const timer = setTimeout(checkPendingDoses, 500);
 
     return () => clearTimeout(timer);
-  }, [location.pathname, navigate]);
+  }, [location.pathname, navigate, user]);
 };

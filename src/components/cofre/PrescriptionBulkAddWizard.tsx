@@ -71,7 +71,7 @@ export default function PrescriptionBulkAddWizard({
       state: {
         prefillData: {
           name: firstMed.drug_name,
-          dose_text: firstMed.dose,
+          doseText: firstMed.dose,
           notes: firstMed.frequency ? `Frequência: ${firstMed.frequency}` : undefined,
           category: "medicamento",
           prescriptionId,
@@ -139,11 +139,10 @@ export default function PrescriptionBulkAddWizard({
                 return (
                   <Card
                     key={idx}
-                    className={`cursor-pointer transition-all ${
-                      isSelected
+                    className={`cursor-pointer transition-all ${isSelected
                         ? "border-primary bg-primary/5"
                         : "hover:border-muted-foreground/30"
-                    }`}
+                      }`}
                     onClick={() => toggleMed(idx)}
                   >
                     <CardContent className="p-4">

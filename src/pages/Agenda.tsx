@@ -15,7 +15,7 @@ export default function Agenda() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1 container mx-auto px-4 py-6 pb-20 pt-24">
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -25,7 +25,7 @@ export default function Agenda() {
                 {t('agenda.subtitle')}
               </p>
             </div>
-            <Button onClick={() => navigate('/saude/consultas')} className="w-full md:w-auto">
+            <Button onClick={() => navigate('/consultas')} className="w-full md:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               {t('agenda.newAppointment')}
             </Button>

@@ -2,31 +2,40 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "date-fns";
-import { 
+import {
   ChevronLeft,
-  ChevronRight, 
+  ChevronRight,
   Calendar as CalendarIcon,
   Check,
   Clock,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Flame,
+  Target,
+  Info
 } from "lucide-react";
-import { 
-  format, 
-  addDays, 
-  startOfWeek, 
-  isSameDay, 
-  isToday, 
+import {
+  format,
+  addDays,
+  startOfWeek,
+  isSameDay,
+  isToday,
   addWeeks,
   subWeeks,
   startOfDay,
   endOfDay,
-  isPast
+  isPast,
+  isFuture,
+  differenceInDays
 } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -44,15 +53,27 @@ interface DayStats {
   pending: number;
 }
 
+interface WeekInsights {
+  trend: "improving" | "declining" | "stable";
+  consistency: number; // 0-100
+  bestDay?: string;
+  worstDay?: string;
+  streak: number;
+  prediction: {
+    nextWeekCompletion: number;
+    riskDays: string[];
+  };
+}
+
 // Animated progress ring component
-const ProgressRing = ({ 
-  progress, 
-  size = 32, 
+const ProgressRing = ({
+  progress,
+  size = 32,
   strokeWidth = 3,
-  isSelected = false 
-}: { 
-  progress: number; 
-  size?: number; 
+  isSelected = false
+}: {
+  progress: number;
+  size?: number;
   strokeWidth?: number;
   isSelected?: boolean;
 }) => {
@@ -124,7 +145,7 @@ const ProgressRing = ({
   );
 };
 
-// Day card component with enhanced visuals
+// Day card component with enhanced visuals and tooltips
 const DayCard = ({
   day,
   stats,
@@ -133,7 +154,8 @@ const DayCard = ({
   status,
   progress,
   dateLocale,
-  onClick
+  onClick,
+  language
 }: {
   day: Date;
   stats: DayStats;
@@ -143,168 +165,306 @@ const DayCard = ({
   progress: number;
   dateLocale: Locale;
   onClick: () => void;
+  language: string;
 }) => {
   const hasEvents = stats.total > 0;
-  
+  const dayIsPast = isPast(endOfDay(day)) && !isToday(day);
+  const dayIsFuture = isFuture(startOfDay(day));
+
+  // Tooltip content
+  const getTooltipContent = () => {
+    if (!hasEvents && dayIsFuture) {
+      return language === 'pt' ? 'Nenhuma dose agendada' : 'No doses scheduled';
+    }
+    if (!hasEvents && dayIsPast) {
+      return language === 'pt' ? 'Sem atividade' : 'No activity';
+    }
+    if (!hasEvents) {
+      return language === 'pt' ? 'Nenhuma dose hoje' : 'No doses today';
+    }
+
+    const parts = [];
+    if (stats.taken > 0) {
+      parts.push(`${stats.taken} ${language === 'pt' ? 'tomada' : 'taken'}${stats.taken > 1 ? 's' : ''}`);
+    }
+    if (stats.pending > 0) {
+      parts.push(`${stats.pending} ${language === 'pt' ? 'pendente' : 'pending'}${stats.pending > 1 ? 's' : ''}`);
+    }
+    if (stats.missed > 0) {
+      parts.push(`${stats.missed} ${language === 'pt' ? 'perdida' : 'missed'}${stats.missed > 1 ? 's' : ''}`);
+    }
+
+    return parts.join(' • ');
+  };
+
+  // Trend indicator for past days
+  const getTrendIcon = () => {
+    if (!dayIsPast || !hasEvents) return null;
+    if (progress === 100) return <TrendingUp className="h-2.5 w-2.5 text-green-500" />;
+    if (progress >= 50) return <Minus className="h-2.5 w-2.5 text-amber-500" />;
+    return <TrendingDown className="h-2.5 w-2.5 text-destructive" />;
+  };
+
   return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      className={cn(
-        "relative flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all duration-300",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-        "min-h-[90px] md:min-h-[100px]",
-        // Selected state - gradient background
-        isSelected && "bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground shadow-lg shadow-primary/25",
-        // Today state (not selected)
-        !isSelected && isDayToday && "bg-gradient-to-br from-primary/15 to-primary/5 ring-2 ring-primary/50",
-        // Past with events
-        !isSelected && !isDayToday && hasEvents && status === "complete" && "bg-gradient-to-br from-green-500/10 to-green-500/5",
-        !isSelected && !isDayToday && hasEvents && status === "missed" && "bg-gradient-to-br from-destructive/10 to-destructive/5",
-        !isSelected && !isDayToday && hasEvents && status === "partial" && "bg-gradient-to-br from-amber-500/10 to-amber-500/5",
-        // Default hover
-        !isSelected && !isDayToday && !hasEvents && "hover:bg-accent/50",
-        !isSelected && hasEvents && "hover:shadow-md"
-      )}
-    >
-      {/* Shimmer effect for today */}
-      {isDayToday && !isSelected && (
-        <motion.div
-          className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-primary/10 to-transparent"
-          animate={{ x: ["-100%", "100%"] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          style={{ overflow: "hidden" }}
-        />
-      )}
-      
-      {/* Day name */}
-      <span className={cn(
-        "text-[10px] font-semibold uppercase tracking-wider mb-1",
-        isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
-      )}>
-        {format(day, "EEE", { locale: dateLocale }).slice(0, 3)}
-      </span>
-      
-      {/* Day number - larger and bolder */}
-      <motion.span 
-        className={cn(
-          "text-xl md:text-2xl font-bold leading-none",
-          isDayToday && !isSelected && "text-primary"
-        )}
-        initial={false}
-        animate={{ scale: isSelected ? 1.1 : 1 }}
-        transition={{ type: "spring", stiffness: 300 }}
-      >
-        {format(day, "d")}
-      </motion.span>
-
-      {/* Status indicator with animations */}
-      <div className="mt-2 h-8 flex items-center justify-center">
-        {hasEvents && (
-          <AnimatePresence mode="wait">
-            {status === "complete" ? (
-              <motion.div
-                key="complete"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className={cn(
-                  "flex items-center justify-center h-6 w-6 rounded-full",
-                  isSelected ? "bg-primary-foreground/20" : "bg-green-500/20"
-                )}
-              >
-                <Check className={cn(
-                  "h-3.5 w-3.5",
-                  isSelected ? "text-primary-foreground" : "text-green-600"
-                )} />
-              </motion.div>
-            ) : status === "missed" ? (
-              <motion.div
-                key="missed"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className={cn(
-                  "flex items-center justify-center h-6 w-6 rounded-full",
-                  isSelected ? "bg-primary-foreground/20" : "bg-destructive/20"
-                )}
-              >
-                <AlertCircle className={cn(
-                  "h-3.5 w-3.5",
-                  isSelected ? "text-primary-foreground" : "text-destructive"
-                )} />
-              </motion.div>
-            ) : status === "partial" || status === "pending" ? (
-              <motion.div
-                key="progress"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-              >
-                <ProgressRing 
-                  progress={progress} 
-                  size={28} 
-                  strokeWidth={3}
-                  isSelected={isSelected}
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="pending-icon"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                className="flex items-center gap-0.5"
-              >
-                <Clock className={cn(
-                  "h-3 w-3",
-                  isSelected ? "text-primary-foreground/60" : "text-muted-foreground"
-                )} />
-                <span className={cn(
-                  "text-[10px] font-medium",
-                  isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
-                )}>
-                  {stats.total}
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-      </div>
-
-      {/* Selection indicator */}
-      {isSelected && (
-        <motion.div
-          className="absolute -bottom-1 left-1/2 h-1 w-6 rounded-full bg-primary-foreground/50"
-          layoutId="selectedIndicator"
-          initial={false}
-          transition={{ type: "spring", stiffness: 500, damping: 35 }}
-          style={{ x: "-50%" }}
-        />
-      )}
-      
-      {/* Today pulse effect */}
-      {isDayToday && (
-        <motion.div
-          className="absolute -top-1 -right-1"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.2, type: "spring" }}
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <motion.button
+          onClick={onClick}
+          whileHover={{ scale: 1.08, y: -3 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 500, damping: 25 }}
+          className={cn(
+            "relative flex flex-col items-center justify-center py-3 px-2 rounded-2xl transition-all duration-300",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            "min-h-[90px] md:min-h-[100px] group",
+            // Selected state - gradient background with glow
+            isSelected && "bg-gradient-to-br from-primary via-primary to-primary/90 text-primary-foreground shadow-xl shadow-primary/30 ring-2 ring-primary/50",
+            // Today state (not selected) - pulsing border
+            !isSelected && isDayToday && "bg-gradient-to-br from-primary/15 to-primary/5 ring-2 ring-primary/60 shadow-md",
+            // Past with events - subtle gradients
+            !isSelected && !isDayToday && hasEvents && status === "complete" && "bg-gradient-to-br from-green-500/15 to-green-500/5 hover:from-green-500/20 hover:to-green-500/10",
+            !isSelected && !isDayToday && hasEvents && status === "missed" && "bg-gradient-to-br from-destructive/15 to-destructive/5 hover:from-destructive/20 hover:to-destructive/10",
+            !isSelected && !isDayToday && hasEvents && status === "partial" && "bg-gradient-to-br from-amber-500/15 to-amber-500/5 hover:from-amber-500/20 hover:to-amber-500/10",
+            // Future days - subtle hint
+            !isSelected && dayIsFuture && hasEvents && "bg-gradient-to-br from-blue-500/10 to-blue-500/5 hover:from-blue-500/15 hover:to-blue-500/10",
+            // Default hover
+            !isSelected && !isDayToday && !hasEvents && "hover:bg-accent/50 hover:shadow-sm",
+            !isSelected && hasEvents && "hover:shadow-lg hover:scale-[1.02]"
+          )}
         >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+          {/* Shimmer effect for today */}
+          {isDayToday && !isSelected && (
+            <motion.div
+              className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-primary/15 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+              style={{ overflow: "hidden" }}
+            />
+          )}
+
+          {/* Trend indicator (top-left corner) */}
+          {!isSelected && getTrendIcon() && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute top-1.5 left-1.5"
+            >
+              {getTrendIcon()}
+            </motion.div>
+          )}
+
+          {/* Day name */}
+          <span className={cn(
+            "text-[10px] font-semibold uppercase tracking-wider mb-1 transition-colors",
+            isSelected ? "text-primary-foreground/90" : "text-muted-foreground group-hover:text-foreground"
+          )}>
+            {format(day, "EEE", { locale: dateLocale }).slice(0, 3)}
           </span>
-        </motion.div>
-      )}
-    </motion.button>
+
+          {/* Day number - larger and bolder */}
+          <motion.span
+            className={cn(
+              "text-xl md:text-2xl font-bold leading-none transition-colors",
+              isDayToday && !isSelected && "text-primary",
+              isSelected && "text-primary-foreground"
+            )}
+            initial={false}
+            animate={{ scale: isSelected ? 1.15 : 1 }}
+            transition={{ type: "spring", stiffness: 400 }}
+          >
+            {format(day, "d")}
+          </motion.span>
+
+          {/* Status indicator with animations */}
+          <div className="mt-2 h-8 flex items-center justify-center">
+            {hasEvents && (
+              <AnimatePresence mode="wait">
+                {status === "complete" ? (
+                  <motion.div
+                    key="complete"
+                    initial={{ scale: 0, opacity: 0, rotate: -180 }}
+                    animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                    exit={{ scale: 0, opacity: 0, rotate: 180 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                    className={cn(
+                      "flex items-center justify-center h-6 w-6 rounded-full",
+                      isSelected ? "bg-primary-foreground/25" : "bg-green-500/25 group-hover:bg-green-500/35"
+                    )}
+                  >
+                    <Check className={cn(
+                      "h-3.5 w-3.5",
+                      isSelected ? "text-primary-foreground" : "text-green-600"
+                    )} />
+                  </motion.div>
+                ) : status === "missed" ? (
+                  <motion.div
+                    key="missed"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{
+                      scale: 1,
+                      opacity: 1,
+                      rotate: [0, -10, 10, -10, 0]
+                    }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{
+                      scale: { type: "spring", stiffness: 300 },
+                      rotate: { duration: 0.5, delay: 0.2 }
+                    }}
+                    className={cn(
+                      "flex items-center justify-center h-6 w-6 rounded-full",
+                      isSelected ? "bg-primary-foreground/25" : "bg-destructive/25 group-hover:bg-destructive/35"
+                    )}
+                  >
+                    <AlertCircle className={cn(
+                      "h-3.5 w-3.5",
+                      isSelected ? "text-primary-foreground" : "text-destructive"
+                    )} />
+                  </motion.div>
+                ) : status === "partial" || status === "pending" ? (
+                  <motion.div
+                    key="progress"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <ProgressRing
+                      progress={progress}
+                      size={28}
+                      strokeWidth={3}
+                      isSelected={isSelected}
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="pending-icon"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="flex items-center gap-0.5"
+                  >
+                    <Clock className={cn(
+                      "h-3 w-3",
+                      isSelected ? "text-primary-foreground/70" : "text-muted-foreground group-hover:text-foreground"
+                    )} />
+                    <span className={cn(
+                      "text-[10px] font-medium",
+                      isSelected ? "text-primary-foreground/90" : "text-muted-foreground group-hover:text-foreground"
+                    )}>
+                      {stats.total}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            )}
+            {!hasEvents && dayIsFuture && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.4 }}
+                className="h-1 w-1 rounded-full bg-muted-foreground"
+              />
+            )}
+          </div>
+
+          {/* Selection indicator - animated underline */}
+          {isSelected && (
+            <motion.div
+              className="absolute -bottom-1 left-1/2 h-1 rounded-full bg-primary-foreground/60"
+              layoutId="selectedIndicator"
+              initial={false}
+              transition={{
+                layout: { type: "spring", stiffness: 500, damping: 35 },
+                width: { duration: 0.4, ease: "easeInOut" }
+              }}
+              style={{ x: "-50%" }}
+              animate={{ width: ["40%", "60%", "40%"] }}
+            />
+          )}
+
+          {/* Today pulse effect - enhanced */}
+          {isDayToday && (
+            <motion.div
+              className="absolute -top-1 -right-1"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
+            >
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary shadow-lg shadow-primary/50" />
+              </span>
+            </motion.div>
+          )}
+
+          {/* Streak flame indicator for consecutive complete days */}
+          {!isSelected && status === "complete" && dayIsPast && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute -top-1 -left-1"
+            >
+              <Flame className="h-3 w-3 text-orange-500 drop-shadow-sm" />
+            </motion.div>
+          )}
+        </motion.button>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="text-xs">
+        <div className="flex flex-col gap-0.5">
+          <p className="font-semibold">{format(day, "EEEE, d MMMM", { locale: dateLocale })}</p>
+          <p className="text-muted-foreground">{getTooltipContent()}</p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 };
 
-export default function ModernWeekCalendar({ 
-  selectedDate, 
+// Week Insights Component - Shows trends and predictions
+const WeekInsightsBar = ({
+  weeklyStats,
+  weeklyProgress,
+  language
+}: {
+  weeklyStats: { total: number; taken: number };
+  weeklyProgress: number;
+  language: string;
+}) => {
+  const getTrendIcon = () => {
+    if (weeklyProgress >= 90) return <TrendingUp className="h-3.5 w-3.5 text-green-500" />;
+    if (weeklyProgress >= 70) return <Minus className="h-3.5 w-3.5 text-amber-500" />;
+    return <TrendingDown className="h-3.5 w-3.5 text-destructive" />;
+  };
+
+  const getTrendText = () => {
+    if (weeklyProgress >= 90) return language === 'pt' ? 'Excelente!' : 'Excellent!';
+    if (weeklyProgress >= 70) return language === 'pt' ? 'Bom' : 'Good';
+    return language === 'pt' ? 'Precisa melhorar' : 'Needs improvement';
+  };
+
+  if (weeklyStats.total === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-muted/40 via-muted/20 to-muted/40 border border-border/50"
+    >
+      <div className="flex items-center gap-1.5">
+        {getTrendIcon()}
+        <span className="text-xs font-semibold">{getTrendText()}</span>
+      </div>
+      <div className="h-4 w-px bg-border" />
+      <div className="flex items-center gap-2">
+        <ProgressRing progress={weeklyProgress} size={20} strokeWidth={2} />
+        <span className="text-xs font-medium text-muted-foreground">
+          {weeklyStats.taken}/{weeklyStats.total}
+        </span>
+      </div>
+    </motion.div>
+  );
+};
+
+export default function ModernWeekCalendar({
+  selectedDate,
   onDateSelect,
   profileId
 }: ModernWeekCalendarProps) {
@@ -343,14 +503,14 @@ export default function ModernWeekCalendar({
       if (!doses) return {};
 
       const stats: Record<string, DayStats> = {};
-      
+
       doses.forEach((dose) => {
         const dayKey = format(new Date(dose.due_at), "yyyy-MM-dd");
         if (!stats[dayKey]) {
           stats[dayKey] = { total: 0, taken: 0, missed: 0, pending: 0 };
         }
         stats[dayKey].total++;
-        
+
         if (dose.status === "taken") {
           stats[dayKey].taken++;
         } else if (dose.status === "missed") {
@@ -406,10 +566,10 @@ export default function ModernWeekCalendar({
 
   const getDayStatus = (date: Date, stats: DayStats): "complete" | "partial" | "missed" | "pending" | "empty" => {
     if (stats.total === 0) return "empty";
-    
+
     const progress = getProgressPercentage(stats);
     const dayIsPast = isPast(endOfDay(date)) && !isToday(date);
-    
+
     if (progress === 100) return "complete";
     if (dayIsPast && stats.missed > 0) return "missed";
     if (progress > 0) return "partial";
@@ -425,9 +585,9 @@ export default function ModernWeekCalendar({
       taken: acc.taken + stats.taken
     };
   }, { total: 0, taken: 0 });
-  
-  const weeklyProgress = weeklyStats.total > 0 
-    ? Math.round((weeklyStats.taken / weeklyStats.total) * 100) 
+
+  const weeklyProgress = weeklyStats.total > 0
+    ? Math.round((weeklyStats.taken / weeklyStats.total) * 100)
     : 0;
 
   const slideVariants = {
@@ -461,8 +621,8 @@ export default function ModernWeekCalendar({
           >
             <ChevronLeft className="h-4 w-4" />
           </motion.button>
-          
-          <motion.div 
+
+          <motion.div
             key={format(weekStart, "yyyy-MM")}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -475,7 +635,7 @@ export default function ModernWeekCalendar({
               {format(weekStart, "yyyy")}
             </p>
           </motion.div>
-          
+
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -485,22 +645,8 @@ export default function ModernWeekCalendar({
             <ChevronRight className="h-4 w-4" />
           </motion.button>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {/* Weekly progress indicator */}
-          {weeklyStats.total > 0 && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 border shadow-sm"
-            >
-              <ProgressRing progress={weeklyProgress} size={20} strokeWidth={2} />
-              <span className="text-xs font-medium">
-                {weeklyStats.taken}/{weeklyStats.total}
-              </span>
-            </motion.div>
-          )}
-          
           {!isToday(selectedDate) && (
             <Button
               variant="ghost"
@@ -512,7 +658,7 @@ export default function ModernWeekCalendar({
               {t('calendar.today')}
             </Button>
           )}
-          
+
           <Popover>
             <PopoverTrigger asChild>
               <motion.button
@@ -540,6 +686,17 @@ export default function ModernWeekCalendar({
           </Popover>
         </div>
       </div>
+
+      {/* Week Insights Bar */}
+      {weeklyStats.total > 0 && (
+        <div className="px-4 py-2 border-b flex items-center justify-center">
+          <WeekInsightsBar
+            weeklyStats={weeklyStats}
+            weeklyProgress={weeklyProgress}
+            language={language}
+          />
+        </div>
+      )}
 
       {/* Week days - Enhanced grid */}
       <div className="p-3 md:p-4">
@@ -572,6 +729,7 @@ export default function ModernWeekCalendar({
                   progress={progress}
                   dateLocale={dateLocale}
                   onClick={() => handleDateClick(day)}
+                  language={language}
                 />
               );
             })}

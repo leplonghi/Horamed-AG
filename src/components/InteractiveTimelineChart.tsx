@@ -6,9 +6,9 @@ import { useState } from "react";
 
 interface Dose {
   id: string;
-  due_at: string;
+  dueAt: string;
   status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-  taken_at: string | null;
+  takenAt: string | null;
   items: {
     name: string;
   };
@@ -24,7 +24,7 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
 
   // Agrupar doses por dia
   const dosesByDay = doses.reduce((acc, dose) => {
-    const day = format(parseISO(dose.due_at), 'yyyy-MM-dd');
+    const day = format(parseISO(dose.dueAt), 'yyyy-MM-dd');
     if (!acc[day]) {
       acc[day] = [];
     }
@@ -78,7 +78,7 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
         <div className="relative">
           {/* Linha de conexão */}
           <div className="absolute left-0 right-0 top-6 h-0.5 bg-border" />
-          
+
           {/* Pontos da timeline */}
           <div className="relative flex justify-between items-start">
             {days.map((day) => {
@@ -167,7 +167,7 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
 
             <div className="space-y-2">
               {selectedDoses
-                .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())
+                .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
                 .map((dose) => (
                   <div
                     key={dose.id}
@@ -178,9 +178,9 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
                       <div>
                         <p className="text-sm font-medium">{dose.items.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {format(parseISO(dose.due_at), 'HH:mm')}
-                          {dose.taken_at && dose.status === 'taken' && (
-                            <> • Tomado às {format(parseISO(dose.taken_at), 'HH:mm')}</>
+                          {format(parseISO(dose.dueAt), 'HH:mm')}
+                          {dose.takenAt && dose.status === 'taken' && (
+                            <> • Tomado às {format(parseISO(dose.takenAt), 'HH:mm')}</>
                           )}
                         </p>
                       </div>

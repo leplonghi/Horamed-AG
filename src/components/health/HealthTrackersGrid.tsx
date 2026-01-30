@@ -1,31 +1,33 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Droplets, 
-  Heart, 
-  Activity, 
-  Wind, 
-  Smile, 
+import {
+  Droplets,
+  Heart,
+  Activity,
+  Wind,
+  Smile,
   Moon,
   Scale,
   Thermometer
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, fetchCollection, orderBy, limit } from "@/integrations/firebase";
 import { toast } from "sonner";
 import HealthMeasurementCard from "./HealthMeasurementCard";
 import { useNavigate } from "react-router-dom";
 
 interface VitalSign {
-  id: string;
-  data_medicao: string;
-  pressao_sistolica: number | null;
-  pressao_diastolica: number | null;
-  frequencia_cardiaca: number | null;
-  glicemia: number | null;
-  saturacao_oxigenio: number | null;
-  temperatura: number | null;
-  peso_kg: number | null;
+  id?: string;
+  measuredAt: string;
+  systolic?: number | null;
+  diastolic?: number | null;
+  heartRate?: number | null;
+  bloodSugar?: number | null;
+  oxygenSaturation?: number | null;
+  temperature?: number | null;
+  weightKg?: number | null;
+  mood?: number | null;
+  sleepHours?: number | null;
 }
 
 interface HealthData {
@@ -60,70 +62,81 @@ export default function HealthTrackersGrid() {
 
   const loadHealthData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       // Get latest vital signs
-      const { data: vitals } = await supabase
-        .from("sinais_vitais")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_medicao", { ascending: false })
-        .limit(10);
-
-      // Get latest weight from health_history
-      const { data: weightHistory } = await supabase
-        .from("health_history")
-        .select("weight_kg, recorded_at")
-        .eq("user_id", user.id)
-        .order("recorded_at", { ascending: false })
-        .limit(2);
+      const { data: vitals } = await fetchCollection<VitalSign>(
+        `users/${user.uid}/vitalSigns`,
+        [orderBy("measuredAt", "desc"), limit(20)]
+      );
 
       if (vitals && vitals.length > 0) {
-        const latest = vitals[0];
-        const previous = vitals[1];
+        // We need to find the latest non-null value for each metric
+        // A naive approach is to just take the latest record, but often records are partial (only weight, or only BP)
+        // So we scan the last 20 records to find the latest value for each.
 
-        // Calculate trends
-        const getTrend = (current: number | null, prev: number | null): "up" | "down" | "stable" | undefined => {
-          if (!current || !prev) return undefined;
+        const findLatest = (key: keyof VitalSign) => {
+          const entry = vitals.find(v => v[key] !== undefined && v[key] !== null);
+          return entry ? { value: entry[key], date: entry.measuredAt } : null;
+        };
+
+        const findTrend = (key: keyof VitalSign) => {
+          const entries = vitals.filter(v => v[key] !== undefined && v[key] !== null);
+          if (entries.length < 2) return undefined;
+          const current = entries[0][key] as number;
+          const prev = entries[1][key] as number;
           if (current > prev) return "up";
           if (current < prev) return "down";
           return "stable";
         };
 
+        const glucose = findLatest('bloodSugar');
+        const bpSystolic = findLatest('systolic');
+        const bpDiastolic = findLatest('diastolic');
+        const hr = findLatest('heartRate');
+        const oxy = findLatest('oxygenSaturation');
+        const temp = findLatest('temperature');
+        const weight = findLatest('weightKg');
+        const mood = findLatest('mood');
+        const sleep = findLatest('sleepHours');
+
         setHealthData({
           glucose: {
-            value: latest.glicemia,
-            lastUpdated: latest.data_medicao,
-            trend: getTrend(latest.glicemia, previous?.glicemia)
+            value: glucose?.value as number || null,
+            lastUpdated: glucose?.date || null,
+            trend: findTrend('bloodSugar')
           },
           bloodPressure: {
-            systolic: latest.pressao_sistolica,
-            diastolic: latest.pressao_diastolica,
-            lastUpdated: latest.data_medicao
+            systolic: bpSystolic?.value as number || null,
+            diastolic: bpDiastolic?.value as number || null,
+            lastUpdated: bpSystolic?.date || null
           },
           heartRate: {
-            value: latest.frequencia_cardiaca,
-            lastUpdated: latest.data_medicao,
-            trend: getTrend(latest.frequencia_cardiaca, previous?.frequencia_cardiaca)
+            value: hr?.value as number || null,
+            lastUpdated: hr?.date || null,
+            trend: findTrend('heartRate')
           },
           spO2: {
-            value: latest.saturacao_oxigenio,
-            lastUpdated: latest.data_medicao
+            value: oxy?.value as number || null,
+            lastUpdated: oxy?.date || null
           },
-          mood: { value: null, lastUpdated: null },
-          sleep: { value: null, lastUpdated: null },
+          mood: {
+            value: mood?.value as number || null,
+            lastUpdated: mood?.date || null
+          },
+          sleep: {
+            value: sleep?.value as number || null,
+            lastUpdated: sleep?.date || null
+          },
           weight: {
-            value: weightHistory?.[0]?.weight_kg || latest.peso_kg,
-            lastUpdated: weightHistory?.[0]?.recorded_at || latest.data_medicao,
-            trend: getTrend(
-              weightHistory?.[0]?.weight_kg || latest.peso_kg,
-              weightHistory?.[1]?.weight_kg || previous?.peso_kg
-            )
+            value: weight?.value as number || null,
+            lastUpdated: weight?.date || null,
+            trend: findTrend('weightKg')
           },
           temperature: {
-            value: latest.temperatura,
-            lastUpdated: latest.data_medicao
+            value: temp?.value as number || null,
+            lastUpdated: temp?.date || null
           }
         });
       }
@@ -135,53 +148,49 @@ export default function HealthTrackersGrid() {
   };
 
   const saveMeasurement = async (
-    type: string, 
-    value: number, 
+    type: string,
+    value: number,
     secondaryValue?: number
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const now = new Date().toISOString();
-      let updateData: Partial<VitalSign> = { data_medicao: now };
+      let updateData: Partial<VitalSign> = { measuredAt: now };
 
       switch (type) {
         case "glucose":
-          updateData.glicemia = value;
+          updateData.bloodSugar = value;
           break;
         case "bloodPressure":
-          updateData.pressao_sistolica = value;
-          updateData.pressao_diastolica = secondaryValue || null;
+          updateData.systolic = value;
+          updateData.diastolic = secondaryValue || null;
           break;
         case "heartRate":
-          updateData.frequencia_cardiaca = value;
+          updateData.heartRate = value;
           break;
         case "spO2":
-          updateData.saturacao_oxigenio = value;
+          updateData.oxygenSaturation = value;
           break;
         case "temperature":
-          updateData.temperatura = value;
+          updateData.temperature = value;
           break;
         case "weight":
-          updateData.peso_kg = value;
-          // Also save to health_history
-          await supabase.from("health_history").insert({
-            user_id: user.id,
-            weight_kg: value,
-            recorded_at: now
-          });
+          updateData.weightKg = value;
+          break;
+        case "mood":
+          updateData.mood = value;
+          break;
+        case "sleep":
+          updateData.sleepHours = value;
           break;
       }
 
-      const { error } = await supabase
-        .from("sinais_vitais")
-        .insert({
-          user_id: user.id,
-          ...updateData
-        });
+      await addDocument(`users/${user.uid}/vitalSigns`, updateData);
 
-      if (error) throw error;
+      // If weight, also check if we need to update profile (redundant if using updateDocument properly elsewhere but good for safety)
+      // Actually let's just stick to vitalSigns for tracking.
 
       toast.success(language === 'pt' ? 'Medição registrada!' : 'Measurement recorded!');
       loadHealthData();
@@ -318,7 +327,7 @@ export default function HealthTrackersGrid() {
           placeholder={tracker.placeholder}
           secondaryPlaceholder={tracker.secondaryPlaceholder}
           onAddMeasurement={(value, secondary) => saveMeasurement(tracker.id, value, secondary)}
-          onViewHistory={() => navigate("/dashboard-saude")}
+          onViewHistory={() => navigate("/sinais-vitais")}
         />
       ))}
     </motion.div>

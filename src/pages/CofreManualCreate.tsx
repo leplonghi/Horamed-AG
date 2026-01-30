@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,36 +20,29 @@ interface Category {
   label: string;
 }
 
+// Static categories for Firebase (matching the ones from Supabase)
+const HEALTH_CATEGORIES: Category[] = [
+  { id: "receita", slug: "receita", label: "Receita Médica" },
+  { id: "exame", slug: "exame", label: "Exame" },
+  { id: "vacinacao", slug: "vacinacao", label: "Vacinação" },
+  { id: "consulta", slug: "consulta", label: "Consulta" },
+  { id: "outro", slug: "outro", label: "Outro" }
+];
+
 export default function CofreManualCreate() {
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
   const { t } = useLanguage();
-  
+
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     title: "",
-    categoria_id: "",
+    categorySlug: "",
     provider: "",
-    issued_at: "",
-    expires_at: "",
+    issuedAt: "",
+    expiresAt: "",
     notes: ""
   });
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  const loadCategories = async () => {
-    const { data } = await supabase
-      .from("categorias_saude")
-      .select("*")
-      .order("label");
-    
-    if (data) {
-      setCategories(data);
-    }
-  };
 
   const handleSave = async () => {
     if (!formData.title.trim()) {
@@ -65,33 +58,31 @@ export default function CofreManualCreate() {
     setSaving(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error(t('errors.notAuthenticated'));
 
       const documentData = {
-        user_id: user.id,
-        profile_id: activeProfile.id,
+        userId: user.uid,
+        profileId: activeProfile.id,
         title: formData.title.trim(),
-        categoria_id: formData.categoria_id || null,
+        categorySlug: formData.categorySlug || null,
         provider: formData.provider.trim() || null,
-        issued_at: formData.issued_at || null,
-        expires_at: formData.expires_at || null,
+        issuedAt: formData.issuedAt || null,
+        expiresAt: formData.expiresAt || null,
         notes: formData.notes.trim() || null,
-        file_path: "", // Documento sem arquivo
-        mime_type: "text/plain",
-        status_extraction: "manual"
+        filePath: "", // Documento sem arquivo
+        mimeType: "text/plain",
+        extractionStatus: "manual",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
-        .from("documentos_saude")
-        .insert(documentData)
-        .select()
-        .single();
+      const { data: newDoc, error } = await addDocument(`users/${user.uid}/healthDocuments`, documentData);
 
-      if (error) throw error;
+      if (error || !newDoc) throw error || new Error("Failed to create document");
 
       toast.success(t('cofreManual.success'));
-      navigate(`/carteira/${data.id}`);
+      navigate(`/carteira/${newDoc.id}`);
     } catch (error) {
       console.error("Erro ao salvar documento:", error);
       toast.error(t('cofreManual.error'));
@@ -104,7 +95,7 @@ export default function CofreManualCreate() {
     <div className="min-h-screen bg-background pb-20">
       <Header />
       <Navigation />
-      
+
       <div className="container max-w-2xl mx-auto px-4 py-6 pt-24">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -134,15 +125,15 @@ export default function CofreManualCreate() {
             <div className="space-y-2">
               <Label htmlFor="categoria">{t('cofreManual.category')}</Label>
               <Select
-                value={formData.categoria_id}
-                onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
+                value={formData.categorySlug}
+                onValueChange={(value) => setFormData({ ...formData, categorySlug: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t('cofreManual.selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                  {HEALTH_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.slug}>
                       {cat.label}
                     </SelectItem>
                   ))}
@@ -167,8 +158,8 @@ export default function CofreManualCreate() {
                 <Input
                   id="issued_at"
                   type="date"
-                  value={formData.issued_at}
-                  onChange={(e) => setFormData({ ...formData, issued_at: e.target.value })}
+                  value={formData.issuedAt}
+                  onChange={(e) => setFormData({ ...formData, issuedAt: e.target.value })}
                 />
               </div>
 
@@ -177,8 +168,8 @@ export default function CofreManualCreate() {
                 <Input
                   id="expires_at"
                   type="date"
-                  value={formData.expires_at}
-                  onChange={(e) => setFormData({ ...formData, expires_at: e.target.value })}
+                  value={formData.expiresAt}
+                  onChange={(e) => setFormData({ ...formData, expiresAt: e.target.value })}
                 />
               </div>
             </div>

@@ -2,20 +2,22 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Calendar, Package, ChevronDown, Camera, Upload, Edit3 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Calendar, ChevronDown, Camera, Upload, Edit3, Pill } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WizardStepIdentity } from "./WizardStepIdentity";
 import { WizardStepScheduleConditional } from "./WizardStepScheduleConditional";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, functions, httpsCallable, fetchDocument, fetchCollection, addDocument, updateDocument, deleteDocument, where } from "@/integrations/firebase";
 import { toast } from "sonner";
 import PaywallDialog from "@/components/PaywallDialog";
 import { cn } from "@/lib/utils";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Card } from "@/components/ui/card";
 import UpgradeModal from "@/components/UpgradeModal";
 import { useLanguage } from "@/contexts/LanguageContext";
+import NotificationScheduleEditor, { NotificationSchedule } from "@/components/notifications/NotificationScheduleEditor";
+
+
 interface MedicationData {
   name: string;
   category: string;
@@ -65,13 +67,13 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
   const { activeProfile } = useUserProfiles();
   const { subscription, loading: subLoading, hasFeature } = useSubscription();
   const { t } = useLanguage();
-  
+
   const urlEditId = searchParams.get("edit");
   const itemIdToEdit = editItemId || urlEditId;
   const isEditing = !!itemIdToEdit;
-  
+
   const prefillData = location.state?.prefillData;
-  
+
   // Step 0 = seleção de método, 1 = identidade, 2 = horários
   const [currentStep, setCurrentStep] = useState(isEditing ? 1 : 0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,7 +83,10 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [processingOCR, setProcessingOCR] = useState(false);
   const [ocrPreview, setOcrPreview] = useState<string | null>(null);
-  
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
+  const [notificationSchedules, setNotificationSchedules] = useState<NotificationSchedule[]>([]);
+
+
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,50 +103,88 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         name: prefillData.name || prev.name,
         category: prefillData.category || prev.category,
         notes: prefillData.notes || prev.notes,
+        doseText: prefillData.doseText || prev.doseText,
       }));
     }
   }, [prefillData]);
 
+  // Sync notification schedules when times change
+  useEffect(() => {
+    if (medicationData.times.length > 0 && notificationSchedules.length === 0) {
+      // Initialize schedules from times if not already set
+      const initialSchedules: NotificationSchedule[] = medicationData.times.map((time, index) => ({
+        id: `schedule-${Date.now()}-${index}`,
+        time,
+        type: medicationData.notificationType || "push",
+        vibrate: true,
+        sound: "default",
+        enabled: true,
+      }));
+      setNotificationSchedules(initialSchedules);
+    }
+  }, [medicationData.times, medicationData.notificationType]);
+
+
   const loadItemData = async (itemId: string) => {
     setIsLoading(true);
     try {
-      const { data: item, error } = await supabase
-        .from("items")
-        .select(`*, schedules (*), stock (*)`)
-        .eq("id", itemId)
-        .single();
+      const user = auth.currentUser;
+      if (!user) return;
 
-      if (error) throw error;
+      const { data: item } = await fetchDocument<any>(`users/${user.uid}/medications`, itemId);
+      if (!item) throw new Error("Item not found");
 
-      const schedule = item.schedules?.[0];
-      const stock = Array.isArray(item.stock) ? item.stock[0] : item.stock;
+      // Fetch Schedules
+      const { data: schedules } = await fetchCollection<any>(
+        `users/${user.uid}/schedules`,
+        [where('itemId', '==', itemId)]
+      );
+      const schedule = schedules && schedules.length > 0 ? schedules[0] : null;
 
-      const freqType = schedule?.freq_type as "daily" | "specific_days" | "weekly" | undefined;
-      const scheduleTimes = Array.isArray(schedule?.times) 
-        ? schedule.times.map((t: unknown) => String(t)) 
+      // Fetch Stock
+      const { data: stockRecords } = await fetchCollection<any>(
+        `users/${user.uid}/stock`,
+        [where('itemId', '==', itemId)]
+      );
+      const stock = stockRecords && stockRecords.length > 0 ? stockRecords[0] : null;
+
+      const freqType = schedule?.freqType as "daily" | "specific_days" | "weekly" | undefined;
+      const scheduleTimes = Array.isArray(schedule?.times)
+        ? schedule.times.map((t: unknown) => String(t))
         : ["08:00"];
 
       setMedicationData({
         name: item.name || "",
         category: item.category || "medicamento",
         notes: item.notes || "",
-        doseText: item.dose_text || "",
-        withFood: item.with_food || false,
+        doseText: item.doseText || "",
+        withFood: item.withFood || false,
         frequency: freqType || "daily",
         times: scheduleTimes,
-        daysOfWeek: schedule?.days_of_week || [],
-        continuousUse: !item.treatment_end_date,
-        startDate: item.treatment_start_date || "",
-        endDate: item.treatment_end_date || "",
-        unitsTotal: stock?.units_left || stock?.units_total || 30,
-        unitLabel: stock?.unit_label || "comprimidos",
+        daysOfWeek: schedule?.daysOfWeek || [],
+        continuousUse: !item.treatmentEndDate,
+        startDate: item.treatmentStartDate || "",
+        endDate: item.treatmentEndDate || "",
+        unitsTotal: stock?.currentQty || stock?.unitsTotal || 30,
+        unitLabel: stock?.unitLabel || "comprimidos",
         lowStockThreshold: 5,
-        notificationType: (item.notification_type as "silent" | "push" | "alarm") || "push",
-        controlStock: !!(stock?.units_total),
+        notificationType: (item.notificationType as "silent" | "push" | "alarm") || "push",
+        controlStock: !!(stock?.unitsTotal),
       });
-      
+
+      // Initialize notification schedules from times
+      const initialSchedules: NotificationSchedule[] = scheduleTimes.map((time, index) => ({
+        id: `schedule-${index}`,
+        time,
+        type: (item.notificationType as "silent" | "push" | "alarm") || "push",
+        vibrate: true,
+        sound: "default",
+        enabled: true,
+      }));
+      setNotificationSchedules(initialSchedules);
+
       // Se já existir estoque, marcar controlStock como true nos dados
-      if (stock?.units_total) {
+      if (stock?.unitsTotal) {
         setMedicationData(prev => ({ ...prev, controlStock: true }));
       }
     } catch (error) {
@@ -178,49 +221,47 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
   const processOCR = async (imageData: string) => {
     setProcessingOCR(true);
     try {
-      const { data, error } = await supabase.functions.invoke("extract-medication", {
-        body: { image: imageData },
-      });
-
-      if (error) throw error;
+      const extractMedication = httpsCallable(functions, 'extractMedication');
+      const { data }: any = await extractMedication({ image: imageData });
 
       if (data?.name) {
         // Create the medication immediately with extracted data and redirect to edit
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
         if (!user) throw new Error("Usuário não autenticado");
 
-        const { data: newItem, error: itemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: user.id,
-            profile_id: activeProfile?.id,
-            name: data.name,
-            category: data.category || "medicamento",
-            dose_text: data.dose || null, // Store extracted dose
-            is_active: true,
-            notification_type: "push",
-            treatment_duration_days: data.duration_days || null,
-          })
-          .select()
-          .single();
+        const medData = {
+          userId: user.uid,
+          profileId: activeProfile?.id,
+          name: data.name,
+          category: data.category || "medicamento",
+          doseText: data.dose || null,
+          isActive: true,
+          notificationType: "push",
+          treatmentDurationDays: data.duration_days || null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
 
+        const { data: newId, error: itemError } = await addDocument(`users/${user.uid}/medications`, medData);
         if (itemError) throw itemError;
+        const itemId = newId as unknown as string;
 
         // Create default schedule
-        await supabase.from('schedules').insert({
-          item_id: newItem.id,
+        await addDocument(`users/${user.uid}/schedules`, {
+          itemId: itemId,
+          userId: user.uid,
           times: ["08:00"],
-          freq_type: "daily",
-          is_active: true,
+          freqType: "daily",
+          daysOfWeek: [],
         });
 
         const extractedInfo = [];
         if (data.name) extractedInfo.push(data.name);
         if (data.dose) extractedInfo.push(data.dose);
-        
+
         toast.success(`${t('wizard.createdComplete')}: ${extractedInfo.join(' - ')}`);
         onOpenChange(false);
-        navigate(`/adicionar?edit=${newItem.id}`);
+        navigate(`/adicionar?edit=${itemId}`);
       } else {
         toast.error(t('wizard.couldNotIdentify'));
         setCurrentStep(1);
@@ -257,36 +298,45 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
     setMedicationData(prev => ({ ...prev, ...partialData }));
   };
 
+  const handleSaveSchedules = (schedules: NotificationSchedule[]) => {
+    setNotificationSchedules(schedules);
+    // Update times in medicationData with enabled schedules only
+    const enabledTimes = schedules.filter(s => s.enabled).map(s => s.time);
+    updateData({ times: enabledTimes });
+    toast.success(t('wizard.schedulesUpdated') || 'Horários atualizados!');
+  };
+
+
   const checkMedicationLimit = async (): Promise<boolean> => {
     if (isEditing) return true;
     if (subLoading) return false;
-    
-    const planType = subscription?.plan_type || 'free';
+
+    const planType = subscription?.planType || 'free';
     const status = subscription?.status || 'active';
-    
+
     if (planType === 'premium' && status === 'active') return true;
-    
-    const { data: { user } } = await supabase.auth.getUser();
+
+    const user = auth.currentUser;
     if (!user) return false;
 
-    const { count, error } = await supabase
-      .from('items')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .eq('profile_id', activeProfile?.id || '');
+    try {
+      const { data: meds } = await fetchCollection(`users/${user.uid}/medications`, [
+        where('isActive', '==', true),
+        where('profileId', '==', activeProfile?.id || '')
+      ]);
 
-    if (error) {
+      const count = meds ? meds.length : 0;
+
+      if (count >= 1) { // Free limit is 1? Check logic.
+        setShowPaywall(true);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
       console.error('Error checking medication limit:', error);
       return false;
     }
-
-    if ((count || 0) >= 1) {
-      setShowPaywall(true);
-      return false;
-    }
-
-    return true;
   };
 
   const handleNext = async () => {
@@ -300,13 +350,12 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
       setCurrentStep(2);
       return;
     }
-    
+
     if (currentStep === 2) {
       if (medicationData.times.length === 0) {
         toast.error(t('wizard.addOneTime'));
         return;
       }
-      // Salvar diretamente - estoque é opcional
       handleSubmit();
     }
   };
@@ -321,114 +370,178 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
     setIsSubmitting(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
-      if (isEditing && itemIdToEdit) {
-        const { error: itemError } = await supabase
-          .from('items')
-          .update({
-            name: medicationData.name,
-            category: medicationData.category,
-            notes: medicationData.notes || null,
-            dose_text: medicationData.doseText || null,
-            with_food: medicationData.withFood,
-            treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
-            treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
-            notification_type: medicationData.notificationType,
-          })
-          .eq("id", itemIdToEdit);
+      const treatmentEndDate = medicationData.continuousUse
+        ? null
+        : medicationData.endDate
+          ? medicationData.endDate
+          : null;
 
-        if (itemError) throw itemError;
+      const medData = {
+        userId: user.uid,
+        name: medicationData.name,
+        category: medicationData.category,
+        notes: medicationData.notes || null,
+        doseText: medicationData.doseText || null,
+        withFood: medicationData.withFood,
+        treatmentStartDate: medicationData.startDate || new Date().toISOString().split('T')[0],
+        treatmentEndDate: treatmentEndDate,
+        notificationType: medicationData.notificationType,
+        profileId: activeProfile?.id || null, // Ensure profileId is saved
+        updatedAt: new Date().toISOString()
+      };
 
-        await supabase.from("schedules").delete().eq("item_id", itemIdToEdit);
+      let itemId = isEditing ? itemIdToEdit : null;
 
-        const { error: scheduleError } = await supabase
-          .from('schedules')
-          .insert({
-            item_id: itemIdToEdit,
-            times: medicationData.times,
-            freq_type: medicationData.frequency,
-            is_active: true,
-            ...(medicationData.frequency === 'specific_days' && {
-              days_of_week: medicationData.daysOfWeek,
-            }),
-          });
+      if (isEditing && itemId) {
+        // Update existing item
+        await updateDocument(`users/${user.uid}/medications`, itemId, medData);
 
-        if (scheduleError) throw scheduleError;
+        // Delete old schedules and doses
+        const { data: oldSchedules } = await fetchCollection<any>(`users/${user.uid}/schedules`, [where('itemId', '==', itemId)]);
+        if (oldSchedules) {
+          await Promise.all(oldSchedules.map((s: any) => deleteDocument(`users/${user.uid}/schedules`, s.id)));
+        }
 
-        // Atualizar estoque apenas se configurado
-        if (medicationData.controlStock) {
-          await supabase.from("stock").delete().eq("item_id", itemIdToEdit);
-          await supabase.from('stock').insert({
-            item_id: itemIdToEdit,
-            units_total: medicationData.unitsTotal,
-            units_left: medicationData.unitsTotal,
-            unit_label: medicationData.unitLabel,
-            last_refill_at: new Date().toISOString(),
-          });
+        const { data: oldDoses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+          where('itemId', '==', itemId),
+          where('status', '==', 'scheduled')
+        ]);
+        if (oldDoses) {
+          await Promise.all(oldDoses.map((d: any) => deleteDocument(`users/${user.uid}/doses`, d.id)));
+        }
+
+        // Update Stock: Delete old
+        const { data: existingStock } = await fetchCollection<any>(`users/${user.uid}/stock`, [where('itemId', '==', itemId)]);
+        if (existingStock) {
+          await Promise.all(existingStock.map((s: any) => deleteDocument(`users/${user.uid}/stock`, s.id)));
         }
 
         toast.success(`${medicationData.name} ${t('wizard.updated')}`);
       } else {
-        const { data: newItem, error: itemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: user.id,
-            profile_id: activeProfile?.id,
-            name: medicationData.name,
-            category: medicationData.category,
-            notes: medicationData.notes || null,
-            dose_text: medicationData.doseText || null,
-            with_food: medicationData.withFood,
-            is_active: true,
-            treatment_start_date: medicationData.startDate || new Date().toISOString().split('T')[0],
-            treatment_end_date: medicationData.continuousUse ? null : medicationData.endDate,
-            notification_type: medicationData.notificationType,
-          })
-          .select()
-          .single();
-
+        // Create new item
+        const { data: newId, error: itemError } = await addDocument(`users/${user.uid}/medications`, {
+          ...medData,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        });
         if (itemError) throw itemError;
-
-        const { error: scheduleError } = await supabase
-          .from('schedules')
-          .insert({
-            item_id: newItem.id,
-            times: medicationData.times,
-            freq_type: medicationData.frequency,
-            is_active: true,
-            ...(medicationData.frequency === 'specific_days' && {
-              days_of_week: medicationData.daysOfWeek,
-            }),
-          });
-
-        if (scheduleError) throw scheduleError;
-
-        // Criar estoque apenas se configurado
-        if (medicationData.controlStock) {
-          const { error: stockError } = await supabase
-            .from('stock')
-            .insert({
-              item_id: newItem.id,
-              units_total: medicationData.unitsTotal,
-              units_left: medicationData.unitsTotal,
-              unit_label: medicationData.unitLabel,
-              last_refill_at: new Date().toISOString(),
-            });
-
-          if (stockError) throw stockError;
-        }
-
+        itemId = newId as unknown as string;
         toast.success(`${medicationData.name} ${t('wizard.added')}`);
       }
-      
-      onOpenChange(false);
-      navigate('/rotina');
-      
-      setCurrentStep(1);
-      setMedicationData(INITIAL_DATA);
-      
+
+      if (!itemId) throw new Error("Failed to get Item ID");
+
+      // Create new schedule
+      const { data: newScheduleId } = await addDocument(`users/${user.uid}/schedules`, {
+        itemId: itemId,
+        userId: user.uid,
+        times: medicationData.times,
+        freqType: medicationData.frequency,
+        daysOfWeek: medicationData.frequency === 'specific_days' ? medicationData.daysOfWeek : [],
+      });
+
+      // Generate dose instances
+      const doseInstances: any[] = [];
+      const now = new Date();
+      const scheduleTimes = medicationData.times;
+
+      // Generate for next 7 days
+      for (let day = 0; day < 7; day++) {
+        const date = new Date(now);
+        date.setDate(date.getDate() + day);
+
+        // Filtering for specific days if needed
+        if (medicationData.frequency === 'specific_days' && medicationData.daysOfWeek) {
+          // daysOfWeek: 0-6 (Sun-Sat) or 1-7? Date.getDay() returns 0-6 (Sun-Sat).
+          // Need to check what WizardStepScheduleConditional returns.
+          // Assuming 0-6 for now.
+          if (!medicationData.daysOfWeek.includes(date.getDay())) {
+            continue;
+          }
+        }
+
+        for (const time of scheduleTimes) {
+          const [hours, minutes] = time.split(":").map(Number);
+          const dueAt = new Date(date);
+          dueAt.setHours(hours, minutes, 0, 0);
+
+          if (dueAt > now) {
+            doseInstances.push({
+              scheduleId: newScheduleId,
+              itemId: itemId,
+              userId: user.uid,
+              profileId: activeProfile?.id,
+              dueAt: dueAt.toISOString(),
+              status: "scheduled",
+              createdAt: new Date().toISOString()
+            });
+          }
+        }
+      }
+
+      if (doseInstances.length > 0) {
+        // Sequential add because no batch helper yet or just map
+        await Promise.all(doseInstances.map(dose => addDocument(`users/${user.uid}/doses`, dose)));
+      }
+
+      // Create stock if enabled
+      if (medicationData.controlStock) {
+        await addDocument(`users/${user.uid}/stock`, {
+          itemId: itemId,
+          itemName: medicationData.name,
+          userId: user.uid,
+          unitsTotal: medicationData.unitsTotal,
+          currentQty: medicationData.unitsTotal, // Or unitsLeft if editing?
+          // Logic: if editing and keeping stock, we might want to preserve currentQty.
+          // But here we deleted old stock. So we reset it.
+          // User likely expects this if they are editing stock settings in Wizard.
+          unitLabel: medicationData.unitLabel,
+          lastRefillAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      const remainingMedications = location.state?.remainingMedications;
+
+      if (remainingMedications && remainingMedications.length > 0) {
+        toast.success("Medicamento salvo! Preparando o próximo...");
+
+        const nextMed = remainingMedications[0];
+        const nextRemaining = remainingMedications.slice(1);
+
+        const nextPrefill = {
+          name: nextMed.drug_name,
+          doseText: nextMed.dose,
+          notes: nextMed.frequency ? `Frequência: ${nextMed.frequency}` : undefined,
+          category: "medicamento",
+          prescriptionId: prefillData?.prescriptionId
+        };
+
+        navigate('/adicionar', {
+          state: {
+            prefillData: nextPrefill,
+            remainingMedications: nextRemaining
+          },
+          replace: true
+        });
+
+        setCurrentStep(1);
+        // Do not reset to INITIAL_DATA completely, let the effect handle it or reset strictly only what's needed
+        // Actually the effect will merge prefill into current state.
+        // We should probably reset to INITIAL_DATA then let effect run.
+        // But effect runs on render.
+        setMedicationData(INITIAL_DATA);
+      } else {
+        onOpenChange(false);
+        navigate('/rotina');
+
+        setCurrentStep(1);
+        setMedicationData(INITIAL_DATA);
+      }
+
     } catch (error: any) {
       console.error('Error saving medication:', error);
       toast.error(error.message || t('wizard.saveError'));
@@ -481,7 +594,6 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
   return (
     <>
-      {/* Hidden file inputs for OCR */}
       <input
         ref={cameraInputRef}
         type="file"
@@ -499,45 +611,42 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
       />
 
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-hidden flex flex-col p-0 rounded-2xl gap-0">
-          {/* Header fixo */}
-          <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4 border-b bg-background shrink-0">
+        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-hidden flex flex-col p-0 rounded-3xl gap-0 border-white/20 shadow-2xl bg-background/80 backdrop-blur-xl">
+          <div className="px-4 pt-4 pb-3 sm:px-6 sm:pt-6 sm:pb-4 border-b border-white/10 shrink-0 bg-background/50">
             <DialogHeader className="space-y-1">
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="text-xl font-bold tracking-tight">
                 {isEditing ? t('common.edit') : currentStep === 0 ? t('meds.addMedication') : t('wizard.addItem')}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground">
-                {currentStep === 0 
-                  ? t('wizard.chooseMethod') 
-                  : currentStep === 1 
-                    ? `${t('wizard.step')} 1: ${t('wizard.step1')}` 
+                {currentStep === 0
+                  ? t('wizard.chooseMethod')
+                  : currentStep === 1
+                    ? `${t('wizard.step')} 1: ${t('wizard.step1')}`
                     : `${t('wizard.step')} 2: ${t('wizard.step2')}`}
               </DialogDescription>
             </DialogHeader>
           </div>
 
-          {/* Progress Steps - compacto e fixo */}
           {currentStep > 0 && (
-            <div className="flex items-center justify-center gap-6 py-4 px-4 bg-muted/30 shrink-0">
+            <div className="flex items-center justify-center gap-6 py-4 px-4 bg-muted/30 border-b border-white/5 shrink-0">
               {steps.map((step, index) => {
-                const Icon = step.icon;
                 const isActive = currentStep === step.number;
                 const isCompleted = currentStep > step.number;
-                
+
                 return (
                   <div key={step.number} className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <div
                         className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center transition-all text-sm font-medium",
-                          isActive 
-                            ? "bg-primary text-primary-foreground" 
-                            : isCompleted 
-                              ? "bg-green-500 text-white" 
+                          "w-8 h-8 rounded-full flex items-center justify-center transition-all text-sm font-bold shadow-sm",
+                          isActive
+                            ? "bg-primary text-primary-foreground scale-110 shadow-primary/25"
+                            : isCompleted
+                              ? "bg-accent-highlight text-accent-highlight-foreground"
                               : "bg-muted text-muted-foreground"
                         )}
                       >
-                        {isCompleted ? <Check className="w-4 h-4" /> : step.number}
+                        {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : step.number}
                       </div>
                       <span className={cn(
                         "text-sm font-medium hidden sm:block",
@@ -548,8 +657,8 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
                     </div>
                     {index < steps.length - 1 && (
                       <div className={cn(
-                        "w-8 h-0.5",
-                        currentStep > step.number ? "bg-green-500" : "bg-muted"
+                        "w-8 h-0.5 rounded-full transition-colors",
+                        currentStep > step.number ? "bg-accent-highlight" : "bg-muted"
                       )} />
                     )}
                   </div>
@@ -558,110 +667,138 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
             </div>
           )}
 
-          {/* Step Content - scrollable */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
+          <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 scrollbar-hide">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentStep}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: 0.3, ease: "circOut" }}
+                className="h-full"
               >
-                {/* Step 0: Seleção de método */}
                 {currentStep === 0 && (
-                  <div className="space-y-3 py-2">
+                  <div className="space-y-4 py-2">
                     {processingOCR ? (
-                      <Card className="p-8 flex flex-col items-center justify-center">
-                        <Loader2 className="w-10 h-10 animate-spin text-primary mb-4" />
-                        <p className="text-muted-foreground text-center">
+                      <div className="flex flex-col items-center justify-center py-12 space-y-6">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-accent-highlight/30 rounded-full blur-xl animate-pulse" />
+                          <Loader2 className="w-12 h-12 animate-spin text-accent-highlight relative z-10" />
+                        </div>
+                        <p className="text-muted-foreground text-center font-medium animate-pulse">
                           {t('wizard.analyzingImage')}
                         </p>
-                      </Card>
+                      </div>
                     ) : (
-                      methodOptions.map((option) => (
-                        <Card
+                      methodOptions.map((option, idx) => (
+                        <motion.div
                           key={option.id}
-                          className="p-4 cursor-pointer hover:bg-accent/50 transition-all border-2 hover:border-primary/30"
-                          onClick={() => handleMethodSelect(option.id as "camera" | "upload" | "manual")}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                              <option.icon className="w-6 h-6 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium">{option.title}</h3>
-                                {option.premium && !hasFeature("ocr") && (
-                                  <span className="text-[10px] bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded-full font-medium">
-                                    Premium
-                                  </span>
-                                )}
+                          <Card
+                            className="group relative overflow-hidden border border-white/10 bg-gradient-to-br from-card to-muted/50 p-5 cursor-pointer hover:border-accent-highlight/50 transition-all hover:shadow-lg hover:shadow-accent-highlight/10 active:scale-[0.98]"
+                            onClick={() => handleMethodSelect(option.id as "camera" | "upload" | "manual")}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                            <div className="flex items-center gap-5">
+                              <div className={cn(
+                                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors",
+                                option.id === 'manual'
+                                  ? "bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white"
+                                  : "bg-accent-highlight/10 text-accent-highlight-foreground/80 group-hover:bg-accent-highlight group-hover:text-accent-highlight-foreground"
+                              )}>
+                                <option.icon className="w-7 h-7" />
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {option.description}
-                              </p>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                                    {option.title}
+                                  </h3>
+                                  {option.premium && !hasFeature("ocr") && (
+                                    <span className="text-[10px] bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                      Premium
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                  {option.description}
+                                </p>
+                              </div>
+
+                              <ArrowRight className="w-5 h-5 text-muted-foreground/50 group-hover:text-accent-highlight group-hover:translate-x-1 transition-all" />
                             </div>
-                            <ArrowRight className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                        </Card>
+                          </Card>
+                        </motion.div>
                       ))
                     )}
+
+                    <div className="pt-4 text-center">
+                      <p className="text-xs text-muted-foreground/60">
+                        Powered by <span className="font-semibold text-primary/80">Gemini AI</span>
+                      </p>
+                    </div>
                   </div>
                 )}
-                
+
                 {currentStep === 1 && (
                   <WizardStepIdentity data={medicationData} updateData={updateData} />
                 )}
                 {currentStep === 2 && (
-                  <WizardStepScheduleConditional data={medicationData} updateData={updateData} />
+                  <WizardStepScheduleConditional
+                    data={medicationData}
+                    updateData={updateData}
+                    onOpenAdvancedEditor={() => setShowScheduleEditor(true)}
+                  />
                 )}
+
               </motion.div>
             </AnimatePresence>
           </div>
 
-          {/* Navigation Buttons - fixo no footer */}
           {currentStep > 0 && (
-            <div className="flex gap-3 p-4 pb-6 sm:px-6 sm:pb-4 border-t bg-background shrink-0 safe-area-inset-bottom">
+            <div className="grid grid-cols-2 gap-4 p-4 pb-6 sm:px-6 sm:pb-5 border-t border-white/10 bg-background/50 backdrop-blur-md shrink-0 safe-area-inset-bottom z-10">
               <Button
-                variant="outline"
+                variant="ghost"
                 onClick={currentStep === 1 ? () => setCurrentStep(0) : handleBack}
                 disabled={isSubmitting}
-                className="flex-1 h-12"
+                className="h-12 rounded-2xl hover:bg-muted/50 text-muted-foreground font-medium"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t('common.back')}
               </Button>
 
-              <Button 
-                onClick={handleNext} 
-                disabled={isSubmitting} 
-                className="flex-1 h-12"
+              <Button
+                onClick={handleNext}
+                disabled={isSubmitting}
+                className="h-12 rounded-2xl bg-accent-highlight hover:bg-accent-highlight/90 text-accent-highlight-foreground font-bold shadow-lg shadow-accent-highlight/20 hover:shadow-accent-highlight/30 hover:scale-[1.02] transition-all"
               >
                 {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                 ) : currentStep === 2 ? (
                   <>
                     {isEditing ? t('common.save') : t('common.add')}
-                    <Check className="w-4 h-4 ml-2" />
+                    <Check className="w-5 h-5 ml-2 stroke-[3]" />
                   </>
                 ) : (
                   <>
                     {t('common.next')}
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    <ArrowRight className="w-5 h-5 ml-2 stroke-[3]" />
                   </>
                 )}
               </Button>
             </div>
           )}
-          
-          {/* Cancel button only on step 0 */}
+
           {currentStep === 0 && !processingOCR && (
-            <div className="p-4 pb-6 sm:px-6 sm:pb-4 border-t bg-background shrink-0 safe-area-inset-bottom">
+            <div className="p-4 pb-6 sm:px-6 sm:pb-4 border-t border-white/5 bg-background/30 backdrop-blur-sm shrink-0 safe-area-inset-bottom">
               <Button
                 variant="ghost"
                 onClick={() => onOpenChange(false)}
-                className="w-full h-11 text-muted-foreground"
+                className="w-full h-11 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors rounded-xl"
               >
                 {t('common.cancel')}
               </Button>
@@ -676,11 +813,21 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         feature={t('wizard.ocrFeature')}
       />
 
+
       <PaywallDialog
         open={showPaywall}
         onOpenChange={setShowPaywall}
         triggerReason="medication_limit"
       />
+
+      <NotificationScheduleEditor
+        open={showScheduleEditor}
+        onOpenChange={setShowScheduleEditor}
+        schedules={notificationSchedules}
+        onSave={handleSaveSchedules}
+        medicationName={medicationData.name}
+      />
     </>
+
   );
 }

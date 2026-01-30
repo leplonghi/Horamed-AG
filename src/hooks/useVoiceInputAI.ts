@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 
 interface UseVoiceInputAIOptions {
   onTranscription?: (text: string) => void;
+  onCommandResult?: (result: any) => void; // Support for intelligent result
   onError?: (error: string) => void;
   language?: string;
 }
@@ -12,24 +14,31 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState<string>('');
-  
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const dispatchError = (message: string) => {
+    toast.error(message);
+    options.onError?.(message);
+  };
+
   const startRecording = useCallback(async () => {
     try {
       console.log('Requesting microphone permission for AI transcription...');
-      
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
           sampleRate: 16000,
         }
       });
-      
-      streamRef.current = stream;
+
+      streamRef.current = mediaStream;
+      setStream(mediaStream);
       console.log('Microphone permission granted');
 
       // Reset state
@@ -50,13 +59,12 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
 
       console.log('Using MIME type:', mimeType || 'default');
 
-      const mediaRecorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
-          console.log('Audio chunk received:', event.data.size, 'bytes');
         }
       };
 
@@ -66,11 +74,9 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
         setIsProcessing(true);
 
         try {
-          const audioBlob = new Blob(audioChunksRef.current, { 
-            type: mediaRecorder.mimeType || 'audio/webm' 
+          const audioBlob = new Blob(audioChunksRef.current, {
+            type: mediaRecorder.mimeType || 'audio/webm'
           });
-          
-          console.log('Audio blob created:', audioBlob.size, 'bytes, type:', audioBlob.type);
 
           if (audioBlob.size < 1000) {
             toast.info('Áudio muito curto. Tente falar por mais tempo.');
@@ -83,41 +89,38 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
           reader.onloadend = async () => {
             try {
               const base64Audio = (reader.result as string).split(',')[1];
-              console.log('Audio converted to base64, length:', base64Audio.length);
 
-              // Call edge function
-              const { data, error } = await supabase.functions.invoke('voice-to-text', {
-                body: { 
-                  audio: base64Audio, 
-                  mimeType: audioBlob.type 
-                }
+              // Call cloud function
+              const voiceToText = httpsCallable(functions, 'voiceToText');
+              const result = await voiceToText({
+                audio: base64Audio,
+                mimeType: audioBlob.type,
+                mode: 'intelligent' // Hint for backend to use smart mode
               });
+              const data = result.data as any;
 
-              if (error) {
-                console.error('Edge function error:', error);
-                throw new Error(error.message || 'Erro na transcrição');
-              }
+              if (data?.text || data?.intent) {
+                // Handle simple text or structured intelligent response
+                const text = data.text || data.intent?.spokenResponse;
+                setTranscription(text);
 
-              if (data?.text) {
-                console.log('Transcription received:', data.text);
-                setTranscription(data.text);
-                options.onTranscription?.(data.text);
-                toast.success('Voz transcrita com IA!', { duration: 1500 });
-                
-                // Haptic feedback
-                if (navigator.vibrate) {
-                  navigator.vibrate([50, 50, 50]);
+                if (options.onCommandResult && data.intent) {
+                  options.onCommandResult(data);
+                } else if (options.onTranscription) {
+                  options.onTranscription(text);
                 }
+
+                // Haptic feedback
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
               } else if (data?.error) {
                 throw new Error(data.error);
               } else {
-                toast.info('Não foi possível entender o áudio. Tente novamente.');
+                dispatchError('Não foi possível entender. Tente novamente.');
               }
             } catch (err) {
               console.error('Transcription error:', err);
               const errorMessage = err instanceof Error ? err.message : 'Erro na transcrição';
-              toast.error(errorMessage);
-              options.onError?.(errorMessage);
+              dispatchError(errorMessage);
             } finally {
               setIsProcessing(false);
             }
@@ -138,34 +141,19 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
         toast.error('Erro na gravação');
       };
 
-      // Start recording with timeslice for periodic data
       mediaRecorder.start(1000);
       setIsRecording(true);
-      
-      console.log('Recording started');
-      toast.info('Ouvindo... Fale agora', { duration: 2000 });
-      
+
       // Haptic feedback
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
+      if (navigator.vibrate) navigator.vibrate(50);
 
     } catch (error) {
       console.error('Error starting recording:', error);
-      
       let errorMessage = 'Erro ao iniciar gravação';
       if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          errorMessage = 'Permissão de microfone negada';
-        } else if (error.name === 'NotFoundError') {
-          errorMessage = 'Microfone não encontrado';
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
-      
-      toast.error(errorMessage);
-      options.onError?.(errorMessage);
+      dispatchError(errorMessage);
       setIsRecording(false);
       setIsProcessing(false);
     }
@@ -173,23 +161,22 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
 
   const stopRecording = useCallback(() => {
     console.log('Stopping AI recording...');
-    
+
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
-    
+
     // Stop all tracks
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => {
         track.stop();
-        console.log('Track stopped:', track.kind);
       });
       streamRef.current = null;
+      setStream(null);
     }
   }, []);
 
   const toggleRecording = useCallback(() => {
-    console.log('Toggle AI recording, current state:', isRecording);
     if (isRecording) {
       stopRecording();
     } else {
@@ -205,7 +192,8 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
     isRecording,
     isProcessing,
     transcription,
-    isSupported: true, // MediaRecorder is widely supported
+    stream,
+    isSupported: true,
     startRecording,
     stopRecording,
     toggleRecording,

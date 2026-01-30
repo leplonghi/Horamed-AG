@@ -56,7 +56,7 @@ export default function QuickActionMenu({ open, onOpenChange, onOpenClara }: Qui
       color: "bg-green-500/10 text-green-600 hover:bg-green-500/20 border-green-500/20",
       onClick: () => {
         onOpenChange(false);
-        navigate("/saude/consultas");
+        navigate("/consultas");
       },
     },
     {

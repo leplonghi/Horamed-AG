@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  ArrowLeft, 
-  Bell, 
-  BellRing, 
-  Check, 
-  ChevronRight, 
-  Smartphone, 
-  Settings, 
+import {
+  ArrowLeft,
+  Bell,
+  BellRing,
+  Check,
+  ChevronRight,
+  Smartphone,
+  Settings,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -20,7 +20,7 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const isNative = Capacitor.isNativePlatform();
@@ -49,12 +49,12 @@ export default function NotificationSetup() {
 
   const checkPermissions = async () => {
     setLoading(true);
-    
+
     try {
       if (isNative) {
         const pushStatus = await PushNotifications.checkPermissions();
         const localStatus = await LocalNotifications.checkPermissions();
-        
+
         setPermissions({
           push: pushStatus.receive as any,
           local: localStatus.display as any,
@@ -81,7 +81,7 @@ export default function NotificationSetup() {
       if (isNative) {
         const pushResult = await PushNotifications.requestPermissions();
         const localResult = await LocalNotifications.requestPermissions();
-        
+
         if (pushResult.receive === 'granted' && localResult.display === 'granted') {
           await PushNotifications.register();
           toast.success(t('notifSetup.notifEnabled'));
@@ -155,7 +155,7 @@ export default function NotificationSetup() {
             </Button>
             <h1 className="text-xl font-bold">{t('notifSetup.title')}</h1>
           </div>
-          
+
           <div className="text-center space-y-2">
             <div className="mx-auto w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
               <BellRing className="h-8 w-8 text-primary" />
@@ -209,13 +209,13 @@ export default function NotificationSetup() {
               <p className="text-sm text-muted-foreground mb-3">
                 {t('notifSetup.authorizeApp')}
               </p>
-              
+
               <div className="flex items-center gap-2 mb-3">
                 {getStatusIcon(permissions.local)}
                 <span className="text-sm">
-                  {permissions.local === 'granted' ? t('notifSetup.allowed') : 
-                   permissions.local === 'denied' ? t('notifSetup.denied') : 
-                   t('notifSetup.notConfigured')}
+                  {permissions.local === 'granted' ? t('notifSetup.allowed') :
+                    permissions.local === 'denied' ? t('notifSetup.denied') :
+                      t('notifSetup.notConfigured')}
                 </span>
               </div>
 
@@ -241,7 +241,7 @@ export default function NotificationSetup() {
                 <p className="text-sm text-muted-foreground mb-3">
                   <strong>{t('notifSetup.batteryImportant')}</strong> {t('notifSetup.batteryDesc')}
                 </p>
-                
+
                 <Alert className="mb-3">
                   <Info className="h-4 w-4" />
                   <AlertDescription className="text-xs">
@@ -260,8 +260,8 @@ export default function NotificationSetup() {
                   </ol>
                 </div>
 
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full mt-3"
                   onClick={() => {
                     toast.info(t('notifSetup.openSettingsInfo'));
@@ -290,9 +290,9 @@ export default function NotificationSetup() {
               <p className="text-sm text-muted-foreground mb-3">
                 {t('notifSetup.testDesc')}
               </p>
-              
-              <Button 
-                onClick={sendTestNotification} 
+
+              <Button
+                onClick={sendTestNotification}
                 variant={testSent ? "outline" : "default"}
                 className="w-full"
                 disabled={permissions.local !== 'granted'}
@@ -339,17 +339,15 @@ export default function NotificationSetup() {
           <Alert>
             <Smartphone className="h-4 w-4" />
             <AlertDescription>
-              {t('notifSetup.webInfo')}{' '}
-              <Button variant="link" className="p-0 h-auto" onClick={() => navigate('/install')}>
-                {t('notifSetup.learnInstall')}
-              </Button>
+              {t('notifSetup.webInfo')}
+              {/* TODO: Criar página de instruções de instalação PWA */}
             </AlertDescription>
           </Alert>
         )}
 
         {/* Done button */}
-        <Button 
-          onClick={() => navigate('/configuracoes/notificacoes')} 
+        <Button
+          onClick={() => navigate('/configuracoes/notificacoes')}
           className="w-full"
           size="lg"
         >

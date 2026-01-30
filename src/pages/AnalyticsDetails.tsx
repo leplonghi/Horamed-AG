@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, endOfDay, subDays } from "date-fns";
-import { useAuth } from "@/contexts/AuthContext";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import PageHeader from "@/components/PageHeader";
@@ -14,47 +13,52 @@ import InteractiveTimelineChart from "@/components/InteractiveTimelineChart";
 
 export default function AnalyticsDetails() {
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const { data: doses = [] } = useQuery({
-    queryKey: ["analytics-doses", user?.id],
+    queryKey: ["analytics-doses"],
     queryFn: async () => {
+      const user = auth.currentUser;
+      if (!user) return [];
+
       const now = new Date();
       const startDate = subDays(now, 30);
 
-      const { data, error } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(name, user_id)
-        `)
-        .eq("items.user_id", user?.id)
-        .gte("due_at", startOfDay(startDate).toISOString())
-        .lte("due_at", endOfDay(now).toISOString())
-        .order("due_at", { ascending: true });
+      // Fetch Doses
+      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        where('dueAt', '>=', startOfDay(startDate).toISOString()),
+        where('dueAt', '<=', endOfDay(now).toISOString()),
+        orderBy('dueAt', 'asc')
+      ]);
 
-      if (error) throw error;
-      
+      // Fetch Items for names
+      const { data: itemsData } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const itemsMap = new Map(itemsData?.map(item => [item.id, item]));
+
       // Transform to match expected type
-      const transformedData = (data || []).map(dose => ({
-        id: dose.id,
-        due_at: dose.due_at,
-        status: dose.status as 'scheduled' | 'taken' | 'missed' | 'skipped',
-        taken_at: dose.taken_at,
-        items: {
-          name: (dose.items as any).name
-        }
-      }));
-      
+      const transformedData = (dosesData || []).map(dose => {
+        const item = itemsMap.get(dose.itemId);
+        return {
+          id: dose.id,
+          itemId: dose.itemId, // Pass this just in case
+          dueAt: dose.dueAt,
+          status: dose.status as 'scheduled' | 'taken' | 'missed' | 'skipped',
+          takenAt: dose.takenAt,
+          items: {
+            name: item?.name || 'Medicamento'
+          }
+        };
+      });
+
       return transformedData;
     },
-    enabled: !!user?.id,
+    // In React Query v5, 'enabled' depends on auth state which might be async. 
+    // Usually handled by parent or queryClient defaults, but explicitly checking user in fn is safe.
   });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-6 pb-24 max-w-4xl pt-24">
         <Button
           variant="ghost"

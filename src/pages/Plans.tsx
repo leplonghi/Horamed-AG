@@ -3,13 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { 
+import {
   ArrowLeft, Check, Crown, Shield, Sparkles, Star, Zap, Gift, Loader2,
   Pill, Bell, BarChart3, FileText, Users, Bot, Camera, FileCheck, Ban,
   HeartPulse, X
 } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { supabase } from "@/integrations/supabase/client";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { auth } from "@/integrations/firebase";
+import { functions } from "@/integrations/firebase/client";
+import { httpsCallable } from "firebase/functions";
 import { getReferralDiscountForUser } from "@/lib/referrals";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PRICING } from "@/lib/stripeConfig";
@@ -53,11 +55,13 @@ export default function Plans() {
   }, []);
 
   const loadReferralDiscount = async () => {
-    if (!isPremium) return;
+    // If user is already premium, no need to check for discounts
+    if (isPremium) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
-      const discount = await getReferralDiscountForUser(user.id);
+      const discount = await getReferralDiscountForUser(user.uid);
       setReferralDiscount(discount);
     } catch (error) {
       console.error('Error loading referral discount:', error);
@@ -68,10 +72,13 @@ export default function Plans() {
     setLoading(true);
     try {
       const planType = billingCycle === 'annual' ? 'annual' : 'monthly';
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { planType, countryCode }
+
+      const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
+      const { data }: any = await createCheckoutSession({
+        planType,
+        countryCode
       });
-      if (error) throw error;
+
       if (data?.url) {
         window.location.href = data.url;
       }
@@ -135,7 +142,7 @@ export default function Plans() {
         </div>
       </div>
 
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="show"
@@ -162,8 +169,8 @@ export default function Plans() {
               onClick={() => setBillingCycle("monthly")}
               className={cn(
                 "px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300",
-                billingCycle === "monthly" 
-                  ? "bg-background shadow-lg text-foreground" 
+                billingCycle === "monthly"
+                  ? "bg-background shadow-lg text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -173,8 +180,8 @@ export default function Plans() {
               onClick={() => setBillingCycle("annual")}
               className={cn(
                 "px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 relative",
-                billingCycle === "annual" 
-                  ? "bg-background shadow-lg text-foreground" 
+                billingCycle === "annual"
+                  ? "bg-background shadow-lg text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -230,8 +237,8 @@ export default function Plans() {
                 ))}
               </div>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full h-12 rounded-xl"
                 onClick={() => navigate('/hoje')}
               >
@@ -303,14 +310,14 @@ export default function Plans() {
                 <div className="flex items-center gap-2 p-4 bg-primary/10 rounded-xl border border-primary/20">
                   <Check className="h-5 w-5 text-primary" />
                   <span className="font-medium text-primary">
-                    {isOnTrial 
+                    {isOnTrial
                       ? `${t('plans.youArePremium')} (${trialDaysLeft} ${t('profile.daysRemaining')})`
                       : t('plans.youArePremium')
                     }
                   </span>
                 </div>
               ) : (
-                <Button 
+                <Button
                   size="lg"
                   className={cn(
                     "w-full h-14 text-lg font-semibold rounded-xl",
@@ -347,15 +354,15 @@ export default function Plans() {
           <h3 className="font-semibold text-center text-lg">{t('plans.everythingIncluded')}</h3>
           <div className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto">
             {premiumFeatures.map((feature, index) => (
-              <motion.div 
+              <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl transition-colors",
-                  feature.highlight 
-                    ? "bg-primary/10 border border-primary/20" 
+                  feature.highlight
+                    ? "bg-primary/10 border border-primary/20"
                     : "bg-muted/30 hover:bg-muted/50"
                 )}
               >
@@ -377,7 +384,7 @@ export default function Plans() {
         </motion.div>
 
         {/* Social Proof */}
-        <motion.div 
+        <motion.div
           variants={itemVariants}
           className={cn(
             "rounded-2xl p-6 text-center",
@@ -389,8 +396,8 @@ export default function Plans() {
             <div className="flex items-center gap-3">
               <div className="flex -space-x-3">
                 {['👨', '👩', '👴', '👧', '👨‍⚕️'].map((emoji, i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className="h-10 w-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-lg shadow-sm"
                   >
                     {emoji}
@@ -401,7 +408,7 @@ export default function Plans() {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-0.5">
-                {[1,2,3,4,5].map((i) => (
+                {[1, 2, 3, 4, 5].map((i) => (
                   <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
@@ -415,7 +422,7 @@ export default function Plans() {
         </motion.div>
 
         {/* Trust Badges */}
-        <motion.div 
+        <motion.div
           variants={itemVariants}
           className="flex flex-wrap items-center justify-center gap-6 py-4"
         >

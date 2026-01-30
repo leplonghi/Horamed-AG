@@ -1,8 +1,10 @@
 import { useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db, addDocument, updateDocument, fetchCollection } from "@/integrations/firebase";
+import { functions } from "@/integrations/firebase/client";
+import { httpsCallable } from "firebase/functions";
+import { collection, query, where, getDocs, deleteDoc, doc, Timestamp } from "firebase/firestore";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
-import { toast } from "sonner";
 import { useAuditLog } from "./useAuditLog";
 
 interface ReminderData {
@@ -14,12 +16,13 @@ interface ReminderData {
 }
 
 interface NotificationMetric {
-  user_id: string;
-  dose_id: string;
-  notification_type: "push" | "local" | "web" | "sound" | "whatsapp";
-  delivery_status: "sent" | "delivered" | "failed" | "fallback";
-  error_message?: string;
+  userId: string;
+  doseId: string;
+  notificationType: "push" | "local" | "web" | "sound" | "whatsapp";
+  deliveryStatus: "sent" | "delivered" | "failed" | "fallback";
+  errorMessage?: string;
   metadata?: Record<string, any>;
+  createdAt: string;
 }
 
 const STORAGE_KEY = "local_reminders_backup";
@@ -43,7 +46,7 @@ export const useResilientReminders = () => {
       if (backupData) {
         const reminders = JSON.parse(backupData);
         if (reminders.length > 100) {
-          const sorted = reminders.sort((a: any, b: any) => 
+          const sorted = reminders.sort((a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
           localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted.slice(0, 50)));
@@ -57,10 +60,10 @@ export const useResilientReminders = () => {
   // Initialize - only once per app lifecycle with cooldown
   useEffect(() => {
     if (isInitialized || hasInitializedRef.current) return;
-    
+
     const now = Date.now();
     if (now - lastSyncTime < SYNC_COOLDOWN) return;
-    
+
     hasInitializedRef.current = true;
     isInitialized = true;
     lastSyncTime = now;
@@ -86,7 +89,7 @@ export const useResilientReminders = () => {
    * Schedule a reminder with automatic fallback and metrics
    */
   const scheduleReminder = async (data: ReminderData): Promise<boolean> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = auth.currentUser;
     if (!user) return false;
 
     let primarySuccess = false;
@@ -112,14 +115,15 @@ export const useResilientReminders = () => {
             },
           ],
         });
-        
+
         primarySuccess = true;
         await logMetric({
-          user_id: user.id,
-          dose_id: data.doseId,
-          notification_type: "local",
-          delivery_status: "sent",
+          userId: user.uid,
+          doseId: data.doseId,
+          notificationType: "local",
+          deliveryStatus: "sent",
           metadata: { method: "native_capacitor" },
+          createdAt: new Date().toISOString()
         });
 
         await logAction({
@@ -131,11 +135,12 @@ export const useResilientReminders = () => {
       } catch (error) {
         errors.push(`Native: ${error instanceof Error ? error.message : "Unknown error"}`);
         await logMetric({
-          user_id: user.id,
-          dose_id: data.doseId,
-          notification_type: "local",
-          delivery_status: "failed",
-          error_message: errors[0],
+          userId: user.uid,
+          doseId: data.doseId,
+          notificationType: "local",
+          deliveryStatus: "failed",
+          errorMessage: errors[0],
+          createdAt: new Date().toISOString()
         });
       }
     }
@@ -155,14 +160,15 @@ export const useResilientReminders = () => {
                 requireInteraction: true,
               });
             }, delay);
-            
+
             primarySuccess = true;
             await logMetric({
-              user_id: user.id,
-              dose_id: data.doseId,
-              notification_type: "web",
-              delivery_status: "sent",
+              userId: user.uid,
+              doseId: data.doseId,
+              notificationType: "web",
+              deliveryStatus: "sent",
               metadata: { method: "web_api" },
+              createdAt: new Date().toISOString()
             });
           }
         }
@@ -174,45 +180,43 @@ export const useResilientReminders = () => {
     // Try WhatsApp as secondary fallback if primary methods failed
     if (!primarySuccess) {
       try {
-        const { data: preferences } = await supabase
-          .from("notification_preferences")
-          .select("whatsapp_enabled, whatsapp_number, whatsapp_instance_id, whatsapp_api_token")
-          .eq("user_id", user.id)
-          .single();
+        // Fetch preferences from Firestore
+        const prefSnap = await getDocs(query(collection(db, 'users', user.uid, 'notificationPreferences')));
+        // Assuming single doc or 'me' doc
+        const preferences = prefSnap.empty ? null : prefSnap.docs[0].data();
 
         if (
-          preferences?.whatsapp_enabled &&
-          preferences.whatsapp_number &&
-          preferences.whatsapp_instance_id &&
-          preferences.whatsapp_api_token
+          preferences?.whatsappEnabled &&
+          preferences.whatsappNumber &&
+          preferences.whatsappInstanceId &&
+          preferences.whatsappApiToken
         ) {
-          const { error: whatsappError } = await supabase.functions.invoke("send-whatsapp-reminder", {
-            body: {
-              phoneNumber: preferences.whatsapp_number,
-              message: `🔔 ${data.title}\n\n${data.body}`,
-              instanceId: preferences.whatsapp_instance_id,
-              apiToken: preferences.whatsapp_api_token,
-            },
+          const sendWhatsappReminder = httpsCallable(functions, 'sendWhatsappReminder');
+          await sendWhatsappReminder({
+            phoneNumber: preferences.whatsappNumber,
+            message: `🔔 ${data.title}\n\n${data.body}`,
+            instanceId: preferences.whatsappInstanceId,
+            apiToken: preferences.whatsappApiToken,
           });
 
-          if (!whatsappError) {
-            primarySuccess = true;
-            fallbackUsed = true;
-            await logMetric({
-              user_id: user.id,
-              dose_id: data.doseId,
-              notification_type: "whatsapp",
-              delivery_status: "sent",
-              metadata: { fallback_from: "push" },
-            });
+          primarySuccess = true;
+          fallbackUsed = true;
+          await logMetric({
+            userId: user.uid,
+            doseId: data.doseId,
+            notificationType: "whatsapp",
+            deliveryStatus: "sent",
+            metadata: { fallback_from: "push" },
+            createdAt: new Date().toISOString()
+          });
 
-            await logAction({
-              action: "whatsapp_fallback",
-              resource: "reminder",
-              resource_id: data.doseId,
-              metadata: { title: data.title },
-            });
-          }
+          await logAction({
+            action: "whatsapp_fallback",
+            resource: "reminder",
+            resource_id: data.doseId,
+            metadata: { title: data.title },
+          });
+
         }
       } catch (error) {
         errors.push(`WhatsApp: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -222,15 +226,16 @@ export const useResilientReminders = () => {
     // Final Fallback: Save to local storage and database
     if (!primarySuccess) {
       fallbackUsed = true;
-      await saveFallbackReminder(user.id, data);
-      
+      await saveFallbackReminder(user.uid, data);
+
       await logMetric({
-        user_id: user.id,
-        dose_id: data.doseId,
-        notification_type: "local",
-        delivery_status: "fallback",
-        error_message: errors.join("; "),
+        userId: user.uid,
+        doseId: data.doseId,
+        notificationType: "local",
+        deliveryStatus: "fallback",
+        errorMessage: errors.join("; "),
         metadata: { fallback_reason: "all_methods_failed" },
+        createdAt: new Date().toISOString()
       });
 
       await logAction({
@@ -262,99 +267,63 @@ export const useResilientReminders = () => {
 
     // Save to database
     try {
-      await supabase.from("local_reminders").insert({
-        user_id: userId,
-        dose_id: data.doseId,
-        scheduled_at: data.scheduledAt.toISOString(),
-        notification_data: {
+      await addDocument(`users/${userId}/localReminders`, {
+        doseId: data.doseId,
+        scheduledAt: data.scheduledAt.toISOString(),
+        notificationData: {
           title: data.title,
           body: data.body,
           itemId: data.itemId,
         },
         status: "pending",
+        retryCount: 0,
+        createdAt: new Date().toISOString()
       });
     } catch (error) {
       console.error("Error saving fallback to database:", error);
     }
   };
 
-  /**
-   * Sync local storage reminders with backend
-   */
-  const syncLocalRemindersWithBackend = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: dbReminders } = await supabase
-        .from("local_reminders")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "pending")
-        .lte("scheduled_at", new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()); // Next 24h
-
-      if (dbReminders && dbReminders.length > 0) {
-        console.log(`Syncing ${dbReminders.length} pending reminders from backend`);
-        
-        for (const reminder of dbReminders) {
-          const data = reminder.notification_data as any;
-          await scheduleReminder({
-            doseId: reminder.dose_id,
-            itemId: data.itemId,
-            title: data.title,
-            body: data.body,
-            scheduledAt: new Date(reminder.scheduled_at),
-          });
-
-          // Mark as sent
-          await supabase
-            .from("local_reminders")
-            .update({ status: "sent" })
-            .eq("id", reminder.id);
-        }
-      }
-    } catch (error) {
-      console.error("Error syncing local reminders:", error);
-    }
-  };
 
   /**
    * Retry failed reminders
    */
   const retryFailedReminders = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data: failedReminders } = await supabase
-        .from("local_reminders")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("status", "failed")
-        .lt("retry_count", MAX_RETRY_ATTEMPTS)
-        .gte("scheduled_at", new Date().toISOString()); // Only future reminders
+      const overdueRef = collection(db, 'users', user.uid, 'localReminders');
+      // "status" == "failed" AND retryCount < MAX
+      // AND scheduledAt > now (future only)
+      const q = query(
+        overdueRef,
+        where("status", "==", "failed"),
+        where("retryCount", "<", MAX_RETRY_ATTEMPTS),
+        where("scheduledAt", ">=", new Date().toISOString())
+      );
 
-      if (failedReminders && failedReminders.length > 0) {
+      const failedMetaSnap = await getDocs(q);
+      const failedReminders = failedMetaSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+      if (failedReminders.length > 0) {
         console.log(`Retrying ${failedReminders.length} failed reminders`);
 
         for (const reminder of failedReminders) {
-          const data = reminder.notification_data as any;
+          const data = reminder.notificationData;
           const success = await scheduleReminder({
-            doseId: reminder.dose_id,
+            doseId: reminder.doseId,
             itemId: data.itemId,
             title: data.title,
             body: data.body,
-            scheduledAt: new Date(reminder.scheduled_at),
+            scheduledAt: new Date(reminder.scheduledAt),
           });
 
-          await supabase
-            .from("local_reminders")
-            .update({
-              status: success ? "sent" : "failed",
-              retry_count: reminder.retry_count + 1,
-              last_retry_at: new Date().toISOString(),
-            })
-            .eq("id", reminder.id);
+          await updateDocument(`users/${user.uid}/localReminders`, reminder.id, {
+            status: success ? "sent" : "failed",
+            retryCount: (reminder.retryCount || 0) + 1,
+            lastRetryAt: new Date().toISOString(),
+          });
         }
       }
     } catch (error) {
@@ -367,7 +336,7 @@ export const useResilientReminders = () => {
    */
   const logMetric = async (metric: NotificationMetric) => {
     try {
-      await supabase.from("notification_metrics").insert(metric);
+      await addDocument(`users/${metric.userId}/notificationMetrics`, metric);
     } catch (error) {
       console.error("Error logging notification metric:", error);
     }
@@ -378,34 +347,33 @@ export const useResilientReminders = () => {
    */
   const getNotificationStats = async (days: number = 7) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return null;
 
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      const { data } = await supabase
-        .from("notification_metrics")
-        .select("notification_type, delivery_status")
-        .eq("user_id", user.id)
-        .gte("created_at", startDate.toISOString());
+      const metricsRef = collection(db, 'users', user.uid, 'notificationMetrics');
+      const q = query(metricsRef, where('createdAt', '>=', startDate.toISOString()));
+      const snap = await getDocs(q);
+      const data = snap.docs.map(d => d.data()) as any[];
 
       if (!data) return null;
 
       const stats = {
         total: data.length,
-        sent: data.filter(m => m.delivery_status === "sent").length,
-        delivered: data.filter(m => m.delivery_status === "delivered").length,
-        failed: data.filter(m => m.delivery_status === "failed").length,
-        fallback: data.filter(m => m.delivery_status === "fallback").length,
+        sent: data.filter(m => m.deliveryStatus === "sent").length,
+        delivered: data.filter(m => m.deliveryStatus === "delivered").length,
+        failed: data.filter(m => m.deliveryStatus === "failed").length,
+        fallback: data.filter(m => m.deliveryStatus === "fallback").length,
         byType: {
-          push: data.filter(m => m.notification_type === "push").length,
-          local: data.filter(m => m.notification_type === "local").length,
-          web: data.filter(m => m.notification_type === "web").length,
-          sound: data.filter(m => m.notification_type === "sound").length,
+          push: data.filter(m => m.notificationType === "push").length,
+          local: data.filter(m => m.notificationType === "local").length,
+          web: data.filter(m => m.notificationType === "web").length,
+          sound: data.filter(m => m.notificationType === "sound").length,
         },
-        successRate: data.length > 0 
-          ? ((data.filter(m => m.delivery_status === "sent" || m.delivery_status === "delivered").length / data.length) * 100).toFixed(1)
+        successRate: data.length > 0
+          ? ((data.filter(m => m.deliveryStatus === "sent" || m.deliveryStatus === "delivered").length / data.length) * 100).toFixed(1)
           : "0",
       };
 
@@ -428,24 +396,29 @@ export const useResilientReminders = () => {
    */
   const cleanupOldReminders = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - 7); // Keep 7 days of history
 
-      await supabase
-        .from("local_reminders")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("status", "sent")
-        .lt("scheduled_at", cutoffDate.toISOString());
+      // Delete old local reminders
+      const remindersRef = collection(db, 'users', user.uid, 'localReminders');
+      const qReminders = query(
+        remindersRef,
+        where("status", "==", "sent"),
+        where("scheduledAt", "<", cutoffDate.toISOString())
+      );
+      const snapReminders = await getDocs(qReminders);
+      snapReminders.forEach(async (d) => await deleteDoc(doc(db, 'users', user.uid, 'localReminders', d.id)));
 
-      await supabase
-        .from("notification_metrics")
-        .delete()
-        .eq("user_id", user.id)
-        .lt("created_at", cutoffDate.toISOString());
+
+      // Delete old metrics
+      const metricsRef = collection(db, 'users', user.uid, 'notificationMetrics');
+      const qMetrics = query(metricsRef, where("createdAt", "<", cutoffDate.toISOString()));
+      const snapMetrics = await getDocs(qMetrics);
+      snapMetrics.forEach(async (d) => await deleteDoc(doc(db, 'users', user.uid, 'notificationMetrics', d.id)));
+
     } catch (error) {
       console.error("Error cleaning up old reminders:", error);
     }

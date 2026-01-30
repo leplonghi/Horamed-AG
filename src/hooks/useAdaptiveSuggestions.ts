@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 import { differenceInDays } from 'date-fns';
 
 interface AdaptiveSuggestion {
@@ -15,68 +15,69 @@ interface AdaptiveSuggestion {
  */
 export const useAdaptiveSuggestions = () => {
   const [suggestions, setSuggestions] = useState<AdaptiveSuggestion[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const analyzeBehavior = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
         if (!user || !isMounted) return;
 
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        // Get recent dose history - fixed query without invalid 'time' column
-        const { data: doses, error } = await supabase
-          .from('dose_instances')
-          .select(`
-            id,
-            due_at,
-            taken_at,
-            status,
-            item_id,
-            items!inner (
-              user_id,
-              name
-            )
-          `)
-          .gte('due_at', sevenDaysAgo.toISOString())
-          .order('due_at', { ascending: false })
-          .limit(100);
+        // Fetch recent dose history: users/{uid}/doses
+        const { data: doses, error } = await fetchCollection<any>(
+          `users/${user.uid}/doses`,
+          [
+            where('dueAt', '>=', sevenDaysAgo.toISOString()), // Changed to ISO comparison
+            orderBy('dueAt', 'desc'),
+            limit(100)
+          ]
+        );
 
-        if (error || !doses || !isMounted) {
-          if (error) console.error('Error fetching dose history:', error);
+        if (error) {
+          console.error('Error fetching dose history:', error);
           return;
         }
+
+        // Fetch items/medications to get names
+        // Since we don't have join, fetch all active medications for naming lookup
+        const { data: medications } = await fetchCollection<any>(
+          `users/${user.uid}/medications`
+        );
+        const medMap = new Map((medications || []).map(m => [m.id, m]));
 
         const newSuggestions: AdaptiveSuggestion[] = [];
 
         // Group by medication
-        const byMedication = doses.reduce((acc, dose) => {
-          const itemData = Array.isArray(dose.items) ? dose.items[0] : dose.items;
-          if (!itemData) return acc;
-          if (!acc[dose.item_id]) {
-            acc[dose.item_id] = { doses: [], name: itemData.name };
+        const byMedication = (doses || []).reduce((acc: any, dose: any) => {
+          // dose.itemId
+          const med = medMap.get(dose.itemId);
+          if (!med) return acc;
+
+          if (!acc[dose.itemId]) {
+            acc[dose.itemId] = { doses: [], name: med.name };
           }
-          acc[dose.item_id].doses.push(dose);
+          acc[dose.itemId].doses.push(dose);
           return acc;
         }, {} as Record<string, { doses: any[], name: string }>);
 
         // Analyze each medication
-        Object.entries(byMedication).forEach(([itemId, { doses: medDoses, name }]) => {
+        Object.entries(byMedication as Record<string, { doses: any[], name: string }>).forEach(([itemId, { doses: medDoses, name }]) => {
           // Check for consistent delays
           const delays = medDoses
-            .filter(d => d.status === 'taken' && d.taken_at && d.due_at)
-            .map(d => {
-              const due = new Date(d.due_at);
-              const taken = new Date(d.taken_at);
+            .filter((d: any) => d.status === 'taken' && d.takenAt && d.dueAt)
+            .map((d: any) => {
+              const due = new Date(d.dueAt);
+              const taken = new Date(d.takenAt);
               return (taken.getTime() - due.getTime()) / (1000 * 60); // minutes
             })
-            .filter(delay => delay > 30); // Only significant delays
+            .filter((delay: number) => delay > 30); // Only significant delays
 
           if (delays.length >= 3) {
-            const avgDelay = delays.reduce((a, b) => a + b, 0) / delays.length;
+            const avgDelay = delays.reduce((a: number, b: number) => a + b, 0) / delays.length;
             const avgDelayHours = Math.floor(avgDelay / 60);
             const avgDelayMinutes = Math.floor(avgDelay % 60);
 
@@ -89,7 +90,7 @@ export const useAdaptiveSuggestions = () => {
           }
 
           // Check for frequent misses
-          const missedCount = medDoses.filter(d => d.status === 'missed').length;
+          const missedCount = medDoses.filter((d: any) => d.status === 'missed').length;
           if (missedCount >= 3) {
             newSuggestions.push({
               type: 'extra_reminder',
@@ -131,7 +132,7 @@ export const useAdaptiveSuggestions = () => {
       isMounted = false;
       clearTimeout(timeout);
     };
-  }, []);
+  }, [user]);
 
   return { suggestions };
 };

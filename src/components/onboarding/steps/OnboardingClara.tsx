@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
 // Clara avatar loaded via URL to reduce bundle size
-const claraAvatarUrl = "https://zmsuqdwleyqpdthaqvbi.supabase.co/storage/v1/object/public/avatars/clara-avatar.webp";
+const claraAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/clara-avatar.webp`;
 
 interface Props {
   onComplete: () => void;
@@ -17,9 +17,9 @@ export default function OnboardingClara({ onComplete }: Props) {
         transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
         className="relative w-28 h-28 mx-auto"
       >
-        <img 
-          src={claraAvatarUrl} 
-          alt="Clara" 
+        <img
+          src={claraAvatarUrl}
+          alt="Clara"
           className="w-full h-full rounded-full object-cover border-4 border-primary/20"
         />
         <div className="absolute -bottom-1 -right-1 w-10 h-10 bg-primary rounded-full flex items-center justify-center">

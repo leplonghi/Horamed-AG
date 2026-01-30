@@ -1,7 +1,7 @@
 // Affiliate recommendation engine
 // This is a simple implementation that returns contextual product recommendations
 
-interface AffiliateProduct {
+export interface AffiliateProduct {
   name: string;
   description: string;
   url?: string;

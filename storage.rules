@@ -1,0 +1,57 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidDocumentType() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType == 'application/pdf';
+    }
+    
+    function isUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Medical Documents
+    match /medical-documents/{userId}/{documentId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) && 
+                      isValidDocumentType() && 
+                      isUnder10MB();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Profile Avatars
+    match /profile-avatars/{userId}/{fileName} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) && 
+                      isValidImageType() && 
+                      request.resource.size < 5 * 1024 * 1024; // 5MB max
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Prescription Images
+    match /prescriptions/{userId}/{prescriptionId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && 
+                      isOwner(userId) && 
+                      isValidImageType() && 
+                      isUnder10MB();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+  }
+}

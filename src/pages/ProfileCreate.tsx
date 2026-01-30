@@ -8,10 +8,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Save, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
-import { supabase } from "@/integrations/supabase/client";
+import { storage, auth } from "@/integrations/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function ProfileCreate() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { createProfile } = useUserProfiles();
   const [loading, setLoading] = useState(false);
@@ -19,9 +22,9 @@ export default function ProfileCreate() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [profile, setProfile] = useState({
     name: "",
-    birth_date: "",
+    birthDate: "",
     relationship: "self",
-    avatar_url: null as string | null,
+    avatarUrl: null as string | null,
   });
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,22 +43,16 @@ export default function ProfileCreate() {
     if (!avatarFile) return null;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
 
       const fileExt = avatarFile.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const fileName = `${user.uid}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${user.uid}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, avatarFile);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const storageRef = ref(storage, filePath);
+      await uploadBytes(storageRef, avatarFile);
+      const publicUrl = await getDownloadURL(storageRef);
 
       return publicUrl;
     } catch (error) {
@@ -76,15 +73,16 @@ export default function ProfileCreate() {
 
       await createProfile({
         name: profile.name,
-        birth_date: profile.birth_date || undefined,
+        birthDate: profile.birthDate || undefined,
         relationship: profile.relationship,
-        avatar_url: avatarUrl,
-        is_primary: false,
+        avatarUrl: avatarUrl,
+        isPrimary: false,
       });
 
       navigate('/perfil');
     } catch (error: any) {
       console.error('Error creating profile:', error);
+      toast.error(t("toast.profile.createError"));
     } finally {
       setLoading(false);
     }
@@ -124,7 +122,7 @@ export default function ProfileCreate() {
                 {getInitials(profile.name)}
               </AvatarFallback>
             </Avatar>
-            
+
             <div className="relative">
               <input
                 type="file"
@@ -178,21 +176,21 @@ export default function ProfileCreate() {
             </div>
 
             <div>
-              <Label htmlFor="birth_date">Data de Nascimento</Label>
+              <Label htmlFor="birthDate">Data de Nascimento</Label>
               <Input
-                id="birth_date"
+                id="birthDate"
                 type="date"
-                value={profile.birth_date}
-                onChange={(e) => setProfile({ ...profile, birth_date: e.target.value })}
+                value={profile.birthDate}
+                onChange={(e) => setProfile({ ...profile, birthDate: e.target.value })}
               />
             </div>
           </div>
         </Card>
 
         {/* Save Button */}
-        <Button 
-          onClick={handleSave} 
-          disabled={loading || !profile.name} 
+        <Button
+          onClick={handleSave}
+          disabled={loading || !profile.name}
           className="w-full"
         >
           <Save className="h-4 w-4 mr-2" />

@@ -29,8 +29,9 @@ const translations: Record<Language, Record<string, string>> = {
     'nav.profile': 'Perfil',
     'nav.medications': 'Medicamentos',
     'nav.health': 'Saúde',
+    'nav.achievements': 'Conquistas',
     'nav.more': 'Mais',
-    
+
     // Common
     'common.save': 'Salvar',
     'common.cancel': 'Cancelar',
@@ -62,6 +63,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.share': 'Compartilhar',
     'common.download': 'Baixar',
     'common.upload': 'Enviar',
+    'common.invalidImageFormat': 'Formato de imagem inválido',
+    'common.imageTooLarge': 'A imagem deve ter no máximo 5MB',
+
     'common.refresh': 'Atualizar',
     'common.filter': 'Filtrar',
     'common.sort': 'Ordenar',
@@ -75,7 +79,9 @@ const translations: Record<Language, Record<string, string>> = {
     'common.perMonth': '/mês',
     'common.perYear': '/ano',
     'common.start': 'Iniciar',
-    
+    'common.quickActions': 'Ações Rápidas',
+
+
     // Today page
     'today.title': 'Hoje',
     'today.goodMorning': 'Bom dia',
@@ -138,7 +144,7 @@ const translations: Record<Language, Record<string, string>> = {
     'todayRedesign.dosesTodayLabel': 'Doses hoje',
     'todayRedesign.insightsTitle': 'Evolução',
     'todayRedesign.insightsDesc': 'Insights e dados',
-    
+
     // Medications
     'meds.title': 'Minha Saúde',
     'meds.routine': 'Rotina',
@@ -173,7 +179,7 @@ const translations: Record<Language, Record<string, string>> = {
     'meds.low': 'Baixo',
     'meds.medium': 'Médio',
     'meds.good': 'Bom',
-    
+
     // Medication Wizard
     'wizard.addItem': 'Adicionar Item',
     'wizard.step1': 'Identificação',
@@ -503,7 +509,7 @@ const translations: Record<Language, Record<string, string>> = {
     'addItem.limitReached': 'Limite de medicamentos atingido. Faça upgrade para o plano Premium!',
     'addItem.viewPlans': 'Ver Planos',
     'addItem.itemUpdated': 'Item atualizado com sucesso!',
-    
+
     // Stock
     'stock.title': 'Estoque',
     'stock.lowStock': 'Estoque baixo',
@@ -514,7 +520,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stock.projection': 'Projeção',
     'stock.lastRefill': 'Última reposição',
     'stock.addStock': 'Adicionar estoque',
-    
+
     // Profile
     'profile.title': 'Perfil',
     'profile.account': 'Conta',
@@ -530,7 +536,8 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportData': 'Exportar dados',
     'profile.deleteAccount': 'Excluir conta',
     'profile.daysLeft': 'dias restantes',
-    
+    'profile.7daysFree': '7 dias grátis',
+
     // Wallet/Cofre
     'wallet.title': 'Carteira de Saúde',
     'wallet.documents': 'Documentos',
@@ -540,7 +547,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wallet.upload': 'Enviar documento',
     'wallet.scan': 'Digitalizar',
     'wallet.noDocuments': 'Nenhum documento',
-    
+
     // Progress
     'progress.title': 'Progresso',
     'progress.adherence': 'Adesão',
@@ -551,7 +558,7 @@ const translations: Record<Language, Record<string, string>> = {
     'progress.statistics': 'Estatísticas',
     'progress.dosesTaken': 'Doses tomadas',
     'progress.days': 'dias',
-    
+
     // Auth
     'auth.email': 'E-mail',
     'auth.password': 'Senha',
@@ -595,7 +602,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.passwordLowercase': 'A senha deve conter pelo menos uma letra minúscula',
     'auth.passwordNumber': 'A senha deve conter pelo menos um número',
     'auth.socialProof': 'Mais de 10.000 famílias já confiam no HoraMed',
-    
+
     // Clara AI
     'clara.greeting': 'Olá! Sou a Clara, sua assistente de saúde.',
     'clara.help': 'Como posso ajudar?',
@@ -610,7 +617,7 @@ const translations: Record<Language, Record<string, string>> = {
     'clara.myProgress': 'Qual meu progresso de hoje?',
     'clara.whereStock': 'Onde vejo meu estoque?',
     'clara.howWallet': 'Como funciona a Carteira de Saúde?',
-    
+
     // Time
     'time.morning': 'Manhã',
     'time.afternoon': 'Tarde',
@@ -623,7 +630,7 @@ const translations: Record<Language, Record<string, string>> = {
     'time.lastWeek': 'Semana passada',
     'time.thisMonth': 'Este mês',
     'time.lastMonth': 'Mês passado',
-    
+
     // Days
     'days.sunday': 'Domingo',
     'days.monday': 'Segunda',
@@ -632,7 +639,7 @@ const translations: Record<Language, Record<string, string>> = {
     'days.thursday': 'Quinta',
     'days.friday': 'Sexta',
     'days.saturday': 'Sábado',
-    
+
     // Settings
     'settings.language': 'Idioma',
     'settings.languageDesc': 'Escolha o idioma do aplicativo',
@@ -642,12 +649,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.biometric': 'Autenticação biométrica',
     'settings.darkMode': 'Modo escuro',
     'settings.fitnessWidgets': 'Widgets de bem-estar',
-    
+
     // Tooltips & hints
     'hint.stockTab': 'Aqui você controla o estoque dos seus medicamentos',
     'hint.historyTab': 'Veja seu histórico completo de doses',
     'hint.firstMed': 'Adicione seu primeiro medicamento para começar',
-    
+
     // Onboarding
     'onboarding.welcome': 'Bem-vindo ao HoraMed',
     'onboarding.subtitle': 'Sua saúde sob controle',
@@ -656,7 +663,7 @@ const translations: Record<Language, Record<string, string>> = {
     'onboarding.step3': 'Receba lembretes',
     'onboarding.start': 'Começar',
     'onboarding.skip': 'Pular introdução',
-    
+
     // Rewards / Referrals
     'rewards.title': 'Recompensas & Indicações',
     'rewards.headline': 'Indique. Ganhe. Pague menos no Premium.',
@@ -688,7 +695,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rewards.inviteNow': 'Indicar agora',
     'rewards.viewPlans': 'Ver planos',
     'rewards.shareMessage': 'Use meu código {code} no HoraMed e ganhe 7 dias Premium grátis!',
-    
+
     // Landing page
     'landing.heroTitle': 'Nunca mais esqueça de tomar seu medicamento',
     'landing.heroHighlight': 'de tomar seu medicamento',
@@ -783,7 +790,7 @@ const translations: Record<Language, Record<string, string>> = {
     'landing.useCase4Examples': 'Tireoide, diabetes, hipertensão, HIV',
     'landing.newFeaturesTitle': 'Novidades que simplificam sua vida',
     'landing.newFeaturesSubtitle': 'Recursos inteligentes para cuidar melhor',
-    
+
     // Notifications
     'notifications.doseReminder': 'Hora de tomar {medication}',
     'notifications.doseReminderBody': 'Não esqueça de tomar sua dose de {medication}',
@@ -791,7 +798,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifications.overdueBody': 'Você ainda não tomou {medication}. Tome assim que possível.',
     'notifications.lowStockTitle': 'Estoque baixo',
     'notifications.lowStockBody': 'Seu estoque de {medication} está acabando. Compre mais em breve.',
-    
+
     // Profile page
     'profile.whatCanYouDo': 'O que você pode fazer aqui?',
     'profile.whatCanYouDoDesc': 'Gerencie sua <strong>conta</strong>, crie <strong>perfis familiares</strong> (Premium), configure <strong>notificações</strong> e veja seu <strong>plano de assinatura</strong>.',
@@ -835,8 +842,6 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.inviteFriendsDiscount': 'Indique amigos e ganhe descontos',
     'profile.notifLabel': 'Notificações',
     'profile.notifDesc': 'Configure alertas e lembretes',
-    'profile.alarmsLabel': 'Alarmes',
-    'profile.alarmsDesc': 'Sons e vibração',
     'profile.exportLabel': 'Exportar Dados',
     'profile.exportDesc': 'Baixe seus dados em PDF',
     'profile.tutorialLabel': 'Tutorial',
@@ -855,8 +860,8 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.notificationsDisabled': 'Notificações desativadas',
     'profile.enableNotificationsDesc': 'Ative para receber lembretes',
     'profile.enable': 'Ativar',
-    'profile.trackYourWeight': 'Acompanhe seu peso',
-    'profile.trackYourWeightDesc': 'Registre e monitore sua evolução',
+    'profile.trackYourWeight': 'Monitore seus Sinais Vitais',
+    'profile.trackYourWeightDesc': 'Peso, pressão, glicemia e muito mais',
     'profile.trialExpiringSoon': 'Período de teste expirando',
     'profile.daysRemaining': 'dias restantes',
     'profile.upgradeToUnlock': 'Faça upgrade para desbloquear todos os recursos',
@@ -866,7 +871,224 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.referralSuccessDesc': 'Continue indicando para ganhar mais descontos',
     'profile.allConfigured': 'Tudo configurado!',
     'profile.allConfiguredDesc': 'Seu perfil está completo',
-    
+    'profile.manageCaregivers': 'Gerenciar Cuidadores',
+    'profile.wellnessWidgets': 'Widgets de Bem-Estar',
+    'profile.disableBiometric': 'Desativar Biometria',
+    'profile.healthTools': 'Ferramentas',
+    'profile.avatarUpdated': 'Foto de perfil atualizada!',
+    'profile.avatarUpdateError': 'Erro ao atualizar foto',
+    'profile.changePhoto': 'Mudar foto',
+    'profile.alarmsLabel': 'Alarmes',
+    'profile.caregivers': 'Cuidadores',
+    'profile.notifications': 'Notificações',
+    'profile.helpLabel': 'Ajuda e Suporte',
+    'profile.termsLabel': 'Termos de Uso',
+    'profile.logout': 'Sair',
+    'profile.support': 'Suporte',
+    'profile.logoutSuccess': 'Logout realizado com sucesso!',
+    'profile.logoutError': 'Erro ao fazer logout',
+
+    'profile.unlimitedAccess': 'Acesso Ilimitado',
+    'profile.createProfile': 'Criar Perfil',
+    'profile.personalInfo': 'Dados Pessoais',
+    'profile.healthData': 'Dados de Saúde',
+    'profile.name': 'Nome',
+    'profile.fullName': 'Nome completo',
+    'profile.birthDate': 'Data de Nascimento',
+    'profile.relationship': 'Relação',
+    'profile.weight': 'Peso (kg)',
+    'profile.height': 'Altura (cm)',
+    'profile.saveSuccess': 'Perfil atualizado com sucesso!',
+    'profile.saveError': 'Erro ao salvar perfil',
+    'profile.nameRequired': 'Nome é obrigatório',
+    'profile.addPhoto': 'Adicionar Foto',
+    'profile.updateFromProfile': 'Atualizado via perfil',
+    'profile.enterName': 'Seu nome completo',
+    'profile.enterWeight': 'Ex: 70.5',
+    'profile.enterHeight': 'Ex: 175',
+    'profile.saving': 'Salvando...',
+    'profile.saveChanges': 'Salvar Alterações',
+
+    // Tools
+    'tools.diary': 'Diário',
+    'tools.docs': 'Docs',
+    'tools.scan': 'Scan',
+    'tools.meds': 'Meds',
+
+    // Common Features
+    'common.multiProfile': 'Multi-perfil',
+    'common.advancedAI': 'IA Avançada',
+
+    // Profile Selector
+    'profileSelector.you': 'Você',
+    'profileSelector.child': 'Filho(a)',
+    'profileSelector.parent': 'Pai/Mãe',
+    'profileSelector.spouse': 'Cônjuge',
+    'profileSelector.other': 'Outro',
+    'profileSelector.selectProfile': 'Selecionar Perfil',
+    'profileSelector.main': 'Principal',
+    'profileSelector.addProfile': 'Criar Perfil',
+    'profileSelector.premium': 'Premium',
+    'profileSelector.multipleProfiles': 'Faça upgrade para adicionar mais perfis',
+
+    // Toast Messages - Subscription
+    'toast.subscription.paymentUpdated': 'Forma de pagamento atualizada com sucesso!',
+    'toast.subscription.canceledNoCharge': 'Assinatura cancelada. Você não será cobrado.',
+    'toast.subscription.canceledEndPeriod': 'Assinatura será cancelada ao final do período atual.',
+    'toast.subscription.cancelError': 'Erro ao cancelar assinatura. Tente novamente.',
+
+    // Toast Messages - Rewards/Referral
+    'toast.referral.linkError': 'Erro ao gerar link',
+    'toast.referral.codeRequired': 'Digite um código de indicação',
+    'toast.referral.createAccountInfo': 'Para aplicar o código, você precisa criar uma nova conta ou entrar com o código aplicado.',
+    'toast.referral.codeNotAvailable': 'Código de indicação não disponível',
+    'toast.referral.codeCopied': 'Código copiado!',
+    'toast.referral.sharedSuccess': 'Compartilhado com sucesso!',
+
+    // Toast Messages - Profile
+    'toast.profile.createError': 'Erro ao criar perfil. Tente novamente.',
+
+    // Toast Messages - Pharmacy
+    'toast.pharmacy.nameRequired': 'Digite o nome do medicamento',
+    'toast.pharmacy.pricesFound': 'Preços encontrados!',
+    'toast.pharmacy.pricesError': 'Erro ao buscar preços',
+
+    // Toast Messages - Notifications
+    'toast.notifications.configurePermissions': 'Configure as permissões de notificação para receber alertas',
+    'toast.notifications.configurePush': 'Configure as notificações push para alertas mesmo com app fechado',
+    'toast.notifications.pushEnabled': 'Notificações push ativadas!',
+    'toast.notifications.permissionDenied': 'Permissão negada. Ative nas configurações do dispositivo.',
+    'toast.notifications.webEnabled': 'Notificações web ativadas!',
+    'toast.notifications.pushError': 'Erro ao ativar notificações push',
+    'toast.notifications.settingsSaved': 'Configurações salvas! Notificações agendadas para as próximas 24 horas.',
+    'toast.notifications.settingsError': 'Erro ao salvar configurações',
+
+    // Toast Messages - Medical Reports
+    'toast.medical.premiumOnly': 'Esta funcionalidade é exclusiva para usuários Premium',
+    'toast.medical.notAuthenticated': 'Usuário não autenticado',
+    'toast.medical.pdfGenerated': 'PDF gerado com sucesso!',
+    'toast.medical.pdfError': 'Erro ao gerar PDF',
+    'toast.medical.appointmentsError': 'Erro ao carregar consultas',
+    'toast.medical.appointmentScheduled': 'Consulta agendada com sucesso!',
+    'toast.medical.appointmentError': 'Erro ao agendar consulta',
+    'toast.medical.statusError': 'Erro ao atualizar status',
+
+    // Toast Messages - Health
+    'toast.health.timelineError': 'Erro ao carregar histórico',
+    'toast.health.dashboardError': 'Erro ao carregar dados',
+    'toast.health.analysisError': 'Erro ao carregar análises',
+    'toast.health.insufficientData': 'Não há dados suficientes para análise ainda. Continue registrando suas doses!',
+    'toast.health.insightsError': 'Erro ao gerar insights',
+
+    // Toast Messages - Documents
+    'toast.document.fileTooLarge': 'Arquivo muito grande. Máximo 10MB',
+    'toast.document.selectFile': 'Selecione um arquivo primeiro',
+    'toast.document.processedSuccess': 'Documento processado com sucesso!',
+    'toast.document.processError': 'Erro ao processar documento',
+
+    // Toast Messages - Medication Wizard
+    'toast.medication.dataExtracted': 'Dados extraídos com sucesso!',
+    'toast.medication.extractionFailed': 'Não foi possível extrair os dados. Tente novamente.',
+    'toast.medication.imageError': 'Erro ao processar imagem',
+    'toast.medication.fillNameDose': 'Preencha o nome e a dose',
+    'toast.medication.addedSuccess': 'Item adicionado com sucesso!',
+    'toast.medication.saveError': 'Erro ao salvar item',
+    'toast.medication.enterName': 'Digite o nome do item',
+    'toast.medication.addSchedule': 'Adicione pelo menos um horário para cada agendamento',
+    'toast.medication.updatedSuccess': 'Item atualizado com sucesso!',
+    'toast.medication.updateError': 'Erro ao atualizar item',
+    'toast.medication.deletedSuccess': 'Item excluído com sucesso!',
+    'toast.medication.deleteError': 'Erro ao excluir item',
+
+    // Toast Messages - Stock
+    'toast.stock.updatedSuccess': 'Estoque atualizado com sucesso!',
+    'toast.stock.updateError': 'Erro ao atualizar estoque',
+    'toast.stock.refillSuccess': 'Estoque reabastecido!',
+    'toast.stock.refillError': 'Erro ao reabastecer estoque',
+
+    // Toast Messages - Doses
+    'toast.dose.markedTaken': 'Dose marcada como tomada!',
+    'toast.dose.markedSkipped': 'Dose pulada',
+    'toast.dose.confirmError': 'Erro ao confirmar dose',
+    'toast.dose.snoozed': 'Dose adiada por 15 minutos',
+    'toast.dose.snoozeError': 'Erro ao adiar dose',
+
+    // Toast Messages - General
+    'toast.general.copied': 'Copiado!',
+    'toast.general.shareError': 'Erro ao compartilhar',
+    'toast.general.saveSuccess': 'Salvo com sucesso!',
+    'toast.general.saveError': 'Erro ao salvar',
+    'toast.general.deleteSuccess': 'Excluído com sucesso!',
+    'toast.general.deleteError': 'Erro ao excluir',
+    'toast.general.loadError': 'Erro ao carregar dados',
+    'toast.general.unknownError': 'Erro desconhecido',
+
+    // Advanced Notification Scheduler
+    'scheduler.manageAlarms': 'Gerenciar Alarmes',
+    'scheduler.configureIndividual': 'Configure horários e tipos de notificação individuais',
+    'scheduler.quickAdd': 'Adição Rápida',
+    'scheduler.customTime': 'Adicionar Horário Personalizado',
+    'scheduler.configuredTimes': 'Horários Configurados',
+    'scheduler.noTimes': 'Nenhum horário configurado. Adicione pelo menos um.',
+    'scheduler.notificationType': 'Tipo de Notificação',
+    'scheduler.sound': 'Som',
+    'scheduler.vibration': 'Vibração',
+    'scheduler.vibrateOnNotification': 'Vibrar ao notificar',
+    'scheduler.labelOptional': 'Rótulo (Opcional)',
+    'scheduler.labelPlaceholder': 'Ex: Após café da manhã',
+    'scheduler.saveChanges': 'Salvar Alterações',
+    'scheduler.timeExists': 'Horário já existe',
+    'scheduler.timeAdded': 'Horário adicionado',
+    'scheduler.timeRemoved': 'Horário removido',
+    'scheduler.keepOneTime': 'Mantenha pelo menos um horário',
+    'scheduler.addOneTime': 'Adicione pelo menos um horário',
+    'scheduler.schedulesSaved': 'Horários salvos com sucesso!',
+    'scheduler.schedulesUpdated': 'Horários atualizados!',
+    'scheduler.manageAdvanced': 'Gerenciar Alarmes Avançados',
+
+    // Notification Sounds
+    'sound.default': 'Padrão do sistema',
+    'sound.gentle': 'Suave',
+    'sound.alert': 'Alerta',
+    'sound.urgent': 'Urgente',
+
+    // Time Periods
+    'time.morning': 'Manhã',
+    'time.lunch': 'Almoço',
+    'time.afternoon': 'Tarde',
+    'time.night': 'Noite',
+
+    // Placeholders - Common
+    'placeholder.weight': 'Ex: 70.5',
+    'placeholder.height': 'Ex: 175',
+    'placeholder.bloodPressure': 'Ex: 120/80',
+    'placeholder.glucose': 'Ex: 95',
+    'placeholder.notes': 'Ex: Tontura, exagerei na comida...',
+    'placeholder.quantity': 'Ex: 30',
+    'placeholder.days': 'Ex: 7, 14, 30',
+    'placeholder.medications': 'Ex: Losartana, Metformina...',
+    'placeholder.treatment': 'Ex: Pressão, Vitamina D, Tratamento diário',
+    'placeholder.documentName': 'Nome do documento',
+    'placeholder.institution': 'Ex: Laboratório Sabin, Hospital Albert Einstein',
+    'placeholder.vaccineName': 'COVID-19, Influenza...',
+    'placeholder.doctorName': 'Dr. João Silva',
+    'placeholder.specialty': 'Ex: Cardiologia, Dermatologia',
+    'placeholder.documentNotes': 'Adicione notas ou observações sobre este documento',
+    'placeholder.alarmTitle': 'Ex: Tomar medicamento',
+    'placeholder.alarmDescription': 'Descrição adicional',
+    'placeholder.aiQuery': 'Como posso ajudar? (ex.: organize meus horários de medicamentos)',
+    'placeholder.profileName': 'Meu perfil principal',
+
+    // Aria Labels
+    'aria.close': 'Fechar',
+    'aria.skipDose': 'Pular dose',
+    'aria.markTaken': 'Marcar como tomado',
+    'aria.bmiInfo': 'Informações sobre IMC',
+    'aria.toggleSidebar': 'Alternar barra lateral',
+    'aria.previousPage': 'Ir para página anterior',
+    'aria.nextPage': 'Ir para próxima página',
+    'aria.syncCloud': 'Sincronizar com a nuvem',
+
     // Cofre page
     'cofre.title': 'Carteira de Saúde',
     'cofre.subtitle': 'Seus documentos médicos organizados e seguros',
@@ -900,7 +1122,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.categoryVaccine': 'Vacina',
     'cofre.categoryConsultation': 'Consulta',
     'cofre.categoryDocument': 'Documento',
-    
+
     // Progress page
     'progress.yourProgress': 'Seu Progresso',
     'progress.trackYourProgress': 'Acompanhe seu compromisso e conquistas',
@@ -936,7 +1158,7 @@ const translations: Record<Language, Record<string, string>> = {
     'progress.punctuality': 'pontualidade',
     'progress.exportData': 'Exportar Dados',
     'progress.downloadPDF': 'Baixe relatório completo em PDF',
-    
+
     // More page
     'more.user': 'Usuário',
     'more.upgradePremium': 'Upgrade para Premium',
@@ -974,7 +1196,7 @@ const translations: Record<Language, Record<string, string>> = {
     'more.termsOfUse': 'Termos de Uso',
     'more.privacy': 'Privacidade',
     'more.tagline': 'Organizador de Rotina de Saúde',
-    
+
     // Achievements page
     'achievements.title': 'Conquistas',
     'achievements.description': 'Seu progresso e badges',
@@ -990,7 +1212,7 @@ const translations: Record<Language, Record<string, string>> = {
     'achievements.unlockedTab': 'Desbloqueados',
     'achievements.lockedTab': 'Bloqueados',
     'achievements.share': 'Compartilhar 🎉',
-    
+
     // Vaccines
     'vaccines.title': 'Caderneta de Vacinação',
     'vaccines.subtitle': 'Registro completo de vacinas seguindo o Calendário Nacional',
@@ -1037,7 +1259,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.observationsPlaceholder': 'Reações adversas, observações...',
     'vaccines.saving': 'Salvando...',
     'vaccines.saveRecord': 'Salvar Registro',
-    
+
     // Vaccine names - Adult
     'vaccines.vaccine.dt.name': 'dT (Difteria/Tétano)',
     'vaccines.vaccine.dt.prevention': 'Difteria e Tétano',
@@ -1057,7 +1279,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.vaccine.meningococicaACWY.prevention': 'Meningite',
     'vaccines.vaccine.covid19.name': 'COVID-19',
     'vaccines.vaccine.covid19.prevention': 'COVID-19',
-    
+
     // Vaccine names - Child
     'vaccines.vaccine.bcg.name': 'BCG',
     'vaccines.vaccine.bcg.prevention': 'Tuberculose',
@@ -1087,7 +1309,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.vaccine.varicela.prevention': 'Varicela (Catapora)',
     'vaccines.vaccine.hpv.name': 'HPV',
     'vaccines.vaccine.hpv.prevention': 'Papilomavírus Humano',
-    
+
     'history.title': 'Histórico Completo',
     'history.subtitle': 'Análises detalhadas do seu compromisso com o tratamento',
     'history.progress': 'Progresso',
@@ -1122,7 +1344,7 @@ const translations: Record<Language, Record<string, string>> = {
     'history.byMedication': 'Por Medicamento',
     'history.last30days': 'Últimos 30 dias',
     'history.skipped': 'puladas',
-    
+
     // Stock page
     'stock.pageTitle': 'Controle Inteligente de Estoque',
     'stock.pageSubtitle': 'Acompanhe consumo real, projeções automáticas e receba alertas personalizados',
@@ -1190,7 +1412,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stockOrigin.addedManually': 'Adicionado manualmente',
     'stockOrigin.fromPrescription': 'Da receita:',
     'stockOrigin.refilledManually': 'Reabastecido manualmente',
-    
+
     // Emergency page
     'emergency.title': 'Modo Emergência',
     'emergency.subtitle': 'Orientação rápida para doses esquecidas',
@@ -1214,7 +1436,7 @@ const translations: Record<Language, Record<string, string>> = {
     'emergency.fillAllFields': 'Preencha todos os campos',
     'emergency.guidanceObtained': 'Orientação obtida',
     'emergency.guidanceError': 'Erro ao obter orientação',
-    
+
     // Saude page
     'saude.title': 'Saúde',
     'saude.subtitle': 'Seu centro de saúde completo',
@@ -1234,7 +1456,7 @@ const translations: Record<Language, Record<string, string>> = {
     'saude.appointments': 'Consultas',
     'saude.exams': 'Exames',
     'saude.measurements': 'Medições',
-    
+
     // Medication History
     'medHistory.title': 'Histórico',
     'medHistory.subtitle': 'Histórico completo e estatísticas',
@@ -1249,7 +1471,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medHistory.loading': 'Carregando...',
     'medHistory.noDosesInPeriod': 'Nenhuma dose neste período',
     'medHistory.back': 'Voltar',
-    
+
     // Side Effects Diary
     'sideEffects.title': 'Diário de Efeitos',
     'sideEffects.description': 'Registre e acompanhe como você se sente após cada dose',
@@ -1270,7 +1492,7 @@ const translations: Record<Language, Record<string, string>> = {
     'sideEffects.generatingPdf': 'Gerando relatório PDF...',
     'sideEffects.exportSuccess': 'Relatório exportado com sucesso!',
     'sideEffects.exportError': 'Erro ao exportar relatório',
-    
+
     // Subscription Success
     'subscription.welcomePremium': 'Bem-vindo ao Premium! 🎉',
     'subscription.activatedSuccess': 'Sua assinatura foi ativada com sucesso. Aproveite todos os recursos ilimitados!',
@@ -1283,7 +1505,7 @@ const translations: Record<Language, Record<string, string>> = {
     'subscription.startUsing': 'Começar a usar',
     'subscription.manageSubscription': 'Gerenciar assinatura',
     'subscription.trialInfo': 'Sua assinatura inclui 7 dias de teste grátis. Você pode cancelar a qualquer momento.',
-    
+
     // Subscription Canceled
     'subscription.canceled': 'Assinatura cancelada',
     'subscription.paymentNotCompleted': 'O pagamento não foi concluído. Você pode tentar novamente quando quiser.',
@@ -1292,7 +1514,7 @@ const translations: Record<Language, Record<string, string>> = {
     'subscription.continueFreePlan': 'Continuar no plano gratuito',
     'subscription.needHelp': 'Preciso de ajuda',
     'subscription.questionsContact': 'Dúvidas? Entre em contato pelo chat ou email.',
-    
+
     // Plans page
     'plans.title': 'Planos',
     'plans.joinUsers': 'Junte-se a mais de 10.000+ usuários',
@@ -1329,7 +1551,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.startNow': 'Começar agora',
     'plans.trialDays': '3 dias de teste',
     'plans.referralDiscount': 'Desconto de {percent}% por indicações ativo!',
-    
+
     // Plans features
     'plans.feature.1medication': '1 medicamento ativo',
     'plans.feature.basicNotifications': 'Notificações básicas',
@@ -1373,7 +1595,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.secure': 'Seguro',
     'plans.continueWithFree': 'Continuar com plano gratuito →',
     'plans.referralDiscountApplied': '{percent}% de desconto por indicação!',
-    
+
     // Testimonials
     'plans.testimonial1.name': 'Maria Silva',
     'plans.testimonial1.role': 'Usuária há 8 meses',
@@ -1384,7 +1606,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.testimonial3.name': 'Ana Costa',
     'plans.testimonial3.role': 'Cuidadora de idosos',
     'plans.testimonial3.text': 'Essencial! Gerencio os medicamentos dos meus pais sem estresse.',
-    
+
     // Cofre Documento
     'cofre.back': 'Voltar',
     'cofre.documentNotFound': 'Documento não encontrado',
@@ -1438,7 +1660,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.category.vacinacao': 'Cartão de Vacina',
     'cofre.category.consulta': 'Consulta Médica',
     'cofre.category.outro': 'Documento',
-    
+
     // Travel Mode
     'travel.title': 'Modo Viagem',
     'travel.description': 'Planeje sua viagem com ajustes automáticos de horários e lista de bagagem inteligente',
@@ -1455,7 +1677,7 @@ const translations: Record<Language, Record<string, string>> = {
     'travel.calculatedSuccess': 'Cálculos realizados com sucesso!',
     'travel.adjustmentsNotApplied': 'Ajustes de horário não serão aplicados',
     'travel.adjustedSuccess': 'Horários ajustados para o fuso horário de destino!',
-    
+
     // Help & Support
     'help.title': 'Ajuda e Suporte',
     'help.subtitle': 'Aprenda a usar o HoraMed',
@@ -1477,7 +1699,7 @@ const translations: Record<Language, Record<string, string>> = {
     'help.step5Title': '📊 Passo 5: Acompanhe seu Progresso',
     'help.contactSupport': 'Entrar em Contato',
     'help.emailSupport': 'Enviar e-mail para suporte',
-    
+
     // Data Export
     'export.title': 'Exportar Dados',
     'export.subtitle': 'Baixe seus dados pessoais',
@@ -1497,7 +1719,7 @@ const translations: Record<Language, Record<string, string>> = {
     'export.generatingPdf': 'Gerando PDF...',
     'export.success': 'PDF gerado com sucesso!',
     'export.error': 'Erro ao exportar dados',
-    
+
     // Spotlight Search
     'search.addMedication': 'Adicionar medicamento',
     'search.uploadDocument': 'Enviar documento',
@@ -1510,14 +1732,14 @@ const translations: Record<Language, Record<string, string>> = {
     'search.navigate': 'navegar',
     'search.select': 'selecionar',
     'search.close': 'fechar',
-    
+
     // Vaccine Reminders
     'vaccines.upcoming': 'Próximas Vacinas',
     'vaccines.today': 'Hoje',
     'vaccines.tomorrow': 'Amanhã',
     'vaccines.days': 'dias',
     'vaccines.dateFormat': "dd 'de' MMMM",
-    
+
     // Welcome Page
     'welcome.title': 'Bem-vindo ao HoraMed! 🎉',
     'welcome.accountCreated': 'Sua conta foi criada com sucesso',
@@ -1529,7 +1751,7 @@ const translations: Record<Language, Record<string, string>> = {
     'welcome.days': 'dias',
     'welcome.addFirstMed': 'Adicionar Primeiro Medicamento',
     'welcome.exploreApp': 'Explorar o app primeiro',
-    
+
     // Medications List Page
     'medications.title': 'Minha Saúde',
     'medications.addItem': 'Adicionar seu primeiro item',
@@ -1549,7 +1771,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medications.confirmDelete': 'Tem certeza que deseja excluir?',
     'medications.deleteSuccess': 'Item excluído',
     'medications.loadError': 'Erro ao carregar medicamentos',
-    
+
     // Cofre Upload
     'cofre.upload.title': 'Adicionar Documento',
     'cofre.upload.subtitle': 'Envie PDF ou foto. O HoraMed identifica o tipo e extrai os dados automaticamente.',
@@ -1588,7 +1810,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.upload.addToRoutine': 'Adicionar à sua rotina de medicamentos',
     'cofre.upload.addToRoutineBtn': '✓ Adicionar à Rotina',
     'cofre.upload.skipForNow': 'Pular por enquanto',
-    
+
     // Contextual Clara
     'clara.todayMessage': 'Como posso ajudar com suas doses de hoje?',
     'clara.newDose': 'Nova dose',
@@ -1612,7 +1834,7 @@ const translations: Record<Language, Record<string, string>> = {
     'clara.logWeight': 'Registrar peso',
     'clara.defaultMessage': 'Olá! Em que posso ajudar?',
     'clara.add': 'Adicionar',
-    
+
     // Quick Action Menu
     'quickAction.whatToDo': 'O que deseja fazer?',
     'quickAction.chooseOrAsk': 'Escolha uma opção ou peça ajuda à Clara',
@@ -1627,7 +1849,7 @@ const translations: Record<Language, Record<string, string>> = {
     'quickAction.scheduleOrRecord': 'Agendar ou registrar',
     'quickAction.exam': 'Exame',
     'quickAction.examResult': 'Resultado de exame',
-    
+
     // Essential Shortcuts
     'shortcuts.addMed': 'Adicionar remédio',
     'shortcuts.addMedDesc': 'Cadastre um novo medicamento',
@@ -1635,7 +1857,7 @@ const translations: Record<Language, Record<string, string>> = {
     'shortcuts.addDocDesc': 'Faça upload de receita ou exame',
     'shortcuts.generateReport': 'Gerar relatório do mês',
     'shortcuts.reportDesc': 'Baixe o resumo para o médico',
-    
+
     // Smart Insights
     'smartInsights.title': 'Insights Inteligentes',
     'smartInsights.subtitle': 'Baseados em IA e seus padrões de uso',
@@ -1650,7 +1872,7 @@ const translations: Record<Language, Record<string, string>> = {
     'smartInsights.restockNeededDesc': '{count} medicamento(s) estão acabando. Programe uma visita à farmácia!',
     'smartInsights.excellentProgress': 'Progresso Excepcional!',
     'smartInsights.excellentProgressDesc': 'Incrível! Você manteve {percent}% de compromisso esta semana. Continue assim! 🎉',
-    
+
     // Quick Document Upload
     'docUpload.title': 'Adicionar Documento',
     'docUpload.howToAdd': 'Como você gostaria de adicionar o documento?',
@@ -1660,7 +1882,7 @@ const translations: Record<Language, Record<string, string>> = {
     'docUpload.fileTypes': 'PDF, JPG ou PNG',
     'docUpload.fillManually': 'Preencher Manualmente',
     'docUpload.noFile': 'Adicionar sem arquivo',
-    
+
     // Upgrade Modal
     'upgrade.title': 'Desbloqueie o melhor do HoraMed',
     'upgrade.aiLimit': 'Você usou as 2 consultas diárias do plano grátis. Para continuar, você pode assinar o Premium ou indicar amigos para liberar mais recursos.',
@@ -1687,7 +1909,7 @@ const translations: Record<Language, Record<string, string>> = {
     'upgrade.feature.ocr': 'usar OCR em documentos',
     'upgrade.feature.profiles': 'criar múltiplos perfis familiares',
     'upgrade.feature.ai_agent': 'usar o assistente de IA',
-    
+
     // Charts Page
     'charts.title': 'Análise e Estatísticas',
     'charts.subtitle': 'Acompanhe seu compromisso com o tratamento e gerencie seu estoque',
@@ -1725,14 +1947,14 @@ const translations: Record<Language, Record<string, string>> = {
     'charts.skips': 'esquecimentos',
     'charts.insight': 'Insight',
     'charts.insightDesc': 'Dica para melhorar sua adesão ao tratamento.',
-    
+
     // Agenda Page
     'agenda.title': 'Agenda de Saúde',
     'agenda.subtitle': 'Gerencie todos os seus compromissos de saúde de forma intuitiva',
     'agenda.newAppointment': 'Novo Compromisso',
     'agenda.noEvents': 'Nenhum evento neste dia.',
     'agenda.addEvent': 'Adicionar Evento',
-    
+
     // CofreDocumento Page
     'cofreDoc.back': 'Voltar',
     'cofreDoc.notFound': 'Documento não encontrado',
@@ -1827,13 +2049,13 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreDoc.activeIngredient': 'Princípio Ativo',
     'cofreDoc.addedToRoutine': 'Já adicionado à rotina',
     'cofreDoc.doctorNotes': 'Observações do Médico',
-    
+
     // Prescription Status Badge
     'prescription.valid': 'Válida',
     'prescription.expired': 'Vencida',
     'prescription.expiresIn': 'Vence em',
     'prescription.day': 'dia',
-    
+
     // Privacy Page
     'privacy.title': 'Privacidade e Segurança',
     'privacy.subtitle': 'Gerencie seus dados e privacidade',
@@ -1884,7 +2106,7 @@ const translations: Record<Language, Record<string, string>> = {
     'privacy.deleting': 'Deletando...',
     'privacy.deleteSuccess': 'Conta deletada com sucesso',
     'privacy.deleteError': 'Erro ao deletar conta',
-    
+
     // Terms Page
     'terms.title': 'Documento Legal',
     'terms.subtitle': 'Termos, Privacidade e LGPD',
@@ -2032,7 +2254,7 @@ const translations: Record<Language, Record<string, string>> = {
     'terms.documentChangesDesc2': 'Alterações significativas serão comunicadas por aviso no app, e-mail ou destaque na data de atualização.',
     'terms.documentChangesDesc3': 'O uso contínuo após alterações será interpretado como concordância com as novas condições.',
     'terms.responsibleData': 'Dados do Responsável',
-    
+
     // Health Assistant Chat
     'chat.greeting': 'Olá, sou a Clara. Estou aqui para ajudar você a organizar sua rotina de saúde. Como posso ajudar?',
     'chat.assistant': 'Assistente HoraMed',
@@ -2061,7 +2283,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreDoc.diagnosisEval': 'Diagnóstico/Avaliação',
     'cofreDoc.event': 'evento',
     'cofreDoc.events': 'eventos',
-    
+
     // Health Calendar
     'healthCalendar.title': 'Calendário de Saúde',
     'healthCalendar.month': 'Mês',
@@ -2087,7 +2309,7 @@ const translations: Record<Language, Record<string, string>> = {
     'healthCalendar.syncCompleteDesc': '{count} eventos sincronizados com sucesso.',
     'healthCalendar.syncError': 'Erro na sincronização',
     'healthCalendar.syncErrorDesc': 'Não foi possível sincronizar com o Google Agenda.',
-    
+
     // Health Indicators / Weight Tracking
     'weight.healthIndicators': 'Indicadores de Saúde',
     'weight.trackEvolution': 'Acompanhe a evolução do seu peso ao longo do tempo',
@@ -2124,7 +2346,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weight.weightUpdatedDiff': 'Peso atualizado! {diff} kg desde a última medição.',
     'weight.errorSaving': 'Erro ao salvar peso',
     'weight.invalidWeight': 'Por favor, informe um peso válido',
-    
+
     // Dose Card
     'dose.taken': 'Tomado',
     'dose.missed': 'Esquecido',
@@ -2137,7 +2359,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dose.unitsShort': 'unidades',
     'dose.withFood': 'com alimento',
     'dose.viewMedInfo': 'Ver informações do medicamento',
-    
+
     // PWA Install Prompt
     'pwa.installTitle': 'Instalar HoraMed',
     'pwa.installDesc': 'Adicione à tela inicial para acesso rápido como um app nativo.',
@@ -2149,7 +2371,7 @@ const translations: Record<Language, Record<string, string>> = {
     'pwa.benefitFast': 'Mais rápido',
     'pwa.benefitOffline': 'Funciona offline',
     'pwa.benefitNotify': 'Lembretes',
-    
+
     // Notification Setup
     'notifSetup.title': 'Configurar Notificações',
     'notifSetup.neverMiss': 'Nunca perca uma dose',
@@ -2195,7 +2417,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifSetup.testSentSuccess': 'Notificação enviada!',
     'notifSetup.testError': 'Erro ao enviar teste',
     'notifSetup.openSettingsInfo': 'Abra as configurações do celular e siga os passos acima',
-    
+
     // Wizard Steps
     'wizardStep.name': 'Nome do Medicamento',
     'wizardStep.nameDesc': 'Qual medicamento você vai tomar?',
@@ -2228,7 +2450,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizardStep.noStock': 'Sem controle',
     'wizardStep.noDetails': 'Sem detalhes adicionais',
     'wizardStep.withFood': 'Com comida',
-    
+
     // Tutorial Page
     'tutorial.title': 'Tutorial',
     'tutorial.subtitle': 'Aprenda a usar todos os recursos do HoraMed',
@@ -2294,7 +2516,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tutorial.stillHaveQuestions': 'Ainda tem dúvidas?',
     'tutorial.visitHelp': 'Visite nossa central de ajuda para mais informações',
     'tutorial.helpBtn': 'Ajuda e Suporte',
-    
+
     // Cofre Document Edit
     'cofreEdit.back': 'Voltar',
     'cofreEdit.title': 'Editar Documento',
@@ -2362,7 +2584,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreEdit.updateSuccess': 'Documento atualizado com sucesso!',
     'cofreEdit.updateError': 'Erro ao atualizar documento',
     'cofreEdit.notFound': 'Documento não encontrado',
-    
+
     // Weight tracking card
     'weightCard.title': 'Acompanhamento de peso',
     'weightCard.description': 'Registre seu peso regularmente para acompanhar a evolução',
@@ -2372,22 +2594,22 @@ const translations: Record<Language, Record<string, string>> = {
     'weightCard.registerNew': 'Registrar novo peso',
     'weightCard.tip': 'Use este espaço para registrar o peso sempre que se pesar. Assim, o HoraMed mostra a evolução e coloca no relatório para o médico.',
     'weightCard.viewHistory': 'Ver histórico de peso',
-    
+
     // Streak badge
     'streak.sequence': 'Sequência',
     'streak.record': 'Recorde',
     'streak.improving': 'Melhorando',
     'streak.days': 'dias',
-    
+
     // Monthly calendar
     'calendar.totalDoses': 'Total de doses',
     'calendar.dosesTaken': 'Doses tomadas',
     'calendar.progress': 'Progresso',
-    
+
     // Next dose widget
     'nextDose.itsNow': '⏰ É AGORA!',
     'nextDose.title': 'Próxima Dose',
-    
+
     // Weight registration modal
     'weightModal.title': 'Registrar novo peso',
     'weightModal.description': 'Use este espaço para registrar o peso sempre que se pesar',
@@ -2404,7 +2626,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weightModal.successGain': 'Peso atualizado! +{diff} kg desde a última medição.',
     'weightModal.successLoss': 'Peso atualizado! {diff} kg desde a última medição.',
     'weightModal.error': 'Erro ao salvar peso',
-    
+
     // Clara suggestions widget
     'claraSuggests.attention': 'Atenção',
     'claraSuggests.overdue': 'Você tem {count} dose{plural} atrasada{plural}. Posso ajudar a organizar?',
@@ -2420,7 +2642,7 @@ const translations: Record<Language, Record<string, string>> = {
     'claraSuggests.tips.water': 'Tomar água junto com os medicamentos ajuda na absorção.',
     'claraSuggests.tips.schedule': 'Manter horários regulares ajuda seu corpo a criar rotina.',
     'claraSuggests.tips.help': 'Precisa de ajuda? Estou aqui para você.',
-    
+
     // Simple adherence summary
     'adherence.noDoses': 'Nenhuma dose programada',
     'adherence.excellent': 'Excelente! Continue assim',
@@ -2428,19 +2650,19 @@ const translations: Record<Language, Record<string, string>> = {
     'adherence.everyDoseCounts': 'Cada dose conta',
     'adherence.dayStarting': 'O dia está começando',
     'adherence.youTook': 'Você tomou {taken} de {total} doses',
-    
+
     // Smart action cards
     'smartActions.title': 'Ações Sugeridas',
     'smartActions.seeMore': 'Ver mais {count} {label}',
     'smartActions.suggestion': 'sugestão',
     'smartActions.suggestions': 'sugestões',
-    
+
     // Weight insights card
     'weightInsights.activeTracking': 'Acompanhamento ativo',
     'weightInsights.correlatingWith': 'Correlacionando com {medications}',
     'weightInsights.guidanceTip': 'Para acompanhar tendências, o ideal é registrar o peso uma vez por semana.',
     'weightInsights.logWeight': 'Registrar peso',
-    
+
     // Overdue doses banner (remaining)
     'overdueBanner.overdueFor1Hour': '⚠️ {profile} não tomou {item} há mais de 1 hora!',
     'overdueBanner.needsToTake': '{profile} precisa tomar {item}',
@@ -2448,7 +2670,7 @@ const translations: Record<Language, Record<string, string>> = {
     'overdueBanner.confirmed': '{item} confirmado!',
     'overdueBanner.doseRecorded': 'Dose registrada com sucesso',
     'overdueBanner.confirmError': 'Erro ao confirmar dose',
-    
+
     // Expired prescriptions alert
     'expiredPrescriptions.title': 'Receitas Vencidas',
     'expiredPrescriptions.description': 'Você tem receitas vencidas que não foram utilizadas. Solicite novas receitas ao seu médico para poder comprar os medicamentos.',
@@ -2458,7 +2680,7 @@ const translations: Record<Language, Record<string, string>> = {
     'expiredPrescriptions.days': 'dias',
     'expiredPrescriptions.viewInWallet': 'Ver na Carteira',
     'expiredPrescriptions.scheduleAppointment': 'Agendar Consulta',
-    
+
     // Daily summary modal
     'dailySummary.title': '🌙 Antes de dormir...',
     'dailySummary.description': 'Você ainda tem {count} dose{plural} sem marcar hoje:',
@@ -2469,7 +2691,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dailySummary.allMarkedTaken': '✅ Todas as doses marcadas como tomadas!',
     'dailySummary.markedMissed': '⚠️ Doses marcadas como não tomadas',
     'dailySummary.errorMarking': 'Erro ao marcar doses',
-    
+
     // Travel packing list
     'travelPacking.needsToBuy': 'Precisa Comprar',
     'travelPacking.packingList': 'Lista de Bagagem',
@@ -2479,7 +2701,7 @@ const translations: Record<Language, Record<string, string>> = {
     'travelPacking.units': 'unidades',
     'travelPacking.perDay': 'x por dia',
     'travelPacking.daysMargin': 'dias (+2 dias de margem)',
-    
+
     // Critical alert banner
     'criticalAlert.urgentActions': '{count} Ação{plural} Urgente{plural}',
     'criticalAlert.clearAll': 'Limpar tudo',
@@ -2488,7 +2710,7 @@ const translations: Record<Language, Record<string, string>> = {
     'criticalAlert.viewHistory': 'Ver Histórico',
     'criticalAlert.viewProfile': 'Ver Perfil',
     'criticalAlert.confirm': 'Confirmar',
-    
+
     // Medication info sheet
     'medInfo.about': 'Informações sobre o medicamento',
     'medInfo.consultProfessional': 'Consulte um médico ou farmacêutico para mais informações.',
@@ -2498,7 +2720,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medInfo.activeIngredient': 'Princípio ativo',
     'medInfo.warnings': 'Cuidados importantes',
     'medInfo.disclaimer': 'Estas informações são apenas para fins educacionais e não substituem a orientação de um profissional de saúde. Sempre consulte seu médico ou farmacêutico antes de iniciar, alterar ou interromper qualquer tratamento.',
-    
+
     // Dose action modal
     'doseAction.scheduled': 'Previsto',
     'doseAction.now': 'Agora',
@@ -2507,7 +2729,7 @@ const translations: Record<Language, Record<string, string>> = {
     'doseAction.alreadyTook': 'Já tomei',
     'doseAction.chooseTime': 'escolher horário',
     'doseAction.forgotWontTake': 'Esqueci / Não vou tomar',
-    
+
     // Quick dose widget
     'quickDose.late': 'Atrasado',
     'quickDose.other': 'outro',
@@ -2516,7 +2738,7 @@ const translations: Record<Language, Record<string, string>> = {
     'quickDose.allGood': 'Tudo em dia!',
     'quickDose.noPending2h': 'Sem doses pendentes nas próximas 2h',
     'quickDose.now': 'Agora',
-    
+
     // Health history links
     'healthHistory.title': 'Histórico Médico',
     'healthHistory.timeline': 'Linha do Tempo',
@@ -2525,19 +2747,19 @@ const translations: Record<Language, Record<string, string>> = {
     'healthHistory.dashboardDesc': 'Gráficos e análises de saúde',
     'healthHistory.agenda': 'Agenda Médica',
     'healthHistory.agendaDesc': 'Consultas e compromissos',
-    
+
     // Medication summary card
     'medSummary.doses': 'de {total} doses',
     'medSummary.next': 'Próxima',
     'medSummary.allTaken': 'Todas as doses tomadas!',
-    
+
     // Daily complete modal
     'dailyComplete.congrats': 'Parabéns! 🎉',
     'dailyComplete.completedAll': 'Você completou todas as doses de hoje!',
     'dailyComplete.days': 'dias',
     'dailyComplete.commitment': 'de compromisso',
     'dailyComplete.continue': 'Continuar',
-    
+
     // Health insights
     'healthInsights.analyzing': 'Analisando seus medicamentos...',
     'healthInsights.analysisComplete': 'Análise concluída! Novos insights detectados',
@@ -2546,7 +2768,7 @@ const translations: Record<Language, Record<string, string>> = {
     'healthInsights.allGood': 'Tudo certo! Nenhum problema detectado',
     'healthInsights.noInteractions': 'Nenhuma interação perigosa detectada',
     'healthInsights.error': 'Erro ao analisar',
-    
+
     // Monthly report
     'monthlyReport.insights': 'Insights do Mês',
     'monthlyReport.excellent90': 'Excelente! Você manteve um progresso superior a 90%!',
@@ -2554,7 +2776,7 @@ const translations: Record<Language, Record<string, string>> = {
     'monthlyReport.punctual': 'Ótima pontualidade! Atraso médio de apenas {minutes} minutos.',
     'monthlyReport.noSkipped': 'Perfeito! Você não pulou nenhuma dose este mês.',
     'monthlyReport.generate': 'Gerar Novo Relatório',
-    
+
     // Category step (wizard)
     'category.medication': 'Medicamento',
     'category.medicationDesc': 'Remédios prescritos ou de farmácia',
@@ -2570,7 +2792,7 @@ const translations: Record<Language, Record<string, string>> = {
     'category.otherTooltip': 'Qualquer outro item que você queira monitorar',
     'category.info': 'Escolha o tipo do item. Isso ajuda a organizar seus medicamentos e mostrar informações relevantes para cada categoria.',
     'category.continue': 'Continuar',
-    
+
     // Notification settings
     'notifSettings.title': 'Notificações',
     'notifSettings.description': 'Configure quando e como receber lembretes',
@@ -2595,7 +2817,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifSettings.skipDesc': 'Marca como pulado',
     'notifSettings.offlineTip': '💡 Funciona offline:',
     'notifSettings.offlineDesc': 'Suas ações são salvas automaticamente e sincronizadas quando você voltar online.',
-    
+
     // Caregiver manager
     'caregiver.inviteTitle': 'Convidar Cuidador',
     'caregiver.emailOrPhone': 'Email ou Telefone',
@@ -2618,7 +2840,7 @@ const translations: Record<Language, Record<string, string>> = {
     'caregiver.loading': 'Carregando...',
     'caregiver.viewerInfo': 'Visualizadores recebem notificações apenas em exceções (doses perdidas, estoque crítico).',
     'caregiver.helperInfo': 'Ajudantes podem também marcar doses como tomadas.',
-    
+
     // Onboarding tour
     'tour.welcome': 'Bem-vindo ao HoraMed! 👋',
     'tour.welcomeDesc': 'Vamos fazer um tour rápido para você conhecer o aplicativo e começar a organizar sua saúde de forma simples.',
@@ -2637,7 +2859,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tour.skipTutorial': 'Pular tutorial',
     'tour.next': 'Próximo',
     'tour.start': 'Começar',
-    
+
     // Calendar
     'calendar.today': 'Hoje',
     'calendar.events': 'eventos',
@@ -2645,23 +2867,13 @@ const translations: Record<Language, Record<string, string>> = {
     'calendar.clickForDetails': 'Clique para ver detalhes',
     'calendar.more': 'mais',
     'calendar.weekdays': 'Dom,Seg,Ter,Qua,Qui,Sex,Sáb',
-    
-    // Profile selector
-    'profileSelector.selectProfile': 'Selecionar Perfil',
-    'profileSelector.addProfile': 'Adicionar Perfil',
-    'profileSelector.premium': 'Premium',
-    'profileSelector.multipleProfiles': 'Múltiplos perfis disponível apenas no Premium',
-    'profileSelector.main': 'Principal',
-    'profileSelector.you': 'Você',
-    'profileSelector.child': 'Filho(a)',
-    'profileSelector.parent': 'Pai/Mãe',
-    'profileSelector.spouse': 'Cônjuge',
-    'profileSelector.other': 'Outro',
-    
+
+
+
     // Tutorial Hint component
     'tutorialHint.swipeToDismiss': 'Arraste para dispensar',
     'tutorialHint.gotIt': 'Entendi',
-    
+
     // Tutorials (microcopy)
     'tutorials.today.id': 'today_page',
     'tutorials.today.title': 'Seu dia de saúde 💊',
@@ -2681,7 +2893,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tutorials.historico.id': 'historico_tab',
     'tutorials.historico.title': 'Histórico completo 📊',
     'tutorials.historico.message': 'Veja todas as doses tomadas, horários e padrões. Ideal para mostrar ao seu médico nas consultas.',
-    
+
     // Dose Card
     'doseCard.viewMedInfo': 'Ver informações do medicamento',
     'doseCard.takeNow': 'Tomar agora',
@@ -2689,7 +2901,7 @@ const translations: Record<Language, Record<string, string>> = {
     'doseCard.snooze': 'Adiar',
     'doseCard.taken': 'Tomado',
     'doseCard.missed': 'Perdido',
-    
+
     // Vaccine Review
     'vaccine.reviewTitle': 'Revise sua vacina',
     'vaccine.reviewDesc': 'Confirme os dados da vacina antes de salvar',
@@ -2708,7 +2920,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccine.saving': 'Salvando vacina...',
     'vaccine.savedSuccess': '✓ Vacina salva na Carteira de Vacinação!',
     'vaccine.saveError': 'Erro ao salvar vacina. Tente novamente.',
-    
+
     // Document Modal
     'document.whatToAdd': 'O que você quer adicionar?',
     'document.add': 'Adicionar',
@@ -2740,7 +2952,7 @@ const translations: Record<Language, Record<string, string>> = {
     'document.processError': 'Erro ao processar documento. Tente novamente.',
     'document.freeUsed': 'Documentos: {used}/5 usados no plano gratuito',
     'document.waitMoment': 'Aguarde alguns instantes...',
-    
+
     // Exam Review
     'examReview.title': 'Revise seu exame',
     'examReview.subtitle': 'Confirme os dados do exame antes de salvar',
@@ -2759,7 +2971,7 @@ const translations: Record<Language, Record<string, string>> = {
     'examReview.saving': 'Salvando exame...',
     'examReview.savedSuccess': '✓ Exame salvo na Carteira de Saúde!',
     'examReview.saveError': 'Erro ao salvar exame. Tente novamente.',
-    
+
     // Document Review
     'docReview.title': 'Revise seu documento',
     'docReview.subtitle': 'Confirme os dados antes de salvar',
@@ -2775,14 +2987,14 @@ const translations: Record<Language, Record<string, string>> = {
     'docReview.savedSuccess': '✓ Documento salvo na Carteira de Saúde!',
     'docReview.saveError': 'Erro ao salvar documento. Tente novamente.',
     'docReview.defaultTitle': 'Documento de Saúde',
-    
+
     // Stock Details
     'stockDetails.title': 'Detalhes de Estoque',
     'stockDetails.overview': 'Visão Geral do Estoque',
     'stockDetails.currentQty': 'Quantidade Atual',
     'stockDetails.daysRemaining': 'Dias Restantes',
     'stockDetails.consumptionHistory': 'Histórico de Consumo',
-    
+
     // Generic labels
     'generic.units': 'unidades',
     'generic.days': 'dias',
@@ -2807,7 +3019,7 @@ const translations: Record<Language, Record<string, string>> = {
     'generic.saveProfileError': 'Erro ao salvar perfil de saúde',
     'generic.notifTestError': 'Erro ao testar notificação',
     'generic.stockUpdateError': 'Erro ao atualizar estoque',
-    
+
     // Alarm Settings
     'alarm.title': 'Configurações de Alarme',
     'alarm.subtitle': 'Personalize seus alertas de medicação',
@@ -2838,7 +3050,7 @@ const translations: Record<Language, Record<string, string>> = {
     'alarm.permDesc': 'Permita notificações para receber lembretes de medicação',
     'alarm.allowNotif': 'Permitir Notificações',
     'alarm.permGranted': 'Permissão concedida!',
-    
+
     // Notifications Page
     'notifPage.title': 'Notificações',
     'notifPage.subtitle': 'Gerencie como você recebe lembretes',
@@ -2861,7 +3073,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifPage.testing': 'Testando...',
     'notifPage.save': 'Salvar Preferências',
     'notifPage.saving': 'Salvando...',
-    
+
     // Drug Interactions
     'interactions.title': 'Interações Medicamentosas',
     'interactions.checker': 'Verificador de Interações',
@@ -2907,7 +3119,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weeklyCalendar.progress': 'Progresso',
     'weeklyCalendar.ofDoses': 'de {total} doses',
     'weeklyCalendar.noDoses': 'Sem doses',
-    
+
     // Cofre Manual
     'cofreManual.title': 'Adicionar Documento Manualmente',
     'cofreManual.subtitle': 'Preencha as informações do documento sem fazer upload de arquivo',
@@ -2926,7 +3138,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreManual.notes': 'Observações',
     'cofreManual.notesPlaceholder': 'Detalhes adicionais...',
     'cofreManual.save': 'Salvar Documento',
-    
+
     // Onboarding Step 4
     'onboardingStep4.title': 'Tudo pronto!',
     'onboardingStep4.subtitle': 'Vamos adicionar seu primeiro item agora ou você pode explorar o app primeiro',
@@ -2937,7 +3149,7 @@ const translations: Record<Language, Record<string, string>> = {
     'onboardingStep4.seeHowDesc': 'Demonstração interativa de 15 segundos',
     'onboardingStep4.seeDemo': 'Ver Demonstração',
     'onboardingStep4.explore': 'Explorar o app',
-    
+
     // Onboarding Demo
     'onboardingDemo.today': 'Hoje',
     'onboardingDemo.mark': 'Marcar',
@@ -2951,13 +3163,14 @@ const translations: Record<Language, Record<string, string>> = {
     // Navigation
     'nav.today': 'Today',
     'nav.routine': 'Routine',
+    'nav.health': 'Health',
     'nav.progress': 'Progress',
     'nav.wallet': 'Wallet',
     'nav.profile': 'Profile',
     'nav.medications': 'Medications',
-    'nav.health': 'Health',
+    'nav.achievements': 'Achievements',
     'nav.more': 'More',
-    
+
     // Common
     'common.save': 'Save',
     'common.cancel': 'Cancel',
@@ -3002,7 +3215,12 @@ const translations: Record<Language, Record<string, string>> = {
     'common.perMonth': '/month',
     'common.perYear': '/year',
     'common.start': 'Start',
-    
+    'common.quickActions': 'Quick Actions',
+    'common.invalidImageFormat': 'Invalid image format',
+    'common.imageTooLarge': 'Image must be max 5MB',
+
+
+
     // Today page
     'today.title': 'Today',
     'today.goodMorning': 'Good morning',
@@ -3065,7 +3283,7 @@ const translations: Record<Language, Record<string, string>> = {
     'todayRedesign.dosesTodayLabel': "Today's doses",
     'todayRedesign.insightsTitle': 'Progress',
     'todayRedesign.insightsDesc': 'Insights & data',
-    
+
     // Medications
     'meds.title': 'My Health',
     'meds.routine': 'Routine',
@@ -3100,7 +3318,7 @@ const translations: Record<Language, Record<string, string>> = {
     'meds.low': 'Low',
     'meds.medium': 'Medium',
     'meds.good': 'Good',
-    
+
     // Medication Wizard
     'wizard.addItem': 'Add Item',
     'wizard.step1': 'Identification',
@@ -3430,7 +3648,7 @@ const translations: Record<Language, Record<string, string>> = {
     'onboardingStep3.careForLoved': 'Care for loved ones',
     'onboardingStep3.allThis': 'All of this',
     'onboardingStep3.fullExperience': 'Complete experience',
-    
+
     // Stock
     'stock.title': 'Stock',
     'stock.lowStock': 'Low stock',
@@ -3441,7 +3659,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stock.projection': 'Projection',
     'stock.lastRefill': 'Last refill',
     'stock.addStock': 'Add stock',
-    
+
     // Profile
     'profile.title': 'Profile',
     'profile.account': 'Account',
@@ -3457,6 +3675,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportData': 'Export data',
     'profile.deleteAccount': 'Delete account',
     'profile.daysLeft': 'days left',
+    'profile.7daysFree': '7 days free',
     'profile.activeMeds': 'Active Medications',
     'profile.documents': 'Documents',
     'profile.notificationsDisabled': 'Notifications disabled',
@@ -3473,7 +3692,158 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.referralSuccessDesc': 'Keep referring to earn more discounts',
     'profile.allConfigured': 'All set up!',
     'profile.allConfiguredDesc': 'Your profile is complete',
-    
+    'profile.manageCaregivers': 'Manage Caregivers',
+    'profile.wellnessWidgets': 'Wellness Widgets',
+    'profile.disableBiometric': 'Disable Biometric',
+    'profile.healthTools': 'Tools',
+    'profile.avatarUpdated': 'Profile photo updated!',
+    'profile.avatarUpdateError': 'Error updating photo',
+    'profile.changePhoto': 'Change photo',
+    'profile.alarmsLabel': 'Alarms',
+    'profile.caregivers': 'Caregivers',
+    'profile.notifications': 'Notifications',
+    'profile.helpLabel': 'Help & Support',
+    'profile.termsLabel': 'Terms of Use',
+    'profile.logout': 'Logout',
+    'profile.support': 'Support',
+    'profile.logoutSuccess': 'Successfully logged out!',
+    'profile.logoutError': 'Error logging out',
+
+    'profile.unlimitedAccess': 'Unlimited Access',
+    'profile.createProfile': 'Create Profile',
+    'profile.personalInfo': 'Personal Info',
+    'profile.healthData': 'Health Data',
+    'profile.name': 'Name',
+    'profile.fullName': 'Full Name',
+    'profile.birthDate': 'Date of Birth',
+    'profile.relationship': 'Relationship',
+    'profile.weight': 'Weight (kg)',
+    'profile.height': 'Height (cm)',
+    'profile.saveSuccess': 'Profile updated successfully!',
+    'profile.saveError': 'Error saving profile',
+    'profile.nameRequired': 'Name is required',
+    'profile.addPhoto': 'Add Photo',
+    'profile.updateFromProfile': 'Updated via profile',
+    'profile.enterName': 'Your full name',
+    'profile.enterWeight': 'Ex: 70.5',
+    'profile.enterHeight': 'Ex: 175',
+    'profile.saving': 'Saving...',
+    'profile.saveChanges': 'Save Changes',
+
+    // Tools
+    'tools.diary': 'Diary',
+    'tools.docs': 'Docs',
+    'tools.scan': 'Scan',
+    'tools.meds': 'Meds',
+
+    // Common Features
+    'common.multiProfile': 'Multi-profile',
+    'common.advancedAI': 'Advanced AI',
+
+    // Profile Selector
+    'profileSelector.you': 'You',
+    'profileSelector.child': 'Child',
+    'profileSelector.parent': 'Parent',
+    'profileSelector.spouse': 'Spouse',
+    'profileSelector.other': 'Other',
+    'profileSelector.selectProfile': 'Select Profile',
+    'profileSelector.main': 'Main',
+    'profileSelector.addProfile': 'Create Profile',
+    'profileSelector.premium': 'Premium',
+    'profileSelector.multipleProfiles': 'Upgrade to add more profiles',
+
+    // Toast Messages - Subscription
+    'toast.subscription.paymentUpdated': 'Payment method updated successfully!',
+    'toast.subscription.canceledNoCharge': 'Subscription canceled. You will not be charged.',
+    'toast.subscription.canceledEndPeriod': 'Subscription will be canceled at the end of the current period.',
+    'toast.subscription.cancelError': 'Error canceling subscription. Please try again.',
+
+    // Toast Messages - Rewards/Referral
+    'toast.referral.linkError': 'Error generating link',
+    'toast.referral.codeRequired': 'Enter a referral code',
+    'toast.referral.createAccountInfo': 'To apply the code, you need to create a new account or sign in with the code applied.',
+    'toast.referral.codeNotAvailable': 'Referral code not available',
+    'toast.referral.codeCopied': 'Code copied!',
+    'toast.referral.sharedSuccess': 'Shared successfully!',
+
+    // Toast Messages - Profile
+    'toast.profile.createError': 'Error creating profile. Please try again.',
+
+    // Toast Messages - Pharmacy
+    'toast.pharmacy.nameRequired': 'Enter the medication name',
+    'toast.pharmacy.pricesFound': 'Prices found!',
+    'toast.pharmacy.pricesError': 'Error fetching prices',
+
+    // Toast Messages - Notifications
+    'toast.notifications.configurePermissions': 'Configure notification permissions to receive alerts',
+    'toast.notifications.configurePush': 'Configure push notifications for alerts even when app is closed',
+    'toast.notifications.pushEnabled': 'Push notifications enabled!',
+    'toast.notifications.permissionDenied': 'Permission denied. Enable in device settings.',
+    'toast.notifications.webEnabled': 'Web notifications enabled!',
+    'toast.notifications.pushError': 'Error enabling push notifications',
+    'toast.notifications.settingsSaved': 'Settings saved! Notifications scheduled for the next 24 hours.',
+    'toast.notifications.settingsError': 'Error saving settings',
+
+    // Toast Messages - Medical Reports
+    'toast.medical.premiumOnly': 'This feature is exclusive to Premium users',
+    'toast.medical.notAuthenticated': 'User not authenticated',
+    'toast.medical.pdfGenerated': 'PDF generated successfully!',
+    'toast.medical.pdfError': 'Error generating PDF',
+    'toast.medical.appointmentsError': 'Error loading appointments',
+    'toast.medical.appointmentScheduled': 'Appointment scheduled successfully!',
+    'toast.medical.appointmentError': 'Error scheduling appointment',
+    'toast.medical.statusError': 'Error updating status',
+
+    // Toast Messages - Health
+    'toast.health.timelineError': 'Error loading history',
+    'toast.health.dashboardError': 'Error loading data',
+    'toast.health.analysisError': 'Error loading analyses',
+    'toast.health.insufficientData': 'Not enough data for analysis yet. Keep recording your doses!',
+    'toast.health.insightsError': 'Error generating insights',
+
+    // Toast Messages - Documents
+    'toast.document.fileTooLarge': 'File too large. Maximum 10MB',
+    'toast.document.selectFile': 'Select a file first',
+    'toast.document.processedSuccess': 'Document processed successfully!',
+    'toast.document.processError': 'Error processing document',
+
+    // Toast Messages - Medication Wizard
+    'toast.medication.dataExtracted': 'Data extracted successfully!',
+    'toast.medication.extractionFailed': 'Could not extract data. Please try again.',
+    'toast.medication.imageError': 'Error processing image',
+    'toast.medication.fillNameDose': 'Fill in the name and dose',
+    'toast.medication.addedSuccess': 'Item added successfully!',
+    'toast.medication.saveError': 'Error saving item',
+    'toast.medication.enterName': 'Enter the item name',
+    'toast.medication.addSchedule': 'Add at least one time for each schedule',
+    'toast.medication.updatedSuccess': 'Item updated successfully!',
+    'toast.medication.updateError': 'Error updating item',
+    'toast.medication.deletedSuccess': 'Item deleted successfully!',
+    'toast.medication.deleteError': 'Error deleting item',
+
+    // Toast Messages - Stock
+    'toast.stock.updatedSuccess': 'Stock updated successfully!',
+    'toast.stock.updateError': 'Error updating stock',
+    'toast.stock.refillSuccess': 'Stock refilled!',
+    'toast.stock.refillError': 'Error refilling stock',
+
+    // Toast Messages - Doses
+    'toast.dose.markedTaken': 'Dose marked as taken!',
+    'toast.dose.markedSkipped': 'Dose skipped',
+    'toast.dose.confirmError': 'Error confirming dose',
+    'toast.dose.snoozed': 'Dose snoozed for 15 minutes',
+    'toast.dose.snoozeError': 'Error snoozing dose',
+
+    // Toast Messages - General
+    'toast.general.copied': 'Copied!',
+    'toast.general.shareError': 'Error sharing',
+    'toast.general.saveSuccess': 'Saved successfully!',
+    'toast.general.saveError': 'Error saving',
+    'toast.general.deleteSuccess': 'Deleted successfully!',
+    'toast.general.deleteError': 'Error deleting',
+    'toast.general.loadError': 'Error loading data',
+    'toast.general.unknownError': 'Unknown error',
+
     // Wallet/Cofre
     'wallet.title': 'Health Wallet',
     'wallet.documents': 'Documents',
@@ -3483,7 +3853,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wallet.upload': 'Upload document',
     'wallet.scan': 'Scan',
     'wallet.noDocuments': 'No documents',
-    
+
     // Progress
     'progress.title': 'Progress',
     'progress.adherence': 'Adherence',
@@ -3494,7 +3864,7 @@ const translations: Record<Language, Record<string, string>> = {
     'progress.statistics': 'Statistics',
     'progress.dosesTaken': 'Doses taken',
     'progress.days': 'days',
-    
+
     // Auth
     'auth.email': 'Email',
     'auth.password': 'Password',
@@ -3538,7 +3908,7 @@ const translations: Record<Language, Record<string, string>> = {
     'auth.passwordLowercase': 'Password must contain at least one lowercase letter',
     'auth.passwordNumber': 'Password must contain at least one number',
     'auth.socialProof': 'Over 10,000 families already trust HoraMed',
-    
+
     // Clara AI
     'clara.greeting': "Hi! I'm Clara, your health assistant.",
     'clara.help': 'How can I help?',
@@ -3553,7 +3923,7 @@ const translations: Record<Language, Record<string, string>> = {
     'clara.myProgress': "What's my progress today?",
     'clara.whereStock': 'Where can I see my stock?',
     'clara.howWallet': 'How does the Health Wallet work?',
-    
+
     // Time
     'time.morning': 'Morning',
     'time.afternoon': 'Afternoon',
@@ -3566,7 +3936,7 @@ const translations: Record<Language, Record<string, string>> = {
     'time.lastWeek': 'Last week',
     'time.thisMonth': 'This month',
     'time.lastMonth': 'Last month',
-    
+
     // Days
     'days.sunday': 'Sunday',
     'days.monday': 'Monday',
@@ -3575,7 +3945,7 @@ const translations: Record<Language, Record<string, string>> = {
     'days.thursday': 'Thursday',
     'days.friday': 'Friday',
     'days.saturday': 'Saturday',
-    
+
     // Settings
     'settings.language': 'Language',
     'settings.languageDesc': 'Choose the app language',
@@ -3585,12 +3955,12 @@ const translations: Record<Language, Record<string, string>> = {
     'settings.biometric': 'Biometric authentication',
     'settings.darkMode': 'Dark mode',
     'settings.fitnessWidgets': 'Wellness widgets',
-    
+
     // Tooltips & hints
     'hint.stockTab': 'Here you control your medication stock',
     'hint.historyTab': 'View your complete dose history',
     'hint.firstMed': 'Add your first medication to get started',
-    
+
     // Onboarding
     'onboarding.welcome': 'Welcome to HoraMed',
     'onboarding.subtitle': 'Your health under control',
@@ -3599,7 +3969,7 @@ const translations: Record<Language, Record<string, string>> = {
     'onboarding.step3': 'Receive reminders',
     'onboarding.start': 'Get started',
     'onboarding.skip': 'Skip intro',
-    
+
     // Rewards / Referrals
     'rewards.title': 'Rewards & Referrals',
     'rewards.headline': 'Refer. Earn. Pay less for Premium.',
@@ -3631,7 +4001,7 @@ const translations: Record<Language, Record<string, string>> = {
     'rewards.inviteNow': 'Invite now',
     'rewards.viewPlans': 'View plans',
     'rewards.shareMessage': 'Use my code {code} on HoraMed and get 7 days Premium free!',
-    
+
     // Landing page
     'landing.heroTitle': 'Never forget to take your medication again',
     'landing.heroHighlight': 'take your medication again',
@@ -3726,7 +4096,7 @@ const translations: Record<Language, Record<string, string>> = {
     'landing.useCase4Examples': 'Thyroid, diabetes, hypertension, HIV',
     'landing.newFeaturesTitle': 'New features that simplify your life',
     'landing.newFeaturesSubtitle': 'Smart features for better care',
-    
+
     // Notifications
     'notifications.doseReminder': 'Time to take {medication}',
     'notifications.doseReminderBody': 'Don\'t forget to take your dose of {medication}',
@@ -3734,7 +4104,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifications.overdueBody': 'You haven\'t taken {medication} yet. Take it as soon as possible.',
     'notifications.lowStockTitle': 'Low stock',
     'notifications.lowStockBody': 'Your stock of {medication} is running low. Buy more soon.',
-    
+
     // Profile page
     'profile.whatCanYouDo': 'What can you do here?',
     'profile.whatCanYouDoDesc': 'Manage your <strong>account</strong>, create <strong>family profiles</strong> (Premium), configure <strong>notifications</strong> and view your <strong>subscription plan</strong>.',
@@ -3778,8 +4148,6 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.inviteFriendsDiscount': 'Invite friends and earn discounts',
     'profile.notifLabel': 'Notifications',
     'profile.notifDesc': 'Configure alerts and reminders',
-    'profile.alarmsLabel': 'Alarms',
-    'profile.alarmsDesc': 'Sounds and vibration',
     'profile.exportLabel': 'Export Data',
     'profile.exportDesc': 'Download your data in PDF',
     'profile.tutorialLabel': 'Tutorial',
@@ -3793,7 +4161,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.biometricLogin': 'Biometric Login',
     'profile.biometricEnabled': 'Enabled on this device',
     'profile.disable': 'Disable',
-    
+
     // Cofre page
     'cofre.title': 'Health Wallet',
     'cofre.subtitle': 'Your medical documents organized and secure',
@@ -3827,7 +4195,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.categoryVaccine': 'Vaccine',
     'cofre.categoryConsultation': 'Consultation',
     'cofre.categoryDocument': 'Document',
-    
+
     // Progress page
     'progress.yourProgress': 'Your Progress',
     'progress.trackYourProgress': 'Track your commitment and achievements',
@@ -3863,7 +4231,7 @@ const translations: Record<Language, Record<string, string>> = {
     'progress.punctuality': 'punctuality',
     'progress.exportData': 'Export Data',
     'progress.downloadPDF': 'Download complete report in PDF',
-    
+
     // More page
     'more.user': 'User',
     'more.upgradePremium': 'Upgrade to Premium',
@@ -3901,7 +4269,7 @@ const translations: Record<Language, Record<string, string>> = {
     'more.termsOfUse': 'Terms of Use',
     'more.privacy': 'Privacy',
     'more.tagline': 'Health Routine Organizer',
-    
+
     // Achievements page
     'achievements.title': 'Achievements',
     'achievements.description': 'Your progress and badges',
@@ -3917,7 +4285,7 @@ const translations: Record<Language, Record<string, string>> = {
     'achievements.unlockedTab': 'Unlocked',
     'achievements.lockedTab': 'Locked',
     'achievements.share': 'Share 🎉',
-    
+
     // Vaccines
     'vaccines.title': 'Vaccination Card',
     'vaccines.subtitle': 'Complete vaccine record following the National Calendar',
@@ -3964,7 +4332,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.observationsPlaceholder': 'Adverse reactions, observations...',
     'vaccines.saving': 'Saving...',
     'vaccines.saveRecord': 'Save Record',
-    
+
     // Vaccine names - Adult
     'vaccines.vaccine.dt.name': 'dT (Diphtheria/Tetanus)',
     'vaccines.vaccine.dt.prevention': 'Diphtheria and Tetanus',
@@ -3984,7 +4352,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.vaccine.meningococicaACWY.prevention': 'Meningitis',
     'vaccines.vaccine.covid19.name': 'COVID-19',
     'vaccines.vaccine.covid19.prevention': 'COVID-19',
-    
+
     // Vaccine names - Child
     'vaccines.vaccine.bcg.name': 'BCG',
     'vaccines.vaccine.bcg.prevention': 'Tuberculosis',
@@ -4014,7 +4382,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccines.vaccine.varicela.prevention': 'Chickenpox',
     'vaccines.vaccine.hpv.name': 'HPV',
     'vaccines.vaccine.hpv.prevention': 'Human Papillomavirus',
-    
+
     'history.title': 'Complete History',
     'history.subtitle': 'Detailed analysis of your treatment commitment',
     'history.progress': 'Progress',
@@ -4049,7 +4417,7 @@ const translations: Record<Language, Record<string, string>> = {
     'history.byMedication': 'By Medication',
     'history.last30days': 'Last 30 days',
     'history.skipped': 'skipped',
-    
+
     // Stock page
     'stock.pageTitle': 'Smart Stock Control',
     'stock.pageSubtitle': 'Track real consumption, automatic projections, and receive personalized alerts',
@@ -4117,7 +4485,7 @@ const translations: Record<Language, Record<string, string>> = {
     'stockOrigin.addedManually': 'Added manually',
     'stockOrigin.fromPrescription': 'From prescription:',
     'stockOrigin.refilledManually': 'Refilled manually',
-    
+
     // Emergency page
     'emergency.title': 'Emergency Mode',
     'emergency.subtitle': 'Quick guidance for missed doses',
@@ -4141,7 +4509,7 @@ const translations: Record<Language, Record<string, string>> = {
     'emergency.fillAllFields': 'Fill in all fields',
     'emergency.guidanceObtained': 'Guidance obtained',
     'emergency.guidanceError': 'Error getting guidance',
-    
+
     // Saude page
     'saude.title': 'Health',
     'saude.subtitle': 'Your complete health center',
@@ -4161,7 +4529,7 @@ const translations: Record<Language, Record<string, string>> = {
     'saude.appointments': 'Appointments',
     'saude.exams': 'Exams',
     'saude.measurements': 'Measurements',
-    
+
     // Medication History
     'medHistory.title': 'History',
     'medHistory.subtitle': 'Complete history and statistics',
@@ -4176,7 +4544,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medHistory.loading': 'Loading...',
     'medHistory.noDosesInPeriod': 'No doses in this period',
     'medHistory.back': 'Back',
-    
+
     // Side Effects Diary
     'sideEffects.title': 'Side Effects Diary',
     'sideEffects.description': 'Track and monitor how you feel after each dose',
@@ -4197,7 +4565,7 @@ const translations: Record<Language, Record<string, string>> = {
     'sideEffects.generatingPdf': 'Generating PDF report...',
     'sideEffects.exportSuccess': 'Report exported successfully!',
     'sideEffects.exportError': 'Error exporting report',
-    
+
     // Subscription Success
     'subscription.welcomePremium': 'Welcome to Premium! 🎉',
     'subscription.activatedSuccess': 'Your subscription has been activated successfully. Enjoy all unlimited features!',
@@ -4210,7 +4578,7 @@ const translations: Record<Language, Record<string, string>> = {
     'subscription.startUsing': 'Start using',
     'subscription.manageSubscription': 'Manage subscription',
     'subscription.trialInfo': 'Your subscription includes a 7-day free trial. You can cancel at any time.',
-    
+
     // Subscription Canceled
     'subscription.canceled': 'Subscription canceled',
     'subscription.paymentNotCompleted': 'Payment was not completed. You can try again whenever you want.',
@@ -4219,7 +4587,7 @@ const translations: Record<Language, Record<string, string>> = {
     'subscription.continueFreePlan': 'Continue on free plan',
     'subscription.needHelp': 'I need help',
     'subscription.questionsContact': 'Questions? Contact us via chat or email.',
-    
+
     // Plans page
     'plans.title': 'Plans',
     'plans.joinUsers': 'Join over 10,000+ users',
@@ -4256,7 +4624,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.startNow': 'Start now',
     'plans.trialDays': '3-day trial',
     'plans.referralDiscount': '{percent}% referral discount active!',
-    
+
     // Plans features
     'plans.feature.1medication': '1 active medication',
     'plans.feature.basicNotifications': 'Basic notifications',
@@ -4275,7 +4643,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.feature.ocrDocs': '🤖 OCR for prescriptions and documents',
     'plans.feature.noAds': '🚫 No ads',
     'plans.feature.prioritySupport': '⚡ Priority support',
-    
+
     'plans.chooseYourPlan': 'Choose your plan',
     'plans.freeTrialBadge': '7 days free trial',
     'plans.unlockPremium': 'Unlock Premium',
@@ -4301,7 +4669,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.secure': 'Secure',
     'plans.continueWithFree': 'Continue with free plan →',
     'plans.referralDiscountApplied': '{percent}% referral discount applied!',
-    
+
     // Testimonials
     'plans.testimonial1.name': 'Maria Silva',
     'plans.testimonial1.role': 'User for 8 months',
@@ -4312,7 +4680,7 @@ const translations: Record<Language, Record<string, string>> = {
     'plans.testimonial3.name': 'Ana Costa',
     'plans.testimonial3.role': 'Elderly caregiver',
     'plans.testimonial3.text': 'Essential! I manage my parents\' medications without stress.',
-    
+
     // Cofre Documento
     'cofre.back': 'Back',
     'cofre.documentNotFound': 'Document not found',
@@ -4366,7 +4734,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.category.vacinacao': 'Vaccination Card',
     'cofre.category.consulta': 'Medical Appointment',
     'cofre.category.outro': 'Document',
-    
+
     // Prescription Status Badge
     'prescription.valid': 'Valid',
     'prescription.expired': 'Expired',
@@ -4375,7 +4743,7 @@ const translations: Record<Language, Record<string, string>> = {
     'prescription.days': 'days',
     'prescription.used': 'Used',
     'prescription.duplicate': 'Repeat Prescription',
-    
+
     // Privacy Page
     'privacy.title': 'Privacy & Security',
     'privacy.subtitle': 'Manage your data and privacy',
@@ -4426,7 +4794,7 @@ const translations: Record<Language, Record<string, string>> = {
     'privacy.deleting': 'Deleting...',
     'privacy.deleteSuccess': 'Account deleted successfully',
     'privacy.deleteError': 'Error deleting account',
-    
+
     // Terms Page
     'terms.title': 'Legal Document',
     'terms.subtitle': 'Terms, Privacy and GDPR',
@@ -4574,7 +4942,7 @@ const translations: Record<Language, Record<string, string>> = {
     'terms.documentChangesDesc2': 'Significant changes will be communicated by app notice, email or update date highlight.',
     'terms.documentChangesDesc3': 'Continued use after changes will be interpreted as agreement with the new conditions.',
     'terms.responsibleData': 'Responsible Data',
-    
+
     // Health Assistant Chat
     'chat.greeting': "Hi, I'm Clara. I'm here to help you organize your health routine. How can I help?",
     'chat.assistant': 'HoraMed Assistant',
@@ -4593,7 +4961,7 @@ const translations: Record<Language, Record<string, string>> = {
     'chat.viewStock': 'View stock',
     'chat.doseQuestion': 'Dose question',
     'chat.adjustSchedules': 'Adjust schedules',
-    
+
     // Travel Mode
     'travel.title': 'Travel Mode',
     'travel.description': 'Plan your trip with automatic schedule adjustments and smart packing list',
@@ -4610,7 +4978,7 @@ const translations: Record<Language, Record<string, string>> = {
     'travel.calculatedSuccess': 'Calculations done successfully!',
     'travel.adjustmentsNotApplied': 'Schedule adjustments will not be applied',
     'travel.adjustedSuccess': 'Schedules adjusted to destination timezone!',
-    
+
     // Help & Support
     'help.title': 'Help & Support',
     'help.subtitle': 'Learn how to use HoraMed',
@@ -4632,7 +5000,7 @@ const translations: Record<Language, Record<string, string>> = {
     'help.step5Title': '📊 Step 5: Track Your Progress',
     'help.contactSupport': 'Contact Support',
     'help.emailSupport': 'Email support',
-    
+
     // Data Export
     'export.title': 'Export Data',
     'export.subtitle': 'Download your personal data',
@@ -4652,7 +5020,7 @@ const translations: Record<Language, Record<string, string>> = {
     'export.generatingPdf': 'Generating PDF...',
     'export.success': 'PDF generated successfully!',
     'export.error': 'Error exporting data',
-    
+
     // Spotlight Search
     'search.addMedication': 'Add medication',
     'search.uploadDocument': 'Upload document',
@@ -4665,14 +5033,14 @@ const translations: Record<Language, Record<string, string>> = {
     'search.navigate': 'navigate',
     'search.select': 'select',
     'search.close': 'close',
-    
+
     // Vaccine Reminders
     'vaccines.upcoming': 'Upcoming Vaccines',
     'vaccines.today': 'Today',
     'vaccines.tomorrow': 'Tomorrow',
     'vaccines.days': 'days',
     'vaccines.dateFormat': 'MMMM dd',
-    
+
     // Welcome Page
     'welcome.title': 'Welcome to HoraMed! 🎉',
     'welcome.accountCreated': 'Your account was created successfully',
@@ -4684,7 +5052,7 @@ const translations: Record<Language, Record<string, string>> = {
     'welcome.days': 'days',
     'welcome.addFirstMed': 'Add First Medication',
     'welcome.exploreApp': 'Explore the app first',
-    
+
     // Medications List Page
     'medications.title': 'My Health',
     'medications.addItem': 'Add your first item',
@@ -4704,7 +5072,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medications.confirmDelete': 'Are you sure you want to delete?',
     'medications.deleteSuccess': 'Item deleted',
     'medications.loadError': 'Error loading medications',
-    
+
     // Cofre Upload
     'cofre.upload.title': 'Add Document',
     'cofre.upload.subtitle': 'Upload PDF or photo. HoraMed identifies the type and extracts data automatically.',
@@ -4743,7 +5111,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofre.upload.addToRoutine': 'Add to your medication routine',
     'cofre.upload.addToRoutineBtn': '✓ Add to Routine',
     'cofre.upload.skipForNow': 'Skip for now',
-    
+
     // Contextual Clara
     'clara.todayMessage': 'How can I help with your doses today?',
     'clara.newDose': 'New dose',
@@ -4767,7 +5135,7 @@ const translations: Record<Language, Record<string, string>> = {
     'clara.logWeight': 'Log weight',
     'clara.defaultMessage': 'Hello! How can I help?',
     'clara.add': 'Add',
-    
+
     // Quick Action Menu
     'quickAction.whatToDo': 'What would you like to do?',
     'quickAction.chooseOrAsk': 'Choose an option or ask Clara for help',
@@ -4782,7 +5150,7 @@ const translations: Record<Language, Record<string, string>> = {
     'quickAction.scheduleOrRecord': 'Schedule or record',
     'quickAction.exam': 'Exam',
     'quickAction.examResult': 'Exam result',
-    
+
     // Essential Shortcuts
     'shortcuts.addMed': 'Add medication',
     'shortcuts.addMedDesc': 'Register a new medication',
@@ -4790,7 +5158,7 @@ const translations: Record<Language, Record<string, string>> = {
     'shortcuts.addDocDesc': 'Upload prescription or exam',
     'shortcuts.generateReport': 'Generate monthly report',
     'shortcuts.reportDesc': 'Download summary for your doctor',
-    
+
     // Smart Insights
     'smartInsights.title': 'Smart Insights',
     'smartInsights.subtitle': 'Based on AI and your usage patterns',
@@ -4805,7 +5173,7 @@ const translations: Record<Language, Record<string, string>> = {
     'smartInsights.restockNeededDesc': '{count} medication(s) are running out. Schedule a pharmacy visit!',
     'smartInsights.excellentProgress': 'Exceptional Progress!',
     'smartInsights.excellentProgressDesc': 'Amazing! You maintained {percent}% commitment this week. Keep it up! 🎉',
-    
+
     // Quick Document Upload
     'docUpload.title': 'Add Document',
     'docUpload.howToAdd': 'How would you like to add the document?',
@@ -4815,7 +5183,7 @@ const translations: Record<Language, Record<string, string>> = {
     'docUpload.fileTypes': 'PDF, JPG or PNG',
     'docUpload.fillManually': 'Fill Manually',
     'docUpload.noFile': 'Add without file',
-    
+
     // Upgrade Modal
     'upgrade.title': 'Unlock the best of HoraMed',
     'upgrade.aiLimit': 'You have used the 2 daily queries on the free plan. To continue, you can subscribe to Premium or refer friends to unlock more features.',
@@ -4842,7 +5210,7 @@ const translations: Record<Language, Record<string, string>> = {
     'upgrade.feature.ocr': 'use OCR on documents',
     'upgrade.feature.profiles': 'create multiple family profiles',
     'upgrade.feature.ai_agent': 'use the AI assistant',
-    
+
     // Charts Page
     'charts.title': 'Analysis & Statistics',
     'charts.subtitle': 'Track your treatment commitment and manage your stock',
@@ -4880,14 +5248,14 @@ const translations: Record<Language, Record<string, string>> = {
     'charts.skips': 'misses',
     'charts.insight': 'Insight',
     'charts.insightDesc': 'Tip to improve your treatment adherence.',
-    
+
     // Agenda Page
     'agenda.title': 'Health Agenda',
     'agenda.subtitle': 'Manage all your health appointments intuitively',
     'agenda.newAppointment': 'New Appointment',
     'agenda.noEvents': 'No events on this day.',
     'agenda.addEvent': 'Add Event',
-    
+
     // CofreDocumento Page
     'cofreDoc.back': 'Back',
     'cofreDoc.notFound': 'Document not found',
@@ -4989,7 +5357,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreDoc.diagnosisEval': 'Diagnosis/Evaluation',
     'cofreDoc.event': 'event',
     'cofreDoc.events': 'events',
-    
+
     // Health Calendar
     'healthCalendar.title': 'Health Calendar',
     'healthCalendar.month': 'Month',
@@ -5015,7 +5383,7 @@ const translations: Record<Language, Record<string, string>> = {
     'healthCalendar.syncCompleteDesc': '{count} events synced successfully.',
     'healthCalendar.syncError': 'Sync error',
     'healthCalendar.syncErrorDesc': 'Could not sync with Google Calendar.',
-    
+
     // Health Indicators / Weight Tracking
     'weight.healthIndicators': 'Health Indicators',
     'weight.trackEvolution': 'Track your weight evolution over time',
@@ -5052,7 +5420,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weight.weightUpdatedDiff': 'Weight updated! {diff} kg since last measurement.',
     'weight.errorSaving': 'Error saving weight',
     'weight.invalidWeight': 'Please enter a valid weight',
-    
+
     // Dose Card
     'dose.taken': 'Taken',
     'dose.missed': 'Missed',
@@ -5065,7 +5433,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dose.unitsShort': 'units',
     'dose.withFood': 'with food',
     'dose.viewMedInfo': 'View medication info',
-    
+
     // PWA Install Prompt
     'pwa.installTitle': 'Install HoraMed',
     'pwa.installDesc': 'Add to home screen for quick access like a native app.',
@@ -5077,7 +5445,7 @@ const translations: Record<Language, Record<string, string>> = {
     'pwa.benefitFast': 'Faster',
     'pwa.benefitOffline': 'Works offline',
     'pwa.benefitNotify': 'Reminders',
-    
+
     // Notification Setup
     'notifSetup.title': 'Set Up Notifications',
     'notifSetup.neverMiss': 'Never miss a dose',
@@ -5123,7 +5491,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifSetup.testSentSuccess': 'Notification sent!',
     'notifSetup.testError': 'Error sending test',
     'notifSetup.openSettingsInfo': 'Open phone settings and follow the steps above',
-    
+
     // Wizard Steps
     'wizardStep.name': 'Medication Name',
     'wizardStep.nameDesc': 'Which medication will you take?',
@@ -5156,7 +5524,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizardStep.noStock': 'No tracking',
     'wizardStep.noDetails': 'No additional details',
     'wizardStep.withFood': 'With food',
-    
+
     // Tutorial Page
     'tutorial.title': 'Tutorial',
     'tutorial.subtitle': 'Learn how to use all HoraMed features',
@@ -5222,7 +5590,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tutorial.stillHaveQuestions': 'Still have questions?',
     'tutorial.visitHelp': 'Visit our help center for more information',
     'tutorial.helpBtn': 'Help & Support',
-    
+
     // Cofre Document Edit
     'cofreEdit.back': 'Back',
     'cofreEdit.title': 'Edit Document',
@@ -5290,7 +5658,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreEdit.updateSuccess': 'Document updated successfully!',
     'cofreEdit.updateError': 'Error updating document',
     'cofreEdit.notFound': 'Document not found',
-    
+
     // Weight tracking card
     'weightCard.title': 'Weight Tracking',
     'weightCard.description': 'Log your weight regularly to track your progress',
@@ -5300,22 +5668,22 @@ const translations: Record<Language, Record<string, string>> = {
     'weightCard.registerNew': 'Log new weight',
     'weightCard.tip': 'Use this space to log your weight whenever you weigh yourself. HoraMed will show your progress and include it in reports for your doctor.',
     'weightCard.viewHistory': 'View weight history',
-    
+
     // Streak badge
     'streak.sequence': 'Streak',
     'streak.record': 'Record',
     'streak.improving': 'Improving',
     'streak.days': 'days',
-    
+
     // Monthly calendar
     'calendar.totalDoses': 'Total doses',
     'calendar.dosesTaken': 'Doses taken',
     'calendar.progress': 'Progress',
-    
+
     // Next dose widget
     'nextDose.itsNow': "⏰ IT'S NOW!",
     'nextDose.title': 'Next Dose',
-    
+
     // Weight registration modal
     'weightModal.title': 'Log new weight',
     'weightModal.description': 'Use this space to log your weight whenever you weigh yourself',
@@ -5332,7 +5700,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weightModal.successGain': 'Weight updated! +{diff} kg since last measurement.',
     'weightModal.successLoss': 'Weight updated! {diff} kg since last measurement.',
     'weightModal.error': 'Error saving weight',
-    
+
     // Clara suggestions widget
     'claraSuggests.attention': 'Attention',
     'claraSuggests.overdue': 'You have {count} overdue dose{plural}. Can I help organize?',
@@ -5348,7 +5716,7 @@ const translations: Record<Language, Record<string, string>> = {
     'claraSuggests.tips.water': 'Drinking water with medications helps absorption.',
     'claraSuggests.tips.schedule': 'Keeping regular schedules helps your body build a routine.',
     'claraSuggests.tips.help': 'Need help? I am here for you.',
-    
+
     // Simple adherence summary
     'adherence.noDoses': 'No doses scheduled',
     'adherence.excellent': 'Excellent! Keep it up',
@@ -5356,19 +5724,19 @@ const translations: Record<Language, Record<string, string>> = {
     'adherence.everyDoseCounts': 'Every dose counts',
     'adherence.dayStarting': 'The day is just starting',
     'adherence.youTook': 'You took {taken} of {total} doses',
-    
+
     // Smart action cards
     'smartActions.title': 'Suggested Actions',
     'smartActions.seeMore': 'See {count} more {label}',
     'smartActions.suggestion': 'suggestion',
     'smartActions.suggestions': 'suggestions',
-    
+
     // Weight insights card
     'weightInsights.activeTracking': 'Active tracking',
     'weightInsights.correlatingWith': 'Correlating with {medications}',
     'weightInsights.guidanceTip': 'To track trends, we recommend logging your weight once a week.',
     'weightInsights.logWeight': 'Log weight',
-    
+
     // Overdue doses banner (remaining)
     'overdueBanner.overdueFor1Hour': "⚠️ {profile} hasn't taken {item} for over 1 hour!",
     'overdueBanner.needsToTake': '{profile} needs to take {item}',
@@ -5376,7 +5744,7 @@ const translations: Record<Language, Record<string, string>> = {
     'overdueBanner.confirmed': '{item} confirmed!',
     'overdueBanner.doseRecorded': 'Dose recorded successfully',
     'overdueBanner.confirmError': 'Error confirming dose',
-    
+
     // Expired prescriptions alert
     'expiredPrescriptions.title': 'Expired Prescriptions',
     'expiredPrescriptions.description': 'You have expired prescriptions that were not used. Request new prescriptions from your doctor to purchase the medications.',
@@ -5386,7 +5754,7 @@ const translations: Record<Language, Record<string, string>> = {
     'expiredPrescriptions.days': 'days',
     'expiredPrescriptions.viewInWallet': 'View in Wallet',
     'expiredPrescriptions.scheduleAppointment': 'Schedule Appointment',
-    
+
     // Daily summary modal
     'dailySummary.title': '🌙 Before you sleep...',
     'dailySummary.description': 'You still have {count} dose{plural} unmarked today:',
@@ -5397,7 +5765,7 @@ const translations: Record<Language, Record<string, string>> = {
     'dailySummary.allMarkedTaken': '✅ All doses marked as taken!',
     'dailySummary.markedMissed': '⚠️ Doses marked as not taken',
     'dailySummary.errorMarking': 'Error marking doses',
-    
+
     // Travel packing list
     'travelPacking.needsToBuy': 'Needs to Buy',
     'travelPacking.packingList': 'Packing List',
@@ -5407,7 +5775,7 @@ const translations: Record<Language, Record<string, string>> = {
     'travelPacking.units': 'units',
     'travelPacking.perDay': 'x per day',
     'travelPacking.daysMargin': 'days (+2 days margin)',
-    
+
     // Critical alert banner
     'criticalAlert.urgentActions': '{count} Urgent Action{plural}',
     'criticalAlert.clearAll': 'Clear all',
@@ -5416,7 +5784,7 @@ const translations: Record<Language, Record<string, string>> = {
     'criticalAlert.viewHistory': 'View History',
     'criticalAlert.viewProfile': 'View Profile',
     'criticalAlert.confirm': 'Confirm',
-    
+
     // Medication info sheet
     'medInfo.about': 'Medication information',
     'medInfo.consultProfessional': 'Consult a doctor or pharmacist for more information.',
@@ -5426,7 +5794,7 @@ const translations: Record<Language, Record<string, string>> = {
     'medInfo.activeIngredient': 'Active ingredient',
     'medInfo.warnings': 'Important warnings',
     'medInfo.disclaimer': 'This information is for educational purposes only and does not replace the guidance of a healthcare professional. Always consult your doctor or pharmacist before starting, changing, or stopping any treatment.',
-    
+
     // Dose action modal
     'doseAction.scheduled': 'Scheduled',
     'doseAction.now': 'Now',
@@ -5435,7 +5803,7 @@ const translations: Record<Language, Record<string, string>> = {
     'doseAction.alreadyTook': 'Already took',
     'doseAction.chooseTime': 'choose time',
     'doseAction.forgotWontTake': "Forgot / Won't take",
-    
+
     // Quick dose widget
     'quickDose.late': 'Late',
     'quickDose.other': 'other',
@@ -5444,7 +5812,7 @@ const translations: Record<Language, Record<string, string>> = {
     'quickDose.allGood': 'All done!',
     'quickDose.noPending2h': 'No pending doses in the next 2h',
     'quickDose.now': 'Now',
-    
+
     // Health history links
     'healthHistory.title': 'Medical History',
     'healthHistory.timeline': 'Timeline',
@@ -5453,19 +5821,19 @@ const translations: Record<Language, Record<string, string>> = {
     'healthHistory.dashboardDesc': 'Health charts and analysis',
     'healthHistory.agenda': 'Medical Agenda',
     'healthHistory.agendaDesc': 'Appointments and schedules',
-    
+
     // Medication summary card
     'medSummary.doses': 'of {total} doses',
     'medSummary.next': 'Next',
     'medSummary.allTaken': 'All doses taken!',
-    
+
     // Daily complete modal
     'dailyComplete.congrats': 'Congrats! 🎉',
     'dailyComplete.completedAll': 'You completed all doses for today!',
     'dailyComplete.days': 'days',
     'dailyComplete.commitment': 'of commitment',
     'dailyComplete.continue': 'Continue',
-    
+
     // Health insights
     'healthInsights.analyzing': 'Analyzing your medications...',
     'healthInsights.analysisComplete': 'Analysis complete! New insights detected',
@@ -5474,7 +5842,7 @@ const translations: Record<Language, Record<string, string>> = {
     'healthInsights.allGood': 'All good! No issues detected',
     'healthInsights.noInteractions': 'No dangerous interactions detected',
     'healthInsights.error': 'Error analyzing',
-    
+
     // Monthly report
     'monthlyReport.insights': 'Monthly Insights',
     'monthlyReport.excellent90': 'Excellent! You kept progress above 90%!',
@@ -5482,7 +5850,7 @@ const translations: Record<Language, Record<string, string>> = {
     'monthlyReport.punctual': 'Great punctuality! Average delay of only {minutes} minutes.',
     'monthlyReport.noSkipped': 'Perfect! You did not skip any dose this month.',
     'monthlyReport.generate': 'Generate New Report',
-    
+
     // Category step (wizard)
     'category.medication': 'Medication',
     'category.medicationDesc': 'Prescribed or pharmacy medications',
@@ -5498,7 +5866,7 @@ const translations: Record<Language, Record<string, string>> = {
     'category.otherTooltip': 'Any other item you want to track',
     'category.info': 'Choose the item type. This helps organize your medications and show relevant information for each category.',
     'category.continue': 'Continue',
-    
+
     // Notification settings
     'notifSettings.title': 'Notifications',
     'notifSettings.description': 'Configure when and how to receive reminders',
@@ -5523,7 +5891,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifSettings.skipDesc': 'Marks as skipped',
     'notifSettings.offlineTip': '💡 Works offline:',
     'notifSettings.offlineDesc': 'Your actions are saved automatically and synced when you go back online.',
-    
+
     // Caregiver manager
     'caregiver.inviteTitle': 'Invite Caregiver',
     'caregiver.emailOrPhone': 'Email or Phone',
@@ -5546,7 +5914,7 @@ const translations: Record<Language, Record<string, string>> = {
     'caregiver.loading': 'Loading...',
     'caregiver.viewerInfo': 'Viewers receive notifications only for exceptions (missed doses, critical stock).',
     'caregiver.helperInfo': 'Helpers can also mark doses as taken.',
-    
+
     // Onboarding tour
     'tour.welcome': 'Welcome to HoraMed! 👋',
     'tour.welcomeDesc': "Let's take a quick tour to get you familiar with the app and start organizing your health simply.",
@@ -5565,7 +5933,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tour.skipTutorial': 'Skip tutorial',
     'tour.next': 'Next',
     'tour.start': 'Start',
-    
+
     // Calendar
     'calendar.today': 'Today',
     'calendar.events': 'events',
@@ -5573,23 +5941,13 @@ const translations: Record<Language, Record<string, string>> = {
     'calendar.clickForDetails': 'Click for details',
     'calendar.more': 'more',
     'calendar.weekdays': 'Sun,Mon,Tue,Wed,Thu,Fri,Sat',
-    
-    // Profile selector
-    'profileSelector.selectProfile': 'Select Profile',
-    'profileSelector.addProfile': 'Add Profile',
-    'profileSelector.premium': 'Premium',
-    'profileSelector.multipleProfiles': 'Multiple profiles available only on Premium',
-    'profileSelector.main': 'Main',
-    'profileSelector.you': 'You',
-    'profileSelector.child': 'Child',
-    'profileSelector.parent': 'Parent',
-    'profileSelector.spouse': 'Spouse',
-    'profileSelector.other': 'Other',
-    
+
+
+
     // Tutorial Hint component
     'tutorialHint.swipeToDismiss': 'Swipe to dismiss',
     'tutorialHint.gotIt': 'Got it',
-    
+
     // Tutorials (microcopy)
     'tutorials.today.id': 'today_page',
     'tutorials.today.title': 'Your health day 💊',
@@ -5609,7 +5967,7 @@ const translations: Record<Language, Record<string, string>> = {
     'tutorials.historico.id': 'historico_tab',
     'tutorials.historico.title': 'Complete history 📊',
     'tutorials.historico.message': 'See all doses taken, times and patterns. Ideal for showing your doctor at appointments.',
-    
+
     // Dose Card
     'doseCard.viewMedInfo': 'View medication info',
     'doseCard.takeNow': 'Take now',
@@ -5617,7 +5975,7 @@ const translations: Record<Language, Record<string, string>> = {
     'doseCard.snooze': 'Snooze',
     'doseCard.taken': 'Taken',
     'doseCard.missed': 'Missed',
-    
+
     // Vaccine Review
     'vaccine.reviewTitle': 'Review your vaccine',
     'vaccine.reviewDesc': 'Confirm vaccine data before saving',
@@ -5636,7 +5994,7 @@ const translations: Record<Language, Record<string, string>> = {
     'vaccine.saving': 'Saving vaccine...',
     'vaccine.savedSuccess': '✓ Vaccine saved to Vaccine Card!',
     'vaccine.saveError': 'Error saving vaccine. Please try again.',
-    
+
     // Document Modal
     'document.whatToAdd': 'What do you want to add?',
     'document.add': 'Add',
@@ -5668,7 +6026,7 @@ const translations: Record<Language, Record<string, string>> = {
     'document.processError': 'Error processing document. Please try again.',
     'document.freeUsed': 'Documents: {used}/5 used on free plan',
     'document.waitMoment': 'Please wait a moment...',
-    
+
     // Errors
     'errors.notAuthenticated': 'Not authenticated',
     'errors.loadError': 'Error loading',
@@ -5679,7 +6037,7 @@ const translations: Record<Language, Record<string, string>> = {
     'errors.requestPermission': 'Error requesting permission',
     'errors.sendTest': 'Error sending test notification',
     'errors.register': 'Error registering',
-    
+
     // Notification Diagnostics
     'notifDiag.title': 'Notification Diagnostics',
     'notifDiag.refresh': 'Refresh',
@@ -5733,13 +6091,13 @@ const translations: Record<Language, Record<string, string>> = {
     'notifDiag.webPermNotGranted': 'Notification permission not granted',
     'notifDiag.tokenOnlyNative': 'Token registration only available in native app',
     'notifDiag.registering': 'Registering token...',
-    
+
     // Notification Metrics
     'notifMetrics.loading': 'Loading metrics...',
     'notifMetrics.title': 'Notification Metrics',
     'notifMetrics.deliveryRate': 'Delivery rate',
     'notifMetrics.noMetrics': 'No metrics yet',
-    
+
     // Feature Flags Admin
     'featureFlags.title': 'Feature Flags',
     'featureFlags.loading': 'Loading settings...',
@@ -5761,7 +6119,7 @@ const translations: Record<Language, Record<string, string>> = {
     'featureFlags.consultationQR': 'Consultation QR Card',
     'featureFlags.affiliate': 'Affiliate Links',
     'featureFlags.interactionsLite': 'Educational AI Lite',
-    
+
     // Wizard additional
     'wizard.createdComplete': 'Medication created! Complete the information.',
     'wizard.couldNotIdentify': 'Could not identify medication',
@@ -5773,7 +6131,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizard.added': 'added!',
     'wizard.saveError': 'Error saving medication',
     'wizard.ocrFeature': 'Prescription OCR',
-    
+
     // Exam Review
     'examReview.title': 'Review your exam',
     'examReview.subtitle': 'Confirm exam data before saving',
@@ -5792,7 +6150,7 @@ const translations: Record<Language, Record<string, string>> = {
     'examReview.saving': 'Saving exam...',
     'examReview.savedSuccess': '✓ Exam saved to Health Wallet!',
     'examReview.saveError': 'Error saving exam. Please try again.',
-    
+
     // Document Review
     'docReview.title': 'Review your document',
     'docReview.subtitle': 'Confirm data before saving',
@@ -5808,14 +6166,14 @@ const translations: Record<Language, Record<string, string>> = {
     'docReview.savedSuccess': '✓ Document saved to Health Wallet!',
     'docReview.saveError': 'Error saving document. Please try again.',
     'docReview.defaultTitle': 'Health Document',
-    
+
     // Stock Details
     'stockDetails.title': 'Stock Details',
     'stockDetails.overview': 'Stock Overview',
     'stockDetails.currentQty': 'Current Quantity',
     'stockDetails.daysRemaining': 'Days Remaining',
     'stockDetails.consumptionHistory': 'Consumption History',
-    
+
     // Generic labels
     'generic.units': 'units',
     'generic.days': 'days',
@@ -5840,7 +6198,7 @@ const translations: Record<Language, Record<string, string>> = {
     'generic.saveProfileError': 'Error saving health profile',
     'generic.notifTestError': 'Error testing notification',
     'generic.stockUpdateError': 'Error updating stock',
-    
+
     // Alarm Settings
     'alarm.title': 'Alarm Settings',
     'alarm.subtitle': 'Customize your medication alerts',
@@ -5871,7 +6229,7 @@ const translations: Record<Language, Record<string, string>> = {
     'alarm.permDesc': 'Allow notifications to receive medication reminders',
     'alarm.allowNotif': 'Allow Notifications',
     'alarm.permGranted': 'Permission granted!',
-    
+
     // Notifications Page
     'notifPage.title': 'Notifications',
     'notifPage.subtitle': 'Manage how you receive reminders',
@@ -5894,7 +6252,7 @@ const translations: Record<Language, Record<string, string>> = {
     'notifPage.testing': 'Testing...',
     'notifPage.save': 'Save Preferences',
     'notifPage.saving': 'Saving...',
-    
+
     // Drug Interactions
     'interactions.title': 'Drug Interactions',
     'interactions.checker': 'Drug Interaction Checker',
@@ -5940,7 +6298,7 @@ const translations: Record<Language, Record<string, string>> = {
     'weeklyCalendar.progress': 'Progress',
     'weeklyCalendar.ofDoses': 'of {total} doses',
     'weeklyCalendar.noDoses': 'No doses',
-    
+
     // Cofre Manual
     'cofreManual.title': 'Add Document Manually',
     'cofreManual.subtitle': 'Fill in document information without uploading a file',
@@ -5959,7 +6317,7 @@ const translations: Record<Language, Record<string, string>> = {
     'cofreManual.notes': 'Notes',
     'cofreManual.notesPlaceholder': 'Additional details...',
     'cofreManual.save': 'Save Document',
-    
+
     // Onboarding Step 4
     'onboardingStep4.title': 'All set!',
     'onboardingStep4.subtitle': "Let's add your first item now or you can explore the app first",
@@ -5970,7 +6328,7 @@ const translations: Record<Language, Record<string, string>> = {
     'onboardingStep4.seeHowDesc': 'Interactive 15-second demo',
     'onboardingStep4.seeDemo': 'See Demo',
     'onboardingStep4.explore': 'Explore the app',
-    
+
     // Onboarding Demo
     'onboardingDemo.today': 'Today',
     'onboardingDemo.mark': 'Mark',
@@ -5990,8 +6348,8 @@ async function detectCountry(): Promise<string> {
 
   try {
     // Try IP-based detection using free services
-    const response = await fetch('https://ipapi.co/json/', { 
-      signal: AbortSignal.timeout(3000) 
+    const response = await fetch('https://ipapi.co/json/', {
+      signal: AbortSignal.timeout(3000)
     });
     if (response.ok) {
       const data = await response.json();
@@ -6003,23 +6361,23 @@ async function detectCountry(): Promise<string> {
     // Fallback to timezone-based detection
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (timezone.startsWith('America/Sao_Paulo') || 
-          timezone.startsWith('America/Fortaleza') ||
-          timezone.startsWith('America/Recife') ||
-          timezone.startsWith('America/Bahia') ||
-          timezone.startsWith('America/Belem') ||
-          timezone.startsWith('America/Manaus') ||
-          timezone.startsWith('America/Cuiaba') ||
-          timezone.startsWith('America/Campo_Grande') ||
-          timezone.startsWith('America/Porto_Velho') ||
-          timezone.startsWith('America/Boa_Vista') ||
-          timezone.startsWith('America/Rio_Branco')) {
+      if (timezone.startsWith('America/Sao_Paulo') ||
+        timezone.startsWith('America/Fortaleza') ||
+        timezone.startsWith('America/Recife') ||
+        timezone.startsWith('America/Bahia') ||
+        timezone.startsWith('America/Belem') ||
+        timezone.startsWith('America/Manaus') ||
+        timezone.startsWith('America/Cuiaba') ||
+        timezone.startsWith('America/Campo_Grande') ||
+        timezone.startsWith('America/Porto_Velho') ||
+        timezone.startsWith('America/Boa_Vista') ||
+        timezone.startsWith('America/Rio_Branco')) {
         return 'BR';
       }
       if (timezone.startsWith('Europe/Lisbon')) return 'PT';
       if (timezone.startsWith('Africa/Luanda')) return 'AO';
       if (timezone.startsWith('Africa/Maputo')) return 'MZ';
-    } catch {}
+    } catch { }
   }
 
   // Default to US (English, USD)
@@ -6032,7 +6390,7 @@ function detectLanguage(countryCode: string): Language {
   if (saved === 'pt' || saved === 'en') {
     return saved;
   }
-  
+
   // Use country to determine language
   return getLanguageByCountry(countryCode);
 }
@@ -6046,7 +6404,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     async function init() {
       const detectedCountry = await detectCountry();
       setCountry({ code: detectedCountry, detected: true });
-      
+
       const lang = detectLanguage(detectedCountry);
       setLanguageState(lang);
       setIsInitialized(true);
@@ -6068,24 +6426,24 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const t = (key: string, params?: Record<string, string>): string => {
     let text = translations[language][key] || translations['en'][key] || key;
-    
+
     // Replace parameters like {code} with actual values
     if (params) {
       Object.entries(params).forEach(([param, value]) => {
         text = text.replace(new RegExp(`\\{${param}\\}`, 'g'), value);
       });
     }
-    
+
     return text;
   };
 
   const isPortugueseCountry = PORTUGUESE_COUNTRIES.includes(country.code);
 
   return (
-    <LanguageContext.Provider value={{ 
-      language, 
-      setLanguage, 
-      t, 
+    <LanguageContext.Provider value={{
+      language,
+      setLanguage,
+      t,
       country,
       isPortugueseCountry
     }}>

@@ -11,7 +11,7 @@ import { useAILimits } from "@/hooks/useAILimits";
 import PaywallDialog from "./PaywallDialog";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AffiliateCard } from "./fitness/AffiliateCard";
-import { getRecommendations, dismissRecommendation } from "@/lib/affiliateEngine";
+import { getRecommendations, dismissRecommendation, AffiliateProduct } from "@/lib/affiliateEngine";
 import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -32,7 +32,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
   const [showPaywall, setShowPaywall] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const aiLimits = useAILimits();
-  const [affiliateProduct, setAffiliateProduct] = useState<any>(null);
+  const [affiliateProduct, setAffiliateProduct] = useState<AffiliateProduct | null>(null);
   const [showAffiliate, setShowAffiliate] = useState(false);
 
   // Initialize greeting message with translation
@@ -43,7 +43,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         content: t('chat.greeting'),
       }]);
     }
-  }, [t]);
+  }, [t, messages.length]);
 
   const quickChips = [
     t('chat.organizeRoutine'),
@@ -69,7 +69,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/health-assistant`,
         {
@@ -103,7 +103,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
 
       const data = await response.json();
       const assistantContent = data.response || t('chat.fallbackResponse');
-      
+
       setMessages((prev) => [...prev, { role: "assistant", content: assistantContent }]);
 
       await aiLimits.recordAIUsage({
@@ -113,7 +113,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
 
       const fitnessKeywords = ["treino", "academia", "performance", "energia", "sono", "glp-1", "ozempic", "mounjaro", "bariátrica", "workout", "gym", "energy", "sleep"];
       const isFitnessQuery = fitnessKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
-      
+
       if (isFitnessQuery) {
         const product = getRecommendations({ type: "AI_QUERY", text: userMessage });
         if (product) {
@@ -229,7 +229,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
             {/* Affiliate Recommendation */}
             {showAffiliate && affiliateProduct && (
               <div className="px-2 sm:px-4">
-                <AffiliateCard 
+                <AffiliateCard
                   product={affiliateProduct}
                   context="AI_QUERY"
                   onDismiss={() => {
@@ -246,7 +246,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         <div className="px-3 sm:px-4 py-2 border-t shrink-0">
           <div className="flex gap-1.5 sm:gap-2 flex-wrap">
             {quickChips.map((chip, idx) => (
-              <Badge 
+              <Badge
                 key={idx}
                 variant="outline"
                 className="cursor-pointer hover:bg-primary/10 transition-colors text-xs px-2 py-0.5"

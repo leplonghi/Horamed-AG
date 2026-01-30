@@ -60,7 +60,7 @@ export default function MiniWeekCalendar({
           .lt("due_at", weekEnd.toISOString());
 
         const counts: Record<string, { total: number; completed: number }> = {};
-        doses?.forEach(dose => {
+        (doses || []).forEach((dose: { due_at: string; status: string }) => {
           const key = format(new Date(dose.due_at), "yyyy-MM-dd");
           if (!counts[key]) counts[key] = { total: 0, completed: 0 };
           counts[key].total++;
@@ -82,7 +82,7 @@ export default function MiniWeekCalendar({
     setDirection(-1);
     setWeekStart(addWeeks(weekStart, -1));
   };
-  
+
   const goToNextWeek = () => {
     setDirection(1);
     setWeekStart(addWeeks(weekStart, 1));
@@ -93,7 +93,7 @@ export default function MiniWeekCalendar({
     const data = doseCounts[key];
     const isPast = isBefore(day, startOfDay(new Date()));
     const isDayToday = isToday(day);
-    
+
     if (!data || data.total === 0) return "empty";
     if (data.completed === data.total) return "complete";
     if (data.completed > 0) return "partial";
@@ -134,8 +134,8 @@ export default function MiniWeekCalendar({
         >
           <ChevronLeft className="w-4 h-4 text-foreground" />
         </motion.button>
-        
-        <motion.span 
+
+        <motion.span
           key={weekStart.toISOString()}
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -143,7 +143,7 @@ export default function MiniWeekCalendar({
         >
           {format(weekStart, "MMMM yyyy", { locale: dateLocale })}
         </motion.span>
-        
+
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={goToNextWeek}
@@ -200,7 +200,7 @@ export default function MiniWeekCalendar({
                 >
                   {format(day, "EEE", { locale: dateLocale }).slice(0, 3)}
                 </span>
-                
+
                 {/* Day number with progress ring */}
                 <div className="relative mt-1">
                   <div
@@ -238,7 +238,7 @@ export default function MiniWeekCalendar({
                         />
                       </svg>
                     )}
-                    
+
                     {/* Content */}
                     {status === "complete" && !isSelected ? (
                       <motion.div

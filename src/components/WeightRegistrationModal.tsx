@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, fetchCollection, orderBy, limit, where } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { Scale, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -42,45 +42,59 @@ export default function WeightRegistrationModal({
 
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error(t('weightModal.notAuthenticated'));
 
       const weightValue = parseFloat(weight);
 
-      // Get previous weight for comparison
-      let prevQuery = supabase
-        .from("weight_logs")
-        .select("weight_kg")
-        .eq("user_id", user.id);
-      
-      if (profileId) {
-        prevQuery = prevQuery.eq("profile_id", profileId);
-      } else {
-        prevQuery = prevQuery.is("profile_id", null);
-      }
-      
-      const { data: previousLog } = await prevQuery
-        .order("recorded_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      // Get previous weight for comparison (fetching from vitalSigns where weightKg is not null)
+      // Note: Filter by weightKg > 0 is tricky in simple Firestore if mixed with other fields.
+      // Easiest is to fetch latest vitalSigns and check weight.
+      // But vitalSigns contains all types.
+      // We'll trust Firestore composite index or just fetch latest few.
+      // Actually, fetching latest 'vitalSigns' might give us a BP reading without weight.
+      // We should really filter `where("weightKg", ">", 0)` but that requires index.
+      // For now, let's just add the document and skip comparison logic if too complex without index,
+      // OR try to fetch with `orderBy("measuredAt")` and client-side filter for previous weight.
+
+      const { data: recentVitals } = await fetchCollection<any>(
+        `users/${user.uid}/vitalSigns`,
+        [
+          orderBy("measuredAt", "desc"),
+          limit(10)
+          // We can't easily filter by profileId AND weightKg > 0 AND ordered by date without specific index.
+        ]
+      );
+
+      // Find last weight in memory
+      const previousLog = recentVitals?.find((v: any) =>
+        v.weightKg && (profileId ? v.profileId === profileId : !v.profileId)
+      );
 
       // Insert new weight log
-      const { error } = await supabase
-        .from("weight_logs")
-        .insert({
-          user_id: user.id,
-          profile_id: profileId || null,
-          weight_kg: weightValue,
-          notes: notes.trim() || null,
-          recorded_at: date.toISOString(),
-        });
+      const logEntry = {
+        userId: user.uid,
+        profileId: profileId || null,
+        weightKg: weightValue,
+        notes: notes.trim() || null,
+        measuredAt: date.toISOString(),
+      };
 
-      if (error) throw error;
+      await addDocument(`users/${user.uid}/vitalSigns`, logEntry);
+
+      // Update profile weight if this is for a profile
+      if (profileId) {
+        const { updateDocument } = await import("@/integrations/firebase");
+        await updateDocument(`users/${user.uid}/profiles`, profileId, {
+          weightKg: weightValue
+        });
+      }
+
 
       // Calculate difference
       let message = t('weightModal.success');
-      if (previousLog?.weight_kg) {
-        const diff = weightValue - previousLog.weight_kg;
+      if (previousLog?.weightKg) {
+        const diff = weightValue - previousLog.weightKg;
         if (diff > 0) {
           message = t('weightModal.successGain', { diff: diff.toFixed(1) });
         } else if (diff < 0) {

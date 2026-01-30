@@ -19,7 +19,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import AlarmManager from "@/components/AlarmManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function NotificationSettings() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { scheduleNotificationsForNextDay } = useMedicationAlarm();
   const [settings, setSettings] = useState({
@@ -69,13 +71,13 @@ export default function NotificationSettings() {
       // Check local notifications
       const localPerm = await LocalNotifications.checkPermissions();
       if (localPerm.display !== 'granted') {
-        toast.info("Configure as permissões de notificação para receber alertas");
+        toast.info(t("toast.notifications.configurePermissions"));
       }
 
       // Check push notifications
       const pushPerm = await PushNotifications.checkPermissions();
       if (pushPerm.receive !== 'granted') {
-        toast.info("Configure as notificações push para alertas mesmo com app fechado");
+        toast.info(t("toast.notifications.configurePush"));
       }
     }
   };
@@ -86,23 +88,23 @@ export default function NotificationSettings() {
         const permResult = await PushNotifications.requestPermissions();
         if (permResult.receive === 'granted') {
           await PushNotifications.register();
-          toast.success("Notificações push ativadas!");
+          toast.success(t("toast.notifications.pushEnabled"));
           setSettings({ ...settings, pushEnabled: true });
         } else {
-          toast.error("Permissão negada. Ative nas configurações do dispositivo.");
+          toast.error(t("toast.notifications.permissionDenied"));
         }
       } else {
         if ("Notification" in window) {
           const permission = await Notification.requestPermission();
           if (permission === "granted") {
-            toast.success("Notificações web ativadas!");
+            toast.success(t("toast.notifications.webEnabled"));
             setSettings({ ...settings, pushEnabled: true });
           }
         }
       }
     } catch (error) {
       console.error("Error enabling push:", error);
-      toast.error("Erro ao ativar notificações push");
+      toast.error(t("toast.notifications.pushError"));
     }
   };
 
@@ -125,10 +127,10 @@ export default function NotificationSettings() {
       // Schedule notifications for next 24 hours
       await scheduleNotificationsForNextDay();
 
-      toast.success("Configurações salvas! Notificações agendadas para as próximas 24 horas.");
+      toast.success(t("toast.notifications.settingsSaved"));
     } catch (error) {
       console.error("Error saving settings:", error);
-      toast.error("Erro ao salvar configurações");
+      toast.error(t("toast.notifications.settingsError"));
     } finally {
       setLoading(false);
     }
@@ -165,15 +167,15 @@ export default function NotificationSettings() {
             <TabsTrigger value="settings">Configurações</TabsTrigger>
             <TabsTrigger value="alarms">Alarmes</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="alarms" className="space-y-4">
             <AlarmManager />
           </TabsContent>
-          
+
           <TabsContent value="settings" className="space-y-5">
             {/* Setup Banner for Mobile */}
             {Capacitor.isNativePlatform() && (
-              <Card 
+              <Card
                 className="p-4 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/30 cursor-pointer hover:shadow-md transition-all"
                 onClick={() => navigate('/configurar-notificacoes')}
               >
@@ -193,239 +195,237 @@ export default function NotificationSettings() {
             )}
 
             {!Capacitor.isNativePlatform() && (
-            <Alert>
-              <Smartphone className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                Para notificações mesmo com o app fechado, instale o HoraMed no seu celular.{' '}
-                <Button variant="link" className="p-0 h-auto text-primary" onClick={() => navigate('/install')}>
-                  Como instalar →
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          <Card className="border-2 hover:shadow-lg transition-all duration-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Smartphone className="h-5 w-5 text-primary" />
+              <Alert>
+                <Smartphone className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Para notificações mesmo com o app fechado, instale o HoraMed no seu celular.
+                  {/* TODO: Criar página de instruções de instalação PWA */}
+                </AlertDescription>
+              </Alert>
+            )}
+            <Card className="border-2 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Smartphone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Notificações Push</CardTitle>
+                    <CardDescription className="text-xs">
+                      Receba alertas mesmo com o app fechado
+                    </CardDescription>
+                  </div>
                 </div>
-                <div>
-                  <CardTitle className="text-lg">Notificações Push</CardTitle>
-                  <CardDescription className="text-xs">
-                    Receba alertas mesmo com o app fechado
-                  </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-primary/20">
+                  <div className="flex-1">
+                    <Label htmlFor="push-enabled" className="text-sm font-semibold cursor-pointer">
+                      Ativar notificações push
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Essencial para lembretes pontuais
+                    </p>
+                  </div>
+                  <Switch
+                    id="push-enabled"
+                    checked={settings.pushEnabled}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        handleEnablePushNotifications();
+                      } else {
+                        setSettings({ ...settings, pushEnabled: false });
+                      }
+                    }}
+                  />
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-primary/20">
-                <div className="flex-1">
-                  <Label htmlFor="push-enabled" className="text-sm font-semibold cursor-pointer">
-                    Ativar notificações push
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Essencial para lembretes pontuais
-                  </p>
+
+                {!settings.pushEnabled && (
+                  <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
+                    <p className="text-sm text-warning-foreground">
+                      <strong>⚠️ Atenção:</strong> Sem notificações push você pode perder seus horários de medicação.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-success/10 rounded-lg">
+                    <Watch className="h-5 w-5 text-success" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Sincronização com Wearables</CardTitle>
+                    <CardDescription className="text-xs">
+                      Apple Watch, Galaxy Watch, etc.
+                    </CardDescription>
+                  </div>
                 </div>
-                <Switch
-                  id="push-enabled"
-                  checked={settings.pushEnabled}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      handleEnablePushNotifications();
-                    } else {
-                      setSettings({ ...settings, pushEnabled: false });
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-success/20">
+                  <div className="flex-1">
+                    <Label htmlFor="wearable-sync" className="text-sm font-semibold cursor-pointer">
+                      Sincronizar com smartwatch
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Alertas no pulso
+                    </p>
+                  </div>
+                  <Switch
+                    id="wearable-sync"
+                    checked={settings.wearableSync}
+                    onCheckedChange={(checked) =>
+                      setSettings({ ...settings, wearableSync: checked })
                     }
-                  }}
-                />
-              </div>
+                  />
+                </div>
 
-              {!settings.pushEnabled && (
-                <div className="p-4 bg-warning/10 border border-warning/30 rounded-lg">
-                  <p className="text-sm text-warning-foreground">
-                    <strong>⚠️ Atenção:</strong> Sem notificações push você pode perder seus horários de medicação.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:shadow-lg transition-all duration-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-success/10 rounded-lg">
-                  <Watch className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Sincronização com Wearables</CardTitle>
-                  <CardDescription className="text-xs">
-                    Apple Watch, Galaxy Watch, etc.
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-success/20">
-                <div className="flex-1">
-                  <Label htmlFor="wearable-sync" className="text-sm font-semibold cursor-pointer">
-                    Sincronizar com smartwatch
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Alertas no pulso
-                  </p>
-                </div>
-                <Switch
-                  id="wearable-sync"
-                  checked={settings.wearableSync}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, wearableSync: checked })
-                  }
-                />
-              </div>
-
-              {settings.wearableSync && (
-                <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
-                  <p className="text-sm flex items-start gap-2">
-                    <span className="text-2xl">⌚</span>
-                    <span>Suas notificações aparecerão automaticamente no seu smartwatch quando conectado.</span>
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 hover:shadow-lg transition-all duration-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-accent rounded-lg">
-                  <Bell className="h-5 w-5 text-accent-foreground" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Horários de Alerta</CardTitle>
-                  <CardDescription className="text-xs">
-                    Configure os momentos de notificação
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-3">
-                <Label className="text-sm font-semibold">Você será alertado nos seguintes momentos:</Label>
-                <div className="space-y-3 p-4 bg-accent/30 rounded-lg border border-border">
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">15 minutos antes</span>
-                    </div>
-                    <Switch defaultChecked disabled />
+                {settings.wearableSync && (
+                  <div className="p-4 bg-success/10 border border-success/30 rounded-lg">
+                    <p className="text-sm flex items-start gap-2">
+                      <span className="text-2xl">⌚</span>
+                      <span>Suas notificações aparecerão automaticamente no seu smartwatch quando conectado.</span>
+                    </p>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-warning rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">5 minutos antes</span>
-                    </div>
-                    <Switch defaultChecked disabled />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 hover:shadow-lg transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-accent rounded-lg">
+                    <Bell className="h-5 w-5 text-accent-foreground" />
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">Na hora exata</span>
-                    </div>
-                    <Switch defaultChecked disabled />
+                  <div>
+                    <CardTitle className="text-lg">Horários de Alerta</CardTitle>
+                    <CardDescription className="text-xs">
+                      Configure os momentos de notificação
+                    </CardDescription>
                   </div>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-border">
-                <div className="flex-1">
-                  <Label htmlFor="vibration" className="text-sm font-semibold cursor-pointer">
-                    Vibração
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Feedback tátil nos alertas
-                  </p>
-                </div>
-                <Switch
-                  id="vibration"
-                  checked={settings.vibration}
-                  onCheckedChange={(checked) =>
-                    setSettings({ ...settings, vibration: checked })
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="sticky bottom-20 z-10 mt-6">
-            <Button 
-              onClick={handleSaveSettings} 
-              className="w-full shadow-lg" 
-              size="lg"
-              disabled={loading}
-              variant={loading ? "secondary" : "default"}
-            >
-              {loading ? (
-                <>
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent mr-2" />
-                  Salvando configurações...
-                </>
-              ) : (
-                <>
-                  <Bell className="mr-2 h-5 w-5" />
-                  Salvar e Agendar Notificações
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Diagnostics Section */}
-          <Collapsible open={showDiagnostics} onOpenChange={setShowDiagnostics}>
-            <CollapsibleTrigger asChild>
-              <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Bug className="h-5 w-5 text-orange-500" />
-                      <span className="font-medium text-sm">Diagnóstico de Notificações</span>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Você será alertado nos seguintes momentos:</Label>
+                  <div className="space-y-3 p-4 bg-accent/30 rounded-lg border border-border">
+                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                        <span className="text-sm font-medium">15 minutos antes</span>
+                      </div>
+                      <Switch defaultChecked disabled />
                     </div>
-                    <ChevronRight className={`h-5 w-5 transition-transform ${showDiagnostics ? "rotate-90" : ""}`} />
+                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-warning rounded-full animate-pulse" />
+                        <span className="text-sm font-medium">5 minutos antes</span>
+                      </div>
+                      <Switch defaultChecked disabled />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                        <span className="text-sm font-medium">Na hora exata</span>
+                      </div>
+                      <Switch defaultChecked disabled />
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2">
-              <NotificationDiagnostics />
-            </CollapsibleContent>
-          </Collapsible>
-
-          <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
-            <CardContent className="p-5">
-              <div className="flex items-start gap-3">
-                <div className="text-2xl">💡</div>
-                <div className="flex-1 space-y-2">
-                  <p className="font-semibold text-sm">Como funcionam as notificações:</p>
-                  <ul className="text-xs text-muted-foreground space-y-1.5 ml-1">
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">✓</span>
-                      <span>Programadas automaticamente para as próximas 24 horas</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">✓</span>
-                      <span>Funcionam mesmo com o app fechado (precisa de permissão)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">✓</span>
-                      <span>Email enviado como backup quando o push falha</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">✓</span>
-                      <span>Reprogramadas automaticamente a cada hora</span>
-                    </li>
-                  </ul>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="flex items-center justify-between p-4 bg-accent/30 rounded-lg border border-border">
+                  <div className="flex-1">
+                    <Label htmlFor="vibration" className="text-sm font-semibold cursor-pointer">
+                      Vibração
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Feedback tátil nos alertas
+                    </p>
+                  </div>
+                  <Switch
+                    id="vibration"
+                    checked={settings.vibration}
+                    onCheckedChange={(checked) =>
+                      setSettings({ ...settings, vibration: checked })
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="sticky bottom-20 z-10 mt-6">
+              <Button
+                onClick={handleSaveSettings}
+                className="w-full shadow-lg"
+                size="lg"
+                disabled={loading}
+                variant={loading ? "secondary" : "default"}
+              >
+                {loading ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent mr-2" />
+                    Salvando configurações...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="mr-2 h-5 w-5" />
+                    Salvar e Agendar Notificações
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Diagnostics Section */}
+            <Collapsible open={showDiagnostics} onOpenChange={setShowDiagnostics}>
+              <CollapsibleTrigger asChild>
+                <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Bug className="h-5 w-5 text-orange-500" />
+                        <span className="font-medium text-sm">Diagnóstico de Notificações</span>
+                      </div>
+                      <ChevronRight className={`h-5 w-5 transition-transform ${showDiagnostics ? "rotate-90" : ""}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <NotificationDiagnostics />
+              </CollapsibleContent>
+            </Collapsible>
+
+            <Card className="bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+              <CardContent className="p-5">
+                <div className="flex items-start gap-3">
+                  <div className="text-2xl">💡</div>
+                  <div className="flex-1 space-y-2">
+                    <p className="font-semibold text-sm">Como funcionam as notificações:</p>
+                    <ul className="text-xs text-muted-foreground space-y-1.5 ml-1">
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Programadas automaticamente para as próximas 24 horas</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Funcionam mesmo com o app fechado (precisa de permissão)</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Email enviado como backup quando o push falha</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Reprogramadas automaticamente a cada hora</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pill, Users, FileText, Crown, Calendar, Activity, Sparkles, TrendingUp } from "lucide-react";
+import { Pill, Users, FileText, Crown, Calendar, Activity, Sparkles, TrendingUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -31,13 +31,13 @@ export default function ProfileStatsGrid() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return 0;
-      
+
       const { count } = await supabase
         .from("items")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id)
         .eq("is_active", true);
-      
+
       return count || 0;
     }
   });
@@ -48,12 +48,12 @@ export default function ProfileStatsGrid() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return 0;
-      
+
       const { count } = await supabase
         .from("documentos_saude")
         .select("*", { count: "exact", head: true })
         .eq("user_id", user.id);
-      
+
       return count || 0;
     }
   });
@@ -64,7 +64,7 @@ export default function ProfileStatsGrid() {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return 0;
-      
+
       // Simplified streak calculation - count consecutive days with taken doses
       const { data: doses } = await supabase
         .from("dose_instances")
@@ -72,13 +72,13 @@ export default function ProfileStatsGrid() {
         .eq("status", "taken")
         .order("due_at", { ascending: false })
         .limit(30);
-      
+
       if (!doses?.length) return 0;
-      
+
       let streak = 0;
       const today = new Date();
       let currentDate = new Date(today);
-      
+
       for (let i = 0; i < 30; i++) {
         const dateStr = currentDate.toISOString().split('T')[0];
         const hasDose = doses.some(d => d.due_at?.startsWith(dateStr));
@@ -89,7 +89,7 @@ export default function ProfileStatsGrid() {
           break;
         }
       }
-      
+
       return streak;
     }
   });
@@ -109,24 +109,24 @@ export default function ProfileStatsGrid() {
       icon: <Users className="h-5 w-5" />,
       color: "text-info",
       bgColor: "bg-info/10",
-      onClick: () => {}
+      onClick: () => { }
     },
     {
-      label: t('profile.documents'),
-      value: docsCount,
-      icon: <FileText className="h-5 w-5" />,
-      color: "text-success",
-      bgColor: "bg-success/10",
-      onClick: () => navigate('/cofre')
+      label: t('nav.achievements'),
+      value: `${t('progress.level')} 1`, // dynamic later if needed
+      icon: <Trophy className="h-5 w-5" />,
+      color: "text-amber-500",
+      bgColor: "bg-amber-500/10",
+      onClick: () => navigate('/conquistas')
     },
     {
-      label: isPremium ? "Premium" : t('profile.daysLeft'),
+      label: isPremium ? t('common.premium') : t('profile.daysLeft'),
       value: isPremium ? "✓" : (daysLeft || 0),
       icon: isPremium ? <Crown className="h-5 w-5" /> : <Calendar className="h-5 w-5" />,
       color: isPremium ? "text-warning" : "text-muted-foreground",
       bgColor: isPremium ? "bg-warning/10" : "bg-muted",
       onClick: () => navigate('/planos'),
-      badge: !isPremium ? "7 dias grátis" : undefined
+      badge: !isPremium ? t('profile.7daysFree') : undefined
     }
   ];
 

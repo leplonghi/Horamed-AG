@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Activity, Calendar, FileText, Stethoscope, Brain, ArrowRight, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy, limit } from "@/integrations/firebase";
 import { motion } from "framer-motion";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import HealthQuickActions from "@/components/health/HealthQuickActions";
@@ -17,7 +17,7 @@ import MedicalReportButton from "@/components/health/MedicalReportButton";
 import OceanBackground from "@/components/ui/OceanBackground";
 
 export default function Saude() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [stats, setStats] = useState({
     appointments: 0,
@@ -27,44 +27,48 @@ export default function Saude() {
     nextAppointmentDate: undefined as string | undefined,
     lastCheckupDate: undefined as string | undefined
   });
-  
+
   useEffect(() => {
     loadStats();
   }, []);
 
   const loadStats = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const [appointmentsRes, examsRes, vaccinesRes, measurementsRes, nextAppointmentRes] = await Promise.all([
-        supabase.from('consultas_medicas').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('exames_laboratoriais').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('documentos_saude').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('categoria_id', 'vacinacao'),
-        supabase.from('sinais_vitais').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('consultas_medicas')
-          .select('data_consulta')
-          .eq('user_id', user.id)
-          .gte('data_consulta', new Date().toISOString())
-          .order('data_consulta', { ascending: true })
-          .limit(1)
+      const [appointmentsRes, examsRes, vaccinesRes, measurementsRes, nextAppointmentRes, lastCheckupRes] = await Promise.all([
+        // These counts are approximate by fetching. 
+        // For production scale, aggregation queries or counters are better.
+        fetchCollection<any>(`users/${user.uid}/appointments`),
+        fetchCollection<any>(`users/${user.uid}/exams`),
+        fetchCollection<any>(`users/${user.uid}/healthDocuments`, [
+          where('category', '==', 'vaccination')
+        ]),
+        fetchCollection<any>(`users/${user.uid}/vitals`),
+
+        // Next appointment
+        fetchCollection<any>(`users/${user.uid}/appointments`, [
+          where('date', '>=', new Date().toISOString()),
+          orderBy('date', 'asc'),
+          limit(1)
+        ]),
+
+        // Last checkup
+        fetchCollection<any>(`users/${user.uid}/appointments`, [
+          where('date', '<', new Date().toISOString()),
+          orderBy('date', 'desc'),
+          limit(1)
+        ])
       ]);
 
-      const lastCheckupRes = await supabase
-        .from('consultas_medicas')
-        .select('data_consulta')
-        .eq('user_id', user.id)
-        .lt('data_consulta', new Date().toISOString())
-        .order('data_consulta', { ascending: false })
-        .limit(1);
-
       setStats({
-        appointments: appointmentsRes.count || 0,
-        exams: examsRes.count || 0,
-        vaccines: vaccinesRes.count || 0,
-        measurements: measurementsRes.count || 0,
-        nextAppointmentDate: nextAppointmentRes.data?.[0]?.data_consulta,
-        lastCheckupDate: lastCheckupRes.data?.[0]?.data_consulta
+        appointments: appointmentsRes.data?.length || 0,
+        exams: examsRes.data?.length || 0,
+        vaccines: vaccinesRes.data?.length || 0,
+        measurements: measurementsRes.data?.length || 0,
+        nextAppointmentDate: nextAppointmentRes.data?.[0]?.date,
+        lastCheckupDate: lastCheckupRes.data?.[0]?.date
       });
     } catch (error) {
       console.error("Error loading health stats:", error);
@@ -82,7 +86,7 @@ export default function Saude() {
       navigate(routes[type]);
     }
   };
-  
+
   const healthSections = [
     {
       title: t('saude.healthAgenda'),
@@ -145,7 +149,7 @@ export default function Saude() {
     <div className="min-h-screen bg-background relative">
       <OceanBackground variant="page" />
       <Header />
-      
+
       <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6 page-container relative z-10">
         {/* Hero Header */}
         <PageHeroHeader
@@ -190,7 +194,7 @@ export default function Saude() {
         />
 
         {/* Health Sections Grid */}
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"

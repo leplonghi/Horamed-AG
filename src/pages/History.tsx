@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -10,13 +10,12 @@ import InteractiveTimelineChart from "@/components/InteractiveTimelineChart";
 import { MonthlyProgressCalendar } from "@/components/MonthlyProgressCalendar";
 import DoseTimeline from "@/components/DoseTimeline";
 import InfoDialog from "@/components/InfoDialog";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, subDays, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, subDays, startOfDay } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { 
-  Calendar as CalendarIcon, 
-  TrendingUp, 
+import {
+  TrendingUp,
   TrendingDown,
-  Activity, 
+  Activity,
   Clock,
   Target,
   BarChart3,
@@ -25,16 +24,17 @@ import {
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 
 interface DoseInstance {
   id: string;
-  item_id: string;
-  due_at: string;
+  itemId: string;
+  dueAt: string;
   status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-  taken_at: string | null;
+  takenAt: string | null;
   items: {
     name: string;
-    dose_text: string | null;
+    doseText: string | null;
   };
 }
 
@@ -58,11 +58,12 @@ export default function History() {
   const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
   const [doses, setDoses] = useState<DoseInstance[]>([]);
   const [previousDoses, setPreviousDoses] = useState<DoseInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState<number>(0);
-  const [longestStreak, setLongestStreak] = useState<number>(0);
+  const [loadingEffects, setLoadingEffects] = useState(true);
   const [medicationStats, setMedicationStats] = useState<MedicationStats[]>([]);
   const { activeProfile } = useUserProfiles();
+
+  // Use the streak calculator hook
+  const { currentStreak, longestStreak, loading: streakLoading, refresh: refreshStreak } = useStreakCalculator();
 
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
@@ -73,27 +74,27 @@ export default function History() {
   // Reload data when active profile changes
   useEffect(() => {
     if (activeProfile) {
-      setLoading(true);
+      setLoadingEffects(true);
       loadAllData();
+      refreshStreak();
     }
   }, [activeProfile?.id]);
 
   const loadAllData = async () => {
-    setLoading(true);
+    setLoadingEffects(true);
     try {
       await Promise.all([
         loadDoses(),
-        loadStreak(),
         loadMedicationStats()
       ]);
     } finally {
-      setLoading(false);
+      setLoadingEffects(false);
     }
   };
 
   const loadDoses = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       let startDate: Date;
@@ -104,11 +105,10 @@ export default function History() {
       const now = new Date();
 
       if (activeTab === 'today') {
-        startDate = new Date(now);
-        startDate.setHours(0, 0, 0, 0);
+        startDate = startOfDay(now);
         endDate = new Date(now);
         endDate.setHours(23, 59, 59, 999);
-        
+
         previousStartDate = subDays(startDate, 1);
         previousEndDate = subDays(endDate, 1);
       } else if (activeTab === 'week') {
@@ -123,121 +123,94 @@ export default function History() {
         previousEndDate = subMonths(endDate, 1);
       }
 
-      // Load current period doses
-      let dosesQuery = supabase
-        .from('dose_instances')
-        .select(`
-          id,
-          item_id,
-          due_at,
-          status,
-          taken_at,
-          items!inner(
-            name,
-            dose_text,
-            user_id,
-            profile_id
-          )
-        `)
-        .eq('items.user_id', user.id)
-        .gte('due_at', startDate.toISOString())
-        .lte('due_at', endDate.toISOString());
+      // Fetch active items first for name resolution
+      const { data: items } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const itemsMap = new Map(items?.map(i => [i.id, i]));
 
-      if (activeProfile) {
-        dosesQuery = dosesQuery.eq('items.profile_id', activeProfile.id);
-      }
+      // Query Constraints
+      const constraints = [
+        where('dueAt', '>=', startDate.toISOString()),
+        where('dueAt', '<=', endDate.toISOString()),
+        orderBy('dueAt', 'desc')
+      ];
 
-      const { data, error } = await dosesQuery.order('due_at', { ascending: false });
+      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, constraints);
 
-      if (error) throw error;
-      setDoses((data || []) as DoseInstance[]);
+      const mappedDoses = (dosesData || []).map(dose => {
+        const item = itemsMap.get(dose.itemId);
+        // Filter by profile if activeProfile is set and item has profileId
+        if (activeProfile && item?.profileId && item.profileId !== activeProfile.id) return null;
 
-      // Load previous period doses for comparison
-      let prevDosesQuery = supabase
-        .from('dose_instances')
-        .select(`
-          id,
-          item_id,
-          due_at,
-          status,
-          taken_at,
-          items!inner(
-            name,
-            dose_text,
-            user_id,
-            profile_id
-          )
-        `)
-        .eq('items.user_id', user.id)
-        .gte('due_at', previousStartDate.toISOString())
-        .lte('due_at', previousEndDate.toISOString());
+        return {
+          id: dose.id,
+          itemId: dose.itemId,
+          dueAt: dose.dueAt,
+          status: dose.status,
+          takenAt: dose.takenAt,
+          items: {
+            name: item?.name || 'Unknown',
+            doseText: item?.doseText || null
+          }
+        };
+      }).filter(Boolean) as DoseInstance[];
 
-      if (activeProfile) {
-        prevDosesQuery = prevDosesQuery.eq('items.profile_id', activeProfile.id);
-      }
+      setDoses(mappedDoses);
 
-      const { data: prevData, error: prevError } = await prevDosesQuery;
+      // Previous period
+      const prevConstraints = [
+        where('dueAt', '>=', previousStartDate.toISOString()),
+        where('dueAt', '<=', previousEndDate.toISOString())
+      ];
+      const { data: prevDosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, prevConstraints);
 
-      if (prevError) throw prevError;
-      setPreviousDoses((prevData || []) as DoseInstance[]);
+      const mappedPrevDoses = (prevDosesData || []).map(dose => {
+        const item = itemsMap.get(dose.itemId);
+        if (activeProfile && item?.profileId && item.profileId !== activeProfile.id) return null;
+
+        return {
+          id: dose.id,
+          itemId: dose.itemId,
+          dueAt: dose.dueAt,
+          status: dose.status,
+          takenAt: dose.takenAt,
+          items: {
+            name: item?.name || 'Unknown',
+            doseText: item?.doseText || null
+          }
+        };
+      }).filter(Boolean) as DoseInstance[];
+
+      setPreviousDoses(mappedPrevDoses);
+
     } catch (error) {
       console.error('Error loading history:', error);
     }
   };
 
-  const loadStreak = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_adherence_streaks')
-        .select('current_streak, longest_streak')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      setStreak(data?.current_streak || 0);
-      setLongestStreak(data?.longest_streak || 0);
-    } catch (error) {
-      console.error('Error loading streak:', error);
-    }
-  };
-
   const loadMedicationStats = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const now = new Date();
       const thirtyDaysAgo = subDays(now, 30);
 
-      let statsQuery = supabase
-        .from('dose_instances')
-        .select(`
-          item_id,
-          status,
-          items!inner(
-            name,
-            user_id,
-            profile_id
-          )
-        `)
-        .eq('items.user_id', user.id)
-        .gte('due_at', thirtyDaysAgo.toISOString())
-        .lte('due_at', now.toISOString());
+      // Fetch active items first
+      const { data: items } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const itemsMap = new Map(items?.map(i => [i.id, i]));
 
-      if (activeProfile) {
-        statsQuery = statsQuery.eq('items.profile_id', activeProfile.id);
-      }
-
-      const { data, error } = await statsQuery;
-
-      if (error) throw error;
+      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        where('dueAt', '>=', thirtyDaysAgo.toISOString()),
+        where('dueAt', '<=', now.toISOString())
+      ]);
 
       // Group by medication
-      const statsByMed = (data || []).reduce((acc, dose: any) => {
-        const medName = dose.items.name;
+      const statsByMed = (dosesData || []).reduce((acc, dose: any) => {
+        const item = itemsMap.get(dose.itemId);
+        if (activeProfile && item?.profileId && item.profileId !== activeProfile.id) return acc;
+
+        const medName = item?.name || 'Unknown';
+
         if (!acc[medName]) {
           acc[medName] = { name: medName, total: 0, taken: 0 };
         }
@@ -265,7 +238,7 @@ export default function History() {
     const missed = dosesData.filter(d => d.status === 'missed').length;
     const skipped = dosesData.filter(d => d.status === 'skipped').length;
     const progressRate = total > 0 ? Math.round((taken / total) * 100) : 0;
-    
+
     return { total, taken, missed, skipped, progressRate };
   };
 
@@ -289,7 +262,7 @@ export default function History() {
     }
   };
 
-  if (loading) {
+  if (loadingEffects || streakLoading) {
     return (
       <>
         <Header />
@@ -312,7 +285,7 @@ export default function History() {
               {t('history.subtitle')}
             </p>
           </div>
-          {streak > 0 && <StreakBadge streak={streak} type="current" />}
+          {currentStreak > 0 && <StreakBadge streak={currentStreak} type="current" />}
         </div>
 
         {/* Stats Cards */}
@@ -366,7 +339,7 @@ export default function History() {
                 />
               </div>
               <div className="text-3xl font-bold text-orange-600">
-                {streak}
+                {currentStreak}
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 {t('history.record')}: {longestStreak} {t('history.days')}
@@ -433,9 +406,9 @@ export default function History() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">{getPeriodLabel()}</span>
-                   <span className="text-lg font-bold text-primary">
-                     {currentStats.progressRate}%
-                   </span>
+                    <span className="text-lg font-bold text-primary">
+                      {currentStats.progressRate}%
+                    </span>
                   </div>
                   <Progress value={currentStats.progressRate} className="h-2" />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -448,9 +421,9 @@ export default function History() {
                     <span className="text-sm font-medium text-muted-foreground">
                       {getPreviousPeriodLabel()}
                     </span>
-                   <span className="text-lg font-bold text-muted-foreground">
-                     {previousStats.progressRate}%
-                   </span>
+                    <span className="text-lg font-bold text-muted-foreground">
+                      {previousStats.progressRate}%
+                    </span>
                   </div>
                   <Progress value={previousStats.progressRate} className="h-2 opacity-50" />
                   <p className="text-xs text-muted-foreground mt-1">
@@ -481,20 +454,20 @@ export default function History() {
               </TabsList>
 
               <TabsContent value="timeline">
-                <InteractiveTimelineChart 
+                <InteractiveTimelineChart
                   doses={doses}
                   period={activeTab}
                 />
               </TabsContent>
 
               <TabsContent value="calendar">
-                <MonthlyProgressCalendar 
+                <MonthlyProgressCalendar
                   profileId={activeProfile?.id}
                 />
               </TabsContent>
 
               <TabsContent value="list">
-                <DoseTimeline 
+                <DoseTimeline
                   doses={doses}
                   period={activeTab}
                 />
@@ -509,14 +482,14 @@ export default function History() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {medicationStats.map((med) => (
-                     <div key={med.name}>
-                       <div className="flex items-center justify-between mb-2">
-                         <span className="text-sm font-medium">{med.name}</span>
-                         <span className="text-sm font-bold text-primary">
-                           {med.progressRate}%
-                         </span>
-                       </div>
-                       <Progress value={med.progressRate} className="h-2" />
+                    <div key={med.name}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{med.name}</span>
+                        <span className="text-sm font-bold text-primary">
+                          {med.progressRate}%
+                        </span>
+                      </div>
+                      <Progress value={med.progressRate} className="h-2" />
                       <p className="text-xs text-muted-foreground mt-1">
                         {med.taken} {t('history.ofDoses')} {med.total} {t('history.dosesTaken')}
                       </p>

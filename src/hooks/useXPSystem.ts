@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useCallback } from "react";
+import { auth, fetchCollection, where, query } from "@/integrations/firebase";
 import { startOfWeek, startOfMonth, subDays } from "date-fns";
 
 interface XPData {
@@ -22,24 +22,18 @@ export function useXPSystem() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    calculateXP();
-  }, []);
-
-  const calculateXP = async () => {
+  const calculateXP = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
+      const userId = user.uid;
+      const dosesPath = `users/${userId}/doses`;
+
       // Get all taken doses
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .eq("status", "taken");
+      const { data: doses } = await fetchCollection<any>(dosesPath, [
+        where("status", "==", "taken")
+      ]);
 
       if (!doses) {
         setLoading(false);
@@ -55,11 +49,11 @@ export function useXPSystem() {
       const monthStart = startOfMonth(new Date());
 
       doses.forEach((dose) => {
-        const doseDate = new Date(dose.taken_at || dose.due_at);
+        const doseDate = new Date(dose.takenAt || dose.dueAt);
         let xpEarned = 10; // Base XP for taking medication
 
         // Bonus for on-time doses (within 30 minutes of scheduled time)
-        if (dose.delay_minutes !== null && dose.delay_minutes <= 30) {
+        if (dose.delayMinutes !== undefined && dose.delayMinutes !== null && dose.delayMinutes <= 30) {
           xpEarned += 5;
         }
 
@@ -76,18 +70,15 @@ export function useXPSystem() {
 
       // Calculate perfect days bonus (all doses taken in a day)
       const dayMap = new Map<string, { total: number; taken: number }>();
-      const { data: allDoses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", subDays(new Date(), 30).toISOString());
+      const thirtyDaysAgo = subDays(new Date(), 30);
 
-      if (allDoses) {
-        allDoses.forEach((dose) => {
-          const day = new Date(dose.due_at).toDateString();
+      const { data: recentDoses } = await fetchCollection<any>(dosesPath, [
+        where("dueAt", ">=", thirtyDaysAgo.toISOString())
+      ]);
+
+      if (recentDoses) {
+        recentDoses.forEach((dose) => {
+          const day = new Date(dose.dueAt).toDateString();
           const current = dayMap.get(day) || { total: 0, taken: 0 };
           current.total++;
           if (dose.status === "taken") current.taken++;
@@ -95,10 +86,10 @@ export function useXPSystem() {
         });
 
         // Add bonus XP for perfect days
-        dayMap.forEach(({ total, taken }) => {
+        dayMap.forEach(({ total, taken }, dayStr) => {
           if (total === taken && total > 0) {
+            const day = new Date(dayStr);
             totalXP += 50;
-            const day = new Date();
             if (day >= weekStart) weeklyXP += 50;
             if (day >= monthStart) monthlyXP += 50;
           }
@@ -132,7 +123,11 @@ export function useXPSystem() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    calculateXP();
+  }, [calculateXP]);
 
   return { ...xpData, loading, refresh: calculateXP };
 }

@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -54,6 +55,11 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        // PRO-MAX: Disruptor Color
+        "accent-highlight": {
+          DEFAULT: "hsl(var(--accent-highlight))",
+          foreground: "hsl(var(--accent-highlight-foreground))",
         },
         // Fluid gradient colors
         gradient: {
@@ -247,5 +253,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

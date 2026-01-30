@@ -1,30 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, fetchCollection, where, orderBy, updateDocument } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 
 export interface MedicationInteraction {
   id: string;
-  drug_a: string;
-  drug_b: string;
+  drugA: string; // drug_a -> drugA
+  drugB: string; // drug_b -> drugB
   severity: 'low' | 'moderate' | 'high' | 'contraindicated';
   description: string;
   recommendation: string | null;
   mechanism: string | null;
-  item_a_name: string;
-  item_b_name: string;
-  item_a_id: string;
-  item_b_id: string;
+  itemAName: string; // item_a_name -> itemAName
+  itemBName: string; // item_b_name -> itemBName
+  itemAId: string; // item_a_id -> itemAId
+  itemBId: string; // item_b_id -> itemBId
 }
 
 export interface InteractionAlert {
   id: string;
-  interaction_id: string;
-  item_a_id: string;
-  item_b_id: string;
+  interactionId: string; // interaction_id
+  itemAId: string; // item_a_id
+  itemBId: string; // item_b_id
   severity: string;
-  acknowledged_at: string | null;
-  dismissed_at: string | null;
-  created_at: string;
+  acknowledgedAt: string | null; // acknowledged_at
+  dismissedAt: string | null; // dismissed_at
+  createdAt: string; // created_at
 }
 
 export function useMedicationInteractions(profileId?: string) {
@@ -35,27 +36,26 @@ export function useMedicationInteractions(profileId?: string) {
   const [error, setError] = useState<string | null>(null);
 
   const checkInteractions = useCallback(async (newMedication?: string) => {
-    if (!user) return { interactions: [], has_critical: false };
-    
+    if (!user) return { interactions: [], hasCritical: false }; // changed has_critical to hasCritical
+
     setLoading(true);
     setError(null);
-    
+
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('check-interactions', {
-        body: { 
-          profile_id: profileId,
-          new_medication: newMedication,
-        }
+      const checkInteractionsFn = httpsCallable(functions, 'checkInteractions');
+      const result = await checkInteractionsFn({
+        profileId,
+        newMedication,
       });
 
-      if (fnError) throw fnError;
+      const data = result.data as any;
 
       setInteractions(data.interactions || []);
       return data;
     } catch (err: any) {
       console.error('Error checking interactions:', err);
       setError(err.message);
-      return { interactions: [], has_critical: false };
+      return { interactions: [], hasCritical: false };
     } finally {
       setLoading(false);
     }
@@ -65,18 +65,20 @@ export function useMedicationInteractions(profileId?: string) {
     if (!user) return;
 
     try {
-      const query = supabase
-        .from('user_interaction_alerts')
-        .select('*')
-        .eq('user_id', user.id)
-        .is('dismissed_at', null)
-        .order('created_at', { ascending: false });
+      const constraints = [
+        where('dismissedAt', '==', null), // dismissed_at -> dismissedAt
+        orderBy('createdAt', 'desc') // created_at -> createdAt
+      ];
 
       if (profileId) {
-        query.eq('profile_id', profileId);
+        constraints.push(where('profileId', '==', profileId));
       }
 
-      const { data, error: queryError } = await query;
+      // In Firestore: users/{userId}/interactionAlerts
+      const { data, error: queryError } = await fetchCollection(
+        `users/${user.uid}/interactionAlerts`,
+        constraints
+      );
 
       if (queryError) throw queryError;
       setAlerts((data || []) as InteractionAlert[]);
@@ -86,36 +88,43 @@ export function useMedicationInteractions(profileId?: string) {
   }, [user, profileId]);
 
   const dismissAlert = useCallback(async (alertId: string) => {
+    if (!user) return;
+
     try {
-      const { error: updateError } = await supabase
-        .from('user_interaction_alerts')
-        .update({ dismissed_at: new Date().toISOString() })
-        .eq('id', alertId);
+      const { error: updateError } = await updateDocument(
+        `users/${user.uid}/interactionAlerts`,
+        alertId,
+        { dismissedAt: new Date().toISOString() }
+      );
 
       if (updateError) throw updateError;
-      
+
       setAlerts(prev => prev.filter(a => a.id !== alertId));
     } catch (err: any) {
       console.error('Error dismissing alert:', err);
     }
-  }, []);
+  }, [user]);
 
   const acknowledgeAlert = useCallback(async (alertId: string) => {
+    if (!user) return;
+
     try {
-      const { error: updateError } = await supabase
-        .from('user_interaction_alerts')
-        .update({ acknowledged_at: new Date().toISOString() })
-        .eq('id', alertId);
+      const now = new Date().toISOString();
+      const { error: updateError } = await updateDocument(
+        `users/${user.uid}/interactionAlerts`,
+        alertId,
+        { acknowledgedAt: now }
+      );
 
       if (updateError) throw updateError;
-      
-      setAlerts(prev => prev.map(a => 
-        a.id === alertId ? { ...a, acknowledged_at: new Date().toISOString() } : a
+
+      setAlerts(prev => prev.map(a =>
+        a.id === alertId ? { ...a, acknowledgedAt: now } : a
       ));
     } catch (err: any) {
       console.error('Error acknowledging alert:', err);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (user) {

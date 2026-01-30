@@ -13,7 +13,7 @@ interface MedicationSummaryCardProps {
     name: string;
     doses: Array<{
       id: string;
-      due_at: string;
+      dueAt: string;
       status: 'scheduled' | 'taken' | 'missed' | 'skipped';
     }>;
   };
@@ -23,14 +23,14 @@ interface MedicationSummaryCardProps {
 export default function MedicationSummaryCard({ medication, className }: MedicationSummaryCardProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  
+
   const takenCount = medication.doses.filter(d => d.status === 'taken').length;
   const totalCount = medication.doses.length;
   const progress = totalCount > 0 ? (takenCount / totalCount) * 100 : 0;
-  
+
   const nextDose = medication.doses
-    .filter(d => d.status === 'scheduled' && new Date(d.due_at) > new Date())
-    .sort((a, b) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime())[0];
+    .filter(d => d.status === 'scheduled' && new Date(d.dueAt) > new Date())
+    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())[0];
 
   return (
     <Link to={`/medicamentos/${medication.id}/historico`}>
@@ -67,7 +67,7 @@ export default function MedicationSummaryCard({ medication, className }: Medicat
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
                 <Clock className="h-4 w-4" />
                 <span>
-                  {t('medSummary.next')}: {format(new Date(nextDose.due_at), "HH:mm", { locale: dateLocale })}
+                  {t('medSummary.next')}: {format(new Date(nextDose.dueAt), "HH:mm", { locale: dateLocale })}
                 </span>
               </div>
             )}

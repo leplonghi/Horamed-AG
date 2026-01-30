@@ -4,15 +4,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { useSubscription } from "@/hooks/useSubscription";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import { 
-  FileText, 
-  Download, 
-  Calendar, 
-  Activity, 
+import {
+  FileText,
+  Download,
+  Calendar,
+  Activity,
   Pill,
   ChevronLeft,
   Clock,
@@ -25,8 +25,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserProfile } from "@/hooks/useUserProfiles";
+
+import { useTranslation } from "@/contexts/LanguageContext";
+// Define simpler interfaces for internal data
+interface Medication {
+  id: string;
+  name: string;
+  doseText: string | null;
+  category: string;
+  withFood: boolean;
+  notes: string | null;
+  unitsLeft?: number;
+  unitsTotal?: number;
+  unitLabel?: string;
+  isActive: boolean;
+}
+
+interface Schedule {
+  id: string;
+  itemId: string;
+  times: string[];
+  freqType: string;
+  daysOfWeek?: number[];
+}
+
+interface Vital {
+  date: string;
+  weightKg?: number;
+  heightCm?: number;
+}
+
+interface ExportData {
+  userEmail: string;
+  profile: any;
+  bmi?: string;
+  items: any[];
+  healthHistory: any[];
+  doseInstances: any[];
+  period: number;
+}
+
 
 export default function MedicalReports() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { isPremium } = useSubscription();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -34,7 +76,7 @@ export default function MedicalReports() {
 
   const generateReport = async (type: 'complete' | 'medication' | 'adherence' | 'health') => {
     if (!isPremium) {
-      toast.error("Esta funcionalidade é exclusiva para usuários Premium", {
+      toast.error(t("toast.medical.premiumOnly"), {
         action: {
           label: "Ver Planos",
           onClick: () => navigate('/planos'),
@@ -47,72 +89,39 @@ export default function MedicalReports() {
 
     try {
       const loadingToast = toast.loading("Coletando dados...");
-      
-      const { data: { user } } = await supabase.auth.getUser();
+
+      const user = auth.currentUser;
       if (!user) {
-        toast.error("Usuário não autenticado");
+        toast.error(t("toast.medical.notAuthenticated"));
         return;
       }
 
-      // Fetch profile
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      // 1. Fetch Profile
+      const { data: profiles } = await fetchCollection<UserProfile>(`users/${user.uid}/profiles`);
+      const profile = profiles?.find(p => p.isPrimary) || profiles?.[0]; // Default to first if no primary
 
-      // Fetch items with schedules and stock
-      const { data: items } = await supabase
-        .from("items")
-        .select(`
-          id,
-          name,
-          dose_text,
-          category,
-          with_food,
-          notes,
-          schedules (
-            id,
-            times,
-            freq_type,
-            days_of_week
-          ),
-          stock (
-            units_left,
-            units_total,
-            unit_label,
-            projected_end_at
-          )
-        `)
-        .eq("is_active", true)
-        .order("category")
-        .order("name");
+      // 2. Fetch Medications & Schedules (Active Only)
+      const { data: medications } = await fetchCollection<Medication>(`users/${user.uid}/medications`, [
+        where('isActive', '==', true),
+        orderBy('name', 'asc')
+      ]);
+      const { data: schedules } = await fetchCollection<Schedule>(`users/${user.uid}/schedules`);
 
-      // Fetch health history based on period
+      // 3. Fetch Health History (Vitals)
       const daysAgo = parseInt(selectedPeriod);
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - daysAgo);
 
-      const { data: healthHistory } = await supabase
-        .from("health_history")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("recorded_at", startDate.toISOString())
-        .order("recorded_at", { ascending: false });
+      const { data: vitals } = await fetchCollection<Vital>(`users/${user.uid}/vitals`, [
+        where('date', '>=', startDate.toISOString()),
+        orderBy('date', 'desc')
+      ]);
 
-      // Fetch dose instances for adherence
-      const { data: doseInstances } = await supabase
-        .from("dose_instances")
-        .select(`
-          id,
-          status,
-          due_at,
-          taken_at,
-          item_id,
-          items (name)
-        `)
-        .gte("due_at", startDate.toISOString())
-        .order("due_at", { ascending: false });
+      // 4. Fetch Dose Instances
+      const { data: doses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        where('dueAt', '>=', startDate.toISOString()),
+        orderBy('dueAt', 'desc')
+      ]);
 
       toast.dismiss(loadingToast);
       toast.loading("Gerando PDF...");
@@ -128,40 +137,68 @@ export default function MedicalReports() {
         .catch(() => undefined);
 
       const pdfModule = await import('@/lib/pdfExport');
-      
-      const formattedItems = (items || []).map(item => {
-        const stockData = item.stock as any;
+
+      // Transform Data to Snake Case for PDF Module
+      const formattedItems = (medications || []).map(item => {
+        const itemSchedules = (schedules || []).filter(s => s.itemId === item.id);
+
         return {
           name: item.name,
-          dose_text: item.dose_text,
+          dose_text: item.doseText,
           category: item.category,
-          with_food: item.with_food,
+          with_food: item.withFood,
           notes: item.notes,
-          schedules: (item.schedules || []).map(s => ({
+          schedules: itemSchedules.map(s => ({
             times: s.times,
-            freq_type: s.freq_type,
-            days_of_week: s.days_of_week,
+            freq_type: s.freqType,
+            days_of_week: s.daysOfWeek,
           })),
-          stock: stockData ? [{
-            units_left: stockData.units_left || 0,
-            units_total: stockData.units_total || 0,
-            unit_label: stockData.unit_label || '',
-            projected_end_at: stockData.projected_end_at,
+          stock: item.unitsLeft !== undefined ? [{
+            units_left: item.unitsLeft,
+            units_total: item.unitsTotal || 0,
+            unit_label: item.unitLabel || '',
+            // projected_end_at: Calculate if needed or leave undefined
           }] : undefined,
         };
       });
 
-      const bmi = profile?.weight_kg && profile?.height_cm 
-        ? (profile.weight_kg / Math.pow(profile.height_cm / 100, 2)).toFixed(1)
+      const profileForPdf = {
+        full_name: profile?.name,
+        birth_date: profile?.birthDate,
+        height_cm: profile?.heightCm,
+        weight_kg: profile?.weightKg,
+      };
+
+      const bmi = profile?.weightKg && profile?.heightCm
+        ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)
         : undefined;
 
-      const exportData = {
+      const healthHistoryForPdf = (vitals || []).map(v => ({
+        recorded_at: v.date,
+        weight_kg: v.weightKg,
+        height_cm: v.heightCm
+      }));
+
+      // Map doses and join with medication names
+      const doseInstancesForPdf = (doses || []).map(d => {
+        const med = medications?.find(m => m.id === d.itemId);
+        return {
+          id: d.id,
+          status: d.status,
+          due_at: d.dueAt,
+          taken_at: d.takenAt,
+          item_id: d.itemId,
+          items: { name: med?.name || 'Medicamento' }
+        };
+      });
+
+      const exportData: ExportData = {
         userEmail: user.email || '',
-        profile: profile || {},
+        profile: profileForPdf,
         bmi,
         items: formattedItems,
-        healthHistory: healthHistory || [],
-        doseInstances: doseInstances || [],
+        healthHistory: healthHistoryForPdf,
+        doseInstances: doseInstancesForPdf,
         period: parseInt(selectedPeriod),
       };
 
@@ -179,13 +216,13 @@ export default function MedicalReports() {
           await pdfModule.generateHealthReport(exportData, logoImage);
           break;
       }
-      
+
       toast.dismiss();
-      toast.success("PDF gerado com sucesso!");
+      toast.success(t("toast.medical.pdfGenerated"));
     } catch (error) {
       console.error("Erro ao gerar PDF:", error);
       toast.dismiss();
-      toast.error("Erro ao gerar PDF");
+      toast.error(t("toast.medical.pdfError"));
     } finally {
       setIsGenerating(false);
     }
@@ -196,7 +233,7 @@ export default function MedicalReports() {
       <Header />
       <div className="min-h-screen bg-background pt-20 pb-24">
         <div className="max-w-4xl mx-auto p-4 space-y-6">
-          
+
           {/* Header */}
           <div className="flex items-center gap-3 mb-6">
             <Button
@@ -267,15 +304,7 @@ export default function MedicalReports() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Documento completo com todos os dados: perfil de saúde, medicamentos, estoque, agendamentos, histórico de aderência e evolução de saúde.
                   </p>
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-3">
-                    <li>✓ Dados pessoais e de saúde</li>
-                    <li>✓ Lista completa de medicamentos</li>
-                    <li>✓ Calendário e horários</li>
-                    <li>✓ Controle de estoque</li>
-                    <li>✓ Histórico de aderência</li>
-                    <li>✓ Evolução de peso e IMC</li>
-                  </ul>
-                  <Button 
+                  <Button
                     className="w-full"
                     onClick={() => generateReport('complete')}
                     disabled={!isPremium || isGenerating}
@@ -298,13 +327,7 @@ export default function MedicalReports() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Documento focado em medicamentos: lista detalhada com dosagens, horários, frequências, observações e controle de estoque.
                   </p>
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-3">
-                    <li>✓ Lista de medicamentos ativos</li>
-                    <li>✓ Dosagens e instruções</li>
-                    <li>✓ Horários e frequências</li>
-                    <li>✓ Estoque e alertas</li>
-                  </ul>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => generateReport('medication')}
@@ -328,13 +351,7 @@ export default function MedicalReports() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Análise completa da aderência ao tratamento: estatísticas, gráficos, doses tomadas, perdidas e padrões de comportamento.
                   </p>
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-3">
-                    <li>✓ Taxa de aderência geral</li>
-                    <li>✓ Aderência por medicamento</li>
-                    <li>✓ Doses tomadas vs. perdidas</li>
-                    <li>✓ Padrões e tendências</li>
-                  </ul>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => generateReport('adherence')}
@@ -358,13 +375,7 @@ export default function MedicalReports() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Acompanhamento da evolução de saúde: histórico de peso, altura, IMC e dados vitais ao longo do tempo.
                   </p>
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-3">
-                    <li>✓ Evolução de peso</li>
-                    <li>✓ Histórico de IMC</li>
-                    <li>✓ Gráficos de tendência</li>
-                    <li>✓ Análise temporal</li>
-                  </ul>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="w-full"
                     onClick={() => generateReport('health')}
@@ -391,12 +402,6 @@ export default function MedicalReports() {
                 </p>
                 <p>
                   • Todos os dados são processados localmente no seu dispositivo
-                </p>
-                <p>
-                  • Os PDFs incluem dados do período selecionado acima
-                </p>
-                <p className="text-xs italic">
-                  Este relatório não substitui consulta médica profissional.
                 </p>
               </div>
             </div>

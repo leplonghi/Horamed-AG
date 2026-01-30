@@ -7,7 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, updateDocument, where, orderBy, serverTimestamp } from "@/integrations/firebase";
 import { cn } from "@/lib/utils";
 
 interface NotificationSetupWizardProps {
@@ -33,12 +33,12 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
   const [currentStep, setCurrentStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [pushToken, setPushToken] = useState<string | null>(null);
-  
+
   const [steps, setSteps] = useState<SetupStep[]>([
     {
       id: 'permission',
       title: 'Permissão de Notificações',
-      description: isNative 
+      description: isNative
         ? `Permitir que o HoraMed envie notificações no seu ${platform === 'ios' ? 'iPhone' : 'Android'}`
         : 'Permitir notificações no navegador',
       status: 'pending'
@@ -64,40 +64,40 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
   ]);
 
   const updateStepStatus = (stepId: string, status: StepStatus, errorMessage?: string) => {
-    setSteps(prev => prev.map(step => 
-      step.id === stepId 
-        ? { ...step, status, errorMessage } 
+    setSteps(prev => prev.map(step =>
+      step.id === stepId
+        ? { ...step, status, errorMessage }
         : step
     ));
   };
 
   const requestPermissions = async (): Promise<boolean> => {
     updateStepStatus('permission', 'loading');
-    
+
     try {
       if (isNative) {
         // Request Push Notification permissions
         const pushPermStatus = await PushNotifications.requestPermissions();
         console.log("[Setup] Push permission result:", pushPermStatus.receive);
-        
+
         if (pushPermStatus.receive !== 'granted') {
-          updateStepStatus('permission', 'error', 
-            platform === 'ios' 
+          updateStepStatus('permission', 'error',
+            platform === 'ios'
               ? 'Vá em Ajustes > HoraMed > Notificações e ative'
               : 'Vá em Configurações > Apps > HoraMed > Notificações'
           );
           return false;
         }
-        
+
         // Request Local Notification permissions
         const localPermStatus = await LocalNotifications.requestPermissions();
         console.log("[Setup] Local permission result:", localPermStatus.display);
-        
+
         if (localPermStatus.display !== 'granted') {
           updateStepStatus('permission', 'error', 'Permissão de notificações locais negada');
           return false;
         }
-        
+
         updateStepStatus('permission', 'success');
         return true;
       } else {
@@ -106,14 +106,14 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           updateStepStatus('permission', 'error', 'Seu navegador não suporta notificações');
           return false;
         }
-        
+
         const permission = await Notification.requestPermission();
-        
+
         if (permission === 'granted') {
           updateStepStatus('permission', 'success');
           return true;
         } else {
-          updateStepStatus('permission', 'error', 
+          updateStepStatus('permission', 'error',
             'Clique no ícone de cadeado na barra de endereço e ative as notificações'
           );
           return false;
@@ -128,9 +128,9 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
   const registerDevice = async (): Promise<boolean> => {
     updateStepStatus('register', 'loading');
-    
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         updateStepStatus('register', 'error', 'Você precisa estar logado');
         return false;
@@ -158,22 +158,17 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
         // Register for push
         await PushNotifications.register();
-        
+
         // Wait for token
         const token = await registrationPromise;
         setPushToken(token);
-        
+
         // Save token to database
-        const { error } = await supabase
-          .from('notification_preferences')
-          .upsert({
-            user_id: user.id,
-            push_enabled: true,
-            push_token: token,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id'
-          });
+        const { error } = await updateDocument(`users/${user.uid}/profile`, "notifications", {
+          pushEnabled: true,
+          pushToken: token,
+          updatedAt: serverTimestamp()
+        });
 
         if (error) {
           console.error("[Setup] Error saving token:", error);
@@ -182,7 +177,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         }
 
         console.log("[Setup] Token saved successfully!");
-        
+
         // Create notification channel for Android
         if (platform === 'android') {
           await LocalNotifications.createChannel({
@@ -201,15 +196,10 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         return true;
       } else {
         // Web - just mark as success since we don't have server push
-        await supabase
-          .from('notification_preferences')
-          .upsert({
-            user_id: user.id,
-            push_enabled: true,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id'
-          });
+        await updateDocument(`users/${user.uid}/profile`, "notifications", {
+          pushEnabled: true,
+          updatedAt: serverTimestamp()
+        });
 
         updateStepStatus('register', 'success');
         return true;
@@ -223,9 +213,9 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
   const scheduleAlarms = async (): Promise<boolean> => {
     updateStepStatus('schedule', 'loading');
-    
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         updateStepStatus('schedule', 'error', 'Usuário não encontrado');
         return false;
@@ -235,23 +225,15 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       const now = new Date();
       const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
 
-      const { data: doses, error } = await supabase
-        .from('dose_instances')
-        .select(`
-          id,
-          due_at,
-          status,
-          items (
-            id,
-            name,
-            dose_text,
-            user_id
-          )
-        `)
-        .eq('status', 'scheduled')
-        .gte('due_at', now.toISOString())
-        .lte('due_at', next48h.toISOString())
-        .order('due_at', { ascending: true });
+      const userId = user.uid;
+      const dosesPath = `users/${userId}/doses`;
+
+      const { data: doses, error } = await fetchCollection<any>(dosesPath, [
+        where("status", "==", "scheduled"),
+        where("dueAt", ">=", now.toISOString()),
+        where("dueAt", "<=", next48h.toISOString()),
+        orderBy("dueAt", "asc")
+      ]);
 
       if (error) throw error;
 
@@ -261,12 +243,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         return true;
       }
 
-      // Filter doses belonging to this user
-      const userDoses = doses.filter(d => {
-        const item = Array.isArray(d.items) ? d.items[0] : d.items;
-        return item?.user_id === user.id;
-      });
-
       if (isNative) {
         // Cancel existing notifications first
         const pending = await LocalNotifications.getPending();
@@ -275,14 +251,13 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         }
 
         // Schedule local notifications for each dose
-        const notifications = userDoses.map((dose, index) => {
-          const item = Array.isArray(dose.items) ? dose.items[0] : dose.items;
-          const dueDate = new Date(dose.due_at);
-          
+        const notifications = doses.map((dose, index) => {
+          const dueDate = new Date(dose.dueAt);
+
           return {
             id: index + 1,
-            title: `💊 Hora do ${item?.name || 'Medicamento'}`,
-            body: item?.dose_text || 'Está na hora de tomar seu medicamento',
+            title: `💊 Hora do ${dose.itemName || 'Medicamento'}`,
+            body: dose.doseText || 'Está na hora de tomar seu medicamento',
             schedule: { at: dueDate },
             sound: 'default',
             channelId: 'horamed-medicamentos',
@@ -299,12 +274,11 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         }
       }
 
-      // Also call server to schedule push notifications (only when authenticated)
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { error: scheduleError } = await supabase.functions.invoke("schedule-dose-notifications");
-        if (scheduleError) throw scheduleError;
-      }
+      // Also call server to schedule push notifications
+      const { httpsCallable } = await import("firebase/functions");
+      const { functions } = await import("@/integrations/firebase/client");
+      const scheduleDoseNotifications = httpsCallable(functions, "scheduleDoseNotifications");
+      await scheduleDoseNotifications();
 
       updateStepStatus('schedule', 'success');
       return true;
@@ -317,7 +291,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
   const testNotification = async (): Promise<boolean> => {
     updateStepStatus('test', 'loading');
-    
+
     try {
       if (isNative) {
         // Schedule immediate local notification
@@ -354,7 +328,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
   const runSetup = async () => {
     setIsProcessing(true);
-    
+
     // Step 1: Permissions
     setCurrentStep(0);
     const permOk = await requestPermissions();
@@ -362,7 +336,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       setIsProcessing(false);
       return;
     }
-    
+
     // Step 2: Register
     setCurrentStep(1);
     const regOk = await registerDevice();
@@ -370,7 +344,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       setIsProcessing(false);
       return;
     }
-    
+
     // Step 3: Schedule
     setCurrentStep(2);
     const schedOk = await scheduleAlarms();
@@ -378,17 +352,17 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       setIsProcessing(false);
       return;
     }
-    
+
     // Step 4: Test
     setCurrentStep(3);
     const testOk = await testNotification();
-    
+
     setIsProcessing(false);
-    
+
     if (testOk) {
       // Mark setup complete
       localStorage.setItem('notification_setup_complete', 'true');
-      
+
       setTimeout(() => {
         onComplete?.();
         onClose();
@@ -428,7 +402,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
             Configurar Notificações
           </DialogTitle>
           <DialogDescription>
-            {isNative 
+            {isNative
               ? 'Configure alarmes que funcionam mesmo com o app fechado'
               : 'Configure lembretes no navegador'
             }
@@ -437,7 +411,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
         <div className="space-y-3 py-4">
           {steps.map((step, index) => (
-            <Card 
+            <Card
               key={step.id}
               className={cn(
                 "transition-all",
@@ -511,9 +485,9 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
               Depois
             </Button>
           )}
-          
+
           {hasError && !isProcessing && (
-            <Button 
+            <Button
               onClick={() => {
                 // Reset steps and retry
                 setSteps(prev => prev.map(s => ({ ...s, status: 'pending' as StepStatus, errorMessage: undefined })));
@@ -525,21 +499,21 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
               Tentar Novamente
             </Button>
           )}
-          
+
           {!isProcessing && !hasError && !allStepsComplete && (
             <Button onClick={runSetup} className="flex-1">
               <Bell className="h-4 w-4 mr-2" />
               Iniciar Configuração
             </Button>
           )}
-          
+
           {isProcessing && (
             <Button disabled className="flex-1">
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Configurando...
             </Button>
           )}
-          
+
           {allStepsComplete && (
             <Button onClick={onClose} className="flex-1">
               Concluir

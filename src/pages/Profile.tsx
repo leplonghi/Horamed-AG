@@ -1,24 +1,18 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { 
-  User, Bell, Shield, HelpCircle, LogOut, FileDown, 
-  Crown, Users, Plus, Trash2, Settings, BookOpen,
-  FileText, Smartphone, Gift, Activity, Check, Fingerprint, ArrowRight, Star, Info
+import {
+  Bell, Shield, HelpCircle, LogOut, FileDown,
+  Crown, FileText, Smartphone, Activity, BookOpen, Plane
 } from "lucide-react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
-import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useFitnessPreferences } from "@/hooks/useFitnessPreferences";
 import { motion } from "framer-motion";
@@ -26,47 +20,35 @@ import { LanguageSwitch } from "@/components/LanguageToggle";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
-// New components
+// New refined components
 import ProfileHeroHeader from "@/components/profile/ProfileHeroHeader";
-import ProfileQuickActions from "@/components/profile/ProfileQuickActions";
-import ProfileStatsGrid from "@/components/profile/ProfileStatsGrid";
-import SmartProfileInsights from "@/components/profile/SmartProfileInsights";
+import PlanOverviewCard from "@/components/profile/PlanOverviewCard";
+import SmartProfileInsights from "@/components/profile/SmartProfileInsights"; // Keep smart insights, mostly for critical alerts
 import OceanBackground from "@/components/ui/OceanBackground";
+import { ProfileMenuSection, ProfileMenuItem } from "@/components/profile/ProfileMenu";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 export default function Profile() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const [userEmail, setUserEmail] = useState("");
-  const [profile, setProfile] = useState<any>({
-    full_name: "",
-    weight_kg: null,
-    height_cm: null,
-  });
-  const { subscription, isPremium, daysLeft, refresh } = useSubscription();
-  const { profiles, activeProfile, deleteProfile, switchProfile } = useUserProfiles();
+  const { isPremium } = useSubscription();
+  const { profiles, activeProfile, switchProfile } = useUserProfiles();
   const { preferences, toggleFitnessWidgets } = useFitnessPreferences();
   const { isAvailable: biometricAvailable, isBiometricEnabled, disableBiometric } = useBiometricAuth();
   const { t } = useTranslation();
 
   useEffect(() => {
     loadProfile();
-    refresh();
   }, []);
 
   const loadProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
       setUserEmail(user.email || "");
-
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (data) setProfile({ ...data, user_id: user.id });
-      else setProfile({ user_id: user.id });
     } catch (error) {
       console.error("Error loading profile:", error);
     }
@@ -85,26 +67,6 @@ export default function Profile() {
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const getRelationshipLabel = (rel: string) => {
-    const labels: { [key: string]: string } = {
-      self: t('profile.relationSelf'),
-      child: t('profile.relationChild'),
-      parent: t('profile.relationParent'),
-      spouse: t('profile.relationSpouse'),
-      other: t('profile.relationOther')
-    };
-    return labels[rel] || rel;
-  };
-
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -114,548 +76,195 @@ export default function Profile() {
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0 }
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative pb-24">
       <OceanBackground variant="page" />
-      <Header />
-      
-      <motion.main 
+
+      <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="page-container container max-w-2xl mx-auto px-4 space-y-5 relative z-10"
+        className="page-container container max-w-lg mx-auto px-4 pt-4 space-y-6 relative z-10"
       >
-        {/* Hero Header */}
+        {/* 1. HERO - Identity Only */}
         <motion.div variants={itemVariants}>
           <ProfileHeroHeader userEmail={userEmail} onLogout={handleLogout} />
         </motion.div>
 
-        {/* Quick Actions */}
+        {/* 2. PLAN OVERVIEW - High Priority */}
         <motion.div variants={itemVariants}>
-          <ProfileQuickActions />
+          <PlanOverviewCard />
         </motion.div>
 
-        {/* Stats Grid */}
-        <motion.div variants={itemVariants}>
-          <ProfileStatsGrid />
-        </motion.div>
+        {/* 3. PROFILE SWITCHER - Compact */}
+        {profiles && profiles.length > 0 && (
+          <motion.div variants={itemVariants} className="space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('profile.profiles')}</h3>
+              {isPremium && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => navigate('/perfil/criar')}>
+                  + {t('common.add')}
+                </Button>
+              )}
+            </div>
 
-        {/* Smart Insights */}
+            <div className="flex gap-3 overflow-x-auto pb-2 px-1 snap-x scrollbar-hide">
+              {profiles.map((p) => {
+                const isActive = activeProfile?.id === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 min-w-[64px] cursor-pointer snap-start transition-all",
+                      isActive ? "opacity-100" : "opacity-60 scale-95"
+                    )}
+                    onClick={() => switchProfile(p)}
+                  >
+                    <Avatar className={cn(
+                      "h-14 w-14 border-2 transition-all",
+                      isActive ? "border-primary ring-2 ring-primary/20" : "border-border"
+                    )}>
+                      <AvatarImage src={p.avatarUrl} />
+                      <AvatarFallback className="text-xs">{p.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className={cn(
+                      "text-[10px] font-medium text-center truncate w-full px-1",
+                      isActive ? "text-primary font-bold" : "text-muted-foreground"
+                    )}>
+                      {p.name.split(' ')[0]}
+                    </span>
+                  </div>
+                );
+              })}
+              {!isPremium && profiles.length < 2 && (
+                <div
+                  className="flex flex-col items-center gap-1.5 min-w-[64px] cursor-pointer opacity-50 hover:opacity-80"
+                  onClick={() => navigate('/planos')}
+                >
+                  <div className="h-14 w-14 rounded-full bg-muted border-2 border-dashed border-muted-foreground flex items-center justify-center">
+                    <Crown className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground text-center">{t('common.new')}</span>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {/* 4. SMART INSIGHTS (Only critical stuff, less noise) */}
         <motion.div variants={itemVariants}>
           <SmartProfileInsights />
         </motion.div>
 
-        {/* Tabs */}
-        <motion.div variants={itemVariants}>
-          <Tabs defaultValue="account" className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-auto p-1.5 rounded-2xl bg-muted/50 backdrop-blur-sm">
-              <TabsTrigger value="account" className="flex-col gap-1 py-3 rounded-xl data-[state=active]:shadow-md">
-                <User className="h-5 w-5" />
-                <span className="text-xs">{t('profile.account')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="profiles" className="flex-col gap-1 py-3 rounded-xl data-[state=active]:shadow-md">
-                <Users className="h-5 w-5" />
-                <span className="text-xs">{t('profile.profiles')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="subscription" className="flex-col gap-1 py-3 rounded-xl data-[state=active]:shadow-md">
-                <Crown className="h-5 w-5" />
-                <span className="text-xs">{t('profile.plan')}</span>
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex-col gap-1 py-3 rounded-xl data-[state=active]:shadow-md">
-                <Settings className="h-5 w-5" />
-                <span className="text-xs">{t('common.settings')}</span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="account" className="space-y-4 mt-5">
-              {/* Referral Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "rounded-2xl p-4 cursor-pointer group",
-                  "bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-primary/5",
-                  "border border-purple-500/20 hover:border-purple-500/40",
-                  "shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]",
-                  "transition-all duration-300"
-                )}
-                onClick={() => navigate('/recompensas')}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-                    <Gift className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">{t('profile.referAndEarn')}</p>
-                    <p className="text-sm text-muted-foreground">{t('profile.earnDiscounts')}</p>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
-                </div>
-              </motion.div>
-
-              {/* Vital Signs Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "rounded-2xl p-4 cursor-pointer group",
-                  "bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-primary/5",
-                  "border border-blue-500/20 hover:border-blue-500/40",
-                  "shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]",
-                  "transition-all duration-300"
-                )}
-                onClick={() => navigate('/sinais-vitais')}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-                    <Activity className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">{t('profile.vitalSigns')}</p>
-                    <p className="text-sm text-muted-foreground">{t('profile.vitalSignsDesc')}</p>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 group-hover:translate-x-1 transition-all" />
-                </div>
-              </motion.div>
-
-
-              {/* Fitness Widgets Preferences */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className={cn(
-                  "rounded-2xl p-5",
-                  "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-                  "border border-border/30",
-                  "shadow-[var(--shadow-glass)]"
-                )}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 rounded-xl bg-performance/10">
-                    <Activity className="h-5 w-5 text-performance" />
-                  </div>
-                  <h3 className="font-semibold">{t('profile.wellnessPrefs')}</h3>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label htmlFor="fitness-widgets" className="cursor-pointer font-medium">
-                      {t('profile.showWellnessWidgets')}
-                    </Label>
-                    <p className="text-sm text-muted-foreground">
-                      {t('profile.showWellnessWidgetsDesc')}
-                    </p>
-                  </div>
-                  <Switch
-                    id="fitness-widgets"
-                    checked={preferences.showFitnessWidgets}
-                    onCheckedChange={toggleFitnessWidgets}
+        {/* 5. SETTINGS GROUP - Consolidate Account, Prefs, Support */}
+        <motion.div variants={itemVariants} className="space-y-4">
+          <ProfileMenuSection title={t('common.settings')}>
+            <Dialog>
+              <DialogTrigger asChild>
+                <div role="button" tabIndex={0} className="w-full">
+                  <ProfileMenuItem
+                    icon={Shield}
+                    label={t('profile.caregivers')}
+                    color="text-purple-500"
+                    bgColor="bg-purple-500/10"
                   />
                 </div>
-              </motion.div>
-            </TabsContent>
-
-            {/* Profiles Tab */}
-            <TabsContent value="profiles" className="space-y-4 mt-5">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  "rounded-2xl p-5",
-                  "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-                  "border border-border/30",
-                  "shadow-[var(--shadow-glass)]"
-                )}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="font-semibold">{t('profile.familyProfiles')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('profile.manageFamilyMeds')}
-                    </p>
-                  </div>
-                  {isPremium && (
-                    <Button
-                      size="sm"
-                      className="rounded-xl gap-2"
-                      onClick={() => navigate('/perfil/criar')}
-                    >
-                      <Plus className="h-4 w-4" />
-                      {t('common.new')}
-                    </Button>
-                  )}
-                </div>
-
-                {!isPremium && (
-                  <div className={cn(
-                    "rounded-xl p-4 mb-4",
-                    "bg-gradient-to-br from-primary/10 to-primary/5",
-                    "border border-primary/20"
-                  )}>
-                    <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-xl bg-primary/20">
-                        <Crown className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-sm mb-1">{t('profile.premiumFeature')}</p>
-                        <p className="text-xs text-muted-foreground mb-3">
-                          {t('profile.premiumFeatureDesc')}
-                        </p>
-                        <Button
-                          size="lg"
-                          className="w-full rounded-xl"
-                          onClick={() => navigate('/planos')}
-                        >
-                          {t('common.upgrade')}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  {profiles.map(profile => {
-                    const isActive = activeProfile?.id === profile.id;
-                    
-                    return (
-                      <motion.div
-                        key={profile.id}
-                        whileHover={{ scale: 1.01 }}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-xl transition-all",
-                          isActive 
-                            ? "bg-primary/10 ring-2 ring-primary/30" 
-                            : "bg-muted/30 hover:bg-muted/50"
-                        )}
-                      >
-                        <Avatar className="h-12 w-12 ring-2 ring-border/50">
-                          <AvatarImage src={profile.avatar_url || undefined} />
-                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {getInitials(profile.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium truncate">{profile.name}</p>
-                            {isActive && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/20 text-primary text-xs font-medium">
-                                <Check className="h-3 w-3" />
-                                {t('common.active')}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {getRelationshipLabel(profile.relationship)}
-                          </p>
-                        </div>
-
-                        <div className="flex gap-2">
-                          {!isActive && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="rounded-xl"
-                              onClick={() => switchProfile(profile)}
-                            >
-                              {t('profile.activate')}
-                            </Button>
-                          )}
-                          {!profile.is_primary && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="rounded-xl hover:bg-destructive/10"
-                              onClick={() => {
-                                if (confirm(t('profile.confirmDeleteProfile', { name: profile.name }))) {
-                                  deleteProfile(profile.id);
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className={cn(
-                  "rounded-2xl p-5",
-                  "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-                  "border border-border/30",
-                  "shadow-[var(--shadow-glass)]"
-                )}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{t('profile.caregivers')}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {t('profile.caregiversDesc')}
-                    </p>
-                  </div>
-                </div>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{t('profile.manageCaregivers')}</DialogTitle>
+                </DialogHeader>
                 <CaregiverManager />
-              </motion.div>
-            </TabsContent>
+              </DialogContent>
+            </Dialog>
 
-            {/* Subscription Tab */}
-            <TabsContent value="subscription" className="space-y-4 mt-5">
-              {/* Premium Upgrade CTA */}
-              {!isPremium && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={cn(
-                    "rounded-2xl p-6 text-center",
-                    "bg-gradient-to-br from-primary/15 via-purple-500/10 to-pink-500/10",
-                    "border border-primary/30",
-                    "shadow-[var(--shadow-glass)]"
-                  )}
-                >
-                  <motion.div 
-                    initial={{ scale: 0.8 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.1, type: "spring" }}
-                    className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-gradient-to-br from-warning to-orange-500 shadow-lg"
-                  >
-                    <Crown className="h-8 w-8 text-white" />
-                  </motion.div>
-                  <h3 className="text-xl font-bold mb-2">{t('profile.subscribePremium')}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {t('profile.subscribePremiumDesc')}
-                  </p>
-                  <div className="inline-block px-6 py-3 rounded-full mb-4 bg-gradient-to-r from-primary/20 to-purple-500/20 border border-primary/30">
-                    <p className="text-3xl font-bold text-primary">R$ 19,90<span className="text-sm font-normal text-muted-foreground">{t('common.perMonth')}</span></p>
-                  </div>
-                  <Button 
-                    size="lg"
-                    className="w-full h-14 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg"
-                    onClick={() => navigate('/planos')}
-                  >
-                    <Crown className="h-5 w-5 mr-2" />
-                    {t('profile.subscribeNow')}
-                  </Button>
-                </motion.div>
-              )}
+            <ProfileMenuItem
+              icon={Bell}
+              label={t('profile.notifications')}
+              onClick={() => navigate('/notificacoes/config')}
+              color="text-orange-500"
+              bgColor="bg-orange-500/10"
+            />
 
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className={cn(
-                  "rounded-2xl p-5",
-                  "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-                  "border border-border/30",
-                  "shadow-[var(--shadow-glass)]"
-                )}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 rounded-xl bg-primary/10">
-                    <Crown className="h-5 w-5 text-primary" />
-                  </div>
-                  <h3 className="font-semibold">{t('profile.currentPlan')}</h3>
+            <ProfileMenuItem
+              icon={Smartphone}
+              label={t('profile.alarmsLabel')}
+              onClick={() => navigate('/alarmes')}
+              color="text-cyan-500"
+              bgColor="bg-cyan-500/10"
+            />
+
+            <ProfileMenuItem
+              icon={Plane}
+              label={t('more.travelMode')}
+              onClick={() => navigate('/viagem')}
+              color="text-sky-500"
+              bgColor="bg-sky-500/10"
+            />
+
+            {/* In-line Toggles */}
+            <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border/40 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-xl bg-green-500/10">
+                  <Activity className="h-5 w-5 text-green-500" />
                 </div>
-                
-                <div className={cn(
-                  "p-4 rounded-xl",
-                  isPremium 
-                    ? "bg-gradient-to-br from-warning/10 to-orange-500/5 border border-warning/20" 
-                    : "bg-muted/50"
-                )}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-lg">
-                      {isPremium ? 'Premium' : t('common.free')}
-                    </span>
-                    {isPremium ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-warning/20 to-orange-500/20 text-warning text-sm font-medium">
-                        <Crown className="h-3.5 w-3.5" />
-                        Premium
-                      </span>
-                    ) : (
-                      <span className="px-3 py-1 rounded-full bg-muted text-muted-foreground text-sm">
-                        {daysLeft !== null ? `${daysLeft} ${t('profile.daysLeft')}` : t('common.free')}
-                      </span>
-                    )}
-                  </div>
-                  {!isPremium && daysLeft !== null && (
-                    <p className="text-sm text-muted-foreground">
-                      {daysLeft > 0 
-                        ? t('profile.freeTrialDays', { days: String(daysLeft) })
-                        : t('profile.freeTrialExpired')}
-                    </p>
-                  )}
+                <span className="font-medium text-sm">{t('profile.wellnessWidgets')}</span>
+              </div>
+              <Switch checked={preferences.showFitnessWidgets} onCheckedChange={toggleFitnessWidgets} />
+            </div>
+
+            {/* Language */}
+            <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm last:border-0 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-xl bg-blue-500/10">
+                  <BookOpen className="h-5 w-5 text-blue-500" />
                 </div>
+                <span className="font-medium text-sm">{t('common.language')}</span>
+              </div>
+              <LanguageSwitch />
+            </div>
 
-                {isPremium && (
-                  <div className="space-y-4 mt-4">
-                    <div className="space-y-3">
-                      {[
-                        t('profile.unlimitedMeds'),
-                        t('profile.unlimitedProfiles'),
-                        t('profile.unlimitedAI'),
-                        t('profile.pdfExport'),
-                        t('profile.smartStockAlerts')
-                      ].map((benefit, i) => (
-                        <motion.div 
-                          key={i} 
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="flex items-start gap-3"
-                        >
-                          <div className="mt-0.5 p-1 rounded-full bg-success/20">
-                            <Check className="h-3 w-3 text-success" />
-                          </div>
-                          <span className="text-sm">{benefit}</span>
-                        </motion.div>
-                      ))}
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      className="w-full rounded-xl"
-                      onClick={() => navigate('/assinatura')}
-                    >
-                      {t('profile.manageSubscription')}
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
-                  </div>
-                )}
-              </motion.div>
+            {biometricAvailable && isBiometricEnabled && (
+              <ProfileMenuItem
+                icon={Shield}
+                label={t('profile.disableBiometric')}
+                onClick={disableBiometric}
+                color="text-red-500"
+                bgColor="bg-red-500/10"
+                value="ON"
+              />
+            )}
+          </ProfileMenuSection>
 
-              {/* Referral Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className={cn(
-                  "rounded-2xl p-5 cursor-pointer group",
-                  "bg-gradient-to-br from-purple-500/10 via-pink-500/5 to-primary/5",
-                  "border border-purple-500/20 hover:border-purple-500/40",
-                  "shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]",
-                  "transition-all duration-300"
-                )}
-                onClick={() => navigate('/recompensas')}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-                      <Gift className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">{t('profile.myRewardsInvites')}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {t('profile.inviteFriendsDiscount')}
-                      </p>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-purple-500 group-hover:translate-x-1 transition-all" />
-                </div>
-              </motion.div>
-            </TabsContent>
-
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="space-y-3 mt-5">
-              {/* Language Toggle */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <LanguageSwitch />
-              </motion.div>
-
-              {[
-                { icon: Bell, label: t('profile.notifLabel'), desc: t('profile.notifDesc'), path: '/notificacoes/configurar', color: "text-info", bg: "bg-info/10" },
-                { icon: Smartphone, label: t('profile.alarmsLabel'), desc: t('profile.alarmsDesc'), path: '/alarmes', color: "text-primary", bg: "bg-primary/10" },
-                { icon: FileDown, label: t('profile.exportLabel'), desc: t('profile.exportDesc'), path: '/exportar', color: "text-success", bg: "bg-success/10" },
-                { icon: BookOpen, label: t('profile.tutorialLabel'), desc: t('profile.tutorialDesc'), path: '/tutorial', color: "text-purple-500", bg: "bg-purple-500/10" },
-                { icon: HelpCircle, label: t('profile.helpLabel'), desc: t('profile.helpDesc'), path: '/ajuda', color: "text-warning", bg: "bg-warning/10" },
-                { icon: Info, label: t('profile.aboutLabel') || "Sobre o App", desc: t('profile.aboutDesc') || "Versão, créditos e informações", path: '/sobre', color: "text-cyan-500", bg: "bg-cyan-500/10" },
-                { icon: Shield, label: t('profile.privacyLabel'), desc: t('profile.privacyDesc'), path: '/privacidade', color: "text-muted-foreground", bg: "bg-muted" },
-                { icon: FileText, label: t('profile.termsLabel'), desc: t('profile.termsDesc'), path: '/termos', color: "text-muted-foreground", bg: "bg-muted" },
-              ].map((item, index) => (
-                <motion.div
-                  key={item.path}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: (index + 1) * 0.04 }}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className={cn(
-                    "rounded-2xl p-4 cursor-pointer group",
-                    "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-sm",
-                    "border border-border/30 hover:border-border/50",
-                    "shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]",
-                    "transition-all duration-200"
-                  )}
-                  onClick={() => navigate(item.path)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn("p-2.5 rounded-xl transition-colors", item.bg)}>
-                        <item.icon className={cn("h-5 w-5", item.color)} />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{item.label}</h4>
-                        <p className="text-xs text-muted-foreground">{item.desc}</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                  </div>
-                </motion.div>
-              ))}
-
-              {/* Biometric Auth */}
-              {biometricAvailable && isBiometricEnabled && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className={cn(
-                    "rounded-2xl p-4",
-                    "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-sm",
-                    "border border-border/30",
-                    "shadow-[var(--shadow-glass)]"
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-xl bg-success/10">
-                        <Fingerprint className="h-5 w-5 text-success" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{t('profile.biometricLogin')}</h4>
-                        <p className="text-xs text-muted-foreground">{t('profile.biometricEnabled')}</p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive rounded-xl hover:bg-destructive/10"
-                      onClick={disableBiometric}
-                    >
-                      {t('profile.disable')}
-                    </Button>
-                  </div>
-                </motion.div>
-              )}
-            </TabsContent>
-          </Tabs>
+          {/* SUPPORT & LEGAL - Less prominent */}
+          <ProfileMenuSection title={t('profile.support')}>
+            <ProfileMenuItem
+              icon={HelpCircle}
+              label={t('profile.helpLabel')}
+              onClick={() => navigate('/ajuda')}
+            />
+            <ProfileMenuItem
+              icon={FileText}
+              label={t('profile.termsLabel')}
+              onClick={() => navigate('/termos')}
+            />
+            <ProfileMenuItem
+              icon={LogOut}
+              label={t('profile.logout')}
+              onClick={handleLogout}
+              isDestructive
+              bgColor="bg-destructive/10"
+            />
+          </ProfileMenuSection>
         </motion.div>
+
+        <div className="text-center text-[10px] text-muted-foreground/60 pt-4 pb-8">
+          HoraMed v1.0.0
+        </div>
       </motion.main>
 
       <Navigation />

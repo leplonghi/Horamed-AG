@@ -4,17 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  ShoppingCart, 
-  ExternalLink, 
-  Truck, 
+import {
+  ShoppingCart,
+  ExternalLink,
+  Truck,
   MapPin,
   TrendingDown,
   RefreshCw,
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { functions, httpsCallable } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -54,16 +54,13 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
   const searchPrices = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('pharmacy-prices', {
-        body: { medicationName }
-      });
-      
-      if (error) throw error;
-      
+      const pharmacyPrices = httpsCallable(functions, 'pharmacyPrices');
+      const { data } = await pharmacyPrices({ medicationName }) as { data: any };
+
       setPharmacies(data.pharmacies);
       setSavings(data.savings);
       setSearched(true);
-      
+
     } catch (error) {
       console.error("Error searching prices:", error);
       toast.error(language === 'pt' ? 'Erro ao buscar preços' : 'Error searching prices');
@@ -74,13 +71,18 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
 
   const handleBuy = (pharmacy: Pharmacy) => {
     // Track affiliate click
-    supabase.functions.invoke('affiliate-click', {
-      body: { 
-        pharmacy: pharmacy.name, 
-        medication: medicationName,
-        price: pharmacy.price
-      }
-    }).catch(console.error);
+    try {
+      const affiliateClick = httpsCallable(functions, 'affiliateClick');
+      affiliateClick({
+        body: { // Maintain compatibility with possible existing structure or update backend
+          pharmacy: pharmacy.name,
+          medication: medicationName,
+          price: pharmacy.price
+        }
+      }).catch(console.error);
+    } catch (e) {
+      console.error("Tracking error", e);
+    }
 
     window.open(pharmacy.link, '_blank');
     onBuy?.(pharmacy);
@@ -105,7 +107,7 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
         </CardTitle>
         <p className="text-sm text-muted-foreground truncate">{medicationName}</p>
       </CardHeader>
-      
+
       <CardContent className="space-y-3">
         {loading ? (
           <div className="space-y-2">
@@ -122,9 +124,8 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`p-3 rounded-lg border ${
-                    index === 0 ? 'bg-green-500/5 border-green-500/20' : 'bg-card'
-                  }`}
+                  className={`p-3 rounded-lg border ${index === 0 ? 'bg-green-500/5 border-green-500/20' : 'bg-card'
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -149,7 +150,7 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
                         </span>
                       </div>
                     </div>
-                    
+
                     <div className="text-right">
                       <p className="text-lg font-bold text-primary">
                         R$ {pharmacy.price.toFixed(2)}
@@ -202,9 +203,9 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
             </Button>
           </>
         ) : (
-          <Button 
-            onClick={searchPrices} 
-            disabled={loading} 
+          <Button
+            onClick={searchPrices}
+            disabled={loading}
             className="w-full gap-2"
           >
             <ShoppingCart className="h-4 w-4" />

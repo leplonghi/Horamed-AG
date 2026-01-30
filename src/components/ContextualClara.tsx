@@ -26,7 +26,7 @@ interface ContextualClaraProps {
 export default function ContextualClara({ context, className, onOpenClara }: ContextualClaraProps) {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  
+
   const contextConfig: Record<PageContext, { message: string; actions: QuickAction[] }> = {
     today: {
       message: t('clara.todayMessage'),
@@ -74,7 +74,7 @@ export default function ContextualClara({ context, className, onOpenClara }: Con
       message: t('clara.healthMessage'),
       actions: [
         { id: "view-insights", label: t('clara.viewInsights'), icon: Sparkles, route: "/dashboard-saude", color: "text-primary bg-primary/10" },
-        { id: "add-weight", label: t('clara.logWeight'), icon: TrendingUp, route: "/peso/historico", color: "text-green-500 bg-green-500/10" },
+        { id: "add-weight", label: t('clara.logWeight'), icon: TrendingUp, route: "/sinais-vitais?tab=weight", color: "text-green-500 bg-green-500/10" },
       ],
     },
     default: {
@@ -112,7 +112,7 @@ export default function ContextualClara({ context, className, onOpenClara }: Con
       </div>
 
       {/* Message Card */}
-      <Card 
+      <Card
         className="p-3 bg-primary/5 border-primary/10 cursor-pointer hover:bg-primary/10 transition-colors"
         onClick={onOpenClara}
       >

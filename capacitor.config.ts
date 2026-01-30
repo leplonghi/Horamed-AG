@@ -9,7 +9,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
  * - webContentsDebuggingEnabled must be FALSE for Play Store release
  */
 const config: CapacitorConfig = {
-  appId: 'dev.horamed.app',
+  appId: 'com.horamed.app',
   appName: 'HoraMed',
   webDir: 'dist',
   // Development server - COMMENT OUT FOR PRODUCTION BUILDS
@@ -21,11 +21,7 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: 'ic_stat_icon',
       iconColor: '#0ea5e9',
-      sound: 'notification.wav',
-      channelId: 'horamed_alarm',
-      channelName: 'Alarmes de Medicamentos',
-      channelDescription: 'Alarmes importantes para lembrar de tomar medicamentos',
-      channelImportance: 5,
+      // sound: undefined, // Use default system sound for reliability
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],

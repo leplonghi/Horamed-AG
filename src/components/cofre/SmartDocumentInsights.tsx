@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { 
-  Sparkles, 
-  Clock, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  Sparkles,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
   Calendar,
   Shield,
   Lightbulb,
@@ -12,12 +12,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { DocumentoSaude } from "@/hooks/useCofre";
+import { HealthDocument } from "@/hooks/useCofre";
 import { differenceInDays, format, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 
 interface SmartDocumentInsightsProps {
-  documents: DocumentoSaude[];
+  documents: HealthDocument[];
   onActionClick?: (action: string, documentId?: string) => void;
 }
 
@@ -45,22 +45,22 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     const in30Days = addDays(now, 30);
 
     // 1. Documentos expirando em 7 dias (URGENTE)
-    const expiringIn7Days = documents.filter(doc => 
-      doc.expires_at && 
-      isAfter(new Date(doc.expires_at), now) &&
-      isBefore(new Date(doc.expires_at), in7Days)
+    const expiringIn7Days = documents.filter(doc =>
+      doc.expiresAt &&
+      isAfter(new Date(doc.expiresAt), now) &&
+      isBefore(new Date(doc.expiresAt), in7Days)
     );
 
     if (expiringIn7Days.length > 0) {
       const doc = expiringIn7Days[0];
-      const days = differenceInDays(new Date(doc.expires_at!), now);
+      const days = differenceInDays(new Date(doc.expiresAt!), now);
       result.push({
         id: "expiring-urgent",
         type: "urgent",
         icon: <AlertTriangle className="h-5 w-5" />,
         title: language === 'pt' ? `${doc.title} expira em ${days} dias!` : `${doc.title} expires in ${days} days!`,
-        description: language === 'pt' 
-          ? "Providencie a renovação para evitar problemas" 
+        description: language === 'pt'
+          ? "Providencie a renovação para evitar problemas"
           : "Arrange renewal to avoid issues",
         action: {
           label: language === 'pt' ? "Ver documento" : "View document",
@@ -71,17 +71,17 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     }
 
     // 2. Documentos pendentes de revisão
-    const pendingReview = documents.filter(doc => doc.status_extraction === "pending_review");
+    const pendingReview = documents.filter(doc => doc.extractionStatus === "pending_review");
     if (pendingReview.length > 0) {
       result.push({
         id: "pending-review",
         type: "warning",
         icon: <Clock className="h-5 w-5" />,
-        title: language === 'pt' 
-          ? `${pendingReview.length} documento(s) aguardando revisão` 
+        title: language === 'pt'
+          ? `${pendingReview.length} documento(s) aguardando revisão`
           : `${pendingReview.length} document(s) awaiting review`,
-        description: language === 'pt' 
-          ? "Confira se os dados extraídos estão corretos" 
+        description: language === 'pt'
+          ? "Confira se os dados extraídos estão corretos"
           : "Check if the extracted data is correct",
         action: {
           label: language === 'pt' ? "Revisar agora" : "Review now",
@@ -91,22 +91,22 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     }
 
     // 3. Sugestão de checkup (se não tem exame há mais de 6 meses)
-    const exams = documents.filter(doc => doc.categorias_saude?.slug === "exame");
-    const lastExam = exams.length > 0 
-      ? exams.reduce((latest, doc) => 
-          new Date(doc.issued_at || doc.created_at) > new Date(latest.issued_at || latest.created_at) 
-            ? doc : latest
-        )
+    const exams = documents.filter(doc => doc.categorySlug === "exame" || doc.category?.slug === "exame");
+    const lastExam = exams.length > 0
+      ? exams.reduce((latest, doc) =>
+        new Date(doc.issuedAt || doc.createdAt) > new Date(latest.issuedAt || latest.createdAt)
+          ? doc : latest
+      )
       : null;
 
-    if (!lastExam || differenceInDays(now, new Date(lastExam.issued_at || lastExam.created_at)) > 180) {
+    if (!lastExam || differenceInDays(now, new Date(lastExam.issuedAt || lastExam.createdAt)) > 180) {
       result.push({
         id: "checkup-suggestion",
         type: "info",
         icon: <Lightbulb className="h-5 w-5" />,
         title: language === 'pt' ? "Hora do check-up?" : "Time for a check-up?",
-        description: language === 'pt' 
-          ? "Faz mais de 6 meses desde seu último exame registrado" 
+        description: language === 'pt'
+          ? "Faz mais de 6 meses desde seu último exame registrado"
           : "It's been over 6 months since your last registered exam",
         action: {
           label: language === 'pt' ? "Agendar lembrete" : "Schedule reminder",
@@ -116,9 +116,9 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     }
 
     // 4. Carteira completa (achievement)
-    const hasVaccine = documents.some(doc => doc.categorias_saude?.slug === "vacinacao");
-    const hasExam = documents.some(doc => doc.categorias_saude?.slug === "exame");
-    const hasPrescription = documents.some(doc => doc.categorias_saude?.slug === "receita");
+    const hasVaccine = documents.some(doc => doc.categorySlug === "vacinacao" || doc.category?.slug === "vacinacao");
+    const hasExam = documents.some(doc => doc.categorySlug === "exame" || doc.category?.slug === "exame");
+    const hasPrescription = documents.some(doc => doc.categorySlug === "receita" || doc.category?.slug === "receita");
 
     if (hasVaccine && hasExam && hasPrescription && documents.length >= 5) {
       result.push({
@@ -126,17 +126,17 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
         type: "success",
         icon: <Shield className="h-5 w-5" />,
         title: language === 'pt' ? "Carteira de saúde completa! 🎉" : "Health wallet complete! 🎉",
-        description: language === 'pt' 
-          ? "Você tem todos os tipos de documentos organizados" 
+        description: language === 'pt'
+          ? "Você tem todos os tipos de documentos organizados"
           : "You have all document types organized"
       });
     }
 
     // 5. Documentos expirando em 30 dias
-    const expiringIn30Days = documents.filter(doc => 
-      doc.expires_at && 
-      isAfter(new Date(doc.expires_at), in7Days) &&
-      isBefore(new Date(doc.expires_at), in30Days)
+    const expiringIn30Days = documents.filter(doc =>
+      doc.expiresAt &&
+      isAfter(new Date(doc.expiresAt), in7Days) &&
+      isBefore(new Date(doc.expiresAt), in30Days)
     );
 
     if (expiringIn30Days.length > 0) {
@@ -144,11 +144,11 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
         id: "expiring-soon",
         type: "warning",
         icon: <Calendar className="h-5 w-5" />,
-        title: language === 'pt' 
-          ? `${expiringIn30Days.length} documento(s) expiram em breve` 
+        title: language === 'pt'
+          ? `${expiringIn30Days.length} documento(s) expiram em breve`
           : `${expiringIn30Days.length} document(s) expiring soon`,
-        description: language === 'pt' 
-          ? "Planeje a renovação com antecedência" 
+        description: language === 'pt'
+          ? "Planeje a renovação com antecedência"
           : "Plan renewal in advance"
       });
     }

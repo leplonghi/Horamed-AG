@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, fetchCollection, fetchDocument, setDocument, where } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { toast } from 'sonner';
 import { classifyIntent } from '@/ai/intentEngine';
 import { getPersonaFromAge, PersonaType } from '@/ai/personaEngine';
@@ -22,15 +23,14 @@ export function useHealthAgent() {
   const checkUsageLimit = async (): Promise<{ allowed: boolean; usageCount: number }> => {
     if (!user) return { allowed: false, usageCount: 0 };
 
-    // Get subscription
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('plan_type, status')
-      .eq('user_id', user.id)
-      .single();
+    // Get subscription: users/{uid}/subscription/current
+    const { data: subscription } = await fetchDocument<any>(
+      `users/${user.uid}/subscription`,
+      'current'
+    );
 
     // Premium has unlimited usage
-    if (subscription?.plan_type === 'premium' && subscription?.status === 'active') {
+    if (subscription?.planType === 'premium' && subscription?.status === 'active') {
       return { allowed: true, usageCount: 0 };
     }
 
@@ -38,14 +38,17 @@ export function useHealthAgent() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { count } = await supabase
-      .from('app_metrics')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('event_name', 'ai_agent_query')
-      .gte('created_at', today.toISOString());
+    // In Firebase: appMetrics (global collection) filtered by userId
+    const { data: metricsToday } = await fetchCollection<any>(
+      'appMetrics',
+      [
+        where('userId', '==', user.uid),
+        where('eventName', '==', 'ai_agent_query'),
+        where('createdAt', '>=', today.toISOString())
+      ]
+    );
 
-    const usageCount = count || 0;
+    const usageCount = metricsToday?.length || 0;
 
     if (usageCount >= 2) {
       return { allowed: false, usageCount };
@@ -58,13 +61,17 @@ export function useHealthAgent() {
   const logUsage = async () => {
     if (!user) return;
 
-    await supabase
-      .from('app_metrics')
-      .insert({
-        user_id: user.id,
-        event_name: 'ai_agent_query',
-        event_data: { timestamp: new Date().toISOString() }
-      });
+    const id = crypto.randomUUID();
+    await setDocument(
+      'appMetrics',
+      id,
+      {
+        userId: user.uid,
+        eventName: 'ai_agent_query',
+        eventData: { timestamp: new Date().toISOString() },
+        createdAt: new Date().toISOString()
+      }
+    );
   };
 
   // Get user context
@@ -81,56 +88,57 @@ export function useHealthAgent() {
     }
 
     // Get profile
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('birth_date')
-      .eq('user_id', user.id)
-      .single();
+    const { data: profile } = await fetchDocument<any>(
+      `users/${user.uid}/profile`,
+      'me'
+    );
 
-    const age = profile?.birth_date 
-      ? new Date().getFullYear() - new Date(profile.birth_date).getFullYear()
+    const age = profile?.birthDate
+      ? new Date().getFullYear() - new Date(profile.birthDate).getFullYear()
       : undefined;
 
     // Determine persona
     const personaType: PersonaType = getPersonaFromAge(age);
 
     // Get active medications
-    const { data: medications } = await supabase
-      .from('items')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('is_active', true);
+    // users/{uid}/medications
+    const { data: medications } = await fetchCollection<any>(
+      `users/${user.uid}/medications`,
+      [where('isActive', '==', true)]
+    );
 
     // Get stock data
-    const { data: stock } = await supabase
-      .from('stock')
-      .select(`
-        *,
-        items:item_id (
-          name
-        )
-      `)
-      .not('item_id', 'is', null);
+    // users/{uid}/stock (subcollection)
+    const { data: stock } = await fetchCollection<any>(
+      `users/${user.uid}/stock`
+    );
 
-    const stockData = stock?.map(s => ({
+    // Fetch related item names for stock (since no Join)
+    // Optimization: fetch items in parallel or reuse fetched medications if overlap
+    // For simplicity, we'll try to match with fetched medications or fetch individually
+    const medMap = new Map((medications || []).map(m => [m.id, m]));
+
+    // If stock item ID not in active medications, we might miss the name, but usually stock is for active meds.
+    // If needed, we could fetch individual items.
+
+    const stockData = (stock || []).map(s => ({
       ...s,
-      item_name: (s.items as any)?.name || 'Desconhecido'
-    })) || [];
+      item_name: medMap.get(s.itemId)?.name || 'Desconhecido' // itemName
+    }));
 
     // Get documents count
-    const { count: docCount } = await supabase
-      .from('documentos_saude')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id);
+    const { data: docs } = await fetchCollection<any>(
+      `users/${user.uid}/documents`
+    );
+    const docCount = docs?.length || 0;
 
     // Get subscription
-    const { data: subscription } = await supabase
-      .from('subscriptions')
-      .select('plan_type, status')
-      .eq('user_id', user.id)
-      .single();
+    const { data: subscription } = await fetchDocument<any>(
+      `users/${user.uid}/subscription`,
+      'current'
+    );
 
-    const planType = subscription?.plan_type === 'premium' && subscription?.status === 'active'
+    const planType = subscription?.planType === 'premium' && subscription?.status === 'active'
       ? 'premium'
       : 'free';
 
@@ -138,21 +146,23 @@ export function useHealthAgent() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { count: usageCount } = await supabase
-      .from('app_metrics')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', user.id)
-      .eq('event_name', 'ai_agent_query')
-      .gte('created_at', today.toISOString());
+    const { data: metricsToday } = await fetchCollection<any>(
+      'appMetrics',
+      [
+        where('userId', '==', user.uid),
+        where('eventName', '==', 'ai_agent_query'),
+        where('createdAt', '>=', today.toISOString())
+      ]
+    );
 
     return {
       age,
       personaType,
       activeMedications: medications || [],
       stockData,
-      documents: Array(docCount || 0).fill(null),
+      documents: Array(docCount).fill(null),
       planType,
-      aiUsageToday: usageCount || 0
+      aiUsageToday: metricsToday?.length || 0
     };
   };
 
@@ -189,10 +199,10 @@ export function useHealthAgent() {
 
       // Build system prompt
       let systemPrompt = buildSystemPrompt(intent, context.personaType, context);
-      
+
       // Add fitness guidance if message mentions fitness keywords
       const fitnessKeywords = ['treino', 'academia', 'performance', 'vitamina', 'suplemento', 'energia', 'sono', 'ozempic', 'mounjaro', 'glp-1', 'glp1', 'bariátrica', 'bariátrico', 'peso', 'dieta'];
-      const hasFitnessKeyword = fitnessKeywords.some(keyword => 
+      const hasFitnessKeyword = fitnessKeywords.some(keyword =>
         message.toLowerCase().includes(keyword)
       );
 
@@ -208,26 +218,24 @@ ORIENTAÇÃO FITNESS E BEM-ESTAR:
 - Foco em organização da rotina e dicas práticas, não em prescrições médicas`;
       }
 
-      // Call AI via edge function
-      const { data, error } = await supabase.functions.invoke('health-assistant', {
-        body: {
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message }
-          ]
-        }
+      // Call AI via cloud function
+      const healthAssistantFn = httpsCallable(functions, 'healthAssistant');
+      const result = await healthAssistantFn({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ]
       });
-
-      if (error) throw error;
+      const data = result.data as any;
 
       // Log usage
       await logUsage();
 
       setIsProcessing(false);
-      
+
       // Check for navigation commands in response
       const response = data?.response || 'Desculpe, não consegui processar sua solicitação.';
-      
+
       return response;
 
     } catch (error) {

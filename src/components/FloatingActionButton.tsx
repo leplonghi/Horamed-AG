@@ -7,11 +7,12 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function FloatingActionButton() {
   const [showMenu, setShowMenu] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const location = useLocation();
   const { t } = useLanguage();
-  
-  // Hide FAB on auth, onboarding, and pages with their own add button
-  const hiddenRoutes = ["/auth", "/onboarding", "/rotina", "/medicamentos"];
+
+  // Hide FAB on auth, onboarding, and pages with their own add button or specific context
+  const hiddenRoutes = ["/auth", "/onboarding", "/rotina", "/medicamentos", "/estoque", "/historico"];
   const shouldHide = hiddenRoutes.some(route => location.pathname.startsWith(route));
 
   if (shouldHide) return null;
@@ -21,10 +22,18 @@ export default function FloatingActionButton() {
       <AnimatePresence>
         <motion.button
           onClick={() => setShowMenu(true)}
-          className="fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full p-4 shadow-xl"
+          onMouseEnter={() => setIsExpanded(true)}
+          onMouseLeave={() => setIsExpanded(false)}
+          className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-6 z-40 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full shadow-xl flex items-center gap-2 transition-all duration-300 group"
+          style={{
+            width: isExpanded ? 'auto' : '3.5rem',
+            height: '3.5rem',
+            paddingLeft: isExpanded ? '1.25rem' : '0.875rem',
+            paddingRight: isExpanded ? '1.25rem' : '0.875rem',
+          }}
           initial={{ scale: 0, opacity: 0 }}
-          animate={{ 
-            scale: 1, 
+          animate={{
+            scale: 1,
             opacity: 1,
             boxShadow: [
               "0 10px 30px -10px hsl(var(--primary) / 0.3)",
@@ -33,8 +42,8 @@ export default function FloatingActionButton() {
             ],
           }}
           exit={{ scale: 0, opacity: 0 }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           transition={{
             scale: { duration: 0.2 },
             opacity: { duration: 0.2 },
@@ -44,9 +53,15 @@ export default function FloatingActionButton() {
               ease: "easeInOut",
             },
           }}
-          aria-label={t('common.add')}
+          aria-label={t('common.quickActions')}
         >
-          <Plus className="h-6 w-6" />
+          <Plus className="h-5 w-5 flex-shrink-0" />
+          <span
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 text-sm font-medium ${isExpanded ? 'max-w-[200px] opacity-100' : 'max-w-0 opacity-0'
+              } md:max-w-0 md:opacity-0 md:group-hover:max-w-[200px] md:group-hover:opacity-100`}
+          >
+            {t('common.quickActions')}
+          </span>
         </motion.button>
       </AnimatePresence>
       <QuickActionMenu open={showMenu} onOpenChange={setShowMenu} />

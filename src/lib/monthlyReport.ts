@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection, fetchDocument, where } from "@/integrations/firebase";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -27,74 +27,79 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
 
   // Get user profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('user_id', userId)
-    .single();
+  const { data: profile } = await fetchDocument<any>(
+    `users/${userId}/profile`,
+    'info' // Assuming 'info' doc contains the profile or similar
+  );
 
   // Get doses for the month
-  const { data: doses } = await supabase
-    .from('dose_instances')
-    .select(`
-      *,
-      items (name, category)
-    `)
-    .eq('items.user_id', userId)
-    .gte('due_at', monthStart.toISOString())
-    .lte('due_at', monthEnd.toISOString());
+  const { data: doses } = await fetchCollection<any>(
+    `users/${userId}/doses`,
+    [
+      where('dueAt', '>=', monthStart.toISOString()),
+      where('dueAt', '<=', monthEnd.toISOString())
+    ]
+  );
 
   const totalDoses = doses?.length || 0;
   const takenDoses = doses?.filter(d => d.status === 'taken').length || 0;
   const missedDoses = doses?.filter(d => d.status === 'skipped' || d.status === 'missed').length || 0;
-  
-  const punctualDoses = doses?.filter(d => 
-    d.status === 'taken' && d.delay_minutes !== null && d.delay_minutes <= 30
+
+  const punctualDoses = doses?.filter(d =>
+    d.status === 'taken' && d.delayMinutes !== undefined && d.delayMinutes <= 30
   ).length || 0;
 
   const adherenceRate = totalDoses > 0 ? (takenDoses / totalDoses) * 100 : 0;
   const punctualityRate = takenDoses > 0 ? (punctualDoses / takenDoses) * 100 : 0;
 
-  // Get active medications
-  const { data: medications } = await supabase
-    .from('items')
-    .select(`
-      *,
-      stock (units_left, projected_end_at)
-    `)
-    .eq('user_id', userId)
-    .eq('is_active', true);
+  // Get medications and join with stock
+  const { data: medications } = await fetchCollection<any>(
+    `users/${userId}/medications`,
+    [where('isActive', '==', true)]
+  );
+
+  const medsWithStock = await Promise.all((medications || []).map(async (med) => {
+    const { data: stockData } = await fetchCollection<any>(
+      `users/${userId}/stock`,
+      [where('itemId', '==', med.id)]
+    );
+    return {
+      ...med,
+      stock: stockData || []
+    };
+  }));
 
   // Get stock predictions
-  const stockPredictions = medications?.map(med => ({
+  const stockPredictions = medsWithStock.map(med => ({
     name: med.name,
-    unitsLeft: med.stock?.[0]?.units_left || 0,
-    projectedEnd: med.stock?.[0]?.projected_end_at || null
-  })) || [];
+    unitsLeft: med.stock?.[0]?.currentQty || 0,
+    projectedEnd: med.stock?.[0]?.projectedEndAt || null
+  }));
 
-  // Get documents count
-  const { count: docCount } = await supabase
-    .from('documentos_saude')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('created_at', monthStart.toISOString())
-    .lte('created_at', monthEnd.toISOString());
+  // Get health documents count (assuming they are in users/{userId}/healthDocuments)
+  const { data: healthDocs } = await fetchCollection<any>(
+    `users/${userId}/healthDocuments`,
+    [
+      where('createdAt', '>=', monthStart.toISOString()),
+      where('createdAt', '<=', monthEnd.toISOString())
+    ]
+  );
 
   // Generate insights
   const insights = generateInsights(adherenceRate, punctualityRate, missedDoses);
 
   return {
     userId,
-    userName: profile?.full_name || 'Usuário',
+    userName: profile?.fullName || profile?.full_name || 'Usuário',
     month,
     totalDoses,
     takenDoses,
     missedDoses,
     punctualityRate,
     adherenceRate,
-    medications: medications || [],
+    medications: medsWithStock || [],
     stockPredictions,
-    documents: Array(docCount || 0).fill(null),
+    documents: healthDocs || [],
     insights
   };
 }

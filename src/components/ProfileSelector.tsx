@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, ChevronDown } from 'lucide-react';
+import { Plus, Users, ChevronDown, Settings } from 'lucide-react';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -14,7 +14,7 @@ export default function ProfileSelector() {
   const { isPremium } = useSubscription();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const handleCreateProfile = () => {
     if (!isPremium) {
@@ -58,28 +58,28 @@ export default function ProfileSelector() {
         <Button
           variant="ghost"
           size="sm"
-          className="gap-1 hover:bg-accent/50 transition-all duration-200 px-1.5 md:px-2"
+          className="gap-1 hover:bg-accent/50 transition-all duration-200 px-0 md:px-2"
         >
-          <Avatar className="h-6 w-6 md:h-7 md:w-7 border-2 border-primary/20">
-            <AvatarImage src={activeProfile.avatar_url || undefined} />
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-primary/20">
+            <AvatarImage src={activeProfile.avatarUrl || undefined} />
             <AvatarFallback className="bg-primary/10 text-primary text-[10px] md:text-xs font-semibold">
               {getInitials(activeProfile.name)}
             </AvatarFallback>
           </Avatar>
           {profiles.length > 1 && (
             <>
-              <span className="hidden sm:inline text-[10px] md:text-xs font-medium max-w-[60px] md:max-w-[80px] truncate">
+              <span className="hidden md:inline text-xs font-medium max-w-[80px] truncate">
                 {activeProfile.name}
               </span>
-              <ChevronDown className="h-3 w-3 md:h-4 md:w-4 opacity-50" />
+              <ChevronDown className="hidden md:block h-4 w-4 opacity-50" />
             </>
           )}
           {profiles.length === 1 && (
             <>
-              <span className="text-[10px] md:text-xs font-medium max-w-[60px] md:max-w-[80px] truncate">
+              <span className="hidden md:inline text-xs font-medium max-w-[80px] truncate">
                 {activeProfile.name}
               </span>
-              <ChevronDown className="h-3 w-3 md:h-4 md:w-4 opacity-50" />
+              <ChevronDown className="hidden md:block h-4 w-4 opacity-50" />
             </>
           )}
         </Button>
@@ -97,20 +97,19 @@ export default function ProfileSelector() {
             <button
               key={profile.id}
               onClick={() => handleSelectProfile(profile)}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-colors ${
-                activeProfile.id === profile.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/50 hover:bg-accent/50'
-              }`}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-colors ${activeProfile.id === profile.id
+                ? 'border-primary bg-primary/5'
+                : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                }`}
             >
               <Avatar>
-                <AvatarImage src={profile.avatar_url} />
+                <AvatarImage src={profile.avatarUrl} />
                 <AvatarFallback>{getInitials(profile.name)}</AvatarFallback>
               </Avatar>
               <div className="flex-1 text-left">
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{profile.name}</p>
-                  {profile.is_primary && (
+                  {profile.isPrimary && (
                     <Badge variant="secondary" className="text-xs">{t('profileSelector.main')}</Badge>
                   )}
                 </div>
@@ -129,6 +128,18 @@ export default function ProfileSelector() {
           >
             <Plus className="h-4 w-4" />
             {t('profileSelector.addProfile')} {!isPremium && `(${t('profileSelector.premium')})`}
+          </Button>
+
+          <Button
+            onClick={() => {
+              navigate('/perfil');
+              setOpen(false);
+            }}
+            variant="ghost"
+            className="w-full gap-2 mt-2 text-muted-foreground"
+          >
+            <Settings className="h-4 w-4" />
+            {t('common.settings')}
           </Button>
 
           {!isPremium && (

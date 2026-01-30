@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { BiometricAuth } from "@aparajita/capacitor-biometric-auth";
-import { supabase } from "@/integrations/supabase/client";
+
 import { useToast } from "@/hooks/use-toast";
 
 // Removed encryption utilities - no longer storing sensitive tokens in localStorage
@@ -54,7 +54,7 @@ export const useBiometricAuth = () => {
       // Store only email and 4-hour expiry - no tokens for healthcare data security
       const expiryDate = new Date();
       expiryDate.setTime(expiryDate.getTime() + (4 * 60 * 60 * 1000));
-      
+
       localStorage.setItem("biometric_email", email);
       localStorage.setItem("biometric_expiry", expiryDate.getTime().toString());
       localStorage.setItem("biometric_enabled", "true");
@@ -68,7 +68,7 @@ export const useBiometricAuth = () => {
   const loginWithBiometric = async () => {
     const email = localStorage.getItem("biometric_email");
     const expiryTimestamp = localStorage.getItem("biometric_expiry");
-    
+
     if (!email || !expiryTimestamp) {
       toast({
         title: "Erro",
@@ -81,7 +81,7 @@ export const useBiometricAuth = () => {
     // Check if biometric session has expired (4 hours for medical data security)
     const now = Date.now();
     const expiry = parseInt(expiryTimestamp, 10);
-    
+
     if (now > expiry) {
       localStorage.removeItem("biometric_email");
       localStorage.removeItem("biometric_expiry");

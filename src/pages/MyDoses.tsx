@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, updateDocument, where, orderBy } from "@/integrations/firebase";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
@@ -17,17 +17,17 @@ import { Calendar as CalendarIcon, TrendingUp, History, Pill } from "lucide-reac
 
 interface DoseInstance {
   id: string;
-  item_id: string;
-  due_at: string;
+  itemId: string;
+  dueAt: string;
   status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-  taken_at: string | null;
+  takenAt: string | null;
   items: {
     name: string;
-    dose_text: string | null;
-    user_id: string;
+    doseText: string | null;
+    userId: string;
   };
   stock?: {
-    units_left: number;
+    currentQty: number; // Adapted to match DoseTimeline expectation
   }[];
 }
 
@@ -38,8 +38,6 @@ export default function MyDoses() {
   const [selectedDose, setSelectedDose] = useState<DoseInstance | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [streak, setStreak] = useState<number>(0);
-  const [customTimeModalOpen, setCustomTimeModalOpen] = useState(false);
-  const [customTime, setCustomTime] = useState<string>('');
   const { showFeedback } = useFeedbackToast();
 
   useEffect(() => {
@@ -50,7 +48,7 @@ export default function MyDoses() {
   const loadDoses = async () => {
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       let startDate: Date;
@@ -71,42 +69,46 @@ export default function MyDoses() {
           break;
       }
 
-      const { data, error } = await supabase
-        .from('dose_instances')
-        .select(`
-          id,
-          item_id,
-          due_at,
-          status,
-          taken_at,
-          items!inner(
-            name,
-            dose_text,
-            user_id
-          )
-        `)
-        .eq('items.user_id', user.id)
-        .gte('due_at', startDate.toISOString())
-        .lte('due_at', endDate.toISOString())
-        .order('due_at', { ascending: true });
+      // 1. Fetch Doses
+      const { data: dosesData } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [
+          where("dueAt", ">=", startDate.toISOString()),
+          where("dueAt", "<=", endDate.toISOString()),
+          orderBy("dueAt", "asc")
+        ]
+      );
 
-      if (error) throw error;
+      if (!dosesData || dosesData.length === 0) {
+        setDoses([]);
+        return;
+      }
 
-      // Buscar estoque separadamente
-      const itemIds = [...new Set((data || []).map(d => d.item_id))];
-      const { data: stockData } = await supabase
-        .from('stock')
-        .select('item_id, units_left')
-        .in('item_id', itemIds);
+      // 2. Fetch all medications for the user (to join)
+      // Optimization: Fetch only distinct itemIds if list is small, but fetch all is often simpler/cheaper if < 100 docs
+      const { data: medsData } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const medsMap = new Map((medsData || []).map(m => [m.id, m]));
 
-      const stockMap = new Map(stockData?.map(s => [s.item_id, s]) || []);
-      
-      const dosesWithStock = (data || []).map(dose => ({
-        ...dose,
-        stock: stockMap.get(dose.item_id) ? [{ units_left: stockMap.get(dose.item_id)!.units_left }] : []
-      })) as DoseInstance[];
+      // 3. Join Doses with Meds
+      const joinedDoses: DoseInstance[] = dosesData.map(dose => {
+        const med = medsMap.get(dose.itemId);
+        return {
+          id: dose.id,
+          itemId: dose.itemId,
+          dueAt: dose.dueAt,
+          status: dose.status,
+          takenAt: dose.takenAt || null,
+          items: {
+            name: med?.name || 'Desconhecido',
+            doseText: med?.doseText || null,
+            userId: user.uid
+          },
+          // Map unitsLeft from medication doc to stock array structure expected by UseTimeline
+          stock: med?.unitsLeft !== undefined ? [{ currentQty: med.unitsLeft }] : []
+        };
+      });
 
-      setDoses(dosesWithStock);
+      setDoses(joinedDoses);
     } catch (error) {
       console.error('Erro ao carregar doses:', error);
       showFeedback('dose-missed', { customMessage: 'Erro ao carregar doses' });
@@ -116,59 +118,45 @@ export default function MyDoses() {
   };
 
   const loadStreak = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_adherence_streaks')
-        .select('current_streak')
-        .eq('user_id', user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      setStreak(data?.current_streak || 0);
-    } catch (error) {
-      console.error('Erro ao carregar sequência:', error);
-    }
+    // Current placeholder for streak loading until backend aggregation is implemented
+    // Ideally: fetch `users/${user.uid}/stats/streak`
+    setStreak(0);
   };
 
   const handleQuickTake = async (dose: DoseInstance) => {
     try {
+      const user = auth.currentUser;
+      if (!user) return;
+
       const takenTime = new Date();
-      const { error } = await supabase
-        .from('dose_instances')
-        .update({
-          status: 'taken',
-          taken_at: takenTime.toISOString(),
-        })
-        .eq('id', dose.id);
 
-      if (error) throw error;
+      // Update Dose Status
+      await updateDocument(`users/${user.uid}/doses`, dose.id, {
+        status: 'taken',
+        takenAt: takenTime.toISOString()
+      });
 
-      // Decrementar estoque
-      if (dose.stock && dose.stock.length > 0) {
-        const { error: stockError } = await supabase
-          .from('stock')
-          .update({ units_left: Math.max(0, dose.stock[0].units_left - 1) })
-          .eq('item_id', dose.item_id);
-
-        if (stockError) throw stockError;
+      // Update Stock (Decrement)
+      if (dose.stock && dose.stock.length > 0 && dose.stock[0].currentQty > 0) {
+        const newQty = Math.max(0, dose.stock[0].currentQty - 1);
+        await updateDocument(`users/${user.uid}/medications`, dose.itemId, {
+          unitsLeft: newQty
+        });
       }
 
-      // Check if period is complete
+      // Check if period is complete (Period Feedback)
       const periodDoses = doses.filter(d => {
-        const hour = new Date(d.due_at).getHours();
-        const doseHour = new Date(dose.due_at).getHours();
+        const hour = new Date(d.dueAt).getHours();
+        const doseHour = new Date(dose.dueAt).getHours();
         return Math.floor(hour / 6) === Math.floor(doseHour / 6);
       });
-      const allTaken = periodDoses.every(d => 
+      const allTaken = periodDoses.every(d =>
         d.id === dose.id || d.status === 'taken'
       );
 
       if (allTaken) {
-        const periodName = new Date(dose.due_at).getHours() < 12 ? 'manhã' : 
-                          new Date(dose.due_at).getHours() < 18 ? 'tarde' : 'noite';
+        const hour = new Date(dose.dueAt).getHours();
+        const periodName = hour < 12 ? 'manhã' : hour < 18 ? 'tarde' : 'noite';
         showFeedback('period-complete', { periodName });
       } else {
         showFeedback('dose-taken', {
@@ -187,17 +175,17 @@ export default function MyDoses() {
 
   const handleStatusUpdate = async (action: 'taken' | 'missed' | 'skipped' | 'custom-time') => {
     if (!selectedDose) return;
+    const user = auth.currentUser;
+    if (!user) return;
 
     try {
       if (action === 'custom-time') {
-        // Use current time as custom time for now
         const customTakenAt = new Date().toISOString();
-        const { error } = await supabase
-          .from('dose_instances')
-          .update({ status: 'taken', taken_at: customTakenAt })
-          .eq('id', selectedDose.id);
-        
-        if (error) throw error;
+        await updateDocument(`users/${user.uid}/doses`, selectedDose.id, {
+          status: 'taken',
+          takenAt: customTakenAt
+        });
+
         showFeedback('dose-taken', { medicationName: selectedDose.items.name });
         loadDoses();
         loadStreak();
@@ -206,23 +194,17 @@ export default function MyDoses() {
 
       const updateData: any = {
         status: action,
-        ...(action === 'taken' && { taken_at: new Date().toISOString() }),
+        ...(action === 'taken' && { takenAt: new Date().toISOString() }),
       };
 
-      const { error } = await supabase
-        .from('dose_instances')
-        .update(updateData)
-        .eq('id', selectedDose.id);
+      await updateDocument(`users/${user.uid}/doses`, selectedDose.id, updateData);
 
-      if (error) throw error;
-
+      // Decrement stock if taken
       if (action === 'taken' && selectedDose.stock && selectedDose.stock.length > 0) {
-        const { error: stockError } = await supabase
-          .from('stock')
-          .update({ units_left: Math.max(0, selectedDose.stock[0].units_left - 1) })
-          .eq('item_id', selectedDose.item_id);
-
-        if (stockError) throw stockError;
+        const newQty = Math.max(0, selectedDose.stock[0].currentQty - 1);
+        await updateDocument(`users/${user.uid}/medications`, selectedDose.itemId, {
+          unitsLeft: newQty
+        });
       }
 
       // Show appropriate feedback
@@ -254,18 +236,18 @@ export default function MyDoses() {
   };
 
   const progress = calculateProgress();
-  const nextDose = doses.find(d => d.status === 'scheduled' && new Date(d.due_at) > new Date());
+  const nextDose = doses.find(d => d.status === 'scheduled' && new Date(d.dueAt) > new Date());
 
   // Group medications for summary cards
   const medicationGroups = doses.reduce((acc, dose) => {
-    if (!acc[dose.item_id]) {
-      acc[dose.item_id] = {
-        id: dose.item_id,
+    if (!acc[dose.itemId]) {
+      acc[dose.itemId] = {
+        id: dose.itemId,
         name: dose.items.name,
         doses: [],
       };
     }
-    acc[dose.item_id].doses.push(dose);
+    acc[dose.itemId].doses.push(dose);
     return acc;
   }, {} as Record<string, { id: string; name: string; doses: typeof doses }>);
 
@@ -294,16 +276,16 @@ export default function MyDoses() {
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                 <span className="text-sm font-medium">Compromisso {activeTab === 'today' ? 'de Hoje' : activeTab === 'week' ? 'da Semana' : 'Mensal'}</span>
+                  <span className="text-sm font-medium">Compromisso {activeTab === 'today' ? 'de Hoje' : activeTab === 'week' ? 'da Semana' : 'Mensal'}</span>
                   <span className="text-2xl font-bold text-primary">{progress}%</span>
                 </div>
-               <Progress value={progress} className="h-3" />
-               <p className="text-sm text-muted-foreground">
-                 {progress >= 90 && "🎉 Você está indo muito bem!"}
-                 {progress >= 70 && progress < 90 && "💪 Bom trabalho! Continue assim!"}
-                 {progress >= 50 && progress < 70 && "⚡ Você pode melhorar!"}
-                 {progress < 50 && "Vamos retomar o compromisso!"}
-               </p>
+                <Progress value={progress} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  {progress >= 90 && "🎉 Você está indo muito bem!"}
+                  {progress >= 70 && progress < 90 && "💪 Bom trabalho! Continue assim!"}
+                  {progress >= 50 && progress < 70 && "⚡ Você pode melhorar!"}
+                  {progress < 50 && "Vamos retomar o compromisso!"}
+                </p>
               </div>
             </CardContent>
           </Card>

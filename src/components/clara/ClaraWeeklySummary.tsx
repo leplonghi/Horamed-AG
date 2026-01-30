@@ -5,19 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Calendar, 
-  Clock, 
+import {
+  Sparkles,
+  TrendingUp,
+  Calendar,
+  Clock,
   ChevronDown,
   ChevronUp,
   RefreshCw,
   Share2
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { functions } from "@/integrations/firebase/client"; // Firebase import
+import { httpsCallable } from "firebase/functions"; // Firebase callable
 
 interface WeeklySummaryMetrics {
   totalDoses: number;
@@ -54,14 +55,15 @@ export default function ClaraWeeklySummary() {
   const generateSummary = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('clara-weekly-summary');
-      
-      if (error) throw error;
-      
+      // Firebase Cloud Function call
+      const claraWeeklySummaryFn = httpsCallable(functions, 'claraWeeklySummary');
+      const result = await claraWeeklySummaryFn();
+      const data = result.data as any;
+
       setSummary(data.summary);
       setMetrics(data.metrics);
       setLastGenerated(new Date());
-      
+
       toast.success(language === 'pt' ? 'Resumo gerado!' : 'Summary generated!');
     } catch (error) {
       console.error("Error generating summary:", error);
@@ -73,7 +75,7 @@ export default function ClaraWeeklySummary() {
 
   const handleShare = async () => {
     if (!summary) return;
-    
+
     try {
       await navigator.share({
         title: t.title,
@@ -102,7 +104,7 @@ export default function ClaraWeeklySummary() {
           )}
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {loading ? (
           <div className="space-y-3">
@@ -139,15 +141,15 @@ export default function ClaraWeeklySummary() {
                       <Progress value={metrics.adherenceRate} className="flex-1 h-2" />
                     </div>
                   </div>
-                  
+
                   <div className="p-3 rounded-lg bg-card border">
                     <div className="flex items-center gap-2 mb-1">
                       <Clock className="h-4 w-4 text-blue-500" />
                       <span className="text-xs text-muted-foreground">{t.onTime}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold">{metrics.onTimeRate}%</span>
-                      <Progress value={metrics.onTimeRate} className="flex-1 h-2" />
+                      <span className="text-xl font-bold">{metrics.onTimeRate || 0}%</span>
+                      <Progress value={metrics.onTimeRate || 0} className="flex-1 h-2" />
                     </div>
                   </div>
                 </div>
@@ -167,7 +169,7 @@ export default function ClaraWeeklySummary() {
                           <Badge variant="secondary">{metrics.bestHour}</Badge>
                         </div>
                       )}
-                      
+
                       {metrics.worstHour && (
                         <div className="flex items-center justify-between p-2 rounded-lg bg-orange-500/10">
                           <span className="text-sm">⚠️ {t.needsAttention}</span>
@@ -227,7 +229,7 @@ export default function ClaraWeeklySummary() {
           <div className="text-center py-4">
             <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
             <p className="text-sm text-muted-foreground mb-4">
-              {language === 'pt' 
+              {language === 'pt'
                 ? 'Clara analisa sua semana e traz insights personalizados'
                 : 'Clara analyzes your week and brings personalized insights'}
             </p>

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ChevronRight, Check, Package } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -84,7 +84,7 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
     toast.loading("Criando medicamentos e lembretes...", { id: "create-meds" });
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Não autenticado");
 
       let createdCount = 0;
@@ -97,59 +97,67 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
         const stockQty = stock[index];
 
         // Create medication item
-        const { data: newItem, error: itemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: user.id,
-            profile_id: activeProfile?.id,
+        const { data: newItem, error: itemError } = await addDocument(
+          `users/${user.uid}/medications`,
+          {
+            userId: user.uid,
+            profileId: activeProfile?.id,
             name: med.commercial_name || med.drug_name,
-            dose_text: med.dose,
+            doseText: med.dose,
             category: 'medicamento',
             notes: med.instructions,
-            with_food: med.with_food || false,
-            treatment_duration_days: med.duration_days,
-            is_active: true,
-          })
-          .select()
-          .single();
+            withFood: med.with_food || false,
+            treatmentDurationDays: med.duration_days,
+            isActive: true,
+            createdAt: new Date().toISOString()
+          }
+        );
 
-        if (itemError) throw itemError;
+        if (itemError || !newItem) throw itemError || new Error("Failed to create medication");
         createdCount++;
 
         // Create schedule
-        const { error: schedError } = await supabase
-          .from('schedules')
-          .insert({
-            item_id: newItem.id,
-            freq_type: 'daily',
+        const { error: schedError } = await addDocument(
+          `users/${user.uid}/schedules`,
+          {
+            itemId: newItem.id,
+            freqType: 'daily',
             times: schedule.times,
-            is_active: true,
-          });
+            isActive: true,
+            createdAt: new Date().toISOString()
+          }
+        );
 
         if (schedError) throw schedError;
         schedulesCount++;
 
         // Create stock
         if (stockQty > 0) {
-          const { error: stockError } = await supabase
-            .from('stock')
-            .insert({
-              item_id: newItem.id,
-              units_total: stockQty,
-              units_left: stockQty,
-              unit_label: 'comprimidos',
-              created_from_prescription_id: documentId,
-            });
+          const { error: stockError } = await addDocument(
+            `users/${user.uid}/stock`,
+            {
+              itemId: newItem.id,
+              unitsTotal: stockQty,
+              unitsLeft: stockQty,
+              unitLabel: 'comprimidos',
+              createdFromPrescriptionId: documentId,
+              createdAt: new Date().toISOString()
+            }
+          );
 
           if (!stockError) stockCount++;
         }
       }
 
       // Mark document as reviewed
-      await supabase
-        .from('documentos_saude')
-        .update({ status_extraction: 'reviewed' })
-        .eq('id', documentId);
+      await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        documentId,
+        {
+          extractionStatus: 'reviewed',
+          updatedAt: new Date().toISOString()
+        }
+      );
 
       toast.dismiss("create-meds");
       toast.success(
@@ -240,8 +248,8 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
               </CardContent>
             </Card>
 
-            <Button 
-              onClick={() => setStep(2)} 
+            <Button
+              onClick={() => setStep(2)}
               className="w-full h-12"
               disabled={selectedMeds.size === 0}
             >
@@ -344,8 +352,8 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
               <Button variant="outline" onClick={() => setStep(2)} className="flex-1">
                 Voltar
               </Button>
-              <Button 
-                onClick={handleFinish} 
+              <Button
+                onClick={handleFinish}
                 className="flex-1 h-12"
                 disabled={processing}
               >

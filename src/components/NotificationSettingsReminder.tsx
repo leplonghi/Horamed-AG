@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from "@/integrations/supabase/client";
 
 const REMINDER_INTERVAL_DAYS = 7; // Show reminder every 7 days
 const STORAGE_KEY = 'notification_settings_reminder';
@@ -21,7 +22,7 @@ export function NotificationSettingsReminder() {
 
   const t = {
     title: language === 'pt' ? 'Configure seus alarmes' : 'Set up your alarms',
-    description: language === 'pt' 
+    description: language === 'pt'
       ? 'Ajuste suas notificações para nunca perder um medicamento'
       : 'Adjust your notifications to never miss a medication',
     configure: language === 'pt' ? 'Configurar' : 'Configure',
@@ -32,10 +33,43 @@ export function NotificationSettingsReminder() {
     checkShouldShow();
   }, []);
 
-  const checkShouldShow = () => {
+  const checkShouldShow = async () => {
     try {
+      // First check local storage for speed
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) {
+      let localState: ReminderState | null = stored ? JSON.parse(stored) : null;
+
+      // If locally configured, don't show (failsafe)
+      if (localState?.configured) return;
+
+      // Check remote profile
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("tutorial_flags")
+          .eq("user_id", user.id)
+          .single();
+
+        const flags = (profile?.tutorial_flags as Record<string, any>) || {};
+
+        // If remotely configured, sync local and return
+        if (flags["reminders_configured"]) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...localState, configured: true }));
+          return;
+        }
+
+        // Check remote dismissal time if available
+        if (flags["reminders_last_dismissed"]) {
+          const daysSinceDismissed = (Date.now() - new Date(flags["reminders_last_dismissed"]).getTime()) / (1000 * 60 * 60 * 24);
+          if (daysSinceDismissed < REMINDER_INTERVAL_DAYS) {
+            return; // Too soon
+          }
+        }
+      }
+
+      // If we got here, check local timing or first use logic
+      if (!localState) {
         // First time - show after 1 day of use
         const firstUse = localStorage.getItem('app_first_use');
         if (!firstUse) {
@@ -49,40 +83,66 @@ export function NotificationSettingsReminder() {
         return;
       }
 
-      const state: ReminderState = JSON.parse(stored);
-      
-      // If user marked as configured, don't show
-      if (state.configured) return;
+      // If user marked as configured, don't show (checked above but good for types)
+      if (localState.configured) return;
 
-      // Check if enough time has passed since last dismissal
-      if (state.lastDismissed) {
-        const daysSinceDismissed = (Date.now() - new Date(state.lastDismissed).getTime()) / (1000 * 60 * 60 * 24);
+      // Check if enough time has passed since last dismissal (local check)
+      if (localState.lastDismissed) {
+        const daysSinceDismissed = (Date.now() - new Date(localState.lastDismissed).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceDismissed >= REMINDER_INTERVAL_DAYS) {
           setShow(true);
         }
+      } else {
+        // If state exists but no dismissal, show
+        setShow(true);
       }
-    } catch {
-      // If error, don't show
+    } catch (e) {
+      console.error("Error checking reminder status", e);
     }
   };
 
+  const updateRemoteFlag = async (updates: Record<string, any>) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tutorial_flags")
+        .eq("user_id", user.id)
+        .single();
+
+      const currentFlags = (profile?.tutorial_flags as Record<string, any>) || {};
+
+      await supabase.from("profiles").update({
+        tutorial_flags: { ...currentFlags, ...updates }
+      }).eq("user_id", user.id);
+    } catch (e) {
+      console.error("Error updating remote flags", e);
+    }
+  }
+
   const handleDismiss = () => {
+    const now = new Date().toISOString();
     const state: ReminderState = {
-      lastDismissed: new Date().toISOString(),
+      lastDismissed: now,
       configured: false,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     setShow(false);
+    updateRemoteFlag({ reminders_last_dismissed: now });
   };
 
   const handleConfigure = () => {
+    const now = new Date().toISOString();
     const state: ReminderState = {
-      lastDismissed: new Date().toISOString(),
+      lastDismissed: now,
       configured: true,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     setShow(false);
-    navigate('/configuracoes/alarmes');
+    updateRemoteFlag({ reminders_configured: true });
+    navigate('/alarmes');
   };
 
   return (
@@ -99,7 +159,7 @@ export function NotificationSettingsReminder() {
               <div className="p-2 rounded-full bg-primary/20">
                 <Bell className="h-5 w-5 text-primary" />
               </div>
-              
+
               <div className="flex-1 min-w-0">
                 <h4 className="font-medium text-foreground flex items-center gap-2">
                   {t.title}
@@ -108,7 +168,7 @@ export function NotificationSettingsReminder() {
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {t.description}
                 </p>
-                
+
                 <div className="flex gap-2 mt-3">
                   <Button size="sm" onClick={handleConfigure}>
                     {t.configure}

@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Heart, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth, fetchDocument, updateDocument, setDocument } from "@/integrations/firebase";
 
 interface ImprovedClaraButtonProps {
   onClick: () => void;
@@ -12,39 +12,37 @@ interface ImprovedClaraButtonProps {
   hasUnreadSuggestion?: boolean;
 }
 
-export default function ImprovedClaraButton({ 
-  onClick, 
+export default function ImprovedClaraButton({
+  onClick,
   isOpen,
-  hasUnreadSuggestion = false 
+  hasUnreadSuggestion = false
 }: ImprovedClaraButtonProps) {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [showTooltip, setShowTooltip] = useState(false);
   const [hasSeenClara, setHasSeenClara] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => {
     checkClaraStatus();
-  }, []);
+  }, [user]);
 
   const checkClaraStatus = async () => {
+    if (!user) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Using users/{uid}/profile/me consistent with usage in useHealthAgent
+      const { data: profile } = await fetchDocument<any>(`users/${user.uid}/profile`, 'me');
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile?.tutorial_flags) {
-        const flags = profile.tutorial_flags as Record<string, boolean>;
-        if (!flags["clara_introduced"]) {
+      if (profile?.tutorialFlags) {
+        // camelCase: tutorialFlags, claraIntroduced
+        if (!profile.tutorialFlags.claraIntroduced) {
           setHasSeenClara(false);
           // Show tooltip after a delay
           setTimeout(() => setShowTooltip(true), 3000);
         }
       } else {
+        // If profile or flags don't exist, assume not seen
         setHasSeenClara(false);
         setTimeout(() => setShowTooltip(true), 3000);
       }
@@ -54,23 +52,28 @@ export default function ImprovedClaraButton({
   };
 
   const markClaraSeen = async () => {
+    if (!user) return;
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Fetch current to merge
+      const { data: profile } = await fetchDocument<any>(`users/${user.uid}/profile`, 'me');
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
+      const currentFlags = profile?.tutorialFlags || {};
+      const newFlags = { ...currentFlags, claraIntroduced: true };
 
-      const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      const newFlags = { ...currentFlags, clara_introduced: true };
-
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: newFlags })
-        .eq("user_id", user.id);
+      if (!profile) {
+        // Create if doesn't exist
+        await setDocument(`users/${user.uid}/profile`, 'me', {
+          tutorialFlags: newFlags,
+          updatedAt: new Date().toISOString()
+        });
+      } else {
+        await updateDocument(
+          `users/${user.uid}/profile`,
+          'me',
+          { tutorialFlags: newFlags }
+        );
+      }
 
       setHasSeenClara(true);
     } catch (error) {
@@ -106,7 +109,7 @@ export default function ImprovedClaraButton({
             <div className="relative bg-card border border-primary/20 rounded-xl p-4 shadow-xl">
               {/* Arrow */}
               <div className="absolute -bottom-2 right-6 w-4 h-4 bg-card border-b border-r border-primary/20 transform rotate-45" />
-              
+
               <button
                 onClick={handleDismissTooltip}
                 className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
@@ -123,7 +126,7 @@ export default function ImprovedClaraButton({
                     {language === 'pt' ? 'Olá! Sou a Clara 💜' : 'Hi! I\'m Clara 💜'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {language === 'pt' 
+                    {language === 'pt'
                       ? 'Sua assistente de saúde. Toque para conversar comigo!'
                       : 'Your health assistant. Tap to chat with me!'}
                   </p>

@@ -1,22 +1,26 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { useAuth } from '@/integrations/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { httpsCallable } from 'firebase/functions';
+import { functions, db } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
+import { eventBus, EVENTS } from '@/lib/eventBus';
 
 export interface Subscription {
   id: string;
-  user_id: string;
-  plan_type: 'free' | 'premium' | 'premium_individual' | 'premium_family';
+  userId: string;
+  planType: 'free' | 'premium' | 'premium_individual' | 'premium_family';
   status: 'active' | 'cancelled' | 'expired' | 'trial';
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  started_at: string;
-  expires_at: string | null;
-  trial_ends_at: string | null;
-  trial_used: boolean;
-  price_variant: 'A' | 'B' | 'C';
-  canceled_at: string | null;
-  created_at: string;
-  updated_at: string;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  startedAt: string;
+  expiresAt: string | null;
+  trialEndsAt: string | null;
+  trialUsed: boolean;
+  priceVariant: 'A' | 'B' | 'C';
+  canceledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SubscriptionContextType {
@@ -39,102 +43,118 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const loadSubscription = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error loading subscription:', error);
-      } else if (data) {
-        setSubscription(data as Subscription);
-      }
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    loadSubscription();
-    
-    // Refresh every 5 minutes instead of 30 seconds
-    const interval = setInterval(loadSubscription, 300000);
-    return () => clearInterval(interval);
-  }, []);
+    // Cleanup previous listener
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    if (!user) {
+      setSubscription(null);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Real-time listener using onSnapshot
+      const subscriptionRef = doc(db, 'users', user.uid, 'subscription', 'current');
+
+      const unsubscribe = onSnapshot(subscriptionRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const data = { id: snapshot.id, ...snapshot.data() } as Subscription;
+          setSubscription(data);
+          // Emit event for other components if needed
+          eventBus.emit(EVENTS.SUBSCRIPTION_CHANGED, data);
+        } else {
+          setSubscription(null);
+        }
+        setLoading(false);
+      }, (error) => {
+        console.error('Error listening to subscription:', error);
+        setLoading(false);
+      });
+
+      unsubscribeRef.current = unsubscribe;
+    } catch (error) {
+      console.error('Error setting up subscription listener:', error);
+      setLoading(false);
+    }
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [user]);
 
   const syncWithStripe = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) return;
 
-      const { data, error } = await supabase.functions.invoke('sync-subscription');
-      
-      if (error && !error.message?.includes('not authenticated')) {
-        throw error;
-      }
-      
+      // Call Firebase Cloud Function
+      const syncSubscription = httpsCallable(functions, 'syncSubscription');
+      const result = await syncSubscription();
+      const data = result.data as any;
+
       if (data?.synced) {
-        await loadSubscription();
+        // onSnapshot will update the state automatically, no need to manually reload
         toast({
           title: 'Assinatura sincronizada',
           description: data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sync error:', error);
       toast({
         title: 'Erro ao sincronizar',
         description: 'Não foi possível sincronizar com o Stripe',
         variant: 'destructive',
       });
-    } finally {
       setLoading(false);
     }
   };
 
-  // Check if on trial - either explicit trial status OR trial_ends_at in the future
-  const isOnTrial = (subscription?.trial_ends_at && new Date(subscription.trial_ends_at) > new Date()) || 
+  const refresh = async () => {
+    // Force sync when requested manually
+    await syncWithStripe();
+  };
+
+  // Check if on trial - either explicit trial status OR trialEndsAt in the future
+  const isOnTrial = (subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date()) ||
     (subscription?.status === 'trial');
-  
+
   // Premium status - includes trial period (trial users get FULL premium features)
   const isPremium = (
-    subscription?.plan_type === 'premium' || 
-    subscription?.plan_type === 'premium_individual' || 
-    subscription?.plan_type === 'premium_family' ||
+    subscription?.planType === 'premium' ||
+    subscription?.planType === 'premium_individual' ||
+    subscription?.planType === 'premium_family' ||
     isOnTrial // Trial users are treated as premium
   ) && (subscription?.status === 'active' || subscription?.status === 'trial' || isOnTrial);
-  
-  const isFree = subscription?.plan_type === 'free' && !isOnTrial;
-  
-  const trialDaysLeft = subscription?.trial_ends_at && isOnTrial
-    ? Math.max(0, Math.ceil((new Date(subscription.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+
+  const isFree = subscription?.planType === 'free' && !isOnTrial;
+
+  const trialDaysLeft = subscription?.trialEndsAt && isOnTrial
+    ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
-  
-  const daysLeft = subscription?.expires_at 
-    ? Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+
+  const daysLeft = subscription?.expiresAt
+    ? Math.max(0, Math.ceil((new Date(subscription.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
   const isExpired = subscription?.status === 'expired' || (daysLeft !== null && daysLeft <= 0 && !isOnTrial);
 
   // Users can add medications if premium, on trial, or within free tier limits
   const canAddMedication = isPremium || isOnTrial || (isFree && !isExpired);
-  
+
   // Trial users get ALL premium features
   const hasFeature = (feature: 'ocr' | 'charts' | 'unlimited_meds' | 'no_ads') => {
     if (isPremium || isOnTrial) return true;
@@ -155,7 +175,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         daysLeft,
         canAddMedication,
         hasFeature,
-        refresh: loadSubscription,
+        refresh,
         syncWithStripe,
       }}
     >

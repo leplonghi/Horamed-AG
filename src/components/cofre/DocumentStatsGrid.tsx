@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { 
-  FolderOpen, 
-  Clock, 
-  AlertTriangle, 
+import {
+  FolderOpen,
+  Clock,
+  AlertTriangle,
   CheckCircle2,
   FileText,
   FlaskConical,
@@ -12,11 +12,11 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { DocumentoSaude } from "@/hooks/useCofre";
+import { HealthDocument } from "@/hooks/useCofre";
 import { differenceInDays, addDays, isAfter, isBefore } from "date-fns";
 
 interface DocumentStatsGridProps {
-  documents: DocumentoSaude[];
+  documents: HealthDocument[];
   onStatClick?: (filter: string) => void;
 }
 
@@ -27,20 +27,20 @@ export default function DocumentStatsGrid({ documents, onStatClick }: DocumentSt
     const now = new Date();
     const in30Days = addDays(now, 30);
 
-    const expiringSoon = documents.filter(doc => 
-      doc.expires_at && 
-      isAfter(new Date(doc.expires_at), now) &&
-      isBefore(new Date(doc.expires_at), in30Days)
+    const expiringSoon = documents.filter(doc =>
+      doc.expiresAt &&
+      isAfter(new Date(doc.expiresAt), now) &&
+      isBefore(new Date(doc.expiresAt), in30Days)
     ).length;
 
-    const needsReview = documents.filter(doc => doc.status_extraction === "pending_review").length;
-    const reviewed = documents.filter(doc => doc.status_extraction === "reviewed").length;
+    const needsReview = documents.filter(doc => doc.extractionStatus === "pending_review").length;
+    const reviewed = documents.filter(doc => doc.extractionStatus === "reviewed").length;
 
     const byCategory = {
-      receita: documents.filter(doc => doc.categorias_saude?.slug === "receita").length,
-      exame: documents.filter(doc => doc.categorias_saude?.slug === "exame").length,
-      vacinacao: documents.filter(doc => doc.categorias_saude?.slug === "vacinacao").length,
-      consulta: documents.filter(doc => doc.categorias_saude?.slug === "consulta").length,
+      receita: documents.filter(doc => doc.category?.slug === "receita").length,
+      exame: documents.filter(doc => doc.category?.slug === "exame").length,
+      vacinacao: documents.filter(doc => doc.category?.slug === "vacinacao").length,
+      consulta: documents.filter(doc => doc.category?.slug === "consulta").length,
     };
 
     return { total: documents.length, expiringSoon, needsReview, reviewed, byCategory };
@@ -62,8 +62,8 @@ export default function DocumentStatsGrid({ documents, onStatClick }: DocumentSt
       label: language === 'pt' ? 'Expirando' : 'Expiring',
       value: stats.expiringSoon,
       sublabel: language === 'pt' ? 'em 30 dias' : 'in 30 days',
-      color: stats.expiringSoon > 0 
-        ? "from-destructive/20 to-destructive/10 border-destructive/30" 
+      color: stats.expiringSoon > 0
+        ? "from-destructive/20 to-destructive/10 border-destructive/30"
         : "from-muted/50 to-muted/30 border-border/50",
       iconColor: stats.expiringSoon > 0 ? "text-destructive" : "text-muted-foreground"
     },
@@ -73,8 +73,8 @@ export default function DocumentStatsGrid({ documents, onStatClick }: DocumentSt
       label: language === 'pt' ? 'Revisar' : 'Review',
       value: stats.needsReview,
       sublabel: language === 'pt' ? 'pendentes' : 'pending',
-      color: stats.needsReview > 0 
-        ? "from-warning/20 to-warning/10 border-warning/30" 
+      color: stats.needsReview > 0
+        ? "from-warning/20 to-warning/10 border-warning/30"
         : "from-muted/50 to-muted/30 border-border/50",
       iconColor: stats.needsReview > 0 ? "text-warning" : "text-muted-foreground"
     },

@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useDocumento, useCompartilhamentos, useDeletarDocumento } from "@/hooks/useCofre";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, storage, functions, fetchCollection, updateDocument } from "@/integrations/firebase";
+import { ref, getDownloadURL } from "firebase/storage";
+import { httpsCallable } from "firebase/functions";
 import { format, isBefore, differenceInDays, parseISO } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { toast } from "sonner";
@@ -61,27 +63,23 @@ export default function CofreDocumento() {
 
   // Buscar medicamentos já adicionados pelo usuário
   const { data: existingMedications = [] } = useQuery({
-    queryKey: ["existing-medications", user?.id],
+    queryKey: ["existing-medications", user?.uid],
     queryFn: async () => {
-      if (!user?.id) return [];
-      
-      const { data, error } = await supabase
-        .from("items")
-        .select("name")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-      
+      if (!user?.uid) return [];
+
+      const { data, error } = await fetchCollection(`users/${user.uid}/medications`);
+
       if (error) throw error;
-      return data.map(item => item.name.toLowerCase().trim());
+      return data.map((item: any) => item.name.toLowerCase().trim());
     },
-    enabled: !!user?.id,
+    enabled: !!user?.uid,
   });
 
   // Função para verificar se um medicamento já foi adicionado
   const isMedicationAdded = (medicationName: string) => {
     const normalizedName = medicationName.toLowerCase().trim();
-    return existingMedications.some((existingName: string) => 
-      existingName === normalizedName || 
+    return existingMedications.some((existingName: string) =>
+      existingName === normalizedName ||
       existingName.includes(normalizedName) ||
       normalizedName.includes(existingName)
     );
@@ -108,28 +106,34 @@ export default function CofreDocumento() {
 
   useEffect(() => {
     const loadUrl = async () => {
-      if (documento?.file_path) {
-        const { data } = await supabase.storage
-          .from("cofre-saude")
-          .createSignedUrl(documento.file_path, 3600);
-        if (data) setSignedUrl(data.signedUrl);
+      if (documento?.filePath) {
+        try {
+          const fileRef = ref(storage, documento.filePath);
+          const url = await getDownloadURL(fileRef);
+          setSignedUrl(url);
+        } catch (error) {
+          console.error("Error loading file URL:", error);
+        }
       }
     };
     loadUrl();
 
     // Carregar status de compra
     if (documento?.meta) {
-      setIsPurchased((documento.meta as any)?.is_purchased === true);
+      setIsPurchased((documento.meta as any)?.isPurchased === true);
     }
   }, [documento]);
 
   const handleCompartilhar = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("gerar-link-compartilhamento", {
-        body: { documentId: id, allowDownload: true, ttlHours: 72 },
+      const generateShareLink = httpsCallable(functions, "generateShareLink");
+      const result = await generateShareLink({
+        documentId: id,
+        allowDownload: true,
+        ttlHours: 72
       });
 
-      if (error) throw error;
+      const data = result.data as any;
 
       if (data?.requiresUpgrade) {
         setShowUpgrade(true);
@@ -141,21 +145,23 @@ export default function CofreDocumento() {
         toast.success(t('cofreDoc.linkCopied'));
       }
     } catch (error: any) {
+      console.error("Share error:", error);
       toast.error(t('cofreDoc.shareError'));
     }
   };
 
   const handleTogglePurchased = async (checked: boolean) => {
-    if (!id) return;
-    
+    if (!id || !user?.uid) return;
+
     try {
       const currentMeta = documento?.meta || {};
-      const updatedMeta = { ...currentMeta, is_purchased: checked };
+      const updatedMeta = { ...currentMeta, isPurchased: checked };
 
-      const { error } = await supabase
-        .from("documentos_saude")
-        .update({ meta: updatedMeta })
-        .eq("id", id);
+      const { error } = await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        id,
+        { meta: updatedMeta, updatedAt: new Date().toISOString() }
+      );
 
       if (error) throw error;
 
@@ -410,9 +416,9 @@ export default function CofreDocumento() {
                     <PrescriptionStatusBadge
                       status={
                         !documento.expires_at ? 'valid' :
-                        isBefore(parseISO(documento.expires_at), new Date()) ? 'expired' :
-                        differenceInDays(parseISO(documento.expires_at), new Date()) <= 7 ? 'expiring_soon' :
-                        'valid'
+                          isBefore(parseISO(documento.expires_at), new Date()) ? 'expired' :
+                            differenceInDays(parseISO(documento.expires_at), new Date()) <= 7 ? 'expiring_soon' :
+                              'valid'
                       }
                       daysUntilExpiry={documento.expires_at ? differenceInDays(parseISO(documento.expires_at), new Date()) : undefined}
                       isPurchased={isPurchased}
@@ -511,7 +517,7 @@ export default function CofreDocumento() {
               <CollapsibleContent>
                 <CardContent className="space-y-4">
                   {/* Card de Ação Rápida */}
-                  <MedicationQuickAddCard 
+                  <MedicationQuickAddCard
                     prescriptionId={id}
                     medications={meta.prescriptions}
                     existingMedications={existingMedications}
@@ -520,112 +526,111 @@ export default function CofreDocumento() {
                   {meta.prescriptions.map((med: any, idx: number) => {
                     const medName = med.commercial_name || med.drug_name || med.name;
                     const isAdded = isMedicationAdded(medName);
-                    
+
                     return (
-                    <div 
-                      key={idx} 
-                      className={`p-4 rounded-lg border transition-all ${
-                        isAdded 
-                          ? 'bg-muted/50 border-muted opacity-60' 
+                      <div
+                        key={idx}
+                        className={`p-4 rounded-lg border transition-all ${isAdded
+                          ? 'bg-muted/50 border-muted opacity-60'
                           : 'bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-900'
-                      }`}
-                    >
-                      {isAdded && (
-                        <div className="mb-3 flex items-center gap-2 text-green-600 dark:text-green-400">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span className="text-sm font-medium">{t('cofreDoc.addedToRoutine')}</span>
-                        </div>
-                      )}
-                      {/* Cabeçalho do Medicamento */}
-                      <div className="mb-3">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1">
-                            <p className="font-semibold text-lg text-blue-900 dark:text-blue-100">
-                              {med.commercial_name || med.drug_name}
-                            </p>
-                            {med.commercial_name && med.drug_name && (
-                              <p className="text-sm text-blue-700 dark:text-blue-300">
-                                {med.drug_name}
+                          }`}
+                      >
+                        {isAdded && (
+                          <div className="mb-3 flex items-center gap-2 text-green-600 dark:text-green-400">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span className="text-sm font-medium">{t('cofreDoc.addedToRoutine')}</span>
+                          </div>
+                        )}
+                        {/* Cabeçalho do Medicamento */}
+                        <div className="mb-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1">
+                              <p className="font-semibold text-lg text-blue-900 dark:text-blue-100">
+                                {med.commercial_name || med.drug_name}
                               </p>
+                              {med.commercial_name && med.drug_name && (
+                                <p className="text-sm text-blue-700 dark:text-blue-300">
+                                  {med.drug_name}
+                                </p>
+                              )}
+                            </div>
+                            {med.is_generic !== undefined && (
+                              <Badge variant={med.is_generic ? "default" : "secondary"} className="shrink-0">
+                                {med.is_generic ? `💊 ${t('cofreDoc.generic')}` : t('cofreDoc.brand')}
+                              </Badge>
                             )}
                           </div>
-                          {med.is_generic !== undefined && (
-                            <Badge variant={med.is_generic ? "default" : "secondary"} className="shrink-0">
-                              {med.is_generic ? `💊 ${t('cofreDoc.generic')}` : t('cofreDoc.brand')}
-                            </Badge>
+                          {med.active_ingredient && (
+                            <p className="text-sm text-blue-600 dark:text-blue-400">
+                              <span className="font-medium">{t('cofreDoc.activeIngredient')}:</span> {med.active_ingredient}
+                            </p>
                           )}
                         </div>
-                        {med.active_ingredient && (
-                          <p className="text-sm text-blue-600 dark:text-blue-400">
-                            <span className="font-medium">{t('cofreDoc.activeIngredient')}:</span> {med.active_ingredient}
-                          </p>
-                        )}
-                      </div>
 
-                      <Separator className="my-3" />
+                        <Separator className="my-3" />
 
-                      {/* Informações de Embalagem */}
-                      {(med.package_type || med.package_quantity || med.packages_count) && (
-                        <div className="mb-3 p-2 bg-blue-100/50 dark:bg-blue-900/30 rounded">
-                          <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                            📦 {t('cofreDoc.packageInfo')}
-                          </p>
-                          <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                            {med.package_type && (
-                              <p>• {t('cofreDoc.type')}: {med.package_type}</p>
-                            )}
-                            {med.package_quantity && (
-                              <p>• {t('cofreDoc.quantity')}: {med.package_quantity}</p>
-                            )}
-                            {med.packages_count && (
-                              <p>• {t('cofreDoc.packagesCount')}: {med.packages_count} {med.packages_count === 1 ? t('cofreDoc.package') : t('cofreDoc.packages')}</p>
-                            )}
-                            {(() => {
-                              const totalUnits = calculateTotalUnits(med.packages_count, med.package_quantity);
-                              return totalUnits && (
-                                <p className="font-semibold pt-1 border-t border-blue-200 dark:border-blue-800 mt-2">
-                                  ✨ {t('cofreDoc.totalAvailable')}: {totalUnits} {extractQuantity(med.package_quantity || '') === 1 ? t('cofreDoc.unit') : t('cofreDoc.units')}
-                                </p>
-                              );
-                            })()}
+                        {/* Informações de Embalagem */}
+                        {(med.package_type || med.package_quantity || med.packages_count) && (
+                          <div className="mb-3 p-2 bg-blue-100/50 dark:bg-blue-900/30 rounded">
+                            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                              📦 {t('cofreDoc.packageInfo')}
+                            </p>
+                            <div className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                              {med.package_type && (
+                                <p>• {t('cofreDoc.type')}: {med.package_type}</p>
+                              )}
+                              {med.package_quantity && (
+                                <p>• {t('cofreDoc.quantity')}: {med.package_quantity}</p>
+                              )}
+                              {med.packages_count && (
+                                <p>• {t('cofreDoc.packagesCount')}: {med.packages_count} {med.packages_count === 1 ? t('cofreDoc.package') : t('cofreDoc.packages')}</p>
+                              )}
+                              {(() => {
+                                const totalUnits = calculateTotalUnits(med.packages_count, med.package_quantity);
+                                return totalUnits && (
+                                  <p className="font-semibold pt-1 border-t border-blue-200 dark:border-blue-800 mt-2">
+                                    ✨ {t('cofreDoc.totalAvailable')}: {totalUnits} {extractQuantity(med.package_quantity || '') === 1 ? t('cofreDoc.unit') : t('cofreDoc.units')}
+                                  </p>
+                                );
+                              })()}
+                            </div>
                           </div>
+                        )}
+
+                        {/* Instruções de Uso */}
+                        <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                          {med.dose && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">💊 {t('cofreDoc.dose')}:</span>
+                              <span>{med.dose}</span>
+                            </div>
+                          )}
+                          {med.frequency && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">⏰ {t('cofreDoc.frequency')}:</span>
+                              <span>{med.frequency}</span>
+                            </div>
+                          )}
+                          {med.duration_days && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">📅 {t('cofreDoc.duration')}:</span>
+                              <span>{med.duration_days} {t('cofreDoc.days')} {med.duration && `(${med.duration})`}</span>
+                            </div>
+                          )}
+                          {med.instructions && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">📝 {t('cofreDoc.instructions')}:</span>
+                              <span>{med.instructions}</span>
+                            </div>
+                          )}
+                          {med.with_food !== undefined && (
+                            <div className="flex items-start gap-2">
+                              <span className="font-medium">🍽️ {t('cofreDoc.withFood')}:</span>
+                              <span>{med.with_food ? t('cofreDoc.takeWithFood') : t('cofreDoc.takeWithoutFood')}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-
-                      {/* Instruções de Uso */}
-                      <div className="text-sm text-blue-700 dark:text-blue-300 space-y-2">
-                        {med.dose && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">💊 {t('cofreDoc.dose')}:</span>
-                            <span>{med.dose}</span>
-                          </div>
-                        )}
-                        {med.frequency && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">⏰ {t('cofreDoc.frequency')}:</span>
-                            <span>{med.frequency}</span>
-                          </div>
-                        )}
-                        {med.duration_days && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">📅 {t('cofreDoc.duration')}:</span>
-                            <span>{med.duration_days} {t('cofreDoc.days')} {med.duration && `(${med.duration})`}</span>
-                          </div>
-                        )}
-                        {med.instructions && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">📝 {t('cofreDoc.instructions')}:</span>
-                            <span>{med.instructions}</span>
-                          </div>
-                        )}
-                        {med.with_food !== undefined && (
-                          <div className="flex items-start gap-2">
-                            <span className="font-medium">🍽️ {t('cofreDoc.withFood')}:</span>
-                            <span>{med.with_food ? t('cofreDoc.takeWithFood') : t('cofreDoc.takeWithoutFood')}</span>
-                          </div>
-                        )}
                       </div>
-                    </div>
                     );
                   })}
                   {meta?.notes && (
@@ -670,7 +675,7 @@ export default function CofreDocumento() {
                 <CardContent className="space-y-4">
                   {/* Exam Deficiency Badges */}
                   <ExamDeficiencyBadges examData={meta.extracted_values} />
-                  
+
                   {meta.extracted_values.map((val: any, idx: number) => (
                     <div key={idx} className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
                       <div className="flex items-start justify-between">
@@ -693,10 +698,10 @@ export default function CofreDocumento() {
                             {val.status === 'normal' ? `✓ ${t('cofreDoc.normalValue')}` : `⚠️ ${t('cofreDoc.alteredValue')}`}
                           </Badge>
                         )}
-                       </div>
-                     </div>
-                   ))}
-                 </CardContent>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
               </CollapsibleContent>
             </Collapsible>
           </Card>

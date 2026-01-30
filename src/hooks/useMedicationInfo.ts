@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { httpsCallable, functions } from "@/integrations/firebase";
 
 export interface MedicationInfo {
   indication: string;
@@ -31,7 +31,7 @@ export function useMedicationInfo(): UseMedicationInfoResult {
 
   const fetchInfo = useCallback(async (medicationName: string) => {
     const normalizedName = medicationName.toLowerCase().trim();
-    
+
     // Check cache first
     if (medicationInfoCache.has(normalizedName)) {
       setInfo(medicationInfoCache.get(normalizedName)!);
@@ -43,20 +43,19 @@ export function useMedicationInfo(): UseMedicationInfoResult {
     setError(null);
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("medication-info", {
-        body: { medicationName },
-      });
+      const getMedicationInfo = httpsCallable<
+        { medicationName: string },
+        { success: boolean, data: MedicationInfo, error?: string }
+      >(functions, "medicationInfo");
 
-      if (fnError) {
-        throw new Error(fnError.message);
-      }
+      const { data } = await getMedicationInfo({ medicationName });
 
       if (data?.error) {
         throw new Error(data.error);
       }
 
       if (data?.success && data?.data) {
-        const medicationInfo = data.data as MedicationInfo;
+        const medicationInfo = data.data;
         medicationInfoCache.set(normalizedName, medicationInfo);
         setInfo(medicationInfo);
       } else {
@@ -88,15 +87,18 @@ export function useMedicationInfo(): UseMedicationInfoResult {
 // Utility to prefetch medication info
 export function prefetchMedicationInfo(medicationName: string): void {
   const normalizedName = medicationName.toLowerCase().trim();
-  
+
   if (medicationInfoCache.has(normalizedName)) {
     return; // Already cached
   }
 
   // Prefetch in background
-  supabase.functions.invoke("medication-info", {
-    body: { medicationName },
-  }).then(({ data }) => {
+  const getMedicationInfo = httpsCallable<
+    { medicationName: string },
+    { success: boolean, data: MedicationInfo }
+  >(functions, "medicationInfo");
+
+  getMedicationInfo({ medicationName }).then(({ data }) => {
     if (data?.success && data?.data) {
       medicationInfoCache.set(normalizedName, data.data);
     }

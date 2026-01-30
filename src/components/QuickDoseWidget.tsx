@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, fetchCollection, where, orderBy, limit, fetchDocument } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { format } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
 import { useFeedbackToast } from '@/hooks/useFeedbackToast';
@@ -12,12 +14,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 interface NextDose {
   id: string;
-  due_at: string;
-  item_id: string;
-  items: {
-    name: string;
-    dose_text?: string;
-  };
+  dueAt: string;
+  itemId: string;
+  name?: string;
+  doseText?: string;
 }
 
 /**
@@ -31,6 +31,7 @@ export default function QuickDoseWidget({
 }) {
   const [nextDose, setNextDose] = useState<NextDose | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   const { overdueDoses, markAsTaken: markOverdueAsTaken, hasOverdue } = useOverdueDoses();
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
@@ -38,66 +39,80 @@ export default function QuickDoseWidget({
     showFeedback
   } = useFeedbackToast();
 
-  useEffect(() => {
-    loadNextDose();
-
-    // Reload every minute
-    const interval = setInterval(loadNextDose, 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadNextDose = async () => {
+  const loadNextDose = useCallback(async () => {
+    if (!user) return;
     try {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) return;
       const now = new Date();
       const next2Hours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-      const {
-        data,
-        error
-      } = await supabase.from('dose_instances').select(`
-          id,
-          due_at,
-          item_id,
-          items!inner (
-            user_id,
-            name,
-            dose_text
-          )
-        `).eq('status', 'scheduled').gte('due_at', now.toISOString()).lte('due_at', next2Hours.toISOString()).order('due_at', {
-        ascending: true
-      }).limit(1).single();
-      if (error && error.code !== 'PGRST116') {
+
+      // In Firebase: users/{uid}/doses
+      const { data: doses, error } = await fetchCollection<{ id: string; dueAt: string; itemId: string; status: string }>(
+        `users/${user.uid}/doses`,
+        [
+          where('status', '==', 'scheduled'),
+          where('dueAt', '>=', now.toISOString()),
+          where('dueAt', '<=', next2Hours.toISOString()),
+          orderBy('dueAt', 'asc'),
+          limit(1)
+        ]
+      );
+
+      if (error) {
         console.error('Error loading next dose:', error);
         return;
       }
-      setNextDose(data);
+
+      const dose = doses && doses.length > 0 ? doses[0] : null;
+
+      if (dose) {
+        // Fetch medication details manually (no join in Firestore)
+        const { data: medication } = await fetchDocument<{ name: string; doseText?: string }>(
+          `users/${user.uid}/medications`,
+          dose.itemId
+        );
+
+        setNextDose({
+          id: dose.id,
+          dueAt: dose.dueAt,
+          itemId: dose.itemId,
+          name: medication?.name,
+          doseText: medication?.doseText
+        });
+      } else {
+        setNextDose(null);
+      }
     } catch (error) {
       console.error('Error in loadNextDose:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadNextDose();
+    }
+
+    // Reload every minute
+    const interval = setInterval(() => {
+      if (user) loadNextDose();
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, loadNextDose]);
 
   const handleQuickTake = async () => {
     if (!nextDose) return;
     try {
-      const {
-        error
-      } = await supabase.functions.invoke('handle-dose-action', {
-        body: {
-          doseId: nextDose.id,
-          action: 'taken'
-        }
+      const handleDoseAction = httpsCallable(functions, 'handleDoseAction');
+      const result = await handleDoseAction({
+        doseId: nextDose.id,
+        action: 'taken'
       });
-      if (error) throw error;
-      const itemData = Array.isArray(nextDose.items) ? nextDose.items[0] : nextDose.items;
+
+      if ((result.data as { error?: string })?.error) throw new Error((result.data as { error?: string }).error);
+
       showFeedback('dose-taken', {
-        medicationName: itemData.name
+        medicationName: nextDose.name || 'Medicamento'
       });
 
       // Reload next dose
@@ -175,16 +190,15 @@ export default function QuickDoseWidget({
     );
   }
 
-  const itemData = Array.isArray(nextDose.items) ? nextDose.items[0] : nextDose.items;
-  const dueTime = new Date(nextDose.due_at);
+  const dueTime = new Date(nextDose.dueAt);
   const minutesUntil = Math.round((dueTime.getTime() - new Date().getTime()) / 60000);
   const isNow = minutesUntil <= 5 && minutesUntil >= -5;
 
   return (
     <Card className={cn(
       "p-4 transition-all",
-      isNow 
-        ? "bg-gradient-to-br from-amber-500/15 to-amber-500/5 border-amber-500/30 shadow-lg shadow-amber-500/10" 
+      isNow
+        ? "bg-gradient-to-br from-amber-500/15 to-amber-500/5 border-amber-500/30 shadow-lg shadow-amber-500/10"
         : "bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20",
       className
     )}>
@@ -204,9 +218,9 @@ export default function QuickDoseWidget({
               {isNow ? t('quickDose.now') : format(dueTime, "HH:mm", { locale: dateLocale })}
             </span>
           </div>
-          <h3 className="font-semibold truncate">{itemData.name}</h3>
-          {itemData.dose_text && (
-            <p className="text-xs text-muted-foreground truncate">{itemData.dose_text}</p>
+          <h3 className="font-semibold truncate">{nextDose.name}</h3>
+          {nextDose.doseText && (
+            <p className="text-xs text-muted-foreground truncate">{nextDose.doseText}</p>
           )}
         </div>
         <Button

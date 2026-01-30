@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -22,6 +22,7 @@ import Landing from "./pages/Landing";
 import SplashScreen from "./components/SplashScreen";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Lazy loaded components for code splitting
 const TodayRedesign = lazy(() => import("./pages/TodayRedesign"));
@@ -54,8 +55,7 @@ const ProfileCreate = lazy(() => import("./pages/ProfileCreate"));
 const ProfileEdit = lazy(() => import("./pages/ProfileEdit"));
 const IndiqueGanhe = lazy(() => import("./pages/IndiqueGanhe"));
 const Recompensas = lazy(() => import("./pages/Recompensas"));
-const WeightHistory = lazy(() => import("./pages/WeightHistory"));
-const SinaisVitais = lazy(() => import("./pages/SinaisVitais"));
+const HealthVitals = lazy(() => import("./pages/HealthVitals"));
 const SubscriptionManagement = lazy(() => import("./pages/SubscriptionManagement"));
 const SubscriptionSuccess = lazy(() => import("./pages/SubscriptionSuccess"));
 const SubscriptionCanceled = lazy(() => import("./pages/SubscriptionCanceled"));
@@ -89,7 +89,10 @@ const ConsultationCardView = lazy(() => import("./pages/ConsultationCardView"));
 const DrugInteractions = lazy(() => import("./pages/DrugInteractions"));
 // Admin route removed - feature flags managed via Supabase Dashboard only
 const NotFound = lazy(() => import("./pages/NotFound"));
-const HealthAIButton = lazy(() => import("./components/HealthAIButton"));
+
+// Critical floating components - always rendered, no lazy loading needed
+import HealthAIButton from "./components/HealthAIButton";
+import FloatingAddButton from "./components/FloatingAddButton";
 const PWAInstallPrompt = lazy(() => import("./components/PWAInstallPrompt"));
 const NotificationPermissionPrompt = lazy(() => import("./components/NotificationPermissionPrompt"));
 
@@ -103,13 +106,36 @@ const PageLoader = () => (
 function AppContent() {
   // Initialize push notifications and get the permission request function
   const { requestNotificationPermission } = usePushNotifications();
-  
+
   // Initialize dose generation to ensure doses are always up-to-date
   useDoseGeneration();
-  
+
   // Track app opened
   useEffect(() => {
     trackAppOpened();
+
+    // Listen for local alarms triggers (foreground)
+    const handleAlarm = (event: CustomEvent) => {
+      console.log('Alarm trigger received:', event.detail);
+      const doseId = event.detail.doseId;
+      // Show persistent toast
+      toast("⏰ Hora do Medicamento", {
+        description: "Toque para confirmar que tomou",
+        action: {
+          label: "Ver",
+          onClick: () => {
+            // Dispatch navigation or open modal
+            window.dispatchEvent(new CustomEvent("horamed-action", {
+              detail: { doseId, actionId: 'open' }
+            }));
+          }
+        },
+        duration: 10000,
+      });
+    };
+
+    window.addEventListener('horamed-alarm', handleAlarm as EventListener);
+    return () => window.removeEventListener('horamed-alarm', handleAlarm as EventListener);
   }, []);
   const location = useLocation();
   const hideNavigationPaths = ["/auth", "/onboarding", "/onboarding-rapido", "/onboarding-completo", "/bem-vindo", "/"];
@@ -124,7 +150,8 @@ function AppContent() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
           <Route path="/landing-preview" element={<Landing />} />
-          
+          <Route path="/splash" element={<SplashScreen onComplete={() => { }} minimumDisplayTime={5000} />} />
+
           {/* Main navigation routes - HoraMed 2.0 */}
           <Route path="/hoje" element={<ProtectedRoute><TodayRedesign /></ProtectedRoute>} />
           <Route path="/rotina" element={<ProtectedRoute><MedicamentosHub /></ProtectedRoute>} />
@@ -133,24 +160,26 @@ function AppContent() {
           <Route path="/jornada" element={<ProtectedRoute><Gamification /></ProtectedRoute>} />
           <Route path="/carteira" element={<ProtectedRoute><Cofre /></ProtectedRoute>} />
           <Route path="/perfil" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          
+
           {/* Super Página de Saúde - Hub unificado */}
           <Route path="/medicamentos" element={<ProtectedRoute><MedicamentosHub /></ProtectedRoute>} />
-          <Route path="/saude" element={<ProtectedRoute><MedicamentosHub /></ProtectedRoute>} />
-          
+          {/* Alias redirects */}
+          <Route path="/saude" element={<Navigate to="/medicamentos" replace />} />
+
           {/* Medicamentos subroutes */}
           <Route path="/adicionar" element={<ProtectedRoute><AddItemRedirect /></ProtectedRoute>} />
-          <Route path="/adicionar-medicamento" element={<ProtectedRoute><AddMedicationPage /></ProtectedRoute>} />
-          <Route path="/add" element={<ProtectedRoute><AddItemRedirect /></ProtectedRoute>} />
+          <Route path="/adicionar-medicamento" element={<Navigate to="/adicionar" replace />} />
+          <Route path="/add" element={<Navigate to="/adicionar" replace />} />
+
           <Route path="/edit/:id" element={<ProtectedRoute><EditItemRedirect /></ProtectedRoute>} />
           <Route path="/estoque" element={<ProtectedRoute><MedicamentosHub /></ProtectedRoute>} />
           <Route path="/estoque/:itemId" element={<ProtectedRoute><StockDetails /></ProtectedRoute>} />
           <Route path="/historico-medicamentos" element={<ProtectedRoute><MedicationHistory /></ProtectedRoute>} />
           <Route path="/medicamentos/:id/historico" element={<ProtectedRoute><MedicationHistory /></ProtectedRoute>} />
-          
+
           {/* Progresso/Analytics detail routes */}
           <Route path="/progresso/detalhes" element={<ProtectedRoute><AnalyticsDetails /></ProtectedRoute>} />
-          <Route path="/analise-detalhada" element={<ProtectedRoute><AnalyticsDetails /></ProtectedRoute>} />
+          <Route path="/analise-detalhada" element={<Navigate to="/progresso/detalhes" replace />} />
 
           {/* Saúde subroutes */}
           <Route path="/saude/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />
@@ -165,31 +194,31 @@ function AppContent() {
           <Route path="/graficos" element={<ProtectedRoute><Charts /></ProtectedRoute>} />
           <Route path="/dashboard-saude" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
           <Route path="/linha-do-tempo" element={<ProtectedRoute><HealthTimeline /></ProtectedRoute>} />
-          <Route path="/timeline" element={<ProtectedRoute><HealthTimeline /></ProtectedRoute>} />
+          <Route path="/timeline" element={<Navigate to="/linha-do-tempo" replace />} />
           <Route path="/analise-saude" element={<ProtectedRoute><HealthAnalysis /></ProtectedRoute>} />
           <Route path="/saude/interacoes" element={<ProtectedRoute><DrugInteractions /></ProtectedRoute>} />
           <Route path="/interacoes" element={<ProtectedRoute><DrugInteractions /></ProtectedRoute>} />
-          
+
           {/* Perfil subroutes */}
           <Route path="/perfil/criar" element={<ProtectedRoute><ProfileCreate /></ProtectedRoute>} />
           <Route path="/perfis/novo" element={<ProtectedRoute><ProfileCreate /></ProtectedRoute>} />
           <Route path="/perfil/editar/:id" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/perfil/indique-e-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
-          <Route path="/indique-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
+          <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
           <Route path="/recompensas" element={<ProtectedRoute><Recompensas /></ProtectedRoute>} />
-          <Route path="/peso" element={<ProtectedRoute><WeightHistory /></ProtectedRoute>} />
-          <Route path="/peso/historico" element={<ProtectedRoute><WeightHistory /></ProtectedRoute>} />
-          <Route path="/sinais-vitais" element={<ProtectedRoute><SinaisVitais /></ProtectedRoute>} />
+          <Route path="/peso" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
+          <Route path="/peso/historico" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
+          <Route path="/sinais-vitais" element={<ProtectedRoute><HealthVitals /></ProtectedRoute>} />
           <Route path="/assinatura" element={<ProtectedRoute><SubscriptionManagement /></ProtectedRoute>} />
           <Route path="/assinatura/sucesso" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
           <Route path="/assinatura/cancelado" element={<ProtectedRoute><SubscriptionCanceled /></ProtectedRoute>} />
           <Route path="/notificacoes-config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
-          <Route path="/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
-          <Route path="/notificacoes/config" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
-          <Route path="/notificacoes/configurar" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
+          <Route path="/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
+          <Route path="/notificacoes/config" element={<Navigate to="/notificacoes-config" replace />} />
+          <Route path="/notificacoes/configurar" element={<Navigate to="/notificacoes-config" replace />} />
           <Route path="/configurar-notificacoes" element={<ProtectedRoute><NotificationSetup /></ProtectedRoute>} />
-          <Route path="/configuracoes/notificacoes" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
+          <Route path="/configuracoes/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
           <Route path="/exportar" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
           <Route path="/exportar-dados" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
           <Route path="/privacidade" element={<Privacy />} />
@@ -211,7 +240,7 @@ function AppContent() {
           <Route path="/alarmes/diagnostico" element={<ProtectedRoute><AlarmDiagnostics /></ProtectedRoute>} />
           <Route path="/emergencia" element={<ProtectedRoute><Emergency /></ProtectedRoute>} />
           <Route path="/planos" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
-          
+
           {/* Carteira subroutes */}
           <Route path="/carteira/upload" element={<ProtectedRoute><CofreUpload /></ProtectedRoute>} />
           <Route path="/carteira/criar-manual" element={<ProtectedRoute><CofreManualCreate /></ProtectedRoute>} />
@@ -222,30 +251,29 @@ function AppContent() {
           <Route path="/compartilhar/:token" element={<CompartilharDocumento />} />
           <Route path="/scan" element={<ProtectedRoute><DocumentScan /></ProtectedRoute>} />
           <Route path="/digitalizar" element={<ProtectedRoute><DocumentScan /></ProtectedRoute>} />
-          
-          {/* Legacy/deprecated routes (mantidos para compatibilidade) */}
-          <Route path="/historico" element={<ProtectedRoute><History /></ProtectedRoute>} />
+
+          {/* Legacy/deprecated routes (mantidos para compatibilidade via redirect) */}
+          <Route path="/historico" element={<Navigate to="/historico-medicamentos" replace />} />
+          <Route path="/evolucao" element={<Navigate to="/dashboard-saude" replace />} />
+          <Route path="/calendario" element={<Navigate to="/hoje" replace />} />
           <Route path="/mais" element={<ProtectedRoute><More /></ProtectedRoute>} />
-          <Route path="/evolucao" element={<ProtectedRoute><HealthDashboard /></ProtectedRoute>} />
-          <Route path="/calendario" element={<ProtectedRoute><WeeklyCalendar /></ProtectedRoute>} />
-          
+
           {/* External share routes (no auth required) */}
           <Route path="/historico-compartilhado/:token" element={<div>Histórico Compartilhado</div>} />
           <Route path="/cuidador/aceitar/:token" element={<CaregiverAccept />} />
           <Route path="/consulta/:token" element={<ConsultationCardView />} />
-          
-          {/* Admin route removed - feature flags managed via Supabase Dashboard only */}
-          
+
           {/* Catch all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
       {showNavigation && <Navigation />}
-      {/* Unified Floating Action Hub (Clara + Voice) */}
+      {/* Unified Floating Action Hub (Clara + Voice) - no lazy loading */}
       {showNavigation && (
-        <Suspense fallback={null}>
+        <>
           <HealthAIButton />
-        </Suspense>
+          <FloatingAddButton />
+        </>
       )}
       {/* PWA prompt should always be available */}
       <Suspense fallback={null}>
@@ -260,13 +288,15 @@ function AppContent() {
 }
 
 // Optimized QueryClient with aggressive caching
+// Optimized QueryClient with aggressive caching (Updated per technical analysis)
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes - reduce refetches
-      gcTime: 30 * 60 * 1000, // 30 minutes cache
+      staleTime: 10 * 60 * 1000, // 10 minutes - reduce refetches significantly
+      gcTime: 60 * 60 * 1000, // 60 minutes cache retention
       refetchOnWindowFocus: false, // Prevent ghost refetches
       refetchOnReconnect: false,
+      refetchOnMount: false, // Don't refetch on component remount if cached
       retry: 1, // Reduce retry attempts
       retryDelay: 1000,
     },
@@ -277,8 +307,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  
+  const [showSplash, setShowSplash] = useState(false);
+
   console.log('App initializing', {
     hasSupabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
     hasSupabaseKey: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
@@ -292,7 +322,7 @@ const App = () => {
       setShowSplash(false);
       return;
     }
-    
+
     // On app domain, only show splash on first load
     const hasSeenSplash = sessionStorage.getItem('horamed_splash_shown');
     if (hasSeenSplash) {
@@ -316,6 +346,7 @@ const App = () => {
                   <SubscriptionProvider>
                     <BrowserRouter>
                       <AuthProvider>
+                        <ScrollToTop />
                         {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
                         <AppContent />
                       </AuthProvider>

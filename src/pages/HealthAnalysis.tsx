@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, fetchCollection, updateDocument, orderBy, limit } from '@/integrations/firebase';
 import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,55 +9,62 @@ import { Loader2, Brain, AlertTriangle, Info, CheckCircle2, RefreshCw, ArrowLeft
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface HealthInsight {
   id: string;
-  insight_type: string;
+  insightType: string;
   title: string;
   description: string;
   severity: string;
   metadata?: any;
-  is_read: boolean;
-  created_at: string;
+  isRead: boolean;
+  createdAt: any;
 }
 
 export default function HealthAnalysis() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [insights, setInsights] = useState<HealthInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [adherenceRate, setAdherenceRate] = useState<number | null>(null);
 
   const fetchInsights = async () => {
+    if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from('health_insights')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const { data, error } = await fetchCollection<HealthInsight>(
+        `users/${user.uid}/healthInsights`,
+        [orderBy('createdAt', 'desc'), limit(10)]
+      );
 
       if (error) throw error;
       setInsights(data || []);
     } catch (error) {
       console.error('Erro ao carregar insights:', error);
-      toast.error('Erro ao carregar análises');
+      toast.error(t("toast.health.analysisError"));
     } finally {
       setLoading(false);
     }
   };
 
   const runAnalysis = async () => {
+    if (!user) return;
     setAnalyzing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('predictive-health-analysis');
+      const { functions } = await import("@/integrations/firebase/client");
+      const { httpsCallable } = await import("firebase/functions");
 
-      if (error) throw error;
+      const predictiveAnalysis = httpsCallable(functions, 'predictiveHealthAnalysis');
+      const result = await predictiveAnalysis();
+      const data = result.data as any;
 
       if (data.insights && data.insights.length > 0) {
         setInsights(data.insights);
-        setAdherenceRate(data.adherence_rate);
+        setAdherenceRate(data.adherenceRate);
         toast.success(`${data.insights.length} insights gerados com sucesso!`);
       } else {
-        toast.info('Não há dados suficientes para análise ainda. Continue registrando suas doses!');
+        toast.info(t("toast.health.insufficientData"));
       }
     } catch (error: any) {
       console.error('Erro ao executar análise:', error);
@@ -68,16 +75,18 @@ export default function HealthAnalysis() {
   };
 
   const markAsRead = async (insightId: string) => {
+    if (!user) return;
     try {
-      const { error } = await supabase
-        .from('health_insights')
-        .update({ is_read: true })
-        .eq('id', insightId);
+      const { error } = await updateDocument(
+        `users/${user.uid}/healthInsights`,
+        insightId,
+        { isRead: true }
+      );
 
       if (error) throw error;
 
-      setInsights(prev => 
-        prev.map(i => i.id === insightId ? { ...i, is_read: true } : i)
+      setInsights(prev =>
+        prev.map(i => i.id === insightId ? { ...i, isRead: true } : i)
       );
     } catch (error) {
       console.error('Erro ao marcar como lido:', error);
@@ -85,8 +94,10 @@ export default function HealthAnalysis() {
   };
 
   useEffect(() => {
-    fetchInsights();
-  }, []);
+    if (user) {
+      fetchInsights();
+    }
+  }, [user]);
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -113,7 +124,7 @@ export default function HealthAnalysis() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container max-w-4xl mx-auto px-4 py-6 pt-24 space-y-6">{/* pt-24 para compensar o header fixo */}
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -130,8 +141,8 @@ export default function HealthAnalysis() {
             </p>
           </div>
 
-          <Button 
-            onClick={runAnalysis} 
+          <Button
+            onClick={runAnalysis}
             disabled={analyzing}
             size="lg"
           >
@@ -178,9 +189,9 @@ export default function HealthAnalysis() {
         ) : (
           <div className="space-y-4">
             {insights.map((insight) => (
-              <Card 
+              <Card
                 key={insight.id}
-                className={`transition-all ${!insight.is_read ? 'border-primary/50 shadow-sm' : ''}`}
+                className={`transition-all ${!insight.isRead ? 'border-primary/50 shadow-sm' : ''}`}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between gap-4">
@@ -193,7 +204,7 @@ export default function HealthAnalysis() {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {getSeverityBadge(insight.severity)}
-                      {!insight.is_read && (
+                      {!insight.isRead && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -208,14 +219,14 @@ export default function HealthAnalysis() {
                 {insight.metadata && (
                   <CardContent>
                     <div className="text-sm text-muted-foreground">
-                      {insight.metadata.day_of_week && (
-                        <p>Dia: {insight.metadata.day_of_week}</p>
+                      {insight.metadata.dayOfWeek && (
+                        <p>Dia: {insight.metadata.dayOfWeek}</p>
                       )}
                       {insight.metadata.hour && (
                         <p>Horário: {insight.metadata.hour}h</p>
                       )}
-                      {insight.metadata.adherence_rate !== undefined && (
-                        <p>Progresso: {(insight.metadata.adherence_rate * 100).toFixed(1)}%</p>
+                      {insight.metadata.adherenceRate !== undefined && (
+                        <p>Progresso: {(insight.metadata.adherenceRate * 100).toFixed(1)}%</p>
                       )}
                     </div>
                   </CardContent>

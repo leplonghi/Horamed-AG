@@ -12,11 +12,11 @@ import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
 import { useDocumento } from "@/hooks/useCofre";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, updateDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function CofreDocumentoEdit() {
@@ -59,18 +59,14 @@ export default function CofreDocumentoEdit() {
 
   const [prescriptions, setPrescriptions] = useState<any[]>([]);
 
-  // Fetch categories
-  const { data: categorias } = useQuery({
-    queryKey: ["categorias_saude"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categorias_saude")
-        .select("*")
-        .order("label");
-      if (error) throw error;
-      return data;
-    },
-  });
+  // Static categories for Firebase
+  const HEALTH_CATEGORIES = [
+    { id: "receita", slug: "receita", label: "Receita Médica" },
+    { id: "exame", slug: "exame", label: "Exame" },
+    { id: "vacinacao", slug: "vacinacao", label: "Vacinação" },
+    { id: "consulta", slug: "consulta", label: "Consulta" },
+    { id: "outro", slug: "outro", label: "Outro" }
+  ];
 
   useEffect(() => {
     if (documento) {
@@ -105,7 +101,7 @@ export default function CofreDocumentoEdit() {
         followup_date: meta?.followup_date?.split("T")[0] || "",
         prescription_type: meta?.prescription_type || "",
       });
-      
+
       if (meta?.prescriptions) {
         setPrescriptions(meta.prescriptions);
       }
@@ -114,41 +110,47 @@ export default function CofreDocumentoEdit() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const { error } = await supabase
-        .from("documentos_saude")
-        .update({
-          title: data.title,
-          categoria_id: data.categoria_id || null,
-          provider: data.provider || null,
-          issued_at: data.issued_at || null,
-          expires_at: data.expires_at || null,
-          notes: data.notes || null,
-          updated_at: new Date().toISOString(),
-          meta: {
-            doctor_name: data.doctor_name,
-            doctor_registration: data.doctor_registration,
-            doctor_state: data.doctor_state,
-            specialty: data.specialty,
-            emitter_name: data.emitter_name,
-            emitter_address: data.emitter_address,
-            emitter_city: data.emitter_city,
-            emitter_state: data.emitter_state,
-            emitter_zip: data.emitter_zip,
-            emitter_phone: data.emitter_phone,
-            emitter_cnpj: data.emitter_cnpj,
-            patient_name: data.patient_name,
-            patient_age: data.patient_age,
-            patient_cpf: data.patient_cpf,
-            patient_address: data.patient_address,
-            diagnosis: data.diagnosis,
-            followup_date: data.followup_date,
-            prescription_type: data.prescription_type,
-            prescriptions: prescriptions,
-            prescription_count: prescriptions.length,
-            prescription_date: data.issued_at,
-          }
-        })
-        .eq("id", id!);
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+
+      const documentData = {
+        title: data.title,
+        categorySlug: data.categoria_id || null,
+        provider: data.provider || null,
+        issuedAt: data.issued_at || null,
+        expiresAt: data.expires_at || null,
+        notes: data.notes || null,
+        updatedAt: new Date().toISOString(),
+        meta: {
+          doctorName: data.doctor_name,
+          doctorRegistration: data.doctor_registration,
+          doctorState: data.doctor_state,
+          specialty: data.specialty,
+          emitterName: data.emitter_name,
+          emitterAddress: data.emitter_address,
+          emitterCity: data.emitter_city,
+          emitterState: data.emitter_state,
+          emitterZip: data.emitter_zip,
+          emitterPhone: data.emitter_phone,
+          emitterCnpj: data.emitter_cnpj,
+          patientName: data.patient_name,
+          patientAge: data.patient_age,
+          patientCpf: data.patient_cpf,
+          patientAddress: data.patient_address,
+          diagnosis: data.diagnosis,
+          followupDate: data.followup_date,
+          prescriptionType: data.prescription_type,
+          prescriptions: prescriptions,
+          prescriptionCount: prescriptions.length,
+          prescriptionDate: data.issued_at,
+        }
+      };
+
+      const { error } = await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        id!,
+        documentData
+      );
 
       if (error) throw error;
     },
@@ -211,7 +213,7 @@ export default function CofreDocumentoEdit() {
               {/* Informações Básicas */}
               <div className="space-y-4">
                 <h3 className="font-semibold text-lg">{t('cofreEdit.basicInfo')}</h3>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="title">{t('cofreEdit.titleLabel')}</Label>
                   <Input
@@ -233,8 +235,8 @@ export default function CofreDocumentoEdit() {
                       <SelectValue placeholder={t('cofreEdit.selectCategory')} />
                     </SelectTrigger>
                     <SelectContent>
-                      {categorias?.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
+                      {HEALTH_CATEGORIES?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.slug}>
                           {cat.label}
                         </SelectItem>
                       ))}
@@ -736,7 +738,7 @@ export default function CofreDocumentoEdit() {
                 <Button
                   type="button"
                   variant="outline"
-          onClick={() => navigate(`/carteira/${id}`)}
+                  onClick={() => navigate(`/carteira/${id}`)}
                 >
                   {t('common.cancel')}
                 </Button>

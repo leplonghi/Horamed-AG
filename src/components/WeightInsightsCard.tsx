@@ -61,9 +61,9 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
     >
       {/* Header with medication context */}
       {data.hasGLP1 && data.medications && data.medications.length > 0 && (
-        <div 
+        <div
           className="rounded-2xl p-4 flex items-center gap-3"
-          style={{ 
+          style={{
             backgroundColor: 'hsl(var(--primary) / 0.1)',
             boxShadow: 'var(--shadow-sm)'
           }}
@@ -86,7 +86,7 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
       <div className="space-y-3">
         {data.insights.slice(0, 3).map((insight, index) => {
           const styles = getNeutralStyles();
-          
+
           return (
             <motion.div
               key={index}
@@ -94,13 +94,13 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
               className="rounded-2xl bg-card/80 backdrop-blur-sm p-4"
-              style={{ 
+              style={{
                 boxShadow: 'var(--shadow-sm)',
                 borderLeft: `3px solid ${styles.border}`
               }}
             >
               <div className="flex items-start gap-3">
-                <div 
+                <div
                   className="p-2 rounded-xl shrink-0"
                   style={{ backgroundColor: styles.bg }}
                 >
@@ -108,7 +108,7 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
                     {insight.trend ? getTrendIcon(insight.trend) : getTypeIcon(insight.type)}
                   </span>
                 </div>
-                
+
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="font-medium text-foreground">{insight.title}</h4>
@@ -139,7 +139,7 @@ export default function WeightInsightsCard({ profileId }: WeightInsightsCardProp
       <Button
         variant="outline"
         className="w-full rounded-xl hover-lift"
-        onClick={() => navigate(`/peso/historico${profileId ? `?profile=${profileId}` : ''}`)}
+        onClick={() => navigate(`/sinais-vitais?tab=weight${profileId ? `&profile=${profileId}` : ''}`)}
       >
         <Scale className="h-4 w-4 mr-2" />
         {t('weightInsights.logWeight')}

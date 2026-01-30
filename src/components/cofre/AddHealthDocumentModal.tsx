@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, FlaskConical, Syringe, FolderOpen, Camera, Upload, X, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, fetchCollection, where, storage, functions, httpsCallable } from "@/integrations/firebase";
+import { ref, uploadBytes } from "firebase/storage";
 import { isPDF, convertPDFToImages } from "@/lib/pdfProcessor";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useDocumentLimits } from "@/hooks/useDocumentLimits";
@@ -31,7 +32,7 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
   const [extractedMedications, setExtractedMedications] = useState<any[]>([]);
   const [showMedicationsWizard, setShowMedicationsWizard] = useState(false);
   const [currentPrescriptionId, setCurrentPrescriptionId] = useState<string>();
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const { activeProfile } = useUserProfiles();
@@ -89,7 +90,7 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
     }
 
     setCurrentFile(file);
-    
+
     if (isPDF(file)) {
       setPreview("PDF_FILE");
     } else {
@@ -105,16 +106,8 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
     let attempts = 0;
     while (attempts < 3) {
       try {
-        const { data, error } = await supabase.functions.invoke("extract-document", {
-          body: { image: base64 },
-        });
-
-        if (error) {
-          if (attempts === 2) throw error;
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          continue;
-        }
+        const extractDocument = httpsCallable(functions, 'extractDocumentMetadata');
+        const { data }: any = await extractDocument({ image: base64 });
 
         if (data?.title) return data;
         break;
@@ -142,20 +135,17 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
 
     try {
       // Upload file first
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error(t('errors.notAuthenticated'));
 
       setProgress({ current: 0, total: 3, message: t('document.uploading') });
 
       const fileExt = currentFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      const filePath = `health-documents/${user.uid}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('cofre-saude')
-        .upload(filePath, currentFile);
-
-      if (uploadError) throw uploadError;
+      const storageRef = ref(storage, filePath);
+      await uploadBytes(storageRef, currentFile);
 
       setProgress({ current: 1, total: 3, message: t('document.analyzing') });
 
@@ -166,12 +156,12 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
         const allData: any[] = [];
 
         for (let i = 0; i < pages.length; i++) {
-          setProgress({ 
-            current: 1 + (i / pages.length), 
-            total: 3, 
+          setProgress({
+            current: 1 + (i / pages.length),
+            total: 3,
             message: t('document.readingPage', { current: String(i + 1), total: String(pages.length) })
           });
-          
+
           const pageData = await extractFromImage(pages[i].imageData);
           if (pageData) allData.push(pageData);
         }
@@ -183,7 +173,7 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
           reader.onloadend = () => resolve(reader.result as string);
           reader.readAsDataURL(currentFile);
         });
-        
+
         const base64 = await base64Promise;
         extractedData = await extractFromImage(base64);
       }
@@ -194,68 +184,59 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
 
       setProgress({ current: 2, total: 3, message: t('document.saving') });
 
-      // Get category ID
-      const { data: categoriaData } = await supabase
-        .from('categorias_saude')
-        .select('id')
-        .eq('slug', selectedType)
-        .maybeSingle();
-
       // Save document
-      const { data: newDoc, error: insertError } = await supabase
-        .from('documentos_saude')
-        .insert({
-          user_id: user.id,
-          profile_id: activeProfile?.id,
-          categoria_id: categoriaData?.id,
-          title: extractedData.title,
-          file_path: filePath,
-          mime_type: currentFile.type,
-          issued_at: extractedData.issued_at || null,
-          expires_at: extractedData.expires_at || null,
-          provider: extractedData.provider || null,
-          confidence_score: extractedData.confidence_score || 0,
-          status_extraction: 'pending_review',
-          meta: extractedData,
-          ocr_text: JSON.stringify(extractedData),
-        })
-        .select()
-        .single();
+      const newDocId = await addDocument(`users/${user.uid}/healthDocuments`, {
+        userId: user.uid,
+        profileId: activeProfile?.id,
+        categorySlug: selectedType,
+        title: extractedData.title,
+        filePath: filePath,
+        mimeType: currentFile.type,
+        issuedAt: extractedData.issued_at || null,
+        expiresAt: extractedData.expires_at || null,
+        provider: extractedData.provider || null,
+        confidenceScore: extractedData.confidence_score || 0,
+        extractionStatus: 'pending_review',
+        meta: extractedData,
+        ocrText: JSON.stringify(extractedData),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
 
-      if (insertError) throw insertError;
+      if (newDocId.error) throw newDocId.error;
 
       setProgress({ current: 3, total: 3, message: t('document.done') });
-      
+
       // If it's a prescription with medications, show wizard
       if (selectedType === "receita" && extractedData.prescriptions && extractedData.prescriptions.length > 0) {
         setExtractedMedications(extractedData.prescriptions);
-        setCurrentPrescriptionId(newDoc.id);
+        setCurrentPrescriptionId(newDocId.data as unknown as string);
         setShowMedicationsWizard(true);
-        
+
         toast.success(
           t('document.savedWithMeds', { count: String(extractedData.prescriptions.length) }),
           { duration: 5000 }
         );
       } else {
         toast.success(t('document.savedReview'));
+
+        // Reset and close
+        setTimeout(() => {
+          if (newDocId.data) onSuccess(newDocId.data as unknown as string, selectedType, extractedData);
+          handleClose();
+        }, 500);
       }
-      
-      // Reset and close
-      setTimeout(() => {
-        onSuccess(newDoc.id, selectedType, extractedData);
-        handleClose();
-      }, 500);
 
     } catch (error: any) {
       console.error('Error processing:', error);
-      
+
       // Show friendly error with fallback option
       toast.error(
         error.message?.includes('ler') || error.message?.includes('read')
           ? t('document.readError')
           : t('document.processError')
       );
-      
+
       setStep("upload");
       setProcessing(false);
     }
@@ -290,157 +271,157 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
                 <div className="flex items-center gap-2 text-sm">
                   <AlertCircle className="h-4 w-4 shrink-0" />
                   <p className="text-muted-foreground">
-                    {t('document.freeUsed', { used: String(5 - remaining) })}
+                    {t('document.freeUsed', { used: String(5 - (remaining || 0)) })}
                   </p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-        {/* Step 1: Select Document Type */}
-        {step === "select-type" && (
-          <div className="grid grid-cols-2 gap-4 py-6">
-            {documentTypes.map((type) => {
-              const Icon = type.icon;
-              return (
-                <Card
-                  key={type.id}
-                  className={`p-6 cursor-pointer transition-all border-2 bg-gradient-to-br ${type.color}`}
-                  onClick={() => handleTypeSelect(type.id)}
-                >
-                  <div className="text-center space-y-3">
-                    <div className="text-5xl">{type.emoji}</div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{type.label}</h3>
-                      <p className="text-sm text-muted-foreground">{type.description}</p>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Step 2: Upload File */}
-        {step === "upload" && (
-          <div className="space-y-6 py-6">
-            {!preview ? (
-              <div className="grid grid-cols-2 gap-4">
-                <Button
-                  variant="outline"
-                  className="h-32 flex-col gap-2 text-base"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
-                  <Camera className="h-8 w-8" />
-                  <span>{t('document.takePhoto')}</span>
-                  <span className="text-xs text-muted-foreground">{t('document.scanDoc')}</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-32 flex-col gap-2 text-base"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-8 w-8" />
-                  <span>{t('document.file')}</span>
-                  <span className="text-xs text-muted-foreground">{t('document.fileDesc')}</span>
-                </Button>
-
-                <input
-                  ref={cameraInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,application/pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="relative rounded-lg overflow-hidden border-2">
-                  {preview === "PDF_FILE" ? (
-                    <div className="w-full h-64 bg-muted flex flex-col items-center justify-center gap-3">
-                      <FileText className="w-16 h-16 text-primary" />
-                      <div className="text-center">
-                        <p className="font-medium">{t('document.pdfSelected')}</p>
-                        <p className="text-sm text-muted-foreground">{currentFile?.name}</p>
+          {/* Step 1: Select Document Type */}
+          {step === "select-type" && (
+            <div className="grid grid-cols-2 gap-4 py-6">
+              {documentTypes.map((type) => {
+                const Icon = type.icon;
+                return (
+                  <Card
+                    key={type.id}
+                    className={`p-6 cursor-pointer transition-all border-2 bg-gradient-to-br ${type.color}`}
+                    onClick={() => handleTypeSelect(type.id)}
+                  >
+                    <div className="text-center space-y-3">
+                      <div className="text-5xl">{type.emoji}</div>
+                      <div>
+                        <h3 className="font-semibold text-lg">{type.label}</h3>
+                        <p className="text-sm text-muted-foreground">{type.description}</p>
                       </div>
                     </div>
-                  ) : (
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="w-full h-auto max-h-64 object-contain bg-muted"
-                    />
-                  )}
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Step 2: Upload File */}
+          {step === "upload" && (
+            <div className="space-y-6 py-6">
+              {!preview ? (
+                <div className="grid grid-cols-2 gap-4">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setPreview(null);
-                      setCurrentFile(null);
-                    }}
-                    className="absolute top-2 right-2 bg-background/90"
+                    variant="outline"
+                    className="h-32 flex-col gap-2 text-base"
+                    onClick={() => cameraInputRef.current?.click()}
                   >
-                    <X className="h-4 w-4" />
+                    <Camera className="h-8 w-8" />
+                    <span>{t('document.takePhoto')}</span>
+                    <span className="text-xs text-muted-foreground">{t('document.scanDoc')}</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-32 flex-col gap-2 text-base"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-8 w-8" />
+                    <span>{t('document.file')}</span>
+                    <span className="text-xs text-muted-foreground">{t('document.fileDesc')}</span>
+                  </Button>
+
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="relative rounded-lg overflow-hidden border-2">
+                    {preview === "PDF_FILE" ? (
+                      <div className="w-full h-64 bg-muted flex flex-col items-center justify-center gap-3">
+                        <FileText className="w-16 h-16 text-primary" />
+                        <div className="text-center">
+                          <p className="font-medium">{t('document.pdfSelected')}</p>
+                          <p className="text-sm text-muted-foreground">{currentFile?.name}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={preview}
+                        alt="Preview"
+                        className="w-full h-auto max-h-64 object-contain bg-muted"
+                      />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setPreview(null);
+                        setCurrentFile(null);
+                      }}
+                      className="absolute top-2 right-2 bg-background/90"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <Button
+                    onClick={handleProcess}
+                    className="w-full h-12 text-base"
+                    disabled={processing}
+                  >
+                    {t('document.continue')}
                   </Button>
                 </div>
+              )}
+            </div>
+          )}
 
-                <Button
-                  onClick={handleProcess}
-                  className="w-full h-12 text-base"
-                  disabled={processing}
-                >
-                  {t('document.continue')}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Processing */}
-        {step === "processing" && (
-          <div className="py-12">
-            <div className="flex flex-col items-center gap-6">
-              <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              <div className="text-center space-y-2">
-                <p className="text-lg font-semibold">{progress.message}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t('document.waitMoment')}
-                </p>
+          {/* Step 3: Processing */}
+          {step === "processing" && (
+            <div className="py-12">
+              <div className="flex flex-col items-center gap-6">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+                <div className="text-center space-y-2">
+                  <p className="text-lg font-semibold">{progress.message}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t('document.waitMoment')}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </DialogContent>
+      </Dialog>
 
-    {/* Paywall Dialog */}
-    <PaywallDialog
-      open={showPaywall}
-      onOpenChange={setShowPaywall}
-      feature="documents"
-    />
+      {/* Paywall Dialog */}
+      <PaywallDialog
+        open={showPaywall}
+        onOpenChange={setShowPaywall}
+        feature="documents"
+      />
 
-    {/* Prescription Medications Wizard */}
-    <PrescriptionBulkAddWizard
-      open={showMedicationsWizard}
-      onOpenChange={setShowMedicationsWizard}
-      medications={extractedMedications}
-      prescriptionId={currentPrescriptionId}
-      onComplete={() => {
-        setExtractedMedications([]);
-        setCurrentPrescriptionId(undefined);
-      }}
-    />
+      {/* Prescription Medications Wizard */}
+      <PrescriptionBulkAddWizard
+        open={showMedicationsWizard}
+        onOpenChange={setShowMedicationsWizard}
+        medications={extractedMedications}
+        prescriptionId={currentPrescriptionId}
+        onComplete={() => {
+          setExtractedMedications([]);
+          setCurrentPrescriptionId(undefined);
+        }}
+      />
     </>
   );
 }

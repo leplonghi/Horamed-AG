@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth, fetchDocument, fetchCollection, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,7 +9,9 @@ import { toast } from "sonner";
 import { getReferralDiscountForUser, getFreeExtraSlotsForUser } from "@/lib/referrals";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function IndiqueGanhe() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
@@ -27,35 +28,36 @@ export default function IndiqueGanhe() {
   }, [user]);
 
   const loadReferralData = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Get user's referral code
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('referral_code')
-        .eq('user_id', user.id)
-        .single();
+      // Get user's referral code from profile subcollection
+      const { data: profile } = await fetchDocument<any>(
+        `users/${user.uid}/profile`,
+        'me'
+      );
 
-      if (profile?.referral_code) {
-        setReferralCode(profile.referral_code);
+      if (profile?.referralCode) {
+        setReferralCode(profile.referralCode);
       }
 
-      // Get referrals
-      const { data: referralsData } = await supabase
-        .from('referrals')
-        .select('*')
-        .eq('referrer_user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Get referrals from subcollection
+      const { data: referralsData } = await fetchCollection<any>(
+        `users/${user.uid}/referrals`,
+        [orderBy('createdAt', 'desc')]
+      );
 
       setReferrals(referralsData || []);
 
       // Calculate rewards
       if (isPremium) {
-        const discountValue = await getReferralDiscountForUser(user.id);
+        const discountValue = await getReferralDiscountForUser(user.uid);
         setDiscount(discountValue);
       } else {
-        const slots = await getFreeExtraSlotsForUser(user.id, new Date());
+        const slots = await getFreeExtraSlotsForUser(user.uid, new Date());
         setExtraSlots(slots);
       }
     } catch (error) {
@@ -67,21 +69,21 @@ export default function IndiqueGanhe() {
 
   const copyReferralCode = () => {
     if (!referralCode) {
-      toast.error('Código de indicação não disponível');
+      toast.error(t("toast.referral.codeNotAvailable"));
       return;
     }
     navigator.clipboard.writeText(referralCode);
-    toast.success('Código copiado!');
+    toast.success(t("toast.referral.codeCopied"));
   };
 
   const shareReferral = async () => {
     if (!referralCode) {
-      toast.error('Código de indicação não disponível');
+      toast.error(t("toast.referral.codeNotAvailable"));
       return;
     }
 
     const shareText = `Use meu código ${referralCode} no HoraMed e ganhe acesso ao melhor app de organização de saúde! ${window.location.origin}/auth?ref=${referralCode}`;
-    
+
     const shareData = {
       title: 'HoraMed - Indique e Ganhe',
       text: shareText,
@@ -91,7 +93,7 @@ export default function IndiqueGanhe() {
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-        toast.success('Compartilhado com sucesso!');
+        toast.success(t("toast.referral.sharedSuccess"));
       } catch (error: any) {
         // User cancelled or error occurred
         if (error.name !== 'AbortError') {
@@ -131,7 +133,7 @@ export default function IndiqueGanhe() {
               </div>
               <Sparkles className="h-5 w-5 text-primary absolute -top-1 -right-1 animate-pulse" />
             </div>
-            
+
             <div>
               <h3 className="font-semibold text-lg mb-2">Seu código de indicação</h3>
               <div className="inline-flex items-center gap-2 bg-background px-6 py-3 rounded-lg text-2xl font-mono font-bold border-2 border-primary/20">
@@ -178,7 +180,7 @@ export default function IndiqueGanhe() {
                   </div>
                   <Progress value={discount} className="h-2" />
                 </div>
-                
+
                 <div className="bg-muted rounded-lg p-4 space-y-2">
                   <p className="text-sm">
                     <strong>Plano mensal:</strong> 20% de desconto por amigo
@@ -200,7 +202,7 @@ export default function IndiqueGanhe() {
                   </div>
                   <Progress value={(extraSlots / 3) * 100} className="h-2" />
                 </div>
-                
+
                 <div className="bg-muted rounded-lg p-4 space-y-2">
                   <p className="text-sm">
                     Cada amigo que assinar o Premium libera mais <strong>1 medicamento ativo</strong> para você usar na versão grátis.
@@ -235,7 +237,7 @@ export default function IndiqueGanhe() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium">
-                        Indicação #{referral.id.slice(0, 8)}
+                        {(referral.id && referral.id.length > 8) ? `Indicação #${referral.id.slice(0, 8)}` : `Indicação #${referral.id}`}
                       </span>
                       {referral.status === 'active' && (
                         <span className="text-xs bg-green-500/10 text-green-500 px-2 py-0.5 rounded-full">
@@ -249,16 +251,16 @@ export default function IndiqueGanhe() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(referral.created_at).toLocaleDateString('pt-BR')}
+                      {referral.createdAt ? new Date(referral.createdAt).toLocaleDateString('pt-BR') : 'Data desconhecida'}
                     </p>
                   </div>
-                  
+
                   {referral.status === 'active' && (
                     <div className="text-right">
                       <p className="text-sm font-medium text-green-500">
-                        {referral.plan_type === 'premium_monthly' && '+20%'}
-                        {referral.plan_type === 'premium_annual' && '+40%'}
-                        {referral.plan_type === 'free' && '+1 slot'}
+                        {referral.planType === 'premium_monthly' && '+20%'}
+                        {referral.planType === 'premium_annual' && '+40%'}
+                        {referral.planType === 'free' && '+1 slot'}
                       </p>
                     </div>
                   )}
@@ -271,7 +273,7 @@ export default function IndiqueGanhe() {
         {/* Info Card */}
         <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
           <p className="text-sm text-center">
-            💡 <strong>Dica:</strong> Compartilhe seu código nas redes sociais, grupos de família ou amigos. Quanto mais pessoas usarem, mais benefícios você ganha!
+            💡 <strong>Dica:</strong> Compartilhe seu código nas redes sociais, grupos de família ou amigos. Quanto mais pessoas usarem, mas benefícios você ganha!
           </p>
         </Card>
       </div>

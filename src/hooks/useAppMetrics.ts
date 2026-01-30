@@ -1,8 +1,9 @@
-import { supabase } from "@/integrations/supabase/client";
+import { auth, analytics, setDocument } from "@/integrations/firebase";
+import { logEvent } from "firebase/analytics";
 
-type MetricEvent = 
+type MetricEvent =
   | 'dose_taken'
-  | 'dose_missed' 
+  | 'dose_missed'
   | 'dose_skipped'
   | 'notification_sent'
   | 'notification_failed'
@@ -27,14 +28,28 @@ interface MetricData {
 
 export const trackMetric = async (eventName: MetricEvent, eventData?: MetricData) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    await supabase.from('app_metrics').insert({
-      user_id: user?.id || null,
-      event_name: eventName,
-      event_data: eventData || {},
-    });
-    
+    const user = auth.currentUser;
+    const timestamp = Date.now();
+
+    // Log to Firebase Analytics
+    if (analytics) {
+      logEvent(analytics, eventName, eventData || {});
+    }
+
+    // Persist to Firestore for internal analysis if needed
+    if (user) {
+      const metricId = `${eventName}_${timestamp}`;
+      await setDocument(
+        `users/${user.uid}/appMetrics`,
+        metricId,
+        {
+          eventName,
+          eventData: eventData || {},
+          createdAt: new Date().toISOString()
+        }
+      );
+    }
+
     console.log(`[Metric] ${eventName}`, eventData);
   } catch (error) {
     console.error('[Metric Error]', eventName, error);
@@ -42,56 +57,56 @@ export const trackMetric = async (eventName: MetricEvent, eventData?: MetricData
 };
 
 // Convenience functions
-export const trackDoseTaken = (doseId: string, itemName: string, delayMinutes?: number) => 
+export const trackDoseTaken = (doseId: string, itemName: string, delayMinutes?: number) =>
   trackMetric('dose_taken', { dose_id: doseId, item_name: itemName, delay_minutes: delayMinutes || 0 });
 
-export const trackDoseMissed = (doseId: string, itemName: string) => 
+export const trackDoseMissed = (doseId: string, itemName: string) =>
   trackMetric('dose_missed', { dose_id: doseId, item_name: itemName });
 
-export const trackDoseSkipped = (doseId: string, itemName: string) => 
+export const trackDoseSkipped = (doseId: string, itemName: string) =>
   trackMetric('dose_skipped', { dose_id: doseId, item_name: itemName });
 
-export const trackNotificationSent = (doseId: string, channel: 'push' | 'local') => 
+export const trackNotificationSent = (doseId: string, channel: 'push' | 'local') =>
   trackMetric('notification_sent', { dose_id: doseId, channel });
 
-export const trackNotificationFailed = (doseId: string, error: string) => 
+export const trackNotificationFailed = (doseId: string, error: string) =>
   trackMetric('notification_failed', { dose_id: doseId, error });
 
-export const trackNotificationClicked = (doseId: string, action: string) => 
+export const trackNotificationClicked = (doseId: string, action: string) =>
   trackMetric('notification_clicked', { dose_id: doseId, action });
 
 export const trackTrialStarted = () => trackMetric('trial_started');
 
-export const trackSubscriptionConverted = (planType: string) => 
+export const trackSubscriptionConverted = (planType: string) =>
   trackMetric('subscription_converted', { plan_type: planType });
 
 export const trackSubscriptionCanceled = () => trackMetric('subscription_canceled');
 
-export const trackMedicationAdded = (itemName: string, category: string) => 
+export const trackMedicationAdded = (itemName: string, category: string) =>
   trackMetric('medication_added', { item_name: itemName, category });
 
-export const trackProfileCreated = (relationship: string) => 
+export const trackProfileCreated = (relationship: string) =>
   trackMetric('profile_created', { relationship });
 
 export const trackAppOpened = () => trackMetric('app_opened');
 
 // New telemetry for HoraMed reliability
-export const trackOnboardingCompleted = (alarmTested: boolean) => 
+export const trackOnboardingCompleted = (alarmTested: boolean) =>
   trackMetric('onboarding_completed', { alarm_tested: alarmTested });
 
-export const trackFirstAlarmTested = (success: boolean) => 
+export const trackFirstAlarmTested = (success: boolean) =>
   trackMetric('first_alarm_tested', { success });
 
-export const trackAlarmFiredOffline = (doseId: string) => 
+export const trackAlarmFiredOffline = (doseId: string) =>
   trackMetric('alarm_fired_offline', { dose_id: doseId });
 
-export const trackDayCompleted = (totalDoses: number, completedDoses: number) => 
+export const trackDayCompleted = (totalDoses: number, completedDoses: number) =>
   trackMetric('day_completed', { total_doses: totalDoses, completed_doses: completedDoses, adherence_percent: Math.round((completedDoses / totalDoses) * 100) });
 
-export const trackStreakStarted = (streakDays: number) => 
+export const trackStreakStarted = (streakDays: number) =>
   trackMetric('streak_started', { streak_days: streakDays });
 
-export const trackUserInactiveDoseReminder = (hoursSinceLastOpen: number) => 
+export const trackUserInactiveDoseReminder = (hoursSinceLastOpen: number) =>
   trackMetric('user_inactive_dose_reminder', { hours_since_last_open: hoursSinceLastOpen });
 
 export const useAppMetrics = () => {

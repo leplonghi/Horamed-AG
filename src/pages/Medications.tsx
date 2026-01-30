@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, updateDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Trash2, Search, Plus, Pill, Leaf, Clock, BookOpen, X } from "lucide-react";
@@ -27,17 +27,17 @@ import OceanBackground from "@/components/ui/OceanBackground";
 interface Item {
   id: string;
   name: string;
-  dose_text: string | null;
+  doseText: string | null;
   category: string;
-  is_active: boolean;
+  isActive: boolean;
   schedules: Array<{
     id: string;
     times: any;
-    freq_type: string;
+    freqType: string;
   }>;
   stock?: Array<{
-    units_left: number;
-    unit_label: string;
+    currentQty: number;
+    unitLabel: string;
   }>;
 }
 
@@ -51,17 +51,17 @@ export default function Medications() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const { canAddMedication } = useSubscription();
   const { activeProfile } = useUserProfiles();
-  
+
   // Medication info (bula) state
   const [selectedMedForInfo, setSelectedMedForInfo] = useState<string | null>(null);
   const { info, isLoading: infoLoading, error: infoError, fetchInfo, clearInfo } = useMedicationInfo();
-  
+
   const handleOpenBula = (medName: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedMedForInfo(medName);
     fetchInfo(medName);
   };
-  
+
   const handleCloseBula = (open: boolean) => {
     if (!open) {
       setSelectedMedForInfo(null);
@@ -82,33 +82,51 @@ export default function Medications() {
 
   const fetchItems = async () => {
     try {
-      let query = supabase.from("items").select(`
-          id,
-          name,
-          dose_text,
-          category,
-          is_active,
-          profile_id,
-          schedules (
-            id,
-            times,
-            freq_type
-          ),
-          stock (
-            units_left,
-            unit_label
-          )
-        `).eq("is_active", true);
-
-      if (activeProfile) {
-        query = query.eq("profile_id", activeProfile.id);
+      const user = auth.currentUser;
+      if (!user) {
+        setLoading(false);
+        return;
       }
-      const { data, error } = await query.order("name");
-      if (error) throw error;
-      const formattedData = (data || []).map(item => ({
-        ...item,
-        stock: item.stock ? Array.isArray(item.stock) ? item.stock : [item.stock] : []
+
+      const userId = user.uid;
+      const medsPath = `users/${userId}/medications`;
+
+      const constraints = [where("isActive", "==", true)];
+      if (activeProfile) {
+        constraints.push(where("profileId", "==", activeProfile.id));
+      }
+
+      const { data: medsData, error: medsError } = await fetchCollection<any>(medsPath, constraints);
+
+      if (medsError) throw medsError;
+
+      // Group and format data. In Firebase, we might need to fetch schedules/stock separately
+      // or assume they are stored within the medication document or sub-level
+      const formattedData = await Promise.all((medsData || []).map(async (med) => {
+        // Fetch schedules for this medication
+        const { data: schedules } = await fetchCollection<any>(`users/${userId}/schedules`, [
+          where("itemId", "==", med.id)
+        ]);
+
+        // Fetch stock for this medication
+        const { data: stock } = await fetchCollection<any>(`users/${userId}/stock`, [
+          where("itemId", "==", med.id)
+        ]);
+
+        return {
+          ...med,
+          name: med.name,
+          dose_text: med.doseText,
+          category: med.category,
+          is_active: med.isActive,
+          profile_id: med.profileId,
+          schedules: schedules || [],
+          stock: stock || []
+        };
       }));
+
+      // Sort by name
+      formattedData.sort((a, b) => a.name.localeCompare(b.name));
       setItems(formattedData);
     } catch (error) {
       console.error("Error fetching items:", error);
@@ -121,10 +139,10 @@ export default function Medications() {
   // Filter items
   const filteredItems = items.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !categoryFilter || 
+    const matchesCategory = !categoryFilter ||
       (categoryFilter === 'medicamento' && item.category === 'medicamento') ||
       (categoryFilter === 'suplemento' && (item.category === 'suplemento' || item.category === 'vitamina')) ||
-      (categoryFilter === 'low-stock' && item.stock?.[0] && item.stock[0].units_left <= 5);
+      (categoryFilter === 'low-stock' && item.stock?.[0] && item.stock[0].currentQty <= 5);
     return matchesSearch && matchesCategory;
   });
 
@@ -135,7 +153,16 @@ export default function Medications() {
   const deleteItem = async (id: string) => {
     if (!confirm(t('medications.confirmDelete'))) return;
     try {
-      const { error } = await supabase.from("items").delete().eq("id", id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userId = user.uid;
+
+      // Update isActive to false instead of deleting (soft delete)
+      const { error } = await updateDocument(`users/${userId}/medications`, id, {
+        isActive: false
+      });
+
       if (error) throw error;
       toast.success(t('medications.deleteSuccess'));
       fetchItems();
@@ -184,8 +211,8 @@ export default function Medications() {
     const isSupplement = item.category === 'suplemento' || item.category === 'vitamina';
     const supplementCategory = isSupplement ? detectSupplementCategory(item.name) : null;
     const stockInfo = item.stock?.[0];
-    const lowStock = stockInfo && stockInfo.units_left <= 5;
-    
+    const lowStock = stockInfo && stockInfo.currentQty <= 5;
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -193,7 +220,7 @@ export default function Medications() {
         transition={{ delay: index * 0.03 }}
         whileTap={{ scale: 0.99 }}
       >
-        <div 
+        <div
           className={cn(
             "p-4 rounded-2xl transition-all duration-200",
             "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
@@ -214,7 +241,7 @@ export default function Medications() {
                 <Pill className="w-5 h-5 text-primary" />
               )}
             </div>
-            
+
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-semibold text-base truncate">{item.name}</h3>
@@ -234,7 +261,7 @@ export default function Medications() {
                     "text-xs px-2 py-0.5 rounded-full",
                     lowStock ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
                   )}>
-                    {stockInfo.units_left} {stockInfo.unit_label || (language === 'pt' ? 'un.' : 'units')}
+                    {stockInfo.currentQty} {stockInfo.unitLabel || (language === 'pt' ? 'un.' : 'units')}
                   </span>
                 )}
               </div>
@@ -252,18 +279,18 @@ export default function Medications() {
               <Pencil className="h-4 w-4 mr-1.5" />
               {language === 'pt' ? 'Editar' : 'Edit'}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-10 w-10 rounded-xl"
               title={language === 'pt' ? 'Ver bula' : 'View package insert'}
               onClick={(e) => handleOpenBula(item.name, e)}
             >
               <BookOpen className="h-4 w-4" />
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10"
               onClick={(e) => {
                 e.stopPropagation();
@@ -279,16 +306,16 @@ export default function Medications() {
   };
 
   // Seção de categoria - Clean
-  const CategorySection = ({ 
-    title, 
-    icon: Icon, 
-    items, 
+  const CategorySection = ({
+    title,
+    icon: Icon,
+    items,
     emptyMessage,
-    accentColor 
-  }: { 
-    title: string; 
-    icon: any; 
-    items: Item[]; 
+    accentColor
+  }: {
+    title: string;
+    icon: any;
+    items: Item[];
     emptyMessage: string;
     accentColor: string;
   }) => (
@@ -302,7 +329,7 @@ export default function Medications() {
         </div>
         <span className="text-sm text-muted-foreground">{items.length}</span>
       </div>
-      
+
       {items.length === 0 ? (
         <div className="py-8 text-center text-muted-foreground rounded-2xl bg-muted/30 backdrop-blur-sm">
           <p className="text-sm">{emptyMessage}</p>
@@ -341,8 +368,8 @@ export default function Medications() {
           <PageHeroHeader
             icon={<Pill className="h-6 w-6 text-primary" />}
             title={t('medications.title')}
-            subtitle={items.length === 0 
-              ? t('medications.addItem') 
+            subtitle={items.length === 0
+              ? t('medications.addItem')
               : `${items.length} ${items.length === 1 ? t('medications.itemCount') : t('medications.itemsCount')}`
             }
             action={{
@@ -382,11 +409,11 @@ export default function Medications() {
           {items.length > 0 && (
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder={t('medications.searchPlaceholder')} 
-                value={searchTerm} 
-                onChange={e => setSearchTerm(e.target.value)} 
-                className="pl-11 pr-10 h-12 rounded-2xl bg-card/80 backdrop-blur-sm border-2 focus:border-primary transition-all" 
+              <Input
+                placeholder={t('medications.searchPlaceholder')}
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-11 pr-10 h-12 rounded-2xl bg-card/80 backdrop-blur-sm border-2 focus:border-primary transition-all"
               />
               {searchTerm && (
                 <Button
@@ -413,7 +440,7 @@ export default function Medications() {
                 className="gap-1 rounded-full"
                 onClick={() => setCategoryFilter(null)}
               >
-                {categoryFilter === 'medicamento' 
+                {categoryFilter === 'medicamento'
                   ? (language === 'pt' ? 'Medicamentos' : 'Medications')
                   : (language === 'pt' ? 'Suplementos' : 'Supplements')
                 }
@@ -424,12 +451,12 @@ export default function Medications() {
 
           {/* Empty State */}
           {items.length === 0 && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="py-16 text-center rounded-3xl bg-gradient-to-br from-card/80 to-muted/30 backdrop-blur-sm border border-border/30"
             >
-              <motion.div 
+              <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring" }}
@@ -451,7 +478,7 @@ export default function Medications() {
           {/* Seções */}
           <AnimatePresence mode="wait">
             {filteredItems.length > 0 && (
-              <motion.div 
+              <motion.div
                 key="sections"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -459,19 +486,19 @@ export default function Medications() {
                 className="space-y-10"
               >
                 {(!categoryFilter || categoryFilter === 'medicamento') && medicamentos.length > 0 && (
-                  <CategorySection 
-                    title={t('medications.medicationsSection')} 
-                    icon={Pill} 
+                  <CategorySection
+                    title={t('medications.medicationsSection')}
+                    icon={Pill}
                     items={medicamentos}
                     emptyMessage={t('medications.noMedications')}
                     accentColor="bg-primary/10 text-primary"
                   />
                 )}
-                
+
                 {(!categoryFilter || categoryFilter === 'suplemento') && suplementos.length > 0 && (
-                  <CategorySection 
-                    title={t('medications.supplementsSection')} 
-                    icon={Leaf} 
+                  <CategorySection
+                    title={t('medications.supplementsSection')}
+                    icon={Leaf}
                     items={suplementos}
                     emptyMessage={t('medications.noSupplements')}
                     accentColor="bg-performance/10 text-performance"
@@ -491,11 +518,11 @@ export default function Medications() {
           )}
         </div>
       </div>
-      
+
       <FloatingActionButton />
       <Navigation />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} feature="medication" />
-      
+
       <MedicationInfoSheet
         open={!!selectedMedForInfo}
         onOpenChange={handleCloseBula}

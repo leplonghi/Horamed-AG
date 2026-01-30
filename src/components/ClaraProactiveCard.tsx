@@ -1,10 +1,10 @@
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  MessageCircle, 
-  Sparkles, 
-  Clock, 
-  Package, 
+import {
+  MessageCircle,
+  Sparkles,
+  Clock,
+  Package,
   TrendingUp,
   Calendar,
   Heart,
@@ -16,6 +16,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/integrations/firebase/auth";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCollection, orderBy, limit } from "@/integrations/firebase";
 
 interface ClaraProactiveCardProps {
   overdueDoses?: number;
@@ -53,12 +56,24 @@ function ClaraProactiveCard({
   className
 }: ClaraProactiveCardProps) {
   const { language } = useLanguage();
-  
+  const { user } = useAuth();
+
+  const { data: latestPressure } = useQuery({
+    queryKey: ["latest-pressure-clara", user?.uid],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await fetchCollection<any>(`users/${user.uid}/pressureLogs`, [orderBy("recordedAt", "desc"), limit(1)]);
+      return data?.[0] || null;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000 // 5 min cache
+  });
+
   // Generate single highest priority insight - no rotation needed
   const currentInsight = useMemo<ClaraInsight | null>(() => {
     const hour = new Date().getHours();
-    const progressPercent = todayProgress.total > 0 
-      ? (todayProgress.taken / todayProgress.total) * 100 
+    const progressPercent = todayProgress.total > 0
+      ? (todayProgress.taken / todayProgress.total) * 100
       : 0;
 
     // Priority 1: Overdue doses alert
@@ -67,11 +82,11 @@ function ClaraProactiveCard({
       return {
         id: "overdue",
         type: "alert",
-        message: language === 'pt' 
+        message: language === 'pt'
           ? `Você tem ${overdueDoses} dose${plural ? 's' : ''} atrasada${plural ? 's' : ''}!`
           : `You have ${overdueDoses} overdue dose${plural ? 's' : ''}!`,
-        subtext: language === 'pt' 
-          ? "Vamos colocar sua rotina em dia?" 
+        subtext: language === 'pt'
+          ? "Vamos colocar sua rotina em dia?"
           : "Let's catch up on your routine?",
         action: {
           label: language === 'pt' ? "Ver doses" : "View doses",
@@ -89,11 +104,11 @@ function ClaraProactiveCard({
       return {
         id: "low_stock",
         type: "reminder",
-        message: language === 'pt' 
+        message: language === 'pt'
           ? `${itemName} está acabando${moreCount > 0 ? ` (+${moreCount})` : ''}`
           : `${itemName} is running low${moreCount > 0 ? ` (+${moreCount})` : ''}`,
-        subtext: language === 'pt' 
-          ? "Quer que eu te lembre de comprar?" 
+        subtext: language === 'pt'
+          ? "Quer que eu te lembre de comprar?"
           : "Want me to remind you to buy more?",
         action: {
           label: language === 'pt' ? "Ver estoque" : "View stock",
@@ -109,11 +124,11 @@ function ClaraProactiveCard({
       return {
         id: "streak_celebration",
         type: "celebration",
-        message: language === 'pt' 
+        message: language === 'pt'
           ? `🔥 Incrível! ${currentStreak} dias seguidos!`
           : `🔥 Amazing! ${currentStreak} days in a row!`,
-        subtext: language === 'pt' 
-          ? "Você está arrasando na sua rotina!" 
+        subtext: language === 'pt'
+          ? "Você está arrasando na sua rotina!"
           : "You're crushing your routine!",
         icon: Sparkles,
         priority: 3
@@ -125,15 +140,45 @@ function ClaraProactiveCard({
       return {
         id: "progress",
         type: "motivation",
-        message: language === 'pt' 
+        message: language === 'pt'
           ? `Já completou ${Math.round(progressPercent)}% do dia!`
           : `Already ${Math.round(progressPercent)}% done for today!`,
-        subtext: language === 'pt' 
-          ? "Continue assim, está quase lá!" 
+        subtext: language === 'pt'
+          ? "Continue assim, está quase lá!"
           : "Keep going, you're almost there!",
         icon: TrendingUp,
         priority: 4
       };
+    }
+
+    // Priority 4.5: Vitals feedback (Symbiosis)
+    if (latestPressure) {
+      const pDate = new Date(latestPressure.recordedAt);
+      const daysSince = (new Date().getTime() - pDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (daysSince > 7) {
+        return {
+          id: "measure_bp",
+          type: "reminder",
+          message: language === 'pt' ? "Faz tempo que não medimos sua pressão." : "It's been a while since we checked your BP.",
+          subtext: language === 'pt' ? "Vamos atualizar seus dados?" : "Shall we update your records?",
+          action: {
+            label: language === 'pt' ? "Medir agora" : "Measure now",
+            route: "/sinais-vitais?tab=pressure"
+          },
+          icon: Heart,
+          priority: 4
+        };
+      } else if (daysSince < 1 && latestPressure.systolic < 120 && latestPressure.diastolic < 80) {
+        return {
+          id: "bp_great",
+          type: "celebration",
+          message: language === 'pt' ? "Sua pressão está excelente hoje! 💚" : "Your BP is excellent today! 💚",
+          subtext: language === 'pt' ? "Continue com os bons hábitos." : "Keep up the good habits.",
+          icon: Heart,
+          priority: 4
+        };
+      }
     }
 
     // Priority 5: Contextual greetings (simplified)
@@ -156,10 +201,10 @@ function ClaraProactiveCard({
         priority: 5
       };
     }
-    
+
     // Default - don't show card
     return null;
-  }, [overdueDoses, lowStockItems, currentStreak, todayProgress.taken, todayProgress.total, language, onActionClick]);
+  }, [overdueDoses, lowStockItems, currentStreak, todayProgress.taken, todayProgress.total, language, onActionClick, latestPressure]);
 
   if (!currentInsight) return null;
 
@@ -187,7 +232,7 @@ function ClaraProactiveCard({
       animate={{ opacity: 1, y: 0 }}
       className={cn("relative", className)}
     >
-      <Card 
+      <Card
         className={cn(
           "p-3 cursor-pointer transition-all border backdrop-blur-xl",
           "hover:shadow-[var(--shadow-glass-hover)] shadow-[var(--shadow-glass)]",
@@ -215,11 +260,11 @@ function ClaraProactiveCard({
             <div className="flex items-center gap-1.5 mb-0.5">
               <span className="font-semibold text-sm">Clara</span>
             </div>
-            
+
             <p className="text-sm font-medium leading-tight">
               {currentInsight.message}
             </p>
-            
+
             {currentInsight.subtext && (
               <p className="text-xs opacity-80 mt-0.5 leading-tight">
                 {currentInsight.subtext}

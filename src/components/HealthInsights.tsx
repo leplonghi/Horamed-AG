@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  AlertTriangle, 
-  TrendingUp, 
-  Shield, 
-  X, 
+import {
+  AlertTriangle,
+  TrendingUp,
+  Shield,
+  X,
   RefreshCw,
   Sparkles,
   AlertCircle
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth, fetchCollection, updateDocument, orderBy, limit, where } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { toast } from 'sonner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
@@ -19,19 +21,20 @@ import { useFeatureFlags } from '@/hooks/useFeatureFlags';
 
 interface Insight {
   id: string;
-  insight_type: string;
+  insightType: string;
   title: string;
   description: string;
   severity: string;
-  metadata: any;
-  is_read: boolean;
-  created_at: string;
+  metadata: Record<string, unknown>;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export default function HealthInsights() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const { user } = useAuth();
   const { isPremium } = useSubscription();
   const { isEnabled } = useFeatureFlags();
   const navigate = useNavigate();
@@ -39,27 +42,30 @@ export default function HealthInsights() {
   // Feature flag: interactions desabilitada por padrão
   const interactionsEnabled = isEnabled('interactions');
 
-  useEffect(() => {
-    if (isPremium) {
-      loadInsights();
-    }
-  }, [isPremium]);
-
-  const loadInsights = async () => {
+  const loadInsights = useCallback(async () => {
+    if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from('health_insights')
-        .select('*')
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { data, error } = await fetchCollection<Insight>(
+        `users/${user.uid}/healthInsights`,
+        [
+          where('isRead', '==', false),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        ]
+      );
 
       if (error) throw error;
       setInsights(data || []);
     } catch (error) {
       console.error('Error loading insights:', error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (isPremium && user) {
+      loadInsights();
+    }
+  }, [isPremium, user, loadInsights]);
 
   const runAnalysis = async () => {
     if (!isPremium) {
@@ -71,30 +77,28 @@ export default function HealthInsights() {
     toast.loading('Analisando seus medicamentos...');
 
     try {
-      let interactionData = null;
-      let predictiveData = null;
+      let interactionData: { insights?: unknown[]; total?: number } | null = null;
+      let predictiveData: { insights?: unknown[]; total?: number } | null = null;
 
       // Análise de interações medicamentosas (apenas se flag habilitada)
       if (interactionsEnabled) {
-        const { data } = await supabase.functions.invoke(
-          'analyze-drug-interactions'
-        );
-        interactionData = data;
+        const analyzeDrugInteractions = httpsCallable<unknown, { insights: unknown[]; total: number }>(functions, 'analyzeDrugInteractions');
+        const result = await analyzeDrugInteractions();
+        interactionData = result.data;
       }
 
       // Análise preditiva de saúde
-      const { data } = await supabase.functions.invoke(
-        'predictive-health-analysis'
-      );
-      predictiveData = data;
+      const predictiveHealthAnalysis = httpsCallable<unknown, { insights: unknown[]; total: number }>(functions, 'predictiveHealthAnalysis');
+      const result = await predictiveHealthAnalysis();
+      predictiveData = result.data;
 
       toast.dismiss();
-      
-      if (interactionData?.insights?.length > 0 || predictiveData?.insights?.length > 0) {
+
+      if ((interactionData?.insights?.length ?? 0) > 0 || (predictiveData?.insights?.length ?? 0) > 0) {
         const interactionCount = interactionData?.total || 0;
         const predictiveCount = predictiveData?.total || 0;
         toast.success('Análise concluída! Novos insights detectados', {
-          description: interactionsEnabled 
+          description: interactionsEnabled
             ? `${interactionCount} interações + ${predictiveCount} padrões`
             : `${predictiveCount} padrões detectados`
         });
@@ -102,7 +106,7 @@ export default function HealthInsights() {
       } else {
         toast.success('Tudo certo! Nenhum problema detectado');
       }
-    } catch (error: any) {
+    } catch (error) {
       toast.dismiss();
       console.error('Error running analysis:', error);
       toast.error('Erro ao executar análise');
@@ -112,12 +116,14 @@ export default function HealthInsights() {
   };
 
   const markAsRead = async (id: string) => {
+    if (!user) return;
     try {
-      await supabase
-        .from('health_insights')
-        .update({ is_read: true })
-        .eq('id', id);
-      
+      await updateDocument(
+        `users/${user.uid}/healthInsights`,
+        id,
+        { isRead: true }
+      );
+
       setInsights(prev => prev.filter(i => i.id !== id));
     } catch (error) {
       console.error('Error marking as read:', error);
@@ -151,7 +157,7 @@ export default function HealthInsights() {
       <Card className="relative overflow-hidden p-6 border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] animate-fade-in">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-24 h-24 bg-accent/10 rounded-full blur-3xl" />
-        
+
         <div className="relative flex flex-col sm:flex-row items-start gap-4">
           <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 backdrop-blur-sm animate-pulse">
             <Shield className="h-8 w-8 text-primary" />
@@ -179,8 +185,8 @@ export default function HealthInsights() {
                 <span>Análise preditiva</span>
               </div>
             </div>
-            <Button 
-              onClick={() => navigate('/planos')} 
+            <Button
+              onClick={() => navigate('/planos')}
               className="gap-2 bg-gradient-to-r from-primary to-primary/90 hover:shadow-lg transition-all hover:scale-105"
             >
               <Sparkles className="h-4 w-4" />
@@ -208,8 +214,8 @@ export default function HealthInsights() {
             </p>
           </div>
         </div>
-        <Button 
-          onClick={runAnalysis} 
+        <Button
+          onClick={runAnalysis}
           disabled={analyzing}
           size="sm"
           variant="outline"
@@ -243,13 +249,13 @@ export default function HealthInsights() {
       ) : (
         <div className="space-y-3">
           {insights.map((insight, index) => (
-            <Card 
-              key={insight.id} 
-              style={{ 
+            <Card
+              key={insight.id}
+              style={{
                 animationDelay: `${index * 100}ms`,
-                borderLeftColor: insight.severity === 'critical' ? 'hsl(var(--destructive))' : 
-                                insight.severity === 'warning' ? 'hsl(var(--warning))' : 
-                                'hsl(var(--primary))'
+                borderLeftColor: insight.severity === 'critical' ? 'hsl(var(--destructive))' :
+                  insight.severity === 'warning' ? 'hsl(var(--warning))' :
+                    'hsl(var(--primary))'
               }}
               className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.01] animate-scale-in border-l-4"
             >
@@ -261,8 +267,8 @@ export default function HealthInsights() {
                   <div className="flex flex-wrap items-center gap-2">
                     {getSeverityBadge(insight.severity)}
                     <span className="text-xs text-muted-foreground">
-                      {new Date(insight.created_at).toLocaleDateString('pt-BR', { 
-                        day: '2-digit', 
+                      {new Date(insight.createdAt).toLocaleDateString('pt-BR', {
+                        day: '2-digit',
                         month: 'short',
                         hour: '2-digit',
                         minute: '2-digit'
@@ -282,7 +288,7 @@ export default function HealthInsights() {
                         <span>Recomendação Personalizada</span>
                       </div>
                       <p className="text-sm text-foreground/80">
-                        {insight.metadata.recommendation}
+                        {typeof insight.metadata?.recommendation === 'string' ? insight.metadata.recommendation : ''}
                       </p>
                     </div>
                   )}

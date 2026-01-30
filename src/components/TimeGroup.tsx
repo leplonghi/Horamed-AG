@@ -9,16 +9,16 @@ interface TimeGroupProps {
   period: 'morning' | 'afternoon' | 'evening' | 'night';
   doses: Array<{
     id: string;
-    item_id: string;
-    due_at: string;
+    itemId: string;
+    dueAt: string;
     status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-    taken_at: string | null;
+    takenAt: string | null;
     items: {
       name: string;
-      dose_text: string | null;
+      doseText: string | null;
     };
     stock?: {
-      units_left: number;
+      currentQty: number;
     }[];
   }>;
   onTake: (dose: any) => void;
@@ -26,12 +26,12 @@ interface TimeGroupProps {
   defaultExpanded?: boolean;
 }
 
-export default function TimeGroup({ 
-  period, 
-  doses, 
-  onTake, 
+export default function TimeGroup({
+  period,
+  doses,
+  onTake,
   onMore,
-  defaultExpanded = true 
+  defaultExpanded = true
 }: TimeGroupProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -76,7 +76,7 @@ export default function TimeGroup({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader 
+      <CardHeader
         className={cn(
           "cursor-pointer hover:bg-accent/50 transition-colors bg-gradient-to-r",
           config.color

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument, deleteDocument, fetchDocument, fetchCollection, where } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +30,7 @@ import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
 import SupplementDetailInfo from "@/components/fitness/SupplementDetailInfo";
 import { useLanguage } from "@/contexts/LanguageContext";
+
 export default function AddItem() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -57,7 +58,7 @@ export default function AddItem() {
     dose_quantity: 1,
     dose_unit: "comprimidos",
   });
-  
+
   // Load and filter medications from CSV
   const { medicamentos: filteredMedicamentos, loading: loadingMeds } = useFilteredMedicamentos(formData.name, 100);
 
@@ -83,23 +84,23 @@ export default function AddItem() {
 
   useEffect(() => {
     const initUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id || null);
+      const user = auth.currentUser;
+      setUserId(user?.uid || null);
 
-      // Check if user has health profile (birth_date and weight_kg are required)
+      // Check if user has health profile (birthDate and weightKg via useUserProfiles or check activeProfile)
       if (user && !isEditing) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("birth_date, weight_kg")
-          .eq("user_id", user.id)
-          .single();
-
-        const hasProfile = !!(profile?.birth_date && profile?.weight_kg);
-        setHasHealthProfile(hasProfile);
-        
-        // Show health setup modal if profile is incomplete
-        if (!hasProfile) {
-          setShowHealthSetup(true);
+        if (activeProfile && activeProfile.birthDate && activeProfile.weightKg) {
+          setHasHealthProfile(true);
+        } else {
+          // Need to fetch strictly to be sure? 
+          // activeProfile comes from hook which reads from Firestore
+          // If activeProfile is loaded but missing data, we show setup
+          // If activeProfile is null, we might need to wait or show setup
+          if (activeProfile) {
+            const isComplete = !!(activeProfile.birthDate && activeProfile.weightKg);
+            setHasHealthProfile(isComplete);
+            if (!isComplete) setShowHealthSetup(true);
+          }
         }
       }
     };
@@ -113,7 +114,7 @@ export default function AddItem() {
       const name = searchParams.get("name");
       const dose = searchParams.get("dose");
       const category = searchParams.get("category");
-      
+
       if (name) {
         setFormData(prev => ({
           ...prev,
@@ -123,42 +124,42 @@ export default function AddItem() {
         }));
       }
     }
-  }, [isEditing, searchParams]);
+  }, [isEditing, searchParams, activeProfile]);
 
   const loadItemData = async (itemId: string) => {
     try {
-      const { data: item, error } = await supabase
-        .from("items")
-        .select(`
-          *,
-          schedules (*),
-          stock (*)
-        `)
-        .eq("id", itemId)
-        .single();
+      const user = auth.currentUser;
+      if (!user) return;
 
-      if (error) throw error;
+      const { data: item } = await fetchDocument<any>(`users/${user.uid}/medications`, itemId);
+      if (!item) throw new Error("Item not found");
 
       setFormData({
         name: item.name,
-        dose_text: item.dose_text || "",
+        dose_text: item.doseText || "",
         category: item.category,
-        with_food: item.with_food,
+        with_food: item.withFood,
         notes: item.notes || "",
-        treatment_duration_days: item.treatment_duration_days || null,
-        total_doses: item.total_doses || null,
-        treatment_start_date: item.treatment_start_date || "",
-        treatment_end_date: item.treatment_end_date || "",
-        dose_quantity: 1,
+        treatment_duration_days: item.treatmentDurationDays || null,
+        total_doses: item.totalDoses || null,
+        treatment_start_date: item.treatmentStartDate || "",
+        treatment_end_date: item.treatmentEndDate || "",
+        dose_quantity: 1, // Default or fetch if stored
         dose_unit: "comprimidos",
       });
 
-      if (item.schedules && item.schedules.length > 0) {
+      // Fetch Schedules
+      const { data: fetchedSchedules } = await fetchCollection<any>(
+        `users/${user.uid}/schedules`,
+        [where('itemId', '==', itemId)]
+      );
+
+      if (fetchedSchedules && fetchedSchedules.length > 0) {
         setSchedules(
-          item.schedules.map((s: any) => ({
-            freq_type: s.freq_type,
+          fetchedSchedules.map((s: any) => ({
+            freq_type: s.freqType,
             times: Array.isArray(s.times) ? s.times : [],
-            days_of_week: s.days_of_week || [],
+            days_of_week: s.daysOfWeek || [],
             mode: "manual" as "manual" | "interval" | "times_per_day",
             interval_hours: 8,
             times_per_day: 3,
@@ -167,17 +168,21 @@ export default function AddItem() {
         );
       }
 
-      if (item.stock) {
-        const stockArray = Array.isArray(item.stock) ? item.stock : [item.stock];
-        if (stockArray.length > 0) {
-          setStockData({
-            enabled: true,
-            units_total: stockArray[0].units_total,
-            units_left: stockArray[0].units_left || stockArray[0].units_total,
-            unit_label: stockArray[0].unit_label,
-            alert_threshold: 20,
-          });
-        }
+      // Fetch Stock
+      const { data: stockRecords } = await fetchCollection<any>(
+        `users/${user.uid}/stock`,
+        [where('itemId', '==', itemId)]
+      );
+
+      if (stockRecords && stockRecords.length > 0) {
+        const s = stockRecords[0];
+        setStockData({
+          enabled: true,
+          units_total: s.unitsTotal,
+          units_left: s.currentQty || s.unitsTotal,
+          unit_label: s.unitLabel || "un",
+          alert_threshold: 20,
+        });
       }
     } catch (error) {
       console.error("Error loading item:", error);
@@ -188,9 +193,9 @@ export default function AddItem() {
   const addSchedule = () => {
     setSchedules([
       ...schedules,
-      { 
-        freq_type: "daily", 
-        times: ["08:00"], 
+      {
+        freq_type: "daily",
+        times: ["08:00"],
         days_of_week: [],
         mode: "manual" as "manual" | "interval" | "times_per_day",
         interval_hours: 8,
@@ -233,7 +238,7 @@ export default function AddItem() {
   const updateScheduleMode = (scheduleIndex: number, mode: "manual" | "interval" | "times_per_day") => {
     const newSchedules = [...schedules];
     newSchedules[scheduleIndex].mode = mode;
-    
+
     // Auto-calculate times based on mode
     if (mode === "interval") {
       const times = calculateIntervalTimes(
@@ -245,14 +250,14 @@ export default function AddItem() {
       const times = calculateTimesPerDay(newSchedules[scheduleIndex].times_per_day);
       newSchedules[scheduleIndex].times = times;
     }
-    
+
     setSchedules(newSchedules);
   };
 
   const updateIntervalHours = (scheduleIndex: number, hours: number) => {
     const newSchedules = [...schedules];
     newSchedules[scheduleIndex].interval_hours = hours;
-    
+
     // Recalculate times
     const times = calculateIntervalTimes(
       newSchedules[scheduleIndex].start_time,
@@ -265,7 +270,7 @@ export default function AddItem() {
   const updateTimesPerDay = (scheduleIndex: number, times: number) => {
     const newSchedules = [...schedules];
     newSchedules[scheduleIndex].times_per_day = times;
-    
+
     // Recalculate times
     const calculatedTimes = calculateTimesPerDay(times);
     newSchedules[scheduleIndex].times = calculatedTimes;
@@ -275,7 +280,7 @@ export default function AddItem() {
   const updateStartTime = (scheduleIndex: number, time: string) => {
     const newSchedules = [...schedules];
     newSchedules[scheduleIndex].start_time = time;
-    
+
     // Recalculate times if in interval mode
     if (newSchedules[scheduleIndex].mode === "interval") {
       const times = calculateIntervalTimes(
@@ -284,7 +289,7 @@ export default function AddItem() {
       );
       newSchedules[scheduleIndex].times = times;
     }
-    
+
     setSchedules(newSchedules);
   };
 
@@ -293,23 +298,23 @@ export default function AddItem() {
     const [startHour, startMinute] = startTime.split(":").map(Number);
     let currentHour = startHour;
     let currentMinute = startMinute;
-    
+
     const hoursInDay = 24;
     const dosesPerDay = Math.floor(hoursInDay / intervalHours);
-    
+
     for (let i = 0; i < dosesPerDay; i++) {
       times.push(
         `${currentHour.toString().padStart(2, "0")}:${currentMinute.toString().padStart(2, "0")}`
       );
       currentHour = (currentHour + intervalHours) % 24;
     }
-    
+
     return times;
   };
 
   const calculateTimesPerDay = (timesPerDay: number): string[] => {
     const times: string[] = [];
-    
+
     if (timesPerDay === 1) {
       times.push("08:00");
     } else if (timesPerDay === 2) {
@@ -326,7 +331,7 @@ export default function AddItem() {
         times.push(`${hour.toString().padStart(2, "0")}:00`);
       }
     }
-    
+
     return times;
   };
 
@@ -361,13 +366,13 @@ export default function AddItem() {
   const calculateStockConsumption = () => {
     const dosesPerDay = calculateTotalDosesPerDay();
     const unitsPerDay = dosesPerDay * formData.dose_quantity;
-    
+
     if (!stockData.enabled || stockData.units_total === 0) return null;
-    
+
     const daysUntilEmpty = Math.floor(stockData.units_total / unitsPerDay);
     const alertThresholdUnits = Math.ceil((stockData.units_total * stockData.alert_threshold) / 100);
     const daysUntilAlert = Math.floor(alertThresholdUnits / unitsPerDay);
-    
+
     return {
       dosesPerDay,
       unitsPerDay,
@@ -387,205 +392,156 @@ export default function AddItem() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
-      toast.error("Digite o nome do item");
+      toast.error(t("toast.medication.enterName"));
       return;
     }
 
     if (schedules.length === 0 || schedules.some((s) => s.times.length === 0)) {
-      toast.error("Adicione pelo menos um horário para cada agendamento");
+      toast.error(t("toast.medication.addSchedule"));
       return;
     }
 
-    if (!userId) {
-      toast.error("Usuário não autenticado");
+    const user = auth.currentUser;
+    if (!user) {
+      toast.error(t("toast.medical.notAuthenticated"));
       return;
     }
 
     setLoading(true);
 
     try {
+      const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
+        ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        : null;
+
+      const medData = {
+        userId: user.uid,
+        name: formData.name,
+        doseText: formData.dose_text || null,
+        category: formData.category,
+        withFood: formData.with_food,
+        notes: formData.notes || null,
+        treatmentDurationDays: formData.treatment_duration_days || null,
+        totalDoses: formData.total_doses || null,
+        treatmentStartDate: formData.treatment_start_date || null,
+        treatmentEndDate: treatmentEndDate,
+        profileId: activeProfile?.id || null,
+        isActive: true, // Default active
+        updatedAt: new Date().toISOString()
+      };
+
+      let itemId = isEditing;
+
       if (isEditing) {
         // Update existing item
-        const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
-          ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          : null;
-
-        const { error: itemError } = await supabase
-          .from("items")
-          .update({
-            name: formData.name,
-            dose_text: formData.dose_text || null,
-            category: formData.category,
-            with_food: formData.with_food,
-            notes: formData.notes || null,
-            treatment_duration_days: formData.treatment_duration_days || null,
-            total_doses: formData.total_doses || null,
-            treatment_start_date: formData.treatment_start_date || null,
-            treatment_end_date: treatmentEndDate,
-            profile_id: activeProfile?.id || null,
-          })
-          .eq("id", isEditing);
-
+        const { error: itemError } = await updateDocument(`users/${user.uid}/medications`, isEditing, medData);
         if (itemError) throw itemError;
 
         // Delete old schedules and doses
-        await supabase.from("schedules").delete().eq("item_id", isEditing);
-
-        // Create new schedules and doses
-        for (const schedule of schedules) {
-          const { data: newSchedule, error: scheduleError } = await supabase
-            .from("schedules")
-            .insert({
-              item_id: isEditing,
-              freq_type: schedule.freq_type,
-              times: schedule.times,
-              days_of_week: schedule.days_of_week,
-            })
-            .select()
-            .single();
-
-          if (scheduleError) throw scheduleError;
-
-          // Generate dose instances
-          const doseInstances = [];
-          const now = new Date();
-
-          for (let day = 0; day < 7; day++) {
-            const date = new Date(now);
-            date.setDate(date.getDate() + day);
-
-            for (const time of schedule.times) {
-              const [hours, minutes] = time.split(":").map(Number);
-              const dueAt = new Date(date);
-              dueAt.setHours(hours, minutes, 0, 0);
-
-              if (dueAt > now) {
-                doseInstances.push({
-                  schedule_id: newSchedule.id,
-                  item_id: isEditing,
-                  due_at: dueAt.toISOString(),
-                  status: "scheduled",
-                });
-              }
-            }
+        // 1. Fetch schedules
+        const { data: oldSchedules } = await fetchCollection<any>(`users/${user.uid}/schedules`, [where('itemId', '==', isEditing)]);
+        if (oldSchedules) {
+          for (const s of oldSchedules) {
+            await deleteDocument(`users/${user.uid}/schedules`, s.id);
           }
-
-          if (doseInstances.length > 0) {
-            await supabase.from("dose_instances").insert(doseInstances);
+        }
+        // 2. Fetch future doses and delete
+        // For simplicity, we might delete all scheduled doses for this item
+        const { data: oldDoses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+          where('itemId', '==', isEditing),
+          where('status', '==', 'scheduled') // Keep history of taken?
+        ]);
+        if (oldDoses) {
+          for (const d of oldDoses) {
+            await deleteDocument(`users/${user.uid}/doses`, d.id);
           }
         }
 
-        // Update stock
-        if (stockData.enabled) {
-          await supabase.from("stock").delete().eq("item_id", isEditing);
-          await supabase.from("stock").insert({
-            item_id: isEditing,
-            units_total: stockData.units_total,
-            units_left: stockData.units_left || stockData.units_total,
-            unit_label: stockData.unit_label,
-          });
-        } else {
-          await supabase.from("stock").delete().eq("item_id", isEditing);
-        }
-
-        toast.success(t('addItem.itemUpdated'));
       } else {
         // Create new item
-        const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
-          ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-          : null;
+        const { data: newId, error: itemError } = await addDocument(`users/${user.uid}/medications`, {
+          ...medData,
+          createdAt: new Date().toISOString()
+        });
+        if (itemError) throw itemError;
+        itemId = newId as unknown as string;
+      }
 
-        const { data: item, error: itemError } = await supabase
-          .from("items")
-          .insert({
-            user_id: userId,
-            name: formData.name,
-            dose_text: formData.dose_text || null,
-            category: formData.category,
-            with_food: formData.with_food,
-            notes: formData.notes || null,
-            treatment_duration_days: formData.treatment_duration_days || null,
-            total_doses: formData.total_doses || null,
-            treatment_start_date: formData.treatment_start_date || null,
-            treatment_end_date: treatmentEndDate,
-            profile_id: activeProfile?.id || null,
-          })
-          .select()
-          .single();
+      if (!itemId) throw new Error("Failed to get Item ID");
 
-        if (itemError) {
-          // Check if error is subscription limit
-        if (itemError.message?.includes('Limite de medicamentos atingido')) {
-            toast.error(t('addItem.limitReached'), {
-              action: {
-                label: t('addItem.viewPlans'),
-                onClick: () => navigate('/planos'),
-              },
-            });
-            setLoading(false);
-            return;
-          }
-          throw itemError;
-        }
+      // Create schedules and doses
+      for (const schedule of schedules) {
+        const { data: newScheduleId, error: scheduleError } = await addDocument(`users/${user.uid}/schedules`, {
+          itemId: itemId,
+          userId: user.uid,
+          freqType: schedule.freq_type,
+          times: schedule.times,
+          daysOfWeek: schedule.days_of_week,
+        });
 
-        // Create schedules and doses
-        for (const schedule of schedules) {
-          const { data: newSchedule, error: scheduleError } = await supabase
-            .from("schedules")
-            .insert({
-              item_id: item.id,
-              freq_type: schedule.freq_type,
-              times: schedule.times,
-              days_of_week: schedule.days_of_week,
-            })
-            .select()
-            .single();
+        if (scheduleError) throw scheduleError;
 
-          if (scheduleError) throw scheduleError;
+        // Generate dose instances
+        const doseInstances: any[] = [];
+        const now = new Date();
 
-          // Generate dose instances
-          const doseInstances = [];
-          const now = new Date();
+        for (let day = 0; day < 7; day++) {
+          const date = new Date(now);
+          date.setDate(date.getDate() + day);
 
-          for (let day = 0; day < 7; day++) {
-            const date = new Date(now);
-            date.setDate(date.getDate() + day);
+          for (const time of schedule.times) {
+            const [hours, minutes] = time.split(":").map(Number);
+            const dueAt = new Date(date);
+            dueAt.setHours(hours, minutes, 0, 0);
 
-            for (const time of schedule.times) {
-              const [hours, minutes] = time.split(":").map(Number);
-              const dueAt = new Date(date);
-              dueAt.setHours(hours, minutes, 0, 0);
-
-              if (dueAt > now) {
-                doseInstances.push({
-                  schedule_id: newSchedule.id,
-                  item_id: item.id,
-                  due_at: dueAt.toISOString(),
-                  status: "scheduled",
-                });
-              }
+            if (dueAt > now) {
+              doseInstances.push({
+                scheduleId: newScheduleId,
+                itemId: itemId,
+                userId: user.uid,
+                dueAt: dueAt.toISOString(),
+                status: "scheduled",
+                createdAt: new Date().toISOString()
+              });
             }
           }
-
-          if (doseInstances.length > 0) {
-            await supabase.from("dose_instances").insert(doseInstances);
-          }
         }
 
-        // Create stock
-        if (stockData.enabled && stockData.units_total > 0) {
-          await supabase.from("stock").insert({
-            item_id: item.id,
-            units_total: stockData.units_total,
-            units_left: stockData.units_total,
-            unit_label: stockData.unit_label,
-          });
+        if (doseInstances.length > 0) {
+          // Batch insert not supported by helper, loop addDocument
+          // Parallelize?
+          await Promise.all(doseInstances.map(dose => addDocument(`users/${user.uid}/doses`, dose)));
         }
-
-        showFeedback("medication-added", { medicationName: formData.name });
       }
+
+      // Update stock
+      // First delete existing stock record for this item (if any)
+      const { data: existingStock } = await fetchCollection<any>(`users/${user.uid}/stock`, [where('itemId', '==', itemId)]);
+      if (existingStock) {
+        for (const s of existingStock) {
+          await deleteDocument(`users/${user.uid}/stock`, s.id);
+        }
+      }
+
+      if (stockData.enabled && stockData.units_total > 0) {
+        await addDocument(`users/${user.uid}/stock`, {
+          itemId: itemId,
+          itemName: formData.name, // Helpful for display without join
+          userId: user.uid,
+          unitsTotal: stockData.units_total,
+          currentQty: stockData.units_left || stockData.units_total,
+          unitLabel: stockData.unit_label,
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      showFeedback("medication-added", { medicationName: formData.name });
+
+      // Emit event for real-time updates
+      const { eventBus, EVENTS } = await import('@/lib/eventBus');
+      eventBus.emit(EVENTS.MEDICATION_UPDATED);
 
       navigate("/medicamentos");
     } catch (error) {
@@ -598,14 +554,14 @@ export default function AddItem() {
 
   return (
     <>
-      <HealthProfileSetup 
-        open={showHealthSetup} 
+      <HealthProfileSetup
+        open={showHealthSetup}
         onComplete={() => {
           setShowHealthSetup(false);
           setHasHealthProfile(true);
-        }} 
+        }}
       />
-      
+
       <div className="min-h-screen bg-background p-6 pb-24">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
@@ -698,8 +654,8 @@ export default function AddItem() {
                     </PopoverTrigger>
                     <PopoverContent className="w-full p-0 bg-background z-50" align="start">
                       <Command shouldFilter={false}>
-                        <CommandInput 
-                          placeholder={t('addItem.searchMed')} 
+                        <CommandInput
+                          placeholder={t('addItem.searchMed')}
                           value={formData.name}
                           onValueChange={(value) => setFormData({ ...formData, name: value })}
                         />
@@ -708,8 +664,8 @@ export default function AddItem() {
                             <div className="p-4 text-sm">
                               <p className="font-medium mb-2">{t('addItem.notFound')}</p>
                               <p className="text-muted-foreground mb-3">{t('addItem.typeYourMed')}</p>
-                              <Button 
-                                size="sm" 
+                              <Button
+                                size="sm"
                                 onClick={() => setOpenNameCombobox(false)}
                                 className="w-full"
                               >
@@ -861,14 +817,14 @@ export default function AddItem() {
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-semibold">Duração do Tratamento (Opcional)</Label>
-                  <HelpTooltip 
+                  <HelpTooltip
                     content="Configure o período do tratamento se for temporário (ex: antibióticos por 7 dias). O sistema calcula automaticamente o total de unidades necessárias."
                   />
                 </div>
                 <p className="text-sm text-muted-foreground -mt-2">
                   Configure o período de tratamento para calcular automaticamente as doses
                 </p>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-date">Data de Início</Label>
@@ -911,7 +867,7 @@ export default function AddItem() {
                         {new Date(formData.treatment_end_date).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
-                    
+
                     {calculateTotalTreatmentDoses() && (
                       <>
                         <div className="flex items-center justify-between pt-2 border-t border-primary/20">
@@ -920,7 +876,7 @@ export default function AddItem() {
                             {calculateTotalTreatmentDoses()} doses
                           </span>
                         </div>
-                        
+
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">Total de {formData.dose_unit}:</span>
                           <span className="text-lg font-bold text-primary">
@@ -936,7 +892,7 @@ export default function AddItem() {
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2">
                   <Label className="text-base font-semibold">Horários</Label>
-                  <HelpTooltip 
+                  <HelpTooltip
                     content="Configure os horários do medicamento. Use 'Automático' para calcular intervalos ou distribuir doses ao longo do dia."
                   />
                 </div>
@@ -1169,7 +1125,7 @@ export default function AddItem() {
                     <Label htmlFor="stock-enabled" className="flex items-center gap-2 text-base font-semibold">
                       <Package className="h-5 w-5 text-primary" />
                       Controlar Estoque
-                      <HelpTooltip 
+                      <HelpTooltip
                         content="Ative para receber alertas quando seus medicamentos estiverem acabando. O sistema desconta automaticamente quando você marca doses como tomadas."
                       />
                     </Label>
@@ -1304,7 +1260,7 @@ export default function AddItem() {
                             </span>
                           </div>
                         </div>
-                        
+
                         {calculateTotalUnitsNeeded() && stockData.units_total < calculateTotalUnitsNeeded()! && (
                           <div className="pt-3 border-t border-destructive/30 bg-destructive/10 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
                             <p className="text-xs font-semibold text-destructive flex items-center gap-2">

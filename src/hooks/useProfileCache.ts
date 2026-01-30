@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 
 interface ProfileCache {
   medications: any[];
@@ -44,7 +44,7 @@ export function useProfileCache() {
   const [cache, setCache] = useState<CacheStore>(loadCacheFromStorage);
   const isFetchingRef = useRef<Set<string>>(new Set());
   const cacheRef = useRef<CacheStore>(cache);
-  
+
   // Keep ref in sync with state to avoid stale closures
   cacheRef.current = cache;
 
@@ -60,9 +60,10 @@ export function useProfileCache() {
     isFetchingRef.current.add(profileId);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
-      const startOfDay = `${today}T00:00:00`;
-      const endOfDay = `${today}T23:59:59`;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(today);
+      endOfDay.setHours(23, 59, 59, 999);
 
       // Fetch all data in parallel
       const [
@@ -73,54 +74,66 @@ export function useProfileCache() {
         consultationsRes,
         healthEventsRes
       ] = await Promise.all([
-        supabase
-          .from('items')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('profile_id', profileId)
-          .eq('is_active', true),
-        
-        supabase
-          .from('dose_instances')
-          .select(`*, items!inner(id, name, dose_text, profile_id, user_id)`)
-          .eq('items.user_id', userId)
-          .eq('items.profile_id', profileId)
-          .gte('due_at', startOfDay)
-          .lte('due_at', endOfDay)
-          .order('due_at'),
-        
-        supabase
-          .from('documentos_saude')
-          .select('id, title, created_at, categoria_id, mime_type')
-          .eq('user_id', userId)
-          .eq('profile_id', profileId)
-          .order('created_at', { ascending: false })
-          .limit(20),
-        
-        supabase
-          .from('sinais_vitais')
-          .select('id, data_medicao, peso_kg, pressao_sistolica, pressao_diastolica')
-          .eq('user_id', userId)
-          .eq('profile_id', profileId)
-          .order('data_medicao', { ascending: false })
-          .limit(10),
-        
-        supabase
-          .from('consultas_medicas')
-          .select('id, data_consulta, medico_nome, especialidade, status')
-          .eq('user_id', userId)
-          .eq('profile_id', profileId)
-          .order('data_consulta', { ascending: false })
-          .limit(10),
-        
-        supabase
-          .from('eventos_saude')
-          .select('id, title, due_date, type')
-          .eq('user_id', userId)
-          .eq('profile_id', profileId)
-          .is('completed_at', null)
-          .order('due_date')
-          .limit(10)
+        // Medications
+        fetchCollection(
+          `users/${userId}/medications`,
+          [
+            where('profileId', '==', profileId),
+            where('isActive', '==', true)
+          ]
+        ),
+
+        // Doses (Today)
+        fetchCollection(
+          `users/${userId}/doses`,
+          [
+            where('profileId', '==', profileId),
+            where('dueAt', '>=', today),
+            where('dueAt', '<=', endOfDay),
+            orderBy('dueAt', 'asc')
+          ]
+        ),
+
+        // Documents
+        fetchCollection(
+          `users/${userId}/documents`,
+          [
+            where('profileId', '==', profileId),
+            orderBy('createdAt', 'desc'),
+            limit(20)
+          ]
+        ),
+
+        // Vital Signs
+        fetchCollection(
+          `users/${userId}/vitalSigns`,
+          [
+            where('profileId', '==', profileId),
+            orderBy('measuredAt', 'desc'), // Changed data_medicao to measuredAt
+            limit(10)
+          ]
+        ),
+
+        // Consultations
+        fetchCollection(
+          `users/${userId}/consultations`,
+          [
+            where('profileId', '==', profileId),
+            orderBy('date', 'desc'), // Changed data_consulta to date
+            limit(10)
+          ]
+        ),
+
+        // Health Events
+        fetchCollection(
+          `users/${userId}/healthEvents`,
+          [
+            where('profileId', '==', profileId),
+            where('completedAt', '==', null),
+            orderBy('dueDate', 'asc'),
+            limit(10)
+          ]
+        )
       ]);
 
       const profileCache: ProfileCache = {
@@ -153,13 +166,13 @@ export function useProfileCache() {
   const prefetchAllProfiles = useCallback(async (profiles: any[], userId: string) => {
     // Only prefetch active profile first for speed, others in background
     if (profiles.length === 0) return;
-    
+
     const activeId = localStorage.getItem('activeProfileId');
     const activeProfile = profiles.find(p => p.id === activeId) || profiles[0];
-    
+
     // Prefetch active profile immediately
     await prefetchProfileData(activeProfile.id, userId);
-    
+
     // Prefetch others after delay to not block UI
     setTimeout(() => {
       profiles

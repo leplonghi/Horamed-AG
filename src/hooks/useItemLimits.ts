@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/integrations/firebase";
 import { canUserActivateAnotherItem } from "@/lib/referrals";
 
 export function useItemLimits() {
@@ -17,10 +17,13 @@ export function useItemLimits() {
   }, [user]);
 
   const checkLimits = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
-      const limits = await canUserActivateAnotherItem(user.id);
+      const limits = await canUserActivateAnotherItem(user.uid);
       setCanActivate(limits.allowed);
       setCurrentActive(limits.currentActive);
       setMaxAllowed(limits.maxAllowed);

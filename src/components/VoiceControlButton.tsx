@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Loader2, X, Volume2 } from 'lucide-react';
+import { Mic, MicOff, Loader2, X, Volume2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { processVoiceCommand, speak, VoiceAction } from '@/ai/voiceCommandProcessor';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { VoiceVisualizer } from '@/components/voice/VoiceVisualizer';
 
 interface VoiceControlButtonProps {
   className?: string;
@@ -25,12 +26,56 @@ export default function VoiceControlButton({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [intelligentMode, setIntelligentMode] = useState(false);
 
+  // Handle Intelligent Results (from Gemini Backend)
+  const handleSmartCommand = async (data: any) => {
+    console.log('🧠 AI Smart Command:', data);
+    setIntelligentMode(true);
+
+    const intent = data.intent;
+    const spokenResponse = intent?.spokenResponse || "Comando processado.";
+
+    setFeedbackText(spokenResponse);
+    setShowFeedback(true);
+
+    setIsSpeaking(true);
+    await speak(spokenResponse);
+    setIsSpeaking(false);
+
+    if (intent?.action_path) {
+      navigate(intent.action_path);
+    } else if (intent?.type === 'ADD_MEDICATION') {
+      navigate('/adicionar', { state: { prefillName: intent.entities?.medication } });
+    } else if (intent?.type === 'CHECK_STOCK') {
+      navigate('/estoque');
+    } else if (intent?.type === 'HEALTH_QUERY') {
+      navigate('/saude');
+    }
+
+    // Execute the action callback
+    if (onAction) {
+      onAction({
+        type: intent?.type || 'UNKNOWN',
+        ...intent
+      } as VoiceAction);
+    }
+
+    setTimeout(() => setShowFeedback(false), 4000);
+  };
+
+  // Handle Simple Transcription (Native / Fallback)
   const handleTranscription = async (text: string) => {
+    // If we just handled a smart command, ignore plain text fallback to avoid double processing
+    if (intelligentMode) {
+      setIntelligentMode(false);
+      return;
+    }
+
     console.log('Voice transcription:', text);
-    
+
     const result = processVoiceCommand(text);
-    console.log('Processed command:', result);
+    console.log('Processed command (Regex):', result);
 
     setFeedbackText(result.spokenResponse);
     setShowFeedback(true);
@@ -56,13 +101,12 @@ export default function VoiceControlButton({
         break;
 
       case 'ADD_MEDICATION':
-        navigate('/adicionar-item', { 
-          state: { prefillName: action.name } 
+        navigate('/adicionar', {
+          state: { prefillName: action.name }
         });
         break;
 
       case 'MARK_DOSE_TAKEN':
-        // This would need integration with dose management
         toast.success('Dose marcada como tomada');
         break;
 
@@ -75,7 +119,6 @@ export default function VoiceControlButton({
         break;
 
       case 'OPEN_SEARCH':
-        // Trigger search modal
         document.dispatchEvent(new CustomEvent('open-spotlight-search'));
         break;
 
@@ -89,18 +132,19 @@ export default function VoiceControlButton({
     }
   };
 
-  const { 
-    isRecording, 
-    isProcessing, 
-    toggleRecording 
+  const {
+    isRecording,
+    isProcessing,
+    toggleRecording,
+    stream // Now available from useVoiceInputAI
   } = useVoiceInput({
     onTranscription: handleTranscription,
+    onCommandResult: handleSmartCommand, // New intelligent handler
     onError: (error) => {
       toast.error(`Erro: ${error}`);
     }
   });
 
-  // Load voices on mount
   useEffect(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.getVoices();
@@ -127,16 +171,16 @@ export default function VoiceControlButton({
             onClick={toggleRecording}
             disabled={isProcessing}
             className={cn(
-              "h-14 w-14 rounded-full shadow-lg transition-all duration-300",
-              isRecording && "animate-pulse bg-red-500 hover:bg-red-600",
-              isProcessing && "bg-amber-500 hover:bg-amber-600",
-              !isActive && "bg-primary hover:bg-primary/90"
+              "h-14 w-14 rounded-full shadow-lg transition-all duration-300 border-2",
+              isRecording && "animate-pulse bg-red-500 hover:bg-red-600 border-red-300",
+              isProcessing && "bg-indigo-600 hover:bg-indigo-700 border-indigo-400", // New "Thinking" color
+              !isActive && "bg-primary hover:bg-primary/90 border-transparent"
             )}
           >
             {isProcessing ? (
-              <Loader2 className="h-6 w-6 animate-spin" />
+              <Sparkles className="h-6 w-6 animate-spin text-white" /> // Sparkles for AI
             ) : isRecording ? (
-              <MicOff className="h-6 w-6" />
+              <MicOff className="h-6 w-6 text-white" />
             ) : (
               <Mic className="h-6 w-6" />
             )}
@@ -164,56 +208,73 @@ export default function VoiceControlButton({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-40 left-4 right-4 z-50"
+              className="fixed bottom-44 left-4 right-4 z-50 flex justify-center"
             >
-              <div className="bg-background/95 backdrop-blur-lg border border-border rounded-2xl p-4 shadow-xl mx-auto max-w-sm">
-                <div className="flex items-center gap-3">
+              <div className="bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl max-w-sm w-full text-center">
+                <div className="flex flex-col items-center gap-3">
                   {isSpeaking && (
-                    <Volume2 className="h-5 w-5 text-primary animate-pulse flex-shrink-0" />
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+                      <Volume2 className="relative h-8 w-8 text-blue-400 animate-pulse" />
+                    </div>
                   )}
-                  <p className="text-sm text-foreground">{feedbackText}</p>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                    onClick={() => setShowFeedback(false)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <p className="text-lg font-medium text-white/90 leading-relaxed">
+                    "{feedbackText}"
+                  </p>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Recording overlay */}
+        {/* Fullscreen Recording Overlay with Visualizer */}
         <AnimatePresence>
           {isRecording && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-40 pointer-events-none"
+              className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={toggleRecording} // Click anywhere to stop
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-red-500/10 to-transparent" />
-              <div className="absolute bottom-40 left-0 right-0 text-center">
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 10, opacity: 0 }}
-                  className="inline-block bg-background/95 backdrop-blur-lg border border-red-200 dark:border-red-900 rounded-full px-6 py-3 shadow-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                    </span>
-                    <span className="text-sm font-medium text-foreground">
-                      Ouvindo... Toque para parar
-                    </span>
-                  </div>
-                </motion.div>
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-red-900/20 pointer-events-none" />
+
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="relative w-full max-w-md aspect-square flex items-center justify-center"
+              >
+                {/* The Dynamic Visualizer */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <VoiceVisualizer stream={stream as MediaStream} isRecording={isRecording} />
+                </div>
+
+                <div className="relative z-10 text-center mt-60 pointer-events-none">
+                  <p className="text-2xl font-bold text-white drop-shadow-lg mb-2">
+                    Estou ouvindo...
+                  </p>
+                  <p className="text-white/70 text-sm">
+                    Toque para enviar
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Processing State Overlay */}
+        <AnimatePresence>
+          {isProcessing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm pointer-events-none"
+            >
+              <div className="bg-white/10 p-8 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
+                <Sparkles className="h-12 w-12 text-indigo-400 animate-spin" />
               </div>
+              <p className="mt-4 text-white font-medium animate-pulse">Processando com Gemini AI...</p>
             </motion.div>
           )}
         </AnimatePresence>

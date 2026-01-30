@@ -4,8 +4,9 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, fetchCollection, where, orderBy } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 
 const GENERATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 const STORAGE_KEY = 'last_dose_generation';
@@ -20,7 +21,7 @@ export function useDoseGeneration() {
     // Check if we recently generated doses
     const lastGeneration = localStorage.getItem(STORAGE_KEY);
     const now = Date.now();
-    
+
     if (!force && lastGeneration) {
       const lastTime = parseInt(lastGeneration, 10);
       if (now - lastTime < GENERATION_INTERVAL) {
@@ -35,14 +36,13 @@ export function useDoseGeneration() {
       console.log('[DoseGeneration] Checking if doses need to be generated...');
 
       // First, check if user has any active schedules
-      const { data: schedules, error: schedulesError } = await supabase
-        .from('schedules')
-        .select('id, item_id, items!inner(user_id, is_active)')
-        .eq('is_active', true)
-        .eq('items.user_id', user.id)
-        .eq('items.is_active', true);
+      // In Firebase: users/{uid}/schedules
+      const { data: schedules } = await fetchCollection(
+        `users/${user.uid}/schedules`,
+        [where('isActive', '==', true)]
+      );
 
-      if (schedulesError || !schedules || schedules.length === 0) {
+      if (!schedules || schedules.length === 0) {
         console.log('[DoseGeneration] No active schedules for user');
         localStorage.setItem(STORAGE_KEY, now.toString());
         return;
@@ -50,31 +50,36 @@ export function useDoseGeneration() {
 
       // Check if we have doses for the next 24 hours
       const next24h = new Date(now + 24 * 60 * 60 * 1000);
-      const { count: futureDoses } = await supabase
-        .from('dose_instances')
-        .select('*', { count: 'exact', head: true })
-        .in('schedule_id', schedules.map(s => s.id))
-        .eq('status', 'scheduled')
-        .gte('due_at', new Date().toISOString())
-        .lte('due_at', next24h.toISOString());
 
-      console.log(`[DoseGeneration] Found ${futureDoses || 0} scheduled doses in next 24h`);
+      // In Firebase: users/{uid}/doses
+      // We don't filter by schedule IDs here to avoid "in" limits, just date and status
+      const { data: futureDoses } = await fetchCollection(
+        `users/${user.uid}/doses`,
+        [
+          where('status', '==', 'scheduled'),
+          where('dueAt', '>=', new Date()),
+          where('dueAt', '<=', next24h)
+        ]
+      );
+
+      console.log(`[DoseGeneration] Found ${futureDoses?.length || 0} scheduled doses in next 24h`);
 
       // If we have few or no doses, trigger generation
-      if (!futureDoses || futureDoses < schedules.length) {
+      if (!futureDoses || futureDoses.length < schedules.length) {
         console.log('[DoseGeneration] Triggering dose generation...');
-        
-        const { data, error } = await supabase.functions.invoke('generate-dose-instances', {
-          body: { days: 7 }
-        });
 
-        if (error) {
-          console.error('[DoseGeneration] Error:', error);
-        } else {
-          console.log('[DoseGeneration] Success:', data);
-          
+        const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
+
+        try {
+          const result = await generateDoseInstances({ days: 7 });
+          console.log('[DoseGeneration] Success:', result.data);
+
           // Also trigger notification scheduling
-          await supabase.functions.invoke('schedule-dose-notifications');
+          const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
+          await scheduleDoseNotifications();
+
+        } catch (error) {
+          console.error('[DoseGeneration] Error calling function:', error);
         }
       }
 
@@ -107,6 +112,27 @@ export function useDoseGeneration() {
     }, GENERATION_INTERVAL);
 
     return () => clearInterval(interval);
+  }, [user, generateDoses]);
+
+  // Listen for medication updates (real-time integration)
+  useEffect(() => {
+    if (!user) return;
+
+    const handler = () => {
+      console.log('[DoseGeneration] Medication updated event received. Regenerating doses...');
+      generateDoses(true); // Force regeneration
+    };
+
+    let cleanup: (() => void) | undefined;
+
+    // Dynamic import to avoid cycles if any (though eventBus is lib)
+    import('@/lib/eventBus').then(({ eventBus, EVENTS }) => {
+      cleanup = eventBus.on(EVENTS.MEDICATION_UPDATED, handler);
+    });
+
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, [user, generateDoses]);
 
   return { generateDoses };

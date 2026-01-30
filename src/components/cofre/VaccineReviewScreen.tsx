@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
@@ -41,37 +41,41 @@ export default function VaccineReviewScreen({ documentId, extractedData, onCompl
     toast.loading(t('vaccine.saving'), { id: "save-vaccine" });
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error(t('errors.notAuthenticated'));
 
       // Update document
-      await supabase
-        .from('documentos_saude')
-        .update({
-          status_extraction: 'reviewed',
+      await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        documentId,
+        {
+          extractionStatus: 'reviewed',
           meta: {
             ...extractedData,
-            vaccine_name: vaccineName,
-            dose_number: doseNumber,
+            vaccineName: vaccineName,
+            doseNumber: doseNumber,
             provider: location,
-            doctor_name: professional,
-          }
-        })
-        .eq('id', documentId);
+            doctorName: professional,
+          },
+          updatedAt: new Date().toISOString()
+        }
+      );
 
       // Create vaccination record
-      await supabase
-        .from('vaccination_records')
-        .insert({
-          user_id: user.id,
-          profile_id: activeProfile?.id,
-          document_id: documentId,
-          vaccine_name: vaccineName,
-          dose_number: doseNumber ? parseInt(doseNumber) : null,
-          application_date: applicationDate,
-          vaccination_location: location || null,
-          vaccinator_name: professional || null,
-        });
+      await addDocument(
+        `users/${user.uid}/vaccinations`,
+        {
+          userId: user.uid,
+          profileId: activeProfile?.id,
+          documentId: documentId,
+          vaccineName: vaccineName,
+          doseNumber: doseNumber ? parseInt(doseNumber) : null,
+          applicationDate: applicationDate,
+          vaccinationLocation: location || null,
+          vaccinatorName: professional || null,
+          createdAt: new Date().toISOString()
+        }
+      );
 
       toast.dismiss("save-vaccine");
       toast.success(t('vaccine.savedSuccess'));
@@ -180,8 +184,8 @@ export default function VaccineReviewScreen({ documentId, extractedData, onCompl
           </CardContent>
         </Card>
 
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           className="w-full h-12"
           disabled={processing || !vaccineName}
         >

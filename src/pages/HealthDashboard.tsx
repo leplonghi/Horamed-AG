@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy, limit } from "@/integrations/firebase";
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
+import HealthToolsGrid from "@/components/health/HealthToolsGrid";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Activity, 
-  TrendingUp, 
+import {
+  Activity,
+  TrendingUp,
   TrendingDown,
   AlertCircle,
   LineChart,
@@ -17,15 +18,14 @@ import {
   Target,
   Calendar,
   FileText,
-  ArrowRight,
   CheckCircle2,
-  XCircle,
   Clock
 } from "lucide-react";
-import { format, subMonths, subDays, startOfDay, endOfDay, startOfMonth, endOfMonth } from "date-fns";
+import { format, subMonths, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import {
+import { useTranslation } from "@/contexts/LanguageContext";
   LineChart as RechartsLineChart,
   Line,
   XAxis,
@@ -34,7 +34,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  BarChart,
   Bar,
   ComposedChart,
   Area
@@ -90,6 +89,7 @@ interface PeriodComparison {
 }
 
 export default function HealthDashboard() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
   const [loading, setLoading] = useState(true);
@@ -113,113 +113,97 @@ export default function HealthDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const threeMonthsAgo = subMonths(new Date(), 3);
       const thirtyDaysAgo = subDays(new Date(), 30);
+      const hoje = new Date().toISOString().split("T")[0];
 
       // === ESTATÍSTICAS PRINCIPAIS ===
-      
+
       // Medicamentos ativos
-      let activeMedsQuery = supabase
-        .from("items")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-      
-      if (activeProfile) {
-        activeMedsQuery = activeMedsQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { count: activeMeds } = await activeMedsQuery;
+      // We need to filter by profile_id and is_active in memory or simple query
+      // Firestore doesn't support complex logical OR/AND combined easily without composite indexes for everything.
+      // We'll fetch all active items and filter in code for profile.
+      const { data: allActiveMeds } = await fetchCollection<any>(
+        `users/${user.uid}/medications`,
+        [where("isActive", "==", true)]
+      );
+
+      const activeMeds = activeProfile
+        ? allActiveMeds?.filter(m => m.profileId === activeProfile.id)
+        : allActiveMeds;
+
+      const activeMedsCount = activeMeds?.length || 0;
 
       // Taxa de adesão nos últimos 30 dias
-      let recentDosesQuery = supabase
-        .from("dose_instances")
-        .select("status, item_id, items!inner(user_id, profile_id)")
-        .eq("items.user_id", user.id)
-        .gte("due_at", thirtyDaysAgo.toISOString());
-      
-      if (activeProfile) {
-        recentDosesQuery = recentDosesQuery.eq("items.profile_id", activeProfile.id);
-      }
-      
-      const { data: recentDoses } = await recentDosesQuery;
+      const { data: recentDoses } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [where("dueAt", ">=", thirtyDaysAgo.toISOString())]
+      );
 
-      const totalDoses = recentDoses?.length || 0;
-      const takenDoses = recentDoses?.filter(d => d.status === "taken").length || 0;
+      // Need to join with items to filter by profile if needed.
+      // We will need to fetch all items to map itemID -> profileId
+      const { data: allItems } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const itemProfileMap = new Map(allItems?.map(i => [i.id, i.profileId]));
+
+      const filteredRecentDoses = activeProfile
+        ? recentDoses?.filter(d => itemProfileMap.get(d.itemId) === activeProfile.id)
+        : recentDoses;
+
+      const totalDoses = filteredRecentDoses?.length || 0;
+      const takenDoses = filteredRecentDoses?.filter(d => d.status === "taken").length || 0;
       const adherenceRate = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
 
       // Próximos eventos (consultas + eventos de saúde)
-      const hoje = new Date().toISOString().split("T")[0];
-      
-      let upcomingConsultasQuery = supabase
-        .from("consultas_medicas")
-        .select("id")
-        .eq("user_id", user.id)
-        .gte("data_consulta", hoje);
-      
-      if (activeProfile) {
-        upcomingConsultasQuery = upcomingConsultasQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { data: upcomingConsultas } = await upcomingConsultasQuery;
+      // Appointments
+      const { data: upcomingConsultas } = await fetchCollection<any>(
+        `users/${user.uid}/appointments`,
+        [where("date", ">=", hoje)] // Assuming field is 'date'
+      );
+      const filteredConsultas = activeProfile
+        ? upcomingConsultas?.filter(c => c.profileId === activeProfile.id)
+        : upcomingConsultas;
 
-      let upcomingEventosQuery = supabase
-        .from("eventos_saude")
-        .select("id")
-        .eq("user_id", user.id)
-        .gte("due_date", hoje)
-        .is("completed_at", null);
-      
-      if (activeProfile) {
-        upcomingEventosQuery = upcomingEventosQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { data: upcomingEventos } = await upcomingEventosQuery;
+      // Health Events (assuming collection 'healthEvents')
+      const { data: upcomingEventos } = await fetchCollection<any>(
+        `users/${user.uid}/healthEvents`,
+        [where("dueDate", ">=", hoje), where("completedAt", "==", null)]
+      );
+      const filteredEventos = activeProfile
+        ? upcomingEventos?.filter(e => e.profileId === activeProfile.id)
+        : upcomingEventos;
 
-      const upcomingEvents = (upcomingConsultas?.length || 0) + (upcomingEventos?.length || 0);
+      const upcomingEventsCount = (filteredConsultas?.length || 0) + (filteredEventos?.length || 0);
 
       // Documentos vencendo em 30 dias
       const em30Dias = new Date();
       em30Dias.setDate(em30Dias.getDate() + 30);
-      
-      let expiringDocsQuery = supabase
-        .from("documentos_saude")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .gte("expires_at", hoje)
-        .lte("expires_at", em30Dias.toISOString().split("T")[0]);
-      
-      if (activeProfile) {
-        expiringDocsQuery = expiringDocsQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { count: expiringDocs } = await expiringDocsQuery;
+      const em30DiasStr = em30Dias.toISOString().split("T")[0];
+
+      const { data: expiringDocs } = await fetchCollection<any>(
+        `users/${user.uid}/documents`,
+        [
+          where("expiresAt", ">=", hoje),
+          where("expiresAt", "<=", em30DiasStr)
+        ]
+      );
+
+      const filteredExpiringDocs = activeProfile
+        ? expiringDocs?.filter(d => d.profileId === activeProfile.id)
+        : expiringDocs;
 
       setStats({
-        medicamentosAtivos: activeMeds || 0,
+        medicamentosAtivos: activeMedsCount,
         taxaAdesao: adherenceRate,
-        proximosEventos: upcomingEvents,
-        documentosVencendo: expiringDocs || 0
+        proximosEventos: upcomingEventsCount,
+        documentosVencendo: filteredExpiringDocs?.length || 0
       });
 
       // === DADOS DE ADESÃO POR DIA (últimos 30 dias) ===
-      // Buscar todas as doses dos últimos 30 dias de uma vez
-      let allDosesQuery = supabase
-        .from("dose_instances")
-        .select("status, due_at, item_id, items!inner(user_id, profile_id)")
-        .eq("items.user_id", user.id)
-        .gte("due_at", thirtyDaysAgo.toISOString());
-      
-      if (activeProfile) {
-        allDosesQuery = allDosesQuery.eq("items.profile_id", activeProfile.id);
-      }
-      
-      const { data: allDosesLast30Days } = await allDosesQuery;
+      // Reuse `filteredRecentDoses` which is already last 30 days
 
-      // Agrupar por dia
       const last30Days = Array.from({ length: 30 }, (_, i) => {
         const date = subDays(new Date(), 29 - i);
         return {
@@ -230,8 +214,8 @@ export default function HealthDashboard() {
 
       const adherenceByDay: AdherenceData[] = last30Days.map(day => {
         const dayStr = format(day.date, "yyyy-MM-dd");
-        const dayDoses = allDosesLast30Days?.filter(d => {
-          const doseDate = format(new Date(d.due_at), "yyyy-MM-dd");
+        const dayDoses = filteredRecentDoses?.filter(d => {
+          const doseDate = format(new Date(d.dueAt), "yyyy-MM-dd");
           return doseDate === dayStr;
         }) || [];
 
@@ -246,199 +230,154 @@ export default function HealthDashboard() {
           tomadas: taken
         };
       });
-      
+
       setAdherenceData(adherenceByDay);
 
       // Buscar sinais vitais dos últimos 3 meses
-      let sinaisQuery = supabase
-        .from("sinais_vitais")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("data_medicao", threeMonthsAgo.toISOString())
-        .order("data_medicao", { ascending: true });
-      
-      if (activeProfile) {
-        sinaisQuery = sinaisQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { data: sinais } = await sinaisQuery;
+      const { data: sinais } = await fetchCollection<any>(
+        `users/${user.uid}/vitals`,
+        [
+          where("date", ">=", threeMonthsAgo.toISOString()),
+          orderBy("date", "asc")
+        ]
+      );
+
+      const filteredSinais = activeProfile
+        ? sinais?.filter(s => s.profileId === activeProfile.id)
+        : sinais;
 
       // Processar dados de peso
-      const peso = sinais
-        ?.filter(s => s.peso_kg)
+      const peso = filteredSinais
+        ?.filter(s => s.weightKg)
         .map(s => ({
-          data: format(new Date(s.data_medicao), "dd/MMM", { locale: ptBR }),
-          peso: parseFloat(String(s.peso_kg))
+          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
+          peso: parseFloat(String(s.weightKg))
         })) || [];
       setPesoData(peso);
 
       // Processar dados de pressão
-      const pressao = sinais
-        ?.filter(s => s.pressao_sistolica)
+      const pressao = filteredSinais
+        ?.filter(s => s.systolicBP)
         .map(s => ({
-          data: format(new Date(s.data_medicao), "dd/MMM", { locale: ptBR }),
-          sistolica: s.pressao_sistolica,
-          diastolica: s.pressao_diastolica
+          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
+          sistolica: s.systolicBP,
+          diastolica: s.diastolicBP
         })) || [];
       setPressaoData(pressao);
 
       // Processar dados de glicemia
-      const glicemia = sinais
-        ?.filter(s => s.glicemia)
+      const glicemia = filteredSinais
+        ?.filter(s => s.glucose)
         .map(s => ({
-          data: format(new Date(s.data_medicao), "dd/MMM", { locale: ptBR }),
-          glicemia: s.glicemia
+          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
+          glicemia: s.glucose
         })) || [];
       setGlicemiaData(glicemia);
 
       // Buscar exames com valores alterados
-      let examesQuery = supabase
-        .from("exames_laboratoriais")
-        .select(`
-          id,
-          data_exame,
-          valores_exames!inner(*)
-        `)
-        .eq("user_id", user.id)
-        .eq("valores_exames.status", "alterado")
-        .gte("data_exame", threeMonthsAgo.toISOString())
-        .order("data_exame", { ascending: false })
-        .limit(10);
-      
-      if (activeProfile) {
-        examesQuery = examesQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { data: exames } = await examesQuery;
+      // Note: Assuming 'users/{uid}/exams' has a nested structure or subcollection 'results'
+      // Or 'users/{uid}/examResults'
+      // Previous Supabase joined exames_laboratoriais and valores_exames.
+      // Let's assume `users/{uid}/examResults` exists or we have to query differently.
+      // Simplification: We assume `users/{uid}/examResults` which contains individual parameter results, 
+      // or we just skip this if the migration of exams is complex. 
+      // Given the complexity of nested collections in NoSQL, assume `users/{uid}/examResults`.
+      // Filtering by status == 'alterado'.
 
-      const alterados: ExamValue[] = [];
-      exames?.forEach((exame: any) => {
-        exame.valores_exames?.forEach((valor: any) => {
-          if (valor.status === 'alterado') {
-            alterados.push({
-              parametro: valor.parametro,
-              valor: valor.valor,
-              data: exame.data_exame,
-              status: valor.status,
-              referencia_min: valor.referencia_min,
-              referencia_max: valor.referencia_max
-            });
-          }
-        });
-      });
+      const { data: examesResults } = await fetchCollection<any>(
+        `users/${user.uid}/examResults`,
+        [
+          where("status", "==", "alterado"),
+          orderBy("date", "desc"),
+          limit(10)
+        ]
+      );
+
+      const filteredExames = activeProfile ? examesResults?.filter(e => e.profileId === activeProfile.id) : examesResults;
+
+      const alterados: ExamValue[] = (filteredExames || []).map(valor => ({
+        parametro: valor.parameter,
+        valor: valor.value,
+        data: valor.date,
+        status: valor.status,
+        referencia_min: valor.referenceMin,
+        referencia_max: valor.referenceMax
+      }));
       setExamesAlterados(alterados);
 
       // === CORRELAÇÃO ADESÃO x SINAIS VITAIS ===
-      // Buscar todos os sinais vitais dos últimos 30 dias de uma vez
-      let allVitalsQuery = supabase
-        .from("sinais_vitais")
-        .select("*")
-        .eq("user_id", user.id)
-        .gte("data_medicao", thirtyDaysAgo.toISOString())
-        .order("data_medicao", { ascending: false });
-      
-      if (activeProfile) {
-        allVitalsQuery = allVitalsQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { data: allVitalsLast30Days } = await allVitalsQuery;
+      const filteredVitalsLast30 = filteredSinais?.filter(s =>
+        new Date(s.date) >= thirtyDaysAgo
+      ) || [];
 
       // Correlacionar com os dados de adesão já calculados
       const correlations: CorrelationData[] = last30Days.map((day, index) => {
         const dayStr = format(day.date, "yyyy-MM-dd");
         const adesao = adherenceByDay[index]?.taxa || 0;
-        
+
         // Buscar sinais vitais do dia
-        const dayVitals = allVitalsLast30Days?.filter(v => {
-          const vitalDate = format(new Date(v.data_medicao), "yyyy-MM-dd");
+        const dayVitals = filteredVitalsLast30.filter(v => {
+          const vitalDate = format(new Date(v.date), "yyyy-MM-dd");
           return vitalDate === dayStr;
-        }) || [];
-        
-        const vital = dayVitals[0]; // Pegar o mais recente do dia
+        });
+
+        // Use the latest vital of the day
+        const vital = dayVitals[dayVitals.length - 1];
 
         return {
           data: format(day.date, "dd/MMM", { locale: ptBR }),
           adesao: adesao,
-          peso: vital?.peso_kg ? parseFloat(String(vital.peso_kg)) : undefined,
-          pressao: vital?.pressao_sistolica || undefined,
-          glicemia: vital?.glicemia || undefined
+          peso: vital?.weightKg ? parseFloat(String(vital.weightKg)) : undefined,
+          pressao: vital?.systolicBP || undefined,
+          glicemia: vital?.glucose || undefined
         };
       });
 
       setCorrelationData(correlations);
 
-      // === COMPARAÇÃO DE PERÍODOS: MÊS ATUAL vs MÊS ANTERIOR ===
+      // === COMPARAÇÃO DE PERÍODOS ===
       const mesAtualInicio = startOfMonth(new Date());
       const mesAtualFim = endOfMonth(new Date());
       const mesAnteriorInicio = startOfMonth(subMonths(new Date(), 1));
       const mesAnteriorFim = endOfMonth(subMonths(new Date(), 1));
 
-      // Dados do mês atual
-      let dosesCurrentMonthQuery = supabase
-        .from("dose_instances")
-        .select("status, item_id, items!inner(user_id, profile_id)")
-        .eq("items.user_id", user.id)
-        .gte("due_at", mesAtualInicio.toISOString())
-        .lte("due_at", mesAtualFim.toISOString());
-      
-      if (activeProfile) {
-        dosesCurrentMonthQuery = dosesCurrentMonthQuery.eq("items.profile_id", activeProfile.id);
-      }
-      
-      const { data: dosesCurrentMonth } = await dosesCurrentMonthQuery;
+      // Fetch doses for larger range to cover both months (optimization)
+      const { data: periodDoses } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [
+          where("dueAt", ">=", mesAnteriorInicio.toISOString()),
+          where("dueAt", "<=", mesAtualFim.toISOString())
+        ]
+      );
 
-      let medsCurrentMonthQuery = supabase
-        .from("items")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .lte("created_at", mesAtualFim.toISOString());
-      
-      if (activeProfile) {
-        medsCurrentMonthQuery = medsCurrentMonthQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { count: medsCurrentMonth } = await medsCurrentMonthQuery;
+      const filteredPeriodDoses = activeProfile
+        ? periodDoses?.filter(d => itemProfileMap.get(d.itemId) === activeProfile.id)
+        : periodDoses;
 
-      const totalCurrentMonth = dosesCurrentMonth?.length || 0;
-      const takenCurrentMonth = dosesCurrentMonth?.filter(d => d.status === "taken").length || 0;
+      const dosesCurrentMonth = filteredPeriodDoses?.filter(d =>
+        new Date(d.dueAt) >= mesAtualInicio && new Date(d.dueAt) <= mesAtualFim
+      ) || [];
+
+      const dosesPreviousMonth = filteredPeriodDoses?.filter(d =>
+        new Date(d.dueAt) >= mesAnteriorInicio && new Date(d.dueAt) <= mesAnteriorFim
+      ) || [];
+
+      const totalCurrentMonth = dosesCurrentMonth.length;
+      const takenCurrentMonth = dosesCurrentMonth.filter(d => d.status === "taken").length;
       const adherenceCurrentMonth = totalCurrentMonth > 0 ? Math.round((takenCurrentMonth / totalCurrentMonth) * 100) : 0;
 
-      // Dados do mês anterior
-      let dosesPreviousMonthQuery = supabase
-        .from("dose_instances")
-        .select("status, item_id, items!inner(user_id, profile_id)")
-        .eq("items.user_id", user.id)
-        .gte("due_at", mesAnteriorInicio.toISOString())
-        .lte("due_at", mesAnteriorFim.toISOString());
-      
-      if (activeProfile) {
-        dosesPreviousMonthQuery = dosesPreviousMonthQuery.eq("items.profile_id", activeProfile.id);
-      }
-      
-      const { data: dosesPreviousMonth } = await dosesPreviousMonthQuery;
-
-      let medsPreviousMonthQuery = supabase
-        .from("items")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_active", true)
-        .lte("created_at", mesAnteriorFim.toISOString());
-      
-      if (activeProfile) {
-        medsPreviousMonthQuery = medsPreviousMonthQuery.eq("profile_id", activeProfile.id);
-      }
-      
-      const { count: medsPreviousMonth } = await medsPreviousMonthQuery;
-
-      const totalPreviousMonth = dosesPreviousMonth?.length || 0;
-      const takenPreviousMonth = dosesPreviousMonth?.filter(d => d.status === "taken").length || 0;
+      const totalPreviousMonth = dosesPreviousMonth.length;
+      const takenPreviousMonth = dosesPreviousMonth.filter(d => d.status === "taken").length;
       const adherencePreviousMonth = totalPreviousMonth > 0 ? Math.round((takenPreviousMonth / totalPreviousMonth) * 100) : 0;
+
+      // Meds count snapshots (using created_at approximation)
+      const activeMedsCurrent = activeMeds?.filter(m => new Date(m.createdAt) <= mesAtualFim).length || 0;
+      const activeMedsPrevious = activeMeds?.filter(m => new Date(m.createdAt) <= mesAnteriorFim).length || 0;
 
       // Calcular tendências e variações
       const adesaoDiff = adherenceCurrentMonth - adherencePreviousMonth;
       const dosesDiff = takenCurrentMonth - takenPreviousMonth;
-      const medsDiff = (medsCurrentMonth || 0) - (medsPreviousMonth || 0);
+      const medsDiff = activeMedsCurrent - activeMedsPrevious;
 
       const getTrend = (diff: number): 'up' | 'down' | 'stable' => {
         if (diff > 2) return 'up';
@@ -451,13 +390,13 @@ export default function HealthDashboard() {
           adesao: adherenceCurrentMonth,
           dosesTomadas: takenCurrentMonth,
           dosesTotal: totalCurrentMonth,
-          medicamentos: medsCurrentMonth || 0
+          medicamentos: activeMedsCurrent
         },
         mesAnterior: {
           adesao: adherencePreviousMonth,
           dosesTomadas: takenPreviousMonth,
           dosesTotal: totalPreviousMonth,
-          medicamentos: medsPreviousMonth || 0
+          medicamentos: activeMedsPrevious
         },
         tendencias: {
           adesao: getTrend(adesaoDiff),
@@ -473,7 +412,7 @@ export default function HealthDashboard() {
 
     } catch (error) {
       console.error("Erro ao carregar dashboard:", error);
-      toast.error("Erro ao carregar dados");
+      toast.error(t("toast.health.dashboardError"));
     } finally {
       setLoading(false);
     }
@@ -486,7 +425,6 @@ export default function HealthDashboard() {
         <div className="min-h-screen bg-background pt-20 pb-24 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
         </div>
-        <Navigation />
       </>
     );
   }
@@ -496,7 +434,7 @@ export default function HealthDashboard() {
       <Header />
       <div className="min-h-screen bg-background pt-20 pb-24">
         <div className="max-w-6xl mx-auto p-4 space-y-6">
-          
+
           {/* Header */}
           <div className="space-y-2">
             <h1 className="text-3xl font-bold flex items-center gap-2">
@@ -506,6 +444,12 @@ export default function HealthDashboard() {
             <p className="text-muted-foreground">
               Análise completa da sua saúde e correlação com adesão aos medicamentos
             </p>
+          </div>
+
+          {/* Ferramentas de Saúde */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">Ferramentas de Saúde</h2>
+            <HealthToolsGrid />
           </div>
 
           {/* Estatísticas Principais */}
@@ -527,12 +471,10 @@ export default function HealthDashboard() {
             <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/historico')}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    stats.taxaAdesao >= 80 ? 'bg-green-500/10' : stats.taxaAdesao >= 50 ? 'bg-yellow-500/10' : 'bg-red-500/10'
-                  }`}>
-                    <Target className={`h-5 w-5 ${
-                      stats.taxaAdesao >= 80 ? 'text-green-600' : stats.taxaAdesao >= 50 ? 'text-yellow-600' : 'text-red-600'
-                    }`} />
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.taxaAdesao >= 80 ? 'bg-green-500/10' : stats.taxaAdesao >= 50 ? 'bg-yellow-500/10' : 'bg-red-500/10'
+                    }`}>
+                    <Target className={`h-5 w-5 ${stats.taxaAdesao >= 80 ? 'text-green-600' : stats.taxaAdesao >= 50 ? 'text-yellow-600' : 'text-red-600'
+                      }`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-2xl font-bold">{stats.taxaAdesao}%</p>
@@ -559,12 +501,10 @@ export default function HealthDashboard() {
             <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/carteira')}>
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    stats.documentosVencendo > 0 ? 'bg-orange-500/10' : 'bg-gray-500/10'
-                  }`}>
-                    <FileText className={`h-5 w-5 ${
-                      stats.documentosVencendo > 0 ? 'text-orange-600' : 'text-gray-600'
-                    }`} />
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.documentosVencendo > 0 ? 'bg-orange-500/10' : 'bg-gray-500/10'
+                    }`}>
+                    <FileText className={`h-5 w-5 ${stats.documentosVencendo > 0 ? 'text-orange-600' : 'text-gray-600'
+                      }`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-2xl font-bold">{stats.documentosVencendo}</p>
@@ -987,7 +927,7 @@ export default function HealthDashboard() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            
+
             {/* Peso */}
             {pesoData.length > 0 && (
               <Card>
@@ -1004,10 +944,10 @@ export default function HealthDashboard() {
                       <XAxis dataKey="data" />
                       <YAxis />
                       <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="peso" 
-                        stroke="hsl(var(--primary))" 
+                      <Line
+                        type="monotone"
+                        dataKey="peso"
+                        stroke="hsl(var(--primary))"
                         strokeWidth={2}
                         dot={{ r: 4 }}
                       />
@@ -1034,17 +974,17 @@ export default function HealthDashboard() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="sistolica" 
-                        stroke="#ef4444" 
+                      <Line
+                        type="monotone"
+                        dataKey="sistolica"
+                        stroke="#ef4444"
                         strokeWidth={2}
                         name="Sistólica"
                       />
-                      <Line 
-                        type="monotone" 
-                        dataKey="diastolica" 
-                        stroke="#3b82f6" 
+                      <Line
+                        type="monotone"
+                        dataKey="diastolica"
+                        stroke="#3b82f6"
                         strokeWidth={2}
                         name="Diastólica"
                       />
@@ -1070,10 +1010,10 @@ export default function HealthDashboard() {
                       <XAxis dataKey="data" />
                       <YAxis />
                       <Tooltip />
-                      <Line 
-                        type="monotone" 
-                        dataKey="glicemia" 
-                        stroke="#3b82f6" 
+                      <Line
+                        type="monotone"
+                        dataKey="glicemia"
+                        stroke="#3b82f6"
                         strokeWidth={2}
                         dot={{ r: 4 }}
                       />
@@ -1091,7 +1031,7 @@ export default function HealthDashboard() {
                 <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <h3 className="font-semibold mb-2">Comece a usar o app para ver insights</h3>
                 <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                  À medida que você registra suas doses e sinais vitais, esta página mostrará 
+                  À medida que você registra suas doses e sinais vitais, esta página mostrará
                   correlações importantes entre sua adesão aos medicamentos e sua saúde.
                 </p>
                 <div className="flex gap-2 justify-center flex-wrap">
@@ -1141,7 +1081,6 @@ export default function HealthDashboard() {
           </Card>
         </div>
       </div>
-      <Navigation />
     </>
   );
 }

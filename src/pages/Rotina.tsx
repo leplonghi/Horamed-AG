@@ -1,17 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { decrementStockWithProjection } from "@/lib/stockHelpers";
-import { supabase } from "@/integrations/supabase/client";
+import { useMedications } from "@/hooks/useMedications";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, Package, Sparkles, ArrowUpDown, SortAsc, SortDesc } from "lucide-react";
-import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
-import MedicationOCR from "@/components/MedicationOCR";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
 import AdBanner from "@/components/AdBanner";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -19,32 +16,14 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import TutorialHint from "@/components/TutorialHint";
 import MedicationWizard from "@/components/medication-wizard/MedicationWizard";
-import { isSupplement, getSupplementTags } from "@/utils/supplementHelpers";
+import { getSupplementTags } from "@/utils/supplementHelpers";
 import SupplementTag from "@/components/fitness/SupplementTag";
 import { AffiliateCard } from "@/components/fitness/AffiliateCard";
 import { getRecommendations, dismissRecommendation } from "@/lib/affiliateEngine";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OceanBackground from "@/components/ui/OceanBackground";
-
-interface Item {
-  id: string;
-  name: string;
-  dose_text: string | null;
-  category: string;
-  with_food: boolean;
-  is_active: boolean;
-  created_at?: string;
-  schedules: Array<{
-    id: string;
-    times: any;
-    freq_type: string;
-  }>;
-  stock?: Array<{
-    units_left: number;
-    unit_label: string;
-  }>;
-}
+import { Stock, Schedule, Medication } from "@/hooks/useMedications";
 
 type SortOption = "name_asc" | "name_desc" | "created_desc" | "created_asc" | "stock_asc" | "stock_desc";
 
@@ -65,27 +44,29 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function Rotina() {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { activeProfile } = useUserProfiles();
+  const { data: items, isLoading: loading, deleteMedication } = useMedications(activeProfile?.id);
+
   const [activeTab, setActiveTab] = useState("todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("name_asc");
   const [showOCR, setShowOCR] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const { hasFeature, canAddMedication, isExpired } = useSubscription();
+  const { hasFeature } = useSubscription();
   const [affiliateProduct, setAffiliateProduct] = useState<any>(null);
   const [showAffiliateCard, setShowAffiliateCard] = useState(false);
 
   useEffect(() => {
-    const hasSupplements = items.some(item => 
+    if (!items) return;
+    const hasSupplements = items.some(item =>
       item.category === 'vitamina' || item.category === 'suplemento'
     );
-    
+
     if (hasSupplements) {
-      const product = getRecommendations({ 
-        type: "MEDICATION_LIST", 
-        hasSupplements: true 
+      const product = getRecommendations({
+        type: "MEDICATION_LIST",
+        hasSupplements: true
       });
       if (product) {
         setAffiliateProduct(product);
@@ -94,54 +75,10 @@ export default function Rotina() {
     }
   }, [items]);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("items")
-        .select(`
-          id,
-          name,
-          dose_text,
-          category,
-          with_food,
-          is_active,
-          created_at,
-          schedules (
-            id,
-            times,
-            freq_type
-          ),
-          stock (
-            units_left,
-            unit_label
-          )
-        `)
-        .eq("is_active", true)
-        .order("category")
-        .order("name");
-
-      if (error) throw error;
-      
-      const formattedData = (data || []).map(item => ({
-        ...item,
-        stock: item.stock ? (Array.isArray(item.stock) ? item.stock : [item.stock]) : []
-      }));
-      
-      setItems(formattedData);
-    } catch (error) {
-      console.error("Error fetching items:", error);
-      toast.error(language === 'pt' ? "Erro ao carregar itens" : "Error loading items");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Sort and filter items
   const filteredItems = useMemo(() => {
+    if (!items) return [];
+
     let result = items.filter((item) => {
       const matchesTab = activeTab === "todos" || item.category === activeTab;
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -156,16 +93,16 @@ export default function Rotina() {
         case "name_desc":
           return b.name.localeCompare(a.name, language);
         case "created_desc":
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
         case "created_asc":
-          return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
         case "stock_asc":
-          const stockA = a.stock?.[0]?.units_left ?? Infinity;
-          const stockB = b.stock?.[0]?.units_left ?? Infinity;
+          const stockA = a.stock?.[0]?.unitsLeft ?? Infinity;
+          const stockB = b.stock?.[0]?.unitsLeft ?? Infinity;
           return stockA - stockB;
         case "stock_desc":
-          const stockADesc = a.stock?.[0]?.units_left ?? -1;
-          const stockBDesc = b.stock?.[0]?.units_left ?? -1;
+          const stockADesc = a.stock?.[0]?.unitsLeft ?? -1;
+          const stockBDesc = b.stock?.[0]?.unitsLeft ?? -1;
           return stockBDesc - stockADesc;
         default:
           return 0;
@@ -175,34 +112,25 @@ export default function Rotina() {
     return result;
   }, [items, activeTab, searchTerm, sortBy, language]);
 
-  const deleteItem = async (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm(t('meds.confirmDelete'))) return;
-
-    try {
-      const { error } = await supabase.from("items").delete().eq("id", id);
-      if (error) throw error;
-      toast.success(t('meds.deleteSuccess'));
-      fetchItems();
-    } catch (error) {
-      console.error("Error deleting item:", error);
-      toast.error(language === 'pt' ? "Erro ao excluir item" : "Error deleting item");
-    }
+    await deleteMedication(id);
   };
 
-  const getScheduleSummary = (schedule: any) => {
+  const getScheduleSummary = (schedule: Schedule) => {
     if (!schedule.times || schedule.times.length === 0) return language === 'pt' ? "Sem horários" : "No times";
     const times = Array.isArray(schedule.times) ? schedule.times : [schedule.times];
     return times.join(", ");
   };
 
   const getCategoryCount = (category: string) => {
-    return items.filter(item => item.category === category).length;
+    return items?.filter(item => item.category === category).length || 0;
   };
 
-  const renderItemCard = (item: Item, index: number, isSupplement: boolean = false) => {
+  const renderItemCard = (item: Medication, index: number, isSupplement: boolean = false) => {
     const supplementTags = isSupplement ? getSupplementTags(item.name) : [];
     const borderColor = isSupplement ? 'border-l-performance' : 'border-l-primary';
-    
+
     return (
       <motion.div
         key={item.id}
@@ -220,14 +148,14 @@ export default function Rotina() {
                   {item.name}
                 </h3>
                 <span className={`pill text-xs ${isSupplement ? 'pill-warning' : 'pill-primary'}`}>
-                  {CATEGORY_ICONS[item.category]} {CATEGORY_LABELS[item.category]}
+                  {CATEGORY_ICONS[item.category] || "📦"} {CATEGORY_LABELS[item.category] || item.category}
                 </span>
                 {supplementTags.map((tag, idx) => (
                   <SupplementTag key={idx} type={tag as any} />
                 ))}
               </div>
-              {item.dose_text && (
-                <p className="text-sm text-muted-foreground">{item.dose_text}</p>
+              {item.doseText && (
+                <p className="text-sm text-muted-foreground">{item.doseText}</p>
               )}
             </div>
 
@@ -244,7 +172,7 @@ export default function Rotina() {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 rounded-xl"
-                onClick={() => deleteItem(item.id)}
+                onClick={() => handleDelete(item.id)}
               >
                 <Trash2 className="h-4 w-4 text-muted-foreground" />
               </Button>
@@ -258,7 +186,7 @@ export default function Rotina() {
                 <span>{language === 'pt' ? 'Diariamente às' : 'Daily at'} {getScheduleSummary(item.schedules[0])}</span>
               </div>
             )}
-            {item.with_food && (
+            {item.withFood && (
               <div className="flex items-center gap-1.5">
                 <UtensilsCrossed className="h-4 w-4" />
                 <span>{language === 'pt' ? 'Com alimento' : 'With food'}</span>
@@ -267,7 +195,7 @@ export default function Rotina() {
             {item.stock && item.stock.length > 0 && (
               <div className="flex items-center gap-1.5">
                 <Package className="h-4 w-4" />
-                <span>{item.stock[0].units_left} {item.stock[0].unit_label} {language === 'pt' ? 'restantes' : 'remaining'}</span>
+                <span>{item.stock[0].unitsLeft} {item.stock[0].unitLabel} {language === 'pt' ? 'restantes' : 'remaining'}</span>
               </div>
             )}
           </div>
@@ -332,8 +260,8 @@ export default function Rotina() {
           <TutorialHint
             id="rotina_page"
             title={language === 'pt' ? "Organize sua rotina de saúde 💊" : "Organize your health routine 💊"}
-            message={language === 'pt' 
-              ? "Aqui você cadastra todos os seus medicamentos, vitaminas e suplementos. Defina horários, doses e durações. Use o botão + para adicionar manualmente ou 📷 para tirar foto da caixa/receita. Simples e rápido!" 
+            message={language === 'pt'
+              ? "Aqui você cadastra todos os seus medicamentos, vitaminas e suplementos. Defina horários, doses e durações. Use o botão + para adicionar manualmente ou 📷 para tirar foto da caixa/receita. Simples e rápido!"
               : "Here you register all your medications, vitamins and supplements. Set times, doses and durations. Use the + button to add manually or 📷 to take a photo of the box/prescription. Simple and fast!"}
           />
 
@@ -399,27 +327,27 @@ export default function Rotina() {
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full flex-wrap h-auto gap-2 p-1.5 rounded-2xl bg-muted/50">
-              <TabsTrigger 
-                value="todos" 
+              <TabsTrigger
+                value="todos"
                 className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 transition-all"
               >
                 <Pill className="h-4 w-4 mr-2" />
-                {language === 'pt' ? 'Todos' : 'All'} ({items.length})
+                {language === 'pt' ? 'Todos' : 'All'} ({items?.length || 0})
               </TabsTrigger>
-              <TabsTrigger 
-                value="medicamento" 
+              <TabsTrigger
+                value="medicamento"
                 className="rounded-xl px-4 py-2.5 transition-all"
               >
                 💊 {language === 'pt' ? 'Medicamentos' : 'Medications'} ({getCategoryCount("medicamento")})
               </TabsTrigger>
-              <TabsTrigger 
-                value="vitamina" 
+              <TabsTrigger
+                value="vitamina"
                 className="rounded-xl px-4 py-2.5 transition-all"
               >
                 ❤️ {language === 'pt' ? 'Vitaminas' : 'Vitamins'} ({getCategoryCount("vitamina")})
               </TabsTrigger>
-              <TabsTrigger 
-                value="suplemento" 
+              <TabsTrigger
+                value="suplemento"
                 className="rounded-xl px-4 py-2.5 transition-all"
               >
                 ⚡ {language === 'pt' ? 'Suplementos' : 'Supplements'} ({getCategoryCount("suplemento")})
@@ -438,7 +366,7 @@ export default function Rotina() {
                     <Pill className="h-10 w-10 text-muted-foreground" />
                   </div>
                   <p className="text-muted-foreground font-medium">
-                    {searchTerm 
+                    {searchTerm
                       ? (language === 'pt' ? "Nenhum item encontrado" : "No items found")
                       : (language === 'pt' ? "Nenhum item cadastrado ainda" : "No items registered yet")}
                   </p>
@@ -517,11 +445,11 @@ export default function Rotina() {
               <h3 className="text-lg font-semibold">Escanear Receita</h3>
               <Button variant="ghost" size="icon" onClick={() => setShowOCR(false)}>✕</Button>
             </div>
-            <MedicationOCRWrapper 
+            <MedicationOCRWrapper
               onResult={(result) => {
                 setShowOCR(false);
                 setWizardOpen(true);
-              }} 
+              }}
             />
           </div>
         </div>

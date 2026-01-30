@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, updateDocument } from "@/integrations/firebase";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/integrations/firebase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,30 +46,28 @@ export default function StockManagement() {
 
   const updateStock = async (stockId: string, newUnitsLeft: number) => {
     try {
-      const { error } = await supabase
-        .from("stock")
-        .update({ 
-          units_left: newUnitsLeft,
-          last_refill_at: new Date().toISOString(),
-        })
-        .eq("id", stockId);
+      const user = auth.currentUser;
+      if (!user) throw new Error("User not authenticated");
 
-      if (error) throw error;
+      const updateData: any = {
+        currentQty: newUnitsLeft,
+        lastRefillAt: new Date().toISOString(),
+      };
 
       // Add refill to consumption history
       const stock = stockProjections?.find(s => s.id === stockId);
-      if (stock && newUnitsLeft > stock.units_left) {
-        const history = [...stock.consumption_history, {
+      if (stock && newUnitsLeft > stock.currentQty) {
+        const history = [...(stock.consumptionHistory || []), {
           date: new Date().toISOString(),
-          amount: newUnitsLeft - stock.units_left,
-          reason: 'refill' as const,
-        }] as any;
-
-        await supabase
-          .from("stock")
-          .update({ consumption_history: history })
-          .eq("id", stockId);
+          amount: newUnitsLeft - stock.currentQty,
+          reason: 'refill',
+        }];
+        updateData.consumptionHistory = history;
       }
+
+      const { error } = await updateDocument(`users/${user.uid}/stock`, stockId, updateData);
+
+      if (error) throw error;
 
       toast.success(`✓ ${t('stock.updated')}`);
       refetch();
@@ -81,11 +81,11 @@ export default function StockManagement() {
 
   const handleRestock = async (itemId: string, itemName: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('affiliate-click', {
-        body: { medication_id: itemId, medication_name: itemName }
+      const affiliateClick = httpsCallable(functions, 'affiliateClick');
+      const { data }: any = await affiliateClick({
+        medicationId: itemId,
+        medicationName: itemName
       });
-
-      if (error) throw error;
 
       if (data?.url) {
         window.open(data.url, '_blank');
@@ -130,7 +130,7 @@ export default function StockManagement() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      
+
       <main className="container max-w-4xl mx-auto p-6 space-y-8">
         {/* Header */}
         <div className="space-y-3">
@@ -139,8 +139,8 @@ export default function StockManagement() {
               <Package className="h-8 w-8 text-primary" />
               {t('stock.pageTitle')}
             </h1>
-            <HelpTooltip 
-              content={t('stock.howItWorksDesc')} 
+            <HelpTooltip
+              content={t('stock.howItWorksDesc')}
               iconSize="lg"
             />
           </div>
@@ -189,8 +189,8 @@ export default function StockManagement() {
         {/* Stock Items */}
         <div className="space-y-4">
           {stockProjections?.map((item) => {
-            const percentage = (item.units_left / item.units_total) * 100;
-            const status = getStockStatus(item.units_left, item.units_total);
+            const percentage = (item.currentQty / item.unitsTotal) * 100;
+            const status = getStockStatus(item.currentQty, item.unitsTotal);
             const isExpanded = expandedItems.has(item.id);
 
             return (
@@ -199,14 +199,14 @@ export default function StockManagement() {
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-2">
-                      <h3 className="heading-card">{item.item_name}</h3>
-                      
+                      <h3 className="heading-card">{item.itemName}</h3>
+
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-subtitle">
                           <strong className={status.color}>
-                            {item.units_left}
+                            {item.currentQty}
                           </strong>{" "}
-                          {t('stock.of')} {item.units_total} {t('stock.units')}
+                          {t('stock.of')} {item.unitsTotal} {t('stock.units')}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-tiny font-medium ${status.bg} ${status.color}`}>
                           {status.label}
@@ -214,9 +214,9 @@ export default function StockManagement() {
                       </div>
 
                       <StockOriginBadge
-                        prescriptionId={item.created_from_prescription_id}
-                        prescriptionTitle={item.prescription_title}
-                        lastRefillAt={item.last_refill_at}
+                        prescriptionId={item.createdFromPrescriptionId}
+                        prescriptionTitle={item.prescriptionTitle}
+                        lastRefillAt={item.lastRefillAt}
                       />
                     </div>
 
@@ -234,7 +234,7 @@ export default function StockManagement() {
                         <DialogHeader>
                           <DialogTitle>{t('stock.adjustStock')}</DialogTitle>
                           <DialogDescription>
-                            {item.item_name} - {t('stock.adjustDesc')}
+                            {item.itemName} - {t('stock.adjustDesc')}
                           </DialogDescription>
                         </DialogHeader>
 
@@ -242,7 +242,7 @@ export default function StockManagement() {
                           <div className="space-y-2">
                             <Label>{t('stock.currentStock')}</Label>
                             <div className="text-3xl font-bold text-primary">
-                              {item.units_left} {t('stock.units')}
+                              {item.currentQty} {t('stock.units')}
                             </div>
                           </div>
 
@@ -260,7 +260,7 @@ export default function StockManagement() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <Button
-                              onClick={() => updateStock(item.id, item.units_left + adjustmentAmount)}
+                              onClick={() => updateStock(item.id, item.currentQty + adjustmentAmount)}
                               disabled={adjustmentAmount <= 0}
                               className="w-full"
                             >
@@ -268,7 +268,7 @@ export default function StockManagement() {
                               {t('stock.restock')}
                             </Button>
                             <Button
-                              onClick={() => updateStock(item.id, Math.max(0, item.units_left - adjustmentAmount))}
+                              onClick={() => updateStock(item.id, Math.max(0, item.currentQty - adjustmentAmount))}
                               disabled={adjustmentAmount <= 0}
                               variant="outline"
                               className="w-full"
@@ -281,10 +281,10 @@ export default function StockManagement() {
                           {adjustmentAmount > 0 && (
                             <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
                               <p>
-                                {t('stock.afterAdding')}: <strong className="text-success">{item.units_left + adjustmentAmount}</strong>
+                                {t('stock.afterAdding')}: <strong className="text-success">{item.currentQty + adjustmentAmount}</strong>
                               </p>
                               <p>
-                                {t('stock.afterRemoving')}: <strong className="text-warning">{Math.max(0, item.units_left - adjustmentAmount)}</strong>
+                                {t('stock.afterRemoving')}: <strong className="text-warning">{Math.max(0, item.currentQty - adjustmentAmount)}</strong>
                               </p>
                             </div>
                           )}
@@ -298,13 +298,12 @@ export default function StockManagement() {
                     <Progress value={percentage} className="h-3" />
                     <div className="flex justify-between text-xs text-muted-foreground items-center">
                       <span>{Math.round(percentage)}% {t('stock.available')}</span>
-                      {item.days_remaining !== null && item.days_remaining > 0 && (
-                        <span className={`flex items-center gap-1 ${
-                          item.days_remaining <= 7 ? "text-destructive font-medium" :
-                          item.days_remaining <= 14 ? "text-warning font-medium" :
-                          ""
-                        }`}>
-                          ~{item.days_remaining} {t('stock.daysRemainingLabel')}
+                      {item.daysRemaining !== null && item.daysRemaining > 0 && (
+                        <span className={`flex items-center gap-1 ${item.daysRemaining <= 7 ? "text-destructive font-medium" :
+                            item.daysRemaining <= 14 ? "text-warning font-medium" :
+                              ""
+                          }`}>
+                          ~{item.daysRemaining} {t('stock.daysRemainingLabel')}
                           <HelpTooltip content={microcopy.help.stock.daysRemaining} side="left" />
                         </span>
                       )}
@@ -313,21 +312,20 @@ export default function StockManagement() {
 
                   {/* Alerts */}
                   {percentage <= 20 && (
-                    <div className={`flex items-start gap-2 p-3 rounded-lg ${
-                      percentage <= 10 ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning-foreground"
-                    }`}>
+                    <div className={`flex items-start gap-2 p-3 rounded-lg ${percentage <= 10 ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning-foreground"
+                      }`}>
                       {percentage <= 10 ? (
                         <>
                           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <div className="text-sm flex-1">
                             <strong>🚨 {t('stock.criticalStock')}</strong>
-                            <p>{item.units_left} {item.units_left === 1 ? t('stock.criticalDesc') : t('stock.criticalDescPlural')}</p>
+                            <p>{item.currentQty} {item.currentQty === 1 ? t('stock.criticalDesc') : t('stock.criticalDescPlural')}</p>
                           </div>
                           {isEnabled('affiliate') && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleRestock(item.item_id, item.item_name)}
+                              onClick={() => handleRestock(item.itemId, item.itemName)}
                               className="shrink-0"
                             >
                               <ExternalLink className="h-3 w-3 mr-1" />
@@ -340,7 +338,7 @@ export default function StockManagement() {
                           <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                           <div className="text-sm flex-1">
                             <strong>⚠️ {t('stock.lowStockAlert')}</strong>
-                            <p>{t('stock.lowStockDesc')} {item.days_remaining && `${t('stock.endsIn')} ~${item.days_remaining} ${t('history.days')}.`}</p>
+                            <p>{t('stock.lowStockDesc')} {item.daysRemaining && `${t('stock.endsIn')} ~${item.daysRemaining} ${t('history.days')}.`}</p>
                           </div>
                         </>
                       )}
@@ -357,19 +355,19 @@ export default function StockManagement() {
                     <CollapsibleContent className="space-y-4 pt-4">
                       <div className="grid gap-4 md:grid-cols-2">
                         <StockConsumptionChart
-                          itemName={item.item_name}
-                          takenCount={item.taken_count_7d}
-                          scheduledCount={item.scheduled_count_7d}
-                          adherence={item.adherence_7d}
-                          trend={item.consumption_trend}
-                          unitsLeft={item.units_left}
-                          unitsTotal={item.units_total}
+                          itemName={item.itemName}
+                          takenCount={item.takenCount7d}
+                          scheduledCount={item.scheduledCount7d}
+                          adherence={item.adherence7d}
+                          trend={item.consumptionTrend}
+                          unitsLeft={item.currentQty}
+                          unitsTotal={item.unitsTotal}
                         />
                         <StockTimeline
-                          itemName={item.item_name}
-                          consumptionHistory={item.consumption_history}
-                          dailyAvg={item.daily_consumption_avg}
-                          daysRemaining={item.days_remaining}
+                          itemName={item.itemName}
+                          consumptionHistory={item.consumptionHistory}
+                          dailyAvg={item.dailyConsumptionAvg}
+                          daysRemaining={item.daysRemaining}
                         />
                       </div>
                     </CollapsibleContent>

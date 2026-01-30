@@ -47,9 +47,9 @@ export default function VoiceRecordingOverlay({
           >
             {/* Gradient background */}
             <div className="absolute inset-0 bg-gradient-to-t from-destructive/20 via-transparent to-transparent" />
-            
+
             {/* Sound waves animation */}
-            <div className="absolute bottom-36 left-0 right-0 flex justify-center items-end gap-1">
+            <div className="absolute bottom-40 left-0 right-0 flex justify-center items-end gap-1">
               {[...Array(12)].map((_, i) => (
                 <motion.div
                   key={i}
@@ -68,7 +68,7 @@ export default function VoiceRecordingOverlay({
             </div>
 
             {/* Recording info bubble */}
-            <div className="absolute bottom-44 left-0 right-0 text-center pointer-events-auto">
+            <div className="absolute bottom-48 left-0 right-0 text-center pointer-events-auto">
               <motion.div
                 initial={{ y: 20, opacity: 0, scale: 0.9 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -137,7 +137,7 @@ export default function VoiceRecordingOverlay({
             className="fixed inset-0 z-[60] pointer-events-none"
           >
             <div className="absolute inset-0 bg-gradient-to-t from-amber-500/10 via-transparent to-transparent" />
-            <div className="absolute bottom-44 left-0 right-0 text-center">
+            <div className="absolute bottom-48 left-0 right-0 text-center">
               <div className="inline-block bg-background/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl px-6 py-4 shadow-2xl">
                 <div className="flex items-center gap-3">
                   <motion.div
@@ -162,7 +162,7 @@ export default function VoiceRecordingOverlay({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-36 left-4 right-4 z-[60] pointer-events-auto"
+            className="fixed bottom-40 left-4 right-4 z-[60] pointer-events-auto"
           >
             <div className="bg-background/95 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-2xl mx-auto max-w-sm">
               <div className="flex items-start gap-3">

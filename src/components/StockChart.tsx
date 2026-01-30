@@ -1,65 +1,18 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Package, AlertTriangle, TrendingDown, Info } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { differenceInDays, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { differenceInDays } from "date-fns";
 import InfoDialog from "./InfoDialog";
-
-interface StockItem {
-  id: string;
-  item_name: string;
-  units_left: number;
-  units_total: number;
-  projected_end_at: string | null;
-  unit_label: string;
-}
+import { useStockProjection } from "@/hooks/useStockProjection";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 
 export default function StockChart() {
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadStock();
-  }, []);
-
-  const loadStock = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: stock } = await supabase
-        .from("stock")
-        .select(`
-          id,
-          units_left,
-          units_total,
-          projected_end_at,
-          unit_label,
-          items!inner(id, name, user_id, is_active)
-        `)
-        .eq("items.user_id", user.id)
-        .eq("items.is_active", true)
-        .gt("units_total", 0);
-
-      if (stock) {
-        const formattedStock = stock.map((s: any) => ({
-          id: s.id,
-          item_name: s.items.name,
-          units_left: s.units_left,
-          units_total: s.units_total,
-          projected_end_at: s.projected_end_at,
-          unit_label: s.unit_label || "unidades",
-        }));
-        setStockItems(formattedStock);
-      }
-    } catch (error) {
-      console.error("Error loading stock:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { activeProfile } = useUserProfiles();
+  // Fetch stock projections for the active profile (or all if activeProfile is null/undefined logic handled in hook?)
+  // The hook filters by profileId if provided. If we want all, we pass undefined.
+  // Usually charts show data for the active profile.
+  const { data: stockItems = [], isLoading: loading } = useStockProjection(activeProfile?.id);
 
   if (loading) {
     return (
@@ -93,26 +46,23 @@ export default function StockChart() {
 
   // Prepare chart data
   const chartData = stockItems.map(item => ({
-    name: item.item_name.length > 15 ? item.item_name.substring(0, 15) + "..." : item.item_name,
-    fullName: item.item_name,
-    restante: item.units_left,
-    total: item.units_total,
-    percentage: (item.units_left / item.units_total) * 100,
-    unit_label: item.unit_label,
-    projected_end_at: item.projected_end_at,
+    name: item.itemName.length > 15 ? item.itemName.substring(0, 15) + "..." : item.itemName,
+    fullName: item.itemName,
+    restante: item.currentQty,
+    total: item.unitsTotal,
+    percentage: item.unitsTotal > 0 ? (item.currentQty / item.unitsTotal) * 100 : 0,
+    unit_label: item.unitLabel || "un", // StockProjection updated to include unitLabel
+    days_remaining: item.daysRemaining,
   }));
 
   // Calculate alerts
   const lowStock = stockItems.filter(item => {
-    const percentage = (item.units_left / item.units_total) * 100;
+    const percentage = item.unitsTotal > 0 ? (item.currentQty / item.unitsTotal) * 100 : 0;
     return percentage < 20 && percentage > 0;
   });
 
   const criticalStock = stockItems.filter(item => {
-    const daysLeft = item.projected_end_at 
-      ? differenceInDays(new Date(item.projected_end_at), new Date())
-      : null;
-    return daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
+    return item.daysRemaining !== null && item.daysRemaining <= 7 && item.daysRemaining > 0;
   });
 
   const getBarColor = (percentage: number) => {
@@ -156,18 +106,18 @@ export default function StockChart() {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis 
-                  dataKey="name" 
+                <XAxis
+                  dataKey="name"
                   angle={-45}
                   textAnchor="end"
                   height={80}
                   tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
                 />
-                <YAxis 
+                <YAxis
                   label={{ value: 'Unidades', angle: -90, position: 'insideLeft', fill: 'hsl(var(--muted-foreground))' }}
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: 'hsl(var(--background))',
                     border: '1px solid hsl(var(--border))',
@@ -198,35 +148,31 @@ export default function StockChart() {
       {/* Stock Details Cards */}
       <div className="grid gap-4 md:grid-cols-2">
         {stockItems.map((item) => {
-          const percentage = (item.units_left / item.units_total) * 100;
-          const daysLeft = item.projected_end_at 
-            ? differenceInDays(new Date(item.projected_end_at), new Date())
-            : null;
-          
+          const percentage = item.unitsTotal > 0 ? (item.currentQty / item.unitsTotal) * 100 : 0;
+          const daysLeft = item.daysRemaining;
+
           const isLowStock = percentage < 20 && percentage > 0;
           const isCritical = daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
 
           return (
-            <Card 
-              key={item.id} 
-              className={`p-4 transition-all ${
-                isCritical ? 'bg-destructive/5 border-destructive/30' :
-                isLowStock ? 'bg-warning/5 border-warning/30' :
-                'hover:shadow-md'
-              }`}
+            <Card
+              key={item.itemId}
+              className={`p-4 transition-all ${isCritical ? 'bg-destructive/5 border-destructive/30' :
+                  isLowStock ? 'bg-warning/5 border-warning/30' :
+                    'hover:shadow-md'
+                }`}
             >
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1 flex-1">
-                    <h4 className="font-semibold text-base">{item.item_name}</h4>
+                    <h4 className="font-semibold text-base">{item.itemName}</h4>
                     <p className="text-sm text-muted-foreground">
-                      {item.units_left} de {item.units_total} {item.unit_label}
+                      {item.currentQty} de {item.unitsTotal} {item.unitLabel || "un"}
                     </p>
                   </div>
                   {(isLowStock || isCritical) && (
-                    <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${
-                      isCritical ? 'text-destructive' : 'text-warning'
-                    }`} />
+                    <AlertTriangle className={`h-5 w-5 flex-shrink-0 ${isCritical ? 'text-destructive' : 'text-warning'
+                      }`} />
                   )}
                 </div>
 
@@ -246,8 +192,8 @@ export default function StockChart() {
                     {daysLeft !== null && daysLeft > 0 && (
                       <span className={
                         daysLeft <= 7 ? 'text-destructive font-medium' :
-                        daysLeft <= 14 ? 'text-warning font-medium' :
-                        'text-muted-foreground'
+                          daysLeft <= 14 ? 'text-warning font-medium' :
+                            'text-muted-foreground'
                       }>
                         ~{daysLeft} dias restantes
                       </span>

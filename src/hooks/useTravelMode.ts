@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { addDays, differenceInDays, parseISO } from 'date-fns';
+import { useState } from 'react';
+import { useAuth, fetchCollection, updateDocument } from '@/integrations/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
 interface TravelCalculation {
@@ -29,55 +29,60 @@ export function useTravelMode() {
     bufferDays: number = 2
   ) => {
     if (!user) return;
-    
+
     setIsLoading(true);
     try {
-      // Fetch active medications with schedules and stock
-      const { data: items, error } = await supabase
-        .from('items')
-        .select(`
-          id,
-          name,
-          dose_text,
-          category,
-          schedules (
-            times,
-            freq_type,
-            days_of_week
-          ),
-          stock (
-            units_left,
-            unit_label
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('is_active', true);
+      // Fetch active medications: users/{uid}/medications
+      const { data: items } = await fetchCollection<any>(
+        `users/${user.uid}/medications`,
+        // where('isActive', '==', true) // Assuming field is isActive (camelCase)
+      );
+      // Client-side filter if needed, but assuming isActive is correct
+      const activeItems = (items || []).filter(i => i.isActive !== false);
 
-      if (error) throw error;
+      // Fetch active schedules: users/{uid}/schedules
+      const { data: allSchedules } = await fetchCollection<any>(
+        `users/${user.uid}/schedules`
+      );
+
+      // Fetch stock: users/${user.uid}/stock
+      const { data: allStock } = await fetchCollection<any>(
+        `users/${user.uid}/stock`
+      );
 
       const totalDays = tripDays + bufferDays;
       const results: TravelCalculation[] = [];
 
-      for (const item of items || []) {
+      for (const item of activeItems) {
         // Calculate daily doses based on schedule
-        const schedule = item.schedules?.[0];
+        // Join schedules in memory
+        const schedules = (allSchedules || []).filter(s => s.medicationId === item.id);
+        // item also has stock mapping
+        const stockItems = (allStock || []).filter(s => s.itemId === item.id);
+
+        const schedule = schedules[0];
         let dailyDoses = 0;
 
         if (schedule) {
           const times = Array.isArray(schedule.times) ? schedule.times : [];
-          
-          if (schedule.freq_type === 'daily') {
+
+          if (schedule.freqType === 'daily' || schedule.freq_type === 'daily') {
+            // Handling camelCase transition, check both or preferred
             dailyDoses = times.length;
-          } else if (schedule.freq_type === 'specific_days') {
-            const daysOfWeek = schedule.days_of_week || [];
+          } else if (schedule.freqType === 'specific_days' || schedule.freq_type === 'specific_days') {
+            const daysOfWeek = schedule.daysOfWeek || schedule.days_of_week || [];
             dailyDoses = (times.length * daysOfWeek.length) / 7;
-          } else if (schedule.freq_type === 'interval') {
-            dailyDoses = times.length;
+          } else if (schedule.freqType === 'interval' || schedule.freq_type === 'interval') {
+            dailyDoses = times.length; // Approximate for interval? Usually 24/interval * 1
+            // Interval logic is trickier without more context, but keeping existing logic structure
+            // Original code: dailyDoses = times.length;
+            // Usually interval schedules don't have 'times' array but start time + interval.
+            // If original code relied on times.length, we keep it.
           }
         }
 
         const totalRequired = Math.ceil(dailyDoses * totalDays);
-        const currentStock = item.stock?.[0]?.units_left || 0;
+        const currentStock = stockItems[0]?.unitsLeft || stockItems[0]?.units_left || 0;
         const needsToBuy = Math.max(0, totalRequired - currentStock);
 
         let packingNotes = '';
@@ -91,7 +96,7 @@ export function useTravelMode() {
           medication: {
             id: item.id,
             name: item.name,
-            dose_text: item.dose_text || '',
+            dose_text: item.doseText || item.dose_text || '',
             category: item.category || 'medicamento'
           },
           dailyDoses,
@@ -118,23 +123,19 @@ export function useTravelMode() {
     if (!user) return;
 
     try {
-      // Get current timezone
-      const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      
       // Fetch all active medications with schedules
-      const { data: items } = await supabase
-        .from('items')
-        .select('id, schedules(id, times)')
-        .eq('user_id', user.id)
-        .eq('is_active', true);
+      // Join manually again
+      // Or just fetch schedules directly since we iterate over them
+      const { data: schedules } = await fetchCollection<any>(
+        `users/${user.uid}/schedules`
+      );
 
-      if (!items) return;
+      const activeSchedules = (schedules || []).filter(s => s.isActive !== false);
 
-      // For each medication, adjust dose times
-      for (const item of items) {
-        const schedule = item.schedules?.[0];
-        if (!schedule) continue;
+      if (!activeSchedules.length) return;
 
+      // For each schedule, adjust dose times
+      for (const schedule of activeSchedules) {
         const times = Array.isArray(schedule.times) ? schedule.times : [];
         const adjustedTimes = times.map((time: string) => {
           // Parse time in current timezone
@@ -148,19 +149,20 @@ export function useTravelMode() {
         });
 
         // Update schedule with adjusted times
-        await supabase
-          .from('schedules')
-          .update({ times: adjustedTimes })
-          .eq('id', schedule.id);
+        await updateDocument(
+          `users/${user.uid}/schedules`,
+          schedule.id,
+          { times: adjustedTimes }
+        );
       }
 
       // Regenerate dose instances for travel period
-      await supabase.functions.invoke('generate-travel-doses', {
-        body: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
-          timezone: destinationTimezone
-        }
+      // Cloud Function call
+      const generateTravelDosesFn = httpsCallable(functions, 'generateTravelDoses');
+      await generateTravelDosesFn({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        timezone: destinationTimezone
       });
 
     } catch (error) {

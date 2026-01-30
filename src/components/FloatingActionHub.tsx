@@ -28,7 +28,7 @@ export default function FloatingActionHub({
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { triggerLight, triggerSuccess, triggerError } = useHapticFeedback();
-  
+
   const [isExpanded, setIsExpanded] = useState(false);
   const [showVoiceOnboarding, setShowVoiceOnboarding] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
@@ -72,7 +72,7 @@ export default function FloatingActionHub({
 
   const handleTranscription = async (text: string) => {
     console.log("Voice transcription:", text);
-    
+
     const result = processVoiceCommand(text);
     console.log("Processed command:", result);
 
@@ -97,7 +97,7 @@ export default function FloatingActionHub({
 
       case "ADD_MEDICATION":
         triggerSuccess();
-        navigate("/adicionar-item", {
+        navigate("/adicionar", {
           state: { prefillName: action.name },
         });
         break;
@@ -152,7 +152,7 @@ export default function FloatingActionHub({
       setShowVoiceOnboarding(true);
       return;
     }
-    
+
     triggerLight();
     toggleRecording();
     setIsExpanded(false);
@@ -169,10 +169,36 @@ export default function FloatingActionHub({
     setIsExpanded(!isExpanded);
   };
 
-  const handleVoiceOnboardingComplete = () => {
+  const handleVoiceOnboardingComplete = async () => {
     setHasSeenVoice(true);
     // Start recording after onboarding
     toggleRecording();
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Fetch current flags first to merge
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("tutorial_flags")
+          .eq("user_id", user.id)
+          .single();
+
+        const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
+
+        await supabase
+          .from("profiles")
+          .update({
+            tutorial_flags: {
+              ...currentFlags,
+              voice_onboarding_completed: true
+            }
+          })
+          .eq("user_id", user.id);
+      }
+    } catch (error) {
+      console.error("Error updating voice status:", error);
+    }
   };
 
   // Hide when assistant is open
@@ -182,7 +208,7 @@ export default function FloatingActionHub({
 
   return (
     <>
-      <div className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-4 z-50">
+      <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] right-4 z-50">
         {/* Spotlight for new users */}
         <AnimatePresence>
           {showSpotlight && !hasSeenVoice && !isExpanded && (
@@ -194,9 +220,37 @@ export default function FloatingActionHub({
             >
               <div className="relative bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 shadow-xl">
                 <div className="absolute -bottom-2 right-8 w-4 h-4 bg-gradient-to-br from-primary/10 to-primary/5 border-b border-r border-primary/20 transform rotate-45" />
-                
+
                 <button
-                  onClick={() => setShowSpotlight(false)}
+                  onClick={async () => {
+                    setShowSpotlight(false);
+                    // Also mark as seen locally and remotely so it doesn't pop up again this session/ever
+                    setHasSeenVoice(true);
+                    try {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user) {
+                        const { data: profile } = await supabase
+                          .from("profiles")
+                          .select("tutorial_flags")
+                          .eq("user_id", user.id)
+                          .single();
+
+                        const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
+
+                        await supabase
+                          .from("profiles")
+                          .update({
+                            tutorial_flags: {
+                              ...currentFlags,
+                              voice_onboarding_completed: true
+                            }
+                          })
+                          .eq("user_id", user.id);
+                      }
+                    } catch (e) {
+                      console.error("Error saving spotlight dismissal", e);
+                    }
+                  }}
                   className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
                 >
                   <X className="w-3 h-3 text-muted-foreground" />

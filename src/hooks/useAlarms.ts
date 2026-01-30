@@ -6,8 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { alarmDB, Alarm } from '@/lib/alarmDB';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, fetchCollection, setDocument, deleteDocument, orderBy } from '@/integrations/firebase';
 import { toast } from 'sonner';
 
 interface UseAlarmsReturn {
@@ -32,7 +31,7 @@ const checkSupport = () => {
   return 'Notification' in window && 'serviceWorker' in navigator;
 };
 
-// Generate unique ID (UUID format for Supabase compatibility)
+// Generate unique ID (UUID format)
 const generateId = () => {
   return crypto.randomUUID();
 };
@@ -53,7 +52,7 @@ export function useAlarms(): UseAlarmsReturn {
   const loadLocalAlarms = useCallback(async () => {
     try {
       const storedAlarms = await alarmDB.getAll();
-      const sorted = storedAlarms.sort((a, b) => 
+      const sorted = storedAlarms.sort((a, b) =>
         new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
       );
       setAlarms(sorted);
@@ -66,18 +65,17 @@ export function useAlarms(): UseAlarmsReturn {
     }
   }, []);
 
-  // Sync alarms from Supabase to local IndexedDB
+  // Sync alarms from Cloud to local IndexedDB
   const syncFromCloud = useCallback(async () => {
     if (!user) return;
 
     try {
       setSyncing(true);
-      
-      const { data: cloudAlarms, error: fetchError } = await supabase
-        .from('alarms')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('scheduled_at', { ascending: true });
+
+      const { data: cloudAlarms, error: fetchError } = await fetchCollection<any>(
+        `users/${user.uid}/alarms`,
+        [orderBy('scheduledAt', 'asc')]
+      );
 
       if (fetchError) {
         console.error('[useAlarms] Error fetching cloud alarms:', fetchError);
@@ -93,24 +91,24 @@ export function useAlarms(): UseAlarmsReturn {
         return;
       }
 
-      // Convert Supabase format to local format
+      // Format works directly if schema is clean, but let's ensure types
       const formattedAlarms: Alarm[] = cloudAlarms.map(alarm => ({
         id: alarm.id,
         title: alarm.title,
         message: alarm.message || undefined,
-        scheduledAt: alarm.scheduled_at,
+        scheduledAt: alarm.scheduledAt, // camelCase
         enabled: alarm.enabled,
-        recurrence: alarm.recurrence as Alarm['recurrence'],
+        recurrence: alarm.recurrence,
         sound: alarm.sound,
         vibrate: alarm.vibrate,
         silent: alarm.silent,
-        requireInteraction: alarm.require_interaction,
+        requireInteraction: alarm.requireInteraction, // camelCase
         url: alarm.url || undefined,
         action: alarm.action || undefined,
-        createdAt: alarm.created_at,
-        lastTriggered: alarm.last_triggered || undefined,
-        category: alarm.category as Alarm['category'],
-        metadata: (alarm.metadata as Record<string, unknown>) || undefined,
+        createdAt: alarm.createdAt, // camelCase
+        lastTriggered: alarm.lastTriggered || undefined, // camelCase
+        category: alarm.category,
+        metadata: alarm.metadata || undefined,
       }));
 
       // Get local alarms for comparison
@@ -131,7 +129,7 @@ export function useAlarms(): UseAlarmsReturn {
 
       // Reload from IndexedDB
       await loadLocalAlarms();
-      
+
       console.log('[useAlarms] Synced', formattedAlarms.length, 'alarms from cloud');
     } catch (err) {
       console.error('[useAlarms] Cloud sync error:', err);
@@ -145,26 +143,27 @@ export function useAlarms(): UseAlarmsReturn {
     if (!user) return;
 
     try {
-      const { error: upsertError } = await supabase
-        .from('alarms')
-        .upsert({
-          id: alarm.id,
-          user_id: user.id,
+      const { error: upsertError } = await setDocument(
+        `users/${user.uid}/alarms`,
+        alarm.id,
+        {
           title: alarm.title,
           message: alarm.message || null,
-          scheduled_at: alarm.scheduledAt,
+          scheduledAt: alarm.scheduledAt,
           enabled: alarm.enabled,
           recurrence: alarm.recurrence,
           sound: alarm.sound,
           vibrate: alarm.vibrate,
           silent: alarm.silent,
-          require_interaction: alarm.requireInteraction,
+          requireInteraction: alarm.requireInteraction,
           url: alarm.url || null,
           action: alarm.action || null,
           category: alarm.category || 'reminder',
           metadata: alarm.metadata || {},
-          last_triggered: alarm.lastTriggered || null,
-        }, { onConflict: 'id' });
+          lastTriggered: alarm.lastTriggered || null,
+          createdAt: alarm.createdAt
+        }
+      );
 
       if (upsertError) {
         console.error('[useAlarms] Error syncing to cloud:', upsertError);
@@ -179,11 +178,10 @@ export function useAlarms(): UseAlarmsReturn {
     if (!user) return;
 
     try {
-      const { error: deleteError } = await supabase
-        .from('alarms')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+      const { error: deleteError } = await deleteDocument(
+        `users/${user.uid}/alarms`,
+        id
+      );
 
       if (deleteError) {
         console.error('[useAlarms] Error deleting from cloud:', deleteError);
@@ -197,15 +195,15 @@ export function useAlarms(): UseAlarmsReturn {
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      
+
       // Load local alarms first (offline-first)
       await loadLocalAlarms();
-      
+
       // Then sync from cloud if authenticated
       if (user) {
         await syncFromCloud();
       }
-      
+
       setLoading(false);
     };
 
@@ -218,19 +216,19 @@ export function useAlarms(): UseAlarmsReturn {
 
     const handleMessage = (event: MessageEvent) => {
       const { type, alarmId } = event.data || {};
-      
+
       if (type === 'ALARM_COMPLETED') {
         loadLocalAlarms();
         toast.success('Alarme concluído!');
       }
-      
+
       if (type === 'NOTIFICATION_CLOSED') {
         console.log('[useAlarms] Notification closed:', alarmId);
       }
     };
 
     navigator.serviceWorker.addEventListener('message', handleMessage);
-    
+
     return () => {
       navigator.serviceWorker.removeEventListener('message', handleMessage);
     };
@@ -246,7 +244,7 @@ export function useAlarms(): UseAlarmsReturn {
     try {
       const permission = await Notification.requestPermission();
       setPermissionStatus(permission);
-      
+
       if (permission === 'granted') {
         toast.success('Notificações ativadas!');
         return true;
@@ -254,7 +252,7 @@ export function useAlarms(): UseAlarmsReturn {
         toast.error('Notificações bloqueadas. Ative nas configurações do navegador.');
         return false;
       }
-      
+
       return false;
     } catch (err) {
       console.error('[useAlarms] Error requesting permission:', err);
@@ -268,10 +266,10 @@ export function useAlarms(): UseAlarmsReturn {
     if (!isSupported) return null;
 
     const registration = await navigator.serviceWorker.ready;
-    
+
     return new Promise((resolve, reject) => {
       const messageChannel = new MessageChannel();
-      
+
       messageChannel.port1.onmessage = (event) => {
         if (event.data.success) {
           resolve(event.data);
@@ -321,7 +319,7 @@ export function useAlarms(): UseAlarmsReturn {
       }
 
       // Update state
-      setAlarms(prev => [...prev, alarm].sort((a, b) => 
+      setAlarms(prev => [...prev, alarm].sort((a, b) =>
         new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
       ));
 

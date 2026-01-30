@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection } from "@/integrations/firebase";
 import { useSubscription } from "./useSubscription";
 
 interface DocumentLimitsStats {
@@ -35,15 +35,15 @@ export function useDocumentLimits() {
     if (subLoading) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         setIsLoading(false);
         return;
       }
 
-      const planType = subscription?.plan_type || 'free';
+      const planType = subscription?.planType || 'free';
       const status = subscription?.status || 'active';
-      const isPremium = planType === 'premium' && status === 'active';
+      const isPremium = (planType === 'premium' || planType === 'premium_individual' || planType === 'premium_family') && status === 'active';
 
       // Premium users have unlimited documents
       if (isPremium) {
@@ -59,14 +59,11 @@ export function useDocumentLimits() {
       }
 
       // Free users: count documents
-      const { count, error } = await supabase
-        .from('documentos_saude')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      const { data, error } = await fetchCollection(`users/${user.uid}/healthDocuments`);
 
       if (error) throw error;
 
-      const currentCount = count || 0;
+      const currentCount = data ? data.length : 0;
       const maxDocuments = 5;
       const remaining = Math.max(0, maxDocuments - currentCount);
 

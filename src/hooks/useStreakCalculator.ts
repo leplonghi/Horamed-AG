@@ -1,5 +1,5 @@
 import { useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, subDays } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -27,30 +27,27 @@ export function useStreakCalculator() {
     };
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return defaultData;
 
       // Get all doses for the last 90 days
       const startDate = startOfDay(subDays(new Date(), 90));
-      
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select(`
-          due_at,
-          status,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", startDate.toISOString())
-        .order("due_at", { ascending: true });
+
+      const { data: doses } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [
+          where("dueAt", ">=", startDate.toISOString()),
+          orderBy("dueAt", "asc")
+        ]
+      );
 
       if (!doses || doses.length === 0) return defaultData;
 
       // Group doses by day and calculate adherence
       const dayMap = new Map<string, { total: number; taken: number }>();
-      
+
       doses.forEach((dose) => {
-        const day = startOfDay(new Date(dose.due_at)).toISOString();
+        const day = startOfDay(new Date(dose.dueAt)).toISOString();
         const current = dayMap.get(day) || { total: 0, taken: 0 };
         current.total++;
         if (dose.status === "taken") current.taken++;
@@ -60,13 +57,13 @@ export function useStreakCalculator() {
       // Calculate current streak (working backwards from today)
       let currentStreak = 0;
       let checkDate = startOfDay(new Date());
-      
+
       while (true) {
         const dayKey = checkDate.toISOString();
         const dayData = dayMap.get(dayKey);
-        
+
         if (!dayData) break;
-        
+
         const adherence = dayData.taken / dayData.total;
         if (adherence >= 0.8) {
           currentStreak++;
@@ -80,7 +77,7 @@ export function useStreakCalculator() {
       let longestStreak = 0;
       let tempStreak = 0;
       const sortedDays = Array.from(dayMap.entries()).sort();
-      
+
       sortedDays.forEach(([, data]) => {
         const adherence = data.taken / data.total;
         if (adherence >= 0.8) {
@@ -100,8 +97,8 @@ export function useStreakCalculator() {
       let lastWeekTaken = 0, lastWeekTotal = 0;
 
       doses.forEach((dose) => {
-        const doseDate = new Date(dose.due_at);
-        
+        const doseDate = new Date(dose.dueAt);
+
         if (doseDate >= thisWeekStart) {
           thisWeekTotal++;
           if (dose.status === "taken") thisWeekTaken++;
@@ -144,13 +141,13 @@ export function useStreakCalculator() {
     queryClient.invalidateQueries({ queryKey: [CACHE_KEY] });
   }, [queryClient]);
 
-  return { 
+  return {
     currentStreak: streakData?.currentStreak ?? 0,
     longestStreak: streakData?.longestStreak ?? 0,
     isImproving: streakData?.isImproving ?? false,
     lastWeekAverage: streakData?.lastWeekAverage ?? 0,
     thisWeekAverage: streakData?.thisWeekAverage ?? 0,
-    loading, 
-    refresh 
+    loading,
+    refresh
   };
 }

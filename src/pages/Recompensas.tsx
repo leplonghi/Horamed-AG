@@ -39,7 +39,7 @@ export default function Recompensas() {
   const shareWhatsApp = () => {
     const link = generateReferralLink();
     if (!link) {
-      toast.error("Erro ao gerar link");
+      toast.error(t("toast.referral.linkError"));
       return;
     }
     const message = `🎁 Olá! Estou usando o HoraMed para gerenciar medicamentos e está sendo incrível!\n\nUse meu código *${stats.referralCode}* e ganhe 7 dias Premium grátis!\n\n👉 ${link}`;
@@ -75,7 +75,7 @@ export default function Recompensas() {
 
   const handleApplyCode = async () => {
     if (!codeInput.trim()) {
-      toast.error("Digite um código de indicação");
+      toast.error(t("toast.referral.codeRequired"));
       return;
     }
 
@@ -84,7 +84,7 @@ export default function Recompensas() {
     // O código será aplicado redirecionando para a página de auth com o parâmetro ref
     const authUrl = `/auth?ref=${encodeURIComponent(codeInput.trim().toUpperCase())}`;
     
-    toast.info("Para aplicar o código, você precisa criar uma nova conta ou entrar com o código aplicado.");
+    toast.info(t("toast.referral.createAccountInfo"));
     
     setTimeout(() => {
       setApplyingCode(false);

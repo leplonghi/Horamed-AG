@@ -25,10 +25,10 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
 
   // Filter low stock items (less than 7 units or ending within 7 days)
   const lowStockItems = stockItems?.filter((item) => {
-    if (item.units_left <= 7) return true;
-    if (item.projected_end_at) {
+    if (item.currentQty <= 7) return true;
+    if (item.projectedEndAt) {
       const daysLeft = Math.ceil(
-        (new Date(item.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (new Date(item.projectedEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
       return daysLeft <= 7;
     }
@@ -41,10 +41,10 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
     setRefillModal({
       open: true,
       stockId: item.id,
-      itemName: item.item_name,
-      itemId: item.item_id,
-      currentUnits: item.units_left,
-      unitLabel: "unidades",
+      itemName: item.itemName,
+      itemId: item.itemId,
+      currentUnits: item.currentQty,
+      unitLabel: item.unitLabel || "unidades",
     });
   };
 
@@ -65,8 +65,8 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
         <div className="space-y-2">
           <AnimatePresence>
             {lowStockItems.slice(0, 3).map((item, i) => {
-              const percent = Math.round((item.units_left / (item.units_total || 1)) * 100);
-              const isCritical = item.units_left <= 3;
+              const percent = Math.round((item.currentQty / (item.unitsTotal || 1)) * 100);
+              const isCritical = item.currentQty <= 3;
 
               return (
                 <motion.div
@@ -97,7 +97,7 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{item.item_name}</p>
+                    <p className="text-sm font-medium truncate">{item.itemName}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                         <motion.div
@@ -116,7 +116,7 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
                           isCritical ? "text-destructive" : "text-amber-600"
                         )}
                       >
-                        {item.units_left}
+                        {item.currentQty}
                       </span>
                     </div>
                   </div>

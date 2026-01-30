@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, addDocument, updateDocument, where, orderBy } from "@/integrations/firebase";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Calendar, 
+import {
+  Calendar,
   Plus,
   Stethoscope,
   Clock,
@@ -28,28 +28,30 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface Consulta {
   id: string;
-  especialidade: string;
-  medico_nome: string;
-  local: string;
-  data_consulta: string;
-  motivo?: string;
-  observacoes?: string;
+  specialty: string;
+  doctorName: string;
+  location: string;
+  date: string;
+  reason?: string;
+  notes?: string;
   status: 'agendada' | 'realizada' | 'cancelada';
 }
 
 export default function MedicalAppointments() {
+  const { t } = useTranslation();
   const [consultas, setConsultas] = useState<Consulta[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
-    especialidade: '',
-    medico_nome: '',
-    local: '',
-    data_consulta: '',
-    motivo: '',
-    observacoes: ''
+    specialty: '',
+    doctorName: '',
+    location: '',
+    date: '',
+    reason: '',
+    notes: ''
   });
 
   useEffect(() => {
@@ -58,20 +60,18 @@ export default function MedicalAppointments() {
 
   const loadConsultas = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from("consultas_medicas")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_consulta", { ascending: true });
+      const { data } = await fetchCollection<any>(
+        `users/${user.uid}/appointments`,
+        [orderBy("date", "asc")]
+      );
 
-      if (error) throw error;
       setConsultas((data || []) as Consulta[]);
     } catch (error) {
       console.error("Erro ao carregar consultas:", error);
-      toast.error("Erro ao carregar consultas");
+      toast.error(t("toast.medical.appointmentsError"));
     } finally {
       setLoading(false);
     }
@@ -79,44 +79,42 @@ export default function MedicalAppointments() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { error } = await supabase
-        .from("consultas_medicas")
-        .insert({
-          user_id: user.id,
-          ...formData,
-          status: 'agendada'
-        });
+      const { error } = await addDocument(`users/${user.uid}/appointments`, {
+        userId: user.uid,
+        ...formData,
+        status: 'agendada'
+      });
 
       if (error) throw error;
 
-      toast.success("Consulta agendada com sucesso!");
+      toast.success(t("toast.medical.appointmentScheduled"));
       setDialogOpen(false);
       setFormData({
-        especialidade: '',
-        medico_nome: '',
-        local: '',
-        data_consulta: '',
-        motivo: '',
-        observacoes: ''
+        specialty: '',
+        doctorName: '',
+        location: '',
+        date: '',
+        reason: '',
+        notes: ''
       });
       loadConsultas();
     } catch (error) {
       console.error("Erro ao agendar consulta:", error);
-      toast.error("Erro ao agendar consulta");
+      toast.error(t("toast.medical.appointmentError"));
     }
   };
 
   const updateStatus = async (id: string, status: 'realizada' | 'cancelada') => {
     try {
-      const { error } = await supabase
-        .from("consultas_medicas")
-        .update({ status })
-        .eq("id", id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const { error } = await updateDocument(`users/${user.uid}/appointments`, id, { status });
 
       if (error) throw error;
 
@@ -124,7 +122,7 @@ export default function MedicalAppointments() {
       loadConsultas();
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
-      toast.error("Erro ao atualizar status");
+      toast.error(t("toast.medical.statusError"));
     }
   };
 
@@ -135,8 +133,8 @@ export default function MedicalAppointments() {
     if (consulta.status === 'cancelada') {
       return <Badge variant="destructive">Cancelada</Badge>;
     }
-    
-    const date = new Date(consulta.data_consulta);
+
+    const date = new Date(consulta.date);
     if (isToday(date)) {
       return <Badge className="bg-yellow-500">Hoje</Badge>;
     }
@@ -146,12 +144,12 @@ export default function MedicalAppointments() {
     return <Badge>Agendada</Badge>;
   };
 
-  const consultasPendentes = consultas.filter(c => 
-    c.status === 'agendada' && isFuture(new Date(c.data_consulta))
+  const consultasPendentes = consultas.filter(c =>
+    c.status === 'agendada' && isFuture(new Date(c.date))
   );
-  const consultasPassadas = consultas.filter(c => 
-    c.status === 'realizada' || c.status === 'cancelada' || 
-    (c.status === 'agendada' && isPast(new Date(c.data_consulta)))
+  const consultasPassadas = consultas.filter(c =>
+    c.status === 'realizada' || c.status === 'cancelada' ||
+    (c.status === 'agendada' && isPast(new Date(c.date)))
   );
 
   return (
@@ -159,7 +157,7 @@ export default function MedicalAppointments() {
       <Header />
       <div className="min-h-screen bg-background pt-20 pb-24">
         <div className="max-w-4xl mx-auto p-4 space-y-6">
-          
+
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="space-y-2">
@@ -185,65 +183,65 @@ export default function MedicalAppointments() {
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="especialidade">Especialidade*</Label>
+                    <Label htmlFor="specialty">Especialidade*</Label>
                     <Input
-                      id="especialidade"
-                      value={formData.especialidade}
-                      onChange={(e) => setFormData({...formData, especialidade: e.target.value})}
+                      id="specialty"
+                      value={formData.specialty}
+                      onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
                       placeholder="Ex: Cardiologia"
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="medico_nome">Nome do Médico*</Label>
+                    <Label htmlFor="doctorName">Nome do Médico*</Label>
                     <Input
-                      id="medico_nome"
-                      value={formData.medico_nome}
-                      onChange={(e) => setFormData({...formData, medico_nome: e.target.value})}
+                      id="doctorName"
+                      value={formData.doctorName}
+                      onChange={(e) => setFormData({ ...formData, doctorName: e.target.value })}
                       placeholder="Dr(a)..."
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="data_consulta">Data e Hora*</Label>
+                    <Label htmlFor="date">Data e Hora*</Label>
                     <Input
-                      id="data_consulta"
+                      id="date"
                       type="datetime-local"
-                      value={formData.data_consulta}
-                      onChange={(e) => setFormData({...formData, data_consulta: e.target.value})}
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="local">Local*</Label>
+                    <Label htmlFor="location">Local*</Label>
                     <Input
-                      id="local"
-                      value={formData.local}
-                      onChange={(e) => setFormData({...formData, local: e.target.value})}
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                       placeholder="Clínica, hospital..."
                       required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="motivo">Motivo</Label>
+                    <Label htmlFor="reason">Motivo</Label>
                     <Input
-                      id="motivo"
-                      value={formData.motivo}
-                      onChange={(e) => setFormData({...formData, motivo: e.target.value})}
+                      id="reason"
+                      value={formData.reason}
+                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
                       placeholder="Consulta de rotina, exames..."
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="observacoes">Observações</Label>
+                    <Label htmlFor="notes">Observações</Label>
                     <Textarea
-                      id="observacoes"
-                      value={formData.observacoes}
-                      onChange={(e) => setFormData({...formData, observacoes: e.target.value})}
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder="Informações adicionais..."
                       rows={3}
                     />
@@ -285,10 +283,10 @@ export default function MedicalAppointments() {
                           <div className="flex items-start justify-between">
                             <div className="space-y-1">
                               <h3 className="font-semibold text-lg">
-                                {consulta.especialidade}
+                                {consulta.specialty}
                               </h3>
                               <p className="text-sm text-muted-foreground">
-                                {consulta.medico_nome}
+                                {consulta.doctorName}
                               </p>
                             </div>
                             {getStatusBadge(consulta)}
@@ -297,17 +295,17 @@ export default function MedicalAppointments() {
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <Calendar className="h-4 w-4" />
-                              {format(new Date(consulta.data_consulta), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                              {format(new Date(consulta.date), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                             </div>
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
-                              {consulta.local}
+                              {consulta.location}
                             </div>
                           </div>
 
-                          {consulta.motivo && (
+                          {consulta.reason && (
                             <p className="text-sm">
-                              <strong>Motivo:</strong> {consulta.motivo}
+                              <strong>Motivo:</strong> {consulta.reason}
                             </p>
                           )}
 
@@ -350,9 +348,9 @@ export default function MedicalAppointments() {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-semibold">{consulta.especialidade}</h3>
+                            <h3 className="font-semibold">{consulta.specialty}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {format(new Date(consulta.data_consulta), "dd/MM/yyyy", { locale: ptBR })} - {consulta.medico_nome}
+                              {format(new Date(consulta.date), "dd/MM/yyyy", { locale: ptBR })} - {consulta.doctorName}
                             </p>
                           </div>
                           {getStatusBadge(consulta)}

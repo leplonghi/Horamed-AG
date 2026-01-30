@@ -9,11 +9,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface NextDoseWidgetProps {
   dose: {
     id: string;
-    item_id: string;
-    due_at: string;
+    itemId: string;
+    dueAt: string;
     items: {
       name: string;
-      dose_text: string | null;
+      doseText: string | null;
     };
   };
   onTake: () => void;
@@ -23,7 +23,7 @@ interface NextDoseWidgetProps {
 export default function NextDoseWidget({ dose, onTake, className }: NextDoseWidgetProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  const dueTime = new Date(dose.due_at);
+  const dueTime = new Date(dose.dueAt);
   const now = new Date();
   const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / (1000 * 60));
   const isNow = minutesUntil <= 5 && minutesUntil >= -5;
@@ -47,9 +47,9 @@ export default function NextDoseWidget({ dose, onTake, className }: NextDoseWidg
             <h3 className="text-xl font-bold text-foreground">
               {dose.items.name}
             </h3>
-            {dose.items.dose_text && (
+            {dose.items.doseText && (
               <p className="text-sm text-muted-foreground">
-                {dose.items.dose_text}
+                {dose.items.doseText}
               </p>
             )}
             <div className="flex items-center gap-2 text-muted-foreground">

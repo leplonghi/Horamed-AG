@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
+import { functions, httpsCallable } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { AlertTriangle, Phone, MapPin, Clock, Activity, Lock } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
@@ -71,18 +71,16 @@ const Emergency = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('emergency-guidance', {
-        body: {
-          medicationName: medicationName.trim(),
-          missedDoses: parseInt(missedDoses),
-          timeSinceMissed: timeSinceMissed.trim(),
-          userLocation: null // Em produção, obter geolocalização real
-        }
+      const emergencyGuidance = httpsCallable(functions, 'emergencyGuidance');
+
+      const { data }: any = await emergencyGuidance({
+        medicationName: medicationName.trim(),
+        missedDoses: parseInt(missedDoses),
+        timeSinceMissed: timeSinceMissed.trim(),
+        userLocation: null // Em produção, obter geolocalização real
       });
 
-      if (error) throw error;
-
-      setResponse(data);
+      setResponse(data as EmergencyResponse);
       toast.success(t('emergency.guidanceObtained'));
     } catch (error) {
       console.error('Error getting emergency guidance:', error);
@@ -95,7 +93,7 @@ const Emergency = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-6 pt-24 space-y-6">
         <Alert className="border-red-500 bg-red-500/10">
           <AlertTriangle className="h-5 w-5 text-red-600" />

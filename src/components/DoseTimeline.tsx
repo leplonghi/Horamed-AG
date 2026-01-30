@@ -4,16 +4,16 @@ import DoseCard from "./DoseCard";
 interface DoseTimelineProps {
   doses: Array<{
     id: string;
-    item_id: string;
-    due_at: string;
+    itemId: string;
+    dueAt: string;
     status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-    taken_at: string | null;
+    takenAt: string | null;
     items: {
       name: string;
-      dose_text: string | null;
+      doseText: string | null;
     };
     stock?: {
-      units_left: number;
+      currentQty: number;
     }[];
   }>;
   period?: "today" | "week" | "month";
@@ -22,11 +22,11 @@ interface DoseTimelineProps {
   groupByTime?: boolean;
 }
 
-export default function DoseTimeline({ 
-  doses, 
+export default function DoseTimeline({
+  doses,
   period = "week",
-  onTake = () => {},
-  onMore = () => {},
+  onTake = () => { },
+  onMore = () => { },
   groupByTime = true,
 }: DoseTimelineProps) {
   // Group doses by time of day
@@ -39,7 +39,7 @@ export default function DoseTimeline({
     };
 
     doses.forEach(dose => {
-      const hour = new Date(dose.due_at).getHours();
+      const hour = new Date(dose.dueAt).getHours();
       if (hour >= 6 && hour < 12) groups.morning.push(dose);
       else if (hour >= 12 && hour < 18) groups.afternoon.push(dose);
       else if (hour >= 18 && hour < 22) groups.evening.push(dose);
@@ -52,7 +52,7 @@ export default function DoseTimeline({
   // If grouping by time, use TimeGroup component
   if (groupByTime && period === 'today') {
     const groups = groupDosesByPeriod();
-    
+
     return (
       <div className="space-y-4">
         {groups.morning.length > 0 && (

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { functions, httpsCallable } from "@/integrations/firebase";
 
 interface OCRResult {
   name: string;
@@ -42,12 +42,9 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
 
     setProcessing(true);
     try {
-      // Call Lovable AI for OCR and extraction
-      const { data, error } = await supabase.functions.invoke("extract-medication", {
-        body: { image: preview },
-      });
-
-      if (error) throw error;
+      // Call Firebase Cloud Function for OCR and extraction
+      const extractMedication = httpsCallable(functions, 'extractMedication');
+      const { data }: any = await extractMedication({ image: preview });
 
       if (data?.name) {
         toast.success("Medicamento identificado! ✨");
@@ -55,7 +52,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           name: data.name,
           dose: data.dose,
           category: data.category || "medicamento",
-          duration_days: data.duration_days,
+          duration_days: data.duration_days, // Ensure backend returns snake_case or map it
           total_doses: data.total_doses,
           start_date: data.start_date,
         });

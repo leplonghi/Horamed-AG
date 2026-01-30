@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { fetchCollection, orderBy } from "@/integrations/firebase";
+import { useAuth } from "@/integrations/firebase/auth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Header from "@/components/Header";
 import PageHeader from "@/components/PageHeader";
@@ -23,30 +23,27 @@ export default function WeightHistory() {
   const { language, t } = useLanguage();
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
-  
+
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
   const { data: weightLogs, refetch } = useQuery({
-    queryKey: ["weight-history", user?.id, profileId],
+    queryKey: ["weight-history", user?.uid, profileId],
     queryFn: async () => {
-      let query = supabase
-        .from("weight_logs")
-        .select("*")
-        .eq("user_id", user?.id);
-      
-      if (profileId) {
-        query = query.eq("profile_id", profileId);
-      } else {
-        query = query.is("profile_id", null);
-      }
-      
-      const { data, error } = await query
-        .order("recorded_at", { ascending: false });
+      if (!user) return [];
+
+      const collectionPath = profileId
+        ? `users/${user.uid}/profiles/${profileId}/weightLogs`
+        : `users/${user.uid}/weightLogs`;
+
+      const { data, error } = await fetchCollection<any>(
+        collectionPath,
+        [orderBy("recordedAt", "desc")]
+      );
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!user?.uid,
   });
 
   const { data: insightsData } = useWeightInsights(profileId || undefined);
@@ -56,18 +53,18 @@ export default function WeightHistory() {
     ?.slice()
     .reverse()
     .map((log) => ({
-      date: format(new Date(log.recorded_at), "dd/MM", { locale: dateLocale }),
-      fullDate: log.recorded_at,
-      weight: typeof log.weight_kg === 'string' ? parseFloat(log.weight_kg) : log.weight_kg,
+      date: format(new Date(log.recordedAt), "dd/MM", { locale: dateLocale }),
+      fullDate: log.recordedAt,
+      weight: typeof log.weightKg === 'string' ? parseFloat(log.weightKg) : log.weightKg,
     }));
 
   // Find medication start dates within chart range
   const getMedicationMarkersInRange = () => {
     if (!chartData || chartData.length === 0 || !insightsData?.medicationMarkers) return [];
-    
+
     const firstDate = new Date(chartData[0].fullDate);
     const lastDate = new Date(chartData[chartData.length - 1].fullDate);
-    
+
     return insightsData.medicationMarkers.filter((marker: MedicationMarker) => {
       const markerDate = new Date(marker.startDate);
       return markerDate >= firstDate && markerDate <= lastDate;
@@ -82,15 +79,15 @@ export default function WeightHistory() {
   // Neutral trend analysis
   const getWeightObservation = () => {
     if (!weightLogs || weightLogs.length < 2) return null;
-    
-    const latest = typeof weightLogs[0].weight_kg === 'string' 
-      ? parseFloat(weightLogs[0].weight_kg) 
-      : weightLogs[0].weight_kg;
-    const previous = typeof weightLogs[1].weight_kg === 'string'
-      ? parseFloat(weightLogs[1].weight_kg)
-      : weightLogs[1].weight_kg;
+
+    const latest = typeof weightLogs[0].weightKg === 'string'
+      ? parseFloat(weightLogs[0].weightKg)
+      : weightLogs[0].weightKg;
+    const previous = typeof weightLogs[1].weightKg === 'string'
+      ? parseFloat(weightLogs[1].weightKg)
+      : weightLogs[1].weightKg;
     const diff = latest - previous;
-    
+
     if (Math.abs(diff) < 0.3) {
       return {
         text: language === 'pt' ? 'Peso estável' : 'Weight stable',
@@ -98,7 +95,7 @@ export default function WeightHistory() {
         value: language === 'pt' ? 'Manteve' : 'Stable'
       };
     }
-    
+
     return {
       text: language === 'pt' ? 'Variação observada' : 'Variation observed',
       icon: diff > 0 ? TrendingUp : TrendingDown,
@@ -109,8 +106,8 @@ export default function WeightHistory() {
   const observation = getWeightObservation();
 
   // Calculate days since last log for frequency guidance
-  const daysSinceLastLog = weightLogs && weightLogs.length > 0 
-    ? differenceInDays(new Date(), new Date(weightLogs[0].recorded_at))
+  const daysSinceLastLog = weightLogs && weightLogs.length > 0
+    ? differenceInDays(new Date(), new Date(weightLogs[0].recordedAt))
     : null;
 
   const showFrequencyReminder = daysSinceLastLog !== null && daysSinceLastLog > 7;
@@ -130,8 +127,8 @@ export default function WeightHistory() {
           </Button>
           <PageHeader
             title={language === 'pt' ? "Indicadores de Saúde" : "Health Indicators"}
-            description={language === 'pt' 
-              ? "Acompanhe a evolução do seu peso ao longo do tempo" 
+            description={language === 'pt'
+              ? "Acompanhe a evolução do seu peso ao longo do tempo"
               : "Track your weight evolution over time"}
             icon={<Scale className="h-6 w-6 text-primary" />}
           />
@@ -151,7 +148,7 @@ export default function WeightHistory() {
                   {language === 'pt' ? 'Registro semanal recomendado' : 'Weekly logging recommended'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {language === 'pt' 
+                  {language === 'pt'
                     ? 'Para acompanhar tendências, o ideal é registrar o peso uma vez por semana. Registros muito frequentes podem confundir a leitura.'
                     : 'To track trends, we recommend logging your weight once a week. Too frequent logs may confuse the analysis.'}
                 </p>
@@ -172,7 +169,7 @@ export default function WeightHistory() {
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <p className="text-3xl font-bold text-primary">
-                    {weightLogs[0].weight_kg}
+                    {weightLogs[0].weightKg}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {language === 'pt' ? 'Peso atual (kg)' : 'Current (kg)'}
@@ -229,7 +226,7 @@ export default function WeightHistory() {
                     }}
                     formatter={(value: any) => [`${value} kg`, language === 'pt' ? 'Peso' : 'Weight']}
                   />
-                  
+
                   {/* Medication start markers */}
                   {medicationMarkersInRange.map((marker: MedicationMarker & { formattedDate: string }, idx: number) => (
                     <ReferenceLine
@@ -245,7 +242,7 @@ export default function WeightHistory() {
                       }}
                     />
                   ))}
-                  
+
                   <Line
                     type="monotone"
                     dataKey="weight"
@@ -255,7 +252,7 @@ export default function WeightHistory() {
                   />
                 </LineChart>
               </ResponsiveContainer>
-              
+
               {/* Medication markers legend */}
               {medicationMarkersInRange.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border">
@@ -264,7 +261,7 @@ export default function WeightHistory() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {medicationMarkersInRange.map((marker: MedicationMarker & { formattedDate: string }) => (
-                      <div 
+                      <div
                         key={marker.id}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-xs"
                       >
@@ -294,7 +291,7 @@ export default function WeightHistory() {
             </CardHeader>
             <CardContent className="space-y-3">
               {insightsData.insights.slice(0, 3).map((insight, index) => (
-                <div 
+                <div
                   key={index}
                   className="p-3 rounded-lg bg-muted/50 border border-border/50"
                 >
@@ -338,8 +335,8 @@ export default function WeightHistory() {
           <CardHeader>
             <CardTitle>{language === 'pt' ? 'Histórico' : 'History'}</CardTitle>
             <CardDescription>
-              {weightLogs?.length || 0} {weightLogs?.length === 1 
-                ? (language === 'pt' ? 'registro' : 'record') 
+              {weightLogs?.length || 0} {weightLogs?.length === 1
+                ? (language === 'pt' ? 'registro' : 'record')
                 : (language === 'pt' ? 'registros' : 'records')}
             </CardDescription>
           </CardHeader>
@@ -347,8 +344,8 @@ export default function WeightHistory() {
             {weightLogs && weightLogs.length > 0 ? (
               <div className="space-y-3">
                 {weightLogs.map((log, index) => {
-                  const prevWeight = weightLogs[index + 1]?.weight_kg;
-                  const currentWeight = typeof log.weight_kg === 'string' ? parseFloat(log.weight_kg) : log.weight_kg;
+                  const prevWeight = weightLogs[index + 1]?.weightKg;
+                  const currentWeight = typeof log.weightKg === 'string' ? parseFloat(log.weightKg) : log.weightKg;
                   const previousWeight = prevWeight && typeof prevWeight === 'string' ? parseFloat(prevWeight) : prevWeight;
                   const diff = previousWeight ? currentWeight - previousWeight : null;
 
@@ -360,7 +357,7 @@ export default function WeightHistory() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <p className="text-2xl font-bold text-primary">
-                            {log.weight_kg} <span className="text-sm font-normal">kg</span>
+                            {log.weightKg} <span className="text-sm font-normal">kg</span>
                           </p>
                           {diff !== null && Math.abs(diff) >= 0.1 && (
                             <span className="text-sm font-medium text-muted-foreground">
@@ -369,8 +366,8 @@ export default function WeightHistory() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(log.recorded_at), 
-                            language === 'pt' ? "dd 'de' MMMM 'de' yyyy" : "MMMM dd, yyyy", 
+                          {format(new Date(log.recordedAt),
+                            language === 'pt' ? "dd 'de' MMMM 'de' yyyy" : "MMMM dd, yyyy",
                             { locale: dateLocale }
                           )}
                         </p>

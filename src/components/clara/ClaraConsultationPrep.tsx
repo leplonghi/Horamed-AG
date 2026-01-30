@@ -4,18 +4,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  FileText, 
-  Stethoscope, 
-  Download, 
+import {
+  FileText,
+  Stethoscope,
+  Download,
   Share2,
   Calendar,
   Pill,
   TrendingUp
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { functions } from "@/integrations/firebase/client"; // Firebase import
+import { httpsCallable } from "firebase/functions"; // Firebase callable
 
 interface ConsultationMetrics {
   periodDays: number;
@@ -39,8 +40,8 @@ export default function ClaraConsultationPrep() {
 
   const t = {
     title: language === 'pt' ? 'Preparação para Consulta' : 'Consultation Prep',
-    subtitle: language === 'pt' 
-      ? 'Gere um relatório completo para seu médico' 
+    subtitle: language === 'pt'
+      ? 'Gere um relatório completo para seu médico'
       : 'Generate a complete report for your doctor',
     generate: language === 'pt' ? 'Gerar Relatório' : 'Generate Report',
     period30: language === 'pt' ? '30 dias' : '30 days',
@@ -57,15 +58,14 @@ export default function ClaraConsultationPrep() {
   const generateReport = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('clara-consultation-prep', {
-        body: { period }
-      });
-      
-      if (error) throw error;
-      
+      // Firebase Cloud Function call
+      const claraConsultationPrepFn = httpsCallable(functions, 'claraConsultationPrep');
+      const result = await claraConsultationPrepFn({ period });
+      const data = result.data as any;
+
       setReport(data.report);
       setMetrics(data.metrics);
-      
+
       toast.success(language === 'pt' ? 'Relatório gerado!' : 'Report generated!');
     } catch (error) {
       console.error("Error generating report:", error);
@@ -83,7 +83,7 @@ export default function ClaraConsultationPrep() {
 
   const handleShare = async () => {
     if (!report) return;
-    
+
     try {
       await navigator.share({
         title: t.title,
@@ -105,7 +105,7 @@ export default function ClaraConsultationPrep() {
         </CardTitle>
         <p className="text-xs text-muted-foreground">{t.subtitle}</p>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {loading ? (
           <div className="space-y-3">

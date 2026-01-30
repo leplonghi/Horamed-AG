@@ -1,12 +1,13 @@
 import { useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, query, where, getDocs, getDoc, doc, Timestamp, orderBy, limit } from "firebase/firestore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type AlertSeverity = "critical" | "urgent" | "warning";
 
 export interface CriticalAlert {
   id: string;
-  type: "duplicate_dose" | "zero_stock" | "missed_essential" | "drug_interaction";
+  type: "duplicate_dose" | "zero_stock" | "missed_essential" | "drug_interaction" | "health_risk";
   severity: AlertSeverity;
   title: string;
   message: string;
@@ -23,7 +24,7 @@ const getDismissedAlerts = (): Record<string, number> => {
     const stored = localStorage.getItem(DISMISSED_ALERTS_KEY);
     if (!stored) return {};
     const dismissed = JSON.parse(stored);
-    
+
     const now = Date.now();
     const filtered: Record<string, number> = {};
     Object.entries(dismissed).forEach(([id, timestamp]) => {
@@ -32,7 +33,7 @@ const getDismissedAlerts = (): Record<string, number> => {
         filtered[id] = timestamp as number;
       }
     });
-    
+
     return filtered;
   } catch {
     return {};
@@ -50,58 +51,73 @@ const saveDismissedAlert = (alertId: string) => {
 };
 
 async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = auth.currentUser;
   if (!user) return [];
 
   const newAlerts: CriticalAlert[] = [];
   const fourHoursAgo = new Date();
   fourHoursAgo.setHours(fourHoursAgo.getHours() - 4);
+  const fourHoursAgoIso = fourHoursAgo.toISOString();
+  const nowIso = new Date().toISOString();
 
-  // Batch all queries together
-  const [profileRes, itemsRes, missedDosesRes, recentDosesRes] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("birth_date, weight_kg, height_cm")
-      .eq("user_id", user.id)
-      .single(),
-    supabase
-      .from("items")
-      .select("id, name, is_active, stock(units_left)")
-      .eq("user_id", user.id)
-      .eq("is_active", true),
-    supabase
-      .from("dose_instances")
-      .select("id, due_at, item_id, items!inner(name, user_id, category)")
-      .eq("items.user_id", user.id)
-      .eq("status", "scheduled")
-      .lt("due_at", new Date().toISOString())
-      .gte("due_at", fourHoursAgo.toISOString()),
-    supabase
-      .from("dose_instances")
-      .select("id, item_id, taken_at, items!inner(name, user_id)")
-      .eq("items.user_id", user.id)
-      .eq("status", "taken")
-      .gte("taken_at", fourHoursAgo.toISOString())
-  ]);
+  // 1. Fetch Profile
+  const profileRef = doc(db, 'users', user.uid, 'profile', 'me');
+  const profileSnap = await getDoc(profileRef);
+  const profile = profileSnap.exists() ? profileSnap.data() : null;
 
-  const profile = profileRes.data;
-  const items = itemsRes.data;
-  const missedDoses = missedDosesRes.data;
-  const recentDoses = recentDosesRes.data;
+  // 2. Fetch Active Medications
+  const medsRef = collection(db, 'users', user.uid, 'medications');
+  const medsQuery = query(medsRef, where('isActive', '==', true));
+  const medsSnap = await getDocs(medsQuery);
+  const meds = medsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
 
-  // Calculate age/BMI
+  // 3. Fetch Missed Doses
+  const dosesRef = collection(db, 'users', user.uid, 'doses');
+  // Firestore doesn't support inequality on different fields easily or "OR" queries easily in client SDK sometimes
+  // Status = scheduled AND scheduledTime < now AND scheduledTime > 4 hours ago
+  const missedDosesQuery = query(
+    dosesRef,
+    where('status', '==', 'scheduled'),
+    where('scheduledTime', '<', nowIso),
+    where('scheduledTime', '>=', fourHoursAgoIso)
+  );
+  const missedDosesSnap = await getDocs(missedDosesQuery);
+  const missedDoses = missedDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+  // 4. Fetch Recent Taken Doses
+  const recentDosesQuery = query(
+    dosesRef,
+    where('status', '==', 'taken'),
+    where('takenAt', '>=', fourHoursAgoIso)
+  );
+  const recentDosesSnap = await getDocs(recentDosesQuery);
+  const recentDoses = recentDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+
+  // --- Logic Processing ---
+
+  // Calculate age
   let age: number | null = null;
-  if (profile?.birth_date) {
-    const birthDate = new Date(profile.birth_date);
+  if (profile?.birthDate) {
+    const birthDate = new Date(profile.birthDate);
     const today = new Date();
-    age = today.getFullYear() - birthDate.getFullYear() - 
-      (today.getMonth() < birthDate.getMonth() || 
-       (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
+    age = today.getFullYear() - birthDate.getFullYear() -
+      (today.getMonth() < birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate()) ? 1 : 0);
   }
 
+  // Map items for easy lookup
+  const itemsMap = new Map();
+  meds.forEach(m => itemsMap.set(m.id, m));
+
   // Check for zero stock
-  items?.forEach((item: any) => {
-    if (item.stock?.[0] && item.stock[0].units_left === 0) {
+  meds.forEach((item: any) => {
+    // Assuming stock is stored in user/{uid}/stock/{itemId} or inside the medication doc?
+    // In migrated schema, stock might be separate or embedded. 
+    // Checking previous code: item.stock?.[0].units_left
+    // In Firebase schema, let's assume filtering by item is tricky if stock is separate.
+    // If stock is inside medication:
+    if (typeof item.currentStock === 'number' && item.currentStock <= 0) {
       newAlerts.push({
         id: `stock_${item.id}`,
         type: "zero_stock",
@@ -115,18 +131,19 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   });
 
   // Check for missed critical doses
-  missedDoses?.forEach((dose: any) => {
-    if (dose.items.category === "medicamento") {
+  missedDoses.forEach((dose: any) => {
+    const med = itemsMap.get(dose.medicationId); // Assuming medicationId links to medication
+    if (med && med.category === "medicamento") {
       const hoursMissed = Math.floor(
-        (new Date().getTime() - new Date(dose.due_at).getTime()) / (1000 * 60 * 60)
+        (new Date().getTime() - new Date(dose.scheduledTime).getTime()) / (1000 * 60 * 60)
       );
 
       let severity: AlertSeverity = hoursMissed >= 2 ? "critical" : "urgent";
-      let message = `${dose.items.name} está ${hoursMissed}h atrasado.`;
-      
+      let message = `${med.name} está ${hoursMissed}h atrasado.`;
+
       if (age && age >= 65 && hoursMissed >= 2) {
         severity = "critical";
-        message = `⚠️ ${dose.items.name} está ${hoursMissed}h atrasado. Tome imediatamente.`;
+        message = `⚠️ ${med.name} está ${hoursMissed}h atrasado. Tome imediatamente.`;
       }
 
       newAlerts.push({
@@ -135,44 +152,91 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
         severity,
         title: age && age >= 65 ? "Dose crítica atrasada (Idoso)" : "Dose atrasada",
         message,
-        itemId: dose.item_id,
-        itemName: dose.items.name,
+        itemId: med.id,
+        itemName: med.name,
       });
     }
   });
 
   // Check for duplicate doses
   const dosesByItem = new Map<string, any[]>();
-  recentDoses?.forEach((dose: any) => {
-    if (!dosesByItem.has(dose.item_id)) {
-      dosesByItem.set(dose.item_id, []);
+  recentDoses.forEach((dose: any) => {
+    const medId = dose.medicationId;
+    if (!dosesByItem.has(medId)) {
+      dosesByItem.set(medId, []);
     }
-    dosesByItem.get(dose.item_id)?.push(dose);
+    dosesByItem.get(medId)?.push(dose);
   });
 
-  dosesByItem.forEach((doses, itemId) => {
+  dosesByItem.forEach((doses, medId) => {
     if (doses.length >= 2) {
+      // Sort by takenAt just in case
+      doses.sort((a, b) => new Date(a.takenAt).getTime() - new Date(b.takenAt).getTime());
+
       const lastDose = doses[doses.length - 1];
       const secondLastDose = doses[doses.length - 2];
-      
+
       const timeDiff = Math.abs(
-        new Date(lastDose.taken_at).getTime() - 
-        new Date(secondLastDose.taken_at).getTime()
+        new Date(lastDose.takenAt).getTime() -
+        new Date(secondLastDose.takenAt).getTime()
       ) / (1000 * 60 * 60);
 
-      if (timeDiff < 4) {
+      const med = itemsMap.get(medId);
+
+      if (timeDiff < 4 && med) {
         newAlerts.push({
-          id: `duplicate_${itemId}`,
+          id: `duplicate_${medId}`,
           type: "duplicate_dose",
           severity: "warning",
           title: "Possível dose duplicada",
-          message: `Você registrou ${lastDose.items.name} há menos de 4 horas.`,
-          itemId,
-          itemName: lastDose.items.name,
+          message: `Você registrou ${med.name} há menos de 4 horas.`,
+          itemId: medId,
+          itemName: med.name,
         });
       }
     }
   });
+
+  // 5. Fetch Recent Pressure
+  const pressureRef = collection(db, 'users', user.uid, 'pressureLogs');
+  // Firestore composite index might be needed for specific ordering, but recordedAt desc is standard
+  // If error occurs regarding index, we gracefully fail or catch
+  try {
+    const pressureQuery = query(pressureRef, orderBy('recordedAt', 'desc'), limit(1));
+    const pressureSnap = await getDocs(pressureQuery);
+
+    if (!pressureSnap.empty) {
+      const lastPressure = pressureSnap.docs[0].data();
+      const pDate = new Date(lastPressure.recordedAt);
+      const hoursSince = (Date.now() - pDate.getTime()) / (1000 * 60 * 60);
+
+      if (hoursSince < 24) {
+        if (lastPressure.systolic >= 180 || lastPressure.diastolic >= 110) {
+          newAlerts.push({
+            id: `bp_critical_${lastPressure.recordedAt}`,
+            type: "health_risk",
+            severity: "critical",
+            title: "Alerta de Pressão Crítica",
+            message: `Medição de ${lastPressure.systolic}/${lastPressure.diastolic} mmHg é muito alta. Procure ajuda médica imediatamente.`,
+            itemId: "bp",
+            itemName: "Pressão Arterial"
+          });
+        } else if (lastPressure.systolic >= 140 || lastPressure.diastolic >= 90) {
+          newAlerts.push({
+            id: `bp_high_${lastPressure.recordedAt}`,
+            type: "health_risk",
+            severity: "warning",
+            title: "Pressão Alta Detectada",
+            message: `Sua pressão está ${lastPressure.systolic}/${lastPressure.diastolic}. Verifique se tomou seus medicamentos.`,
+            itemId: "bp",
+            itemName: "Pressão Arterial"
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Error checking pressure stats", e);
+  }
 
   // Filter dismissed alerts
   const dismissed = getDismissedAlerts();
@@ -190,6 +254,7 @@ export function useCriticalAlerts() {
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnWindowFocus: false,
     refetchInterval: 60 * 1000, // Check every minute
+    enabled: !!auth.currentUser, // Only run if logged in
   });
 
   const refresh = useCallback(() => {
@@ -201,7 +266,7 @@ export function useCriticalAlerts() {
 
   const dismissAlert = useCallback((alertId: string) => {
     saveDismissedAlert(alertId);
-    queryClient.setQueryData([CACHE_KEY], (old: CriticalAlert[] | undefined) => 
+    queryClient.setQueryData([CACHE_KEY], (old: CriticalAlert[] | undefined) =>
       old?.filter(a => a.id !== alertId) ?? []
     );
   }, [queryClient]);

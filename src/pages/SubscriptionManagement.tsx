@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { 
-  CheckCircle2, Crown, Calendar, CreditCard, 
-  ArrowLeft, AlertCircle, Sparkles, XCircle, 
+import {
+  CheckCircle2, Crown, Calendar, CreditCard,
+  ArrowLeft, AlertCircle, Sparkles, XCircle,
   AlertTriangle, Heart, TrendingDown, Shield
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -25,8 +24,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PaymentMethodModal } from "@/components/PaymentMethodModal";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function SubscriptionManagement() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { subscription, isPremium, isFree, isExpired, daysLeft, loading, refresh } = useSubscription();
@@ -36,15 +37,15 @@ export default function SubscriptionManagement() {
   const [cancelingSubscription, setCancelingSubscription] = useState(false);
 
   // Calculate if within 7-day free cancellation window
-  const daysSubscribed = subscription?.started_at 
-    ? differenceInDays(new Date(), new Date(subscription.started_at)) 
+  const daysSubscribed = subscription?.started_at
+    ? differenceInDays(new Date(), new Date(subscription.started_at))
     : 0;
   const isWithinFreeCancellation = daysSubscribed <= 7;
 
   // Check for payment update success
   useEffect(() => {
     if (searchParams.get('payment_updated') === 'true') {
-      toast.success("Forma de pagamento atualizada com sucesso!");
+      toast.success(t("toast.subscription.paymentUpdated"));
       // Remove the query param
       window.history.replaceState({}, '', '/assinatura');
     }
@@ -70,23 +71,28 @@ export default function SubscriptionManagement() {
   const handleCancelSubscription = async () => {
     setCancelingSubscription(true);
     try {
-      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
-        body: { immediate: isWithinFreeCancellation }
-      });
-      
-      if (error) throw error;
-      
-      if (isWithinFreeCancellation) {
-        toast.success("Assinatura cancelada. Você não será cobrado.");
+      const { functions } = await import("@/integrations/firebase/client");
+      const { httpsCallable } = await import("firebase/functions");
+
+      const cancelSubscription = httpsCallable(functions, 'cancelSubscription');
+      const result = await cancelSubscription({ immediate: isWithinFreeCancellation });
+      const data = result.data as any;
+
+      if (data?.success) {
+        if (isWithinFreeCancellation) {
+          toast.success(t("toast.subscription.canceledNoCharge"));
+        } else {
+          toast.success(t("toast.subscription.canceledEndPeriod"));
+        }
+
+        setShowCancelDialog(false);
+        refresh();
       } else {
-        toast.success("Assinatura será cancelada ao final do período atual.");
+        throw new Error(data?.error || "Erro ao cancelar");
       }
-      
-      setShowCancelDialog(false);
-      refresh();
     } catch (error: any) {
       console.error('Cancel error:', error);
-      toast.error("Erro ao cancelar assinatura. Tente novamente.");
+      toast.error(t("toast.subscription.cancelError"));
     } finally {
       setCancelingSubscription(false);
     }
@@ -135,14 +141,14 @@ export default function SubscriptionManagement() {
                   <h2 className="text-2xl font-bold text-foreground">
                     Plano {isPremium ? 'Premium' : 'Gratuito'}
                   </h2>
-                  <Badge 
+                  <Badge
                     variant={isPremium ? 'default' : isExpired ? 'destructive' : 'secondary'}
                     className="mt-1"
                   >
-                    {subscription?.status === 'active' ? 'Ativo' : 
-                     subscription?.status === 'cancelled' ? 'Cancelado' : 
-                     subscription?.status === 'expired' ? 'Expirado' : 
-                     subscription?.status === 'trial' ? 'Trial' : 'Inativo'}
+                    {subscription?.status === 'active' ? 'Ativo' :
+                      subscription?.status === 'cancelled' ? 'Cancelado' :
+                        subscription?.status === 'expired' ? 'Expirado' :
+                          subscription?.status === 'trial' ? 'Trial' : 'Inativo'}
                   </Badge>
                 </div>
               </div>
@@ -238,24 +244,24 @@ export default function SubscriptionManagement() {
         <div className="space-y-3">
           {isPremium ? (
             <>
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 className="w-full"
                 onClick={handleOpenPaymentModal}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Alterar Forma de Pagamento
               </Button>
-              
-              <Button 
-                variant="outline" 
+
+              <Button
+                variant="outline"
                 className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={handleCancelClick}
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Cancelar Assinatura
               </Button>
-              
+
               {isWithinFreeCancellation && (
                 <p className="text-xs text-center text-muted-foreground">
                   Você está dentro do período de 7 dias. Cancele sem custos.
@@ -264,7 +270,7 @@ export default function SubscriptionManagement() {
             </>
           ) : (
             <>
-              <Button 
+              <Button
                 className="w-full bg-primary hover:bg-primary/90"
                 onClick={handleReactivate}
               >
@@ -302,7 +308,7 @@ export default function SubscriptionManagement() {
                 </AlertDialogTitle>
                 <AlertDialogDescription className="space-y-3">
                   <p>
-                    {isWithinFreeCancellation 
+                    {isWithinFreeCancellation
                       ? "Você está dentro do período de 7 dias. Seu cancelamento será imediato e você não será cobrado."
                       : "Sua assinatura continuará ativa até o final do período pago. Após isso, você perderá acesso aos recursos Premium."}
                   </p>
@@ -324,7 +330,7 @@ export default function SubscriptionManagement() {
                   😢 Vamos sentir sua falta!
                 </AlertDialogTitle>
               </AlertDialogHeader>
-              
+
               <div className="space-y-4 py-4">
                 <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
                   <div className="flex items-start gap-3">
@@ -369,15 +375,15 @@ export default function SubscriptionManagement() {
               </div>
 
               <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
-                <Button 
-                  className="w-full" 
+                <Button
+                  className="w-full"
                   onClick={() => setShowCancelDialog(false)}
                 >
                   <Crown className="h-4 w-4 mr-2" />
                   Manter meu Premium
                 </Button>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="w-full text-muted-foreground"
                   onClick={handleCancelProceed}
                 >
@@ -402,7 +408,7 @@ export default function SubscriptionManagement() {
                   ) : (
                     <p>
                       Sua assinatura permanecerá ativa até <strong>
-                        {subscription?.expires_at 
+                        {subscription?.expires_at
                           ? format(new Date(subscription.expires_at), "dd 'de' MMMM", { locale: ptBR })
                           : 'o final do período'}
                       </strong>. Após essa data, você será rebaixado para o plano gratuito.
@@ -414,8 +420,8 @@ export default function SubscriptionManagement() {
                 <AlertDialogCancel disabled={cancelingSubscription}>
                   Voltar
                 </AlertDialogCancel>
-                <Button 
-                  variant="destructive" 
+                <Button
+                  variant="destructive"
                   onClick={handleCancelSubscription}
                   disabled={cancelingSubscription}
                 >
@@ -428,8 +434,8 @@ export default function SubscriptionManagement() {
       </AlertDialog>
 
       {/* Payment Method Modal */}
-      <PaymentMethodModal 
-        open={showPaymentModal} 
+      <PaymentMethodModal
+        open={showPaymentModal}
         onOpenChange={setShowPaymentModal}
         onSuccess={refresh}
       />

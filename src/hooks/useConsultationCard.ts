@@ -1,19 +1,22 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export function useConsultationCard() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const createCard = async (profile_id?: string, hours: number = 48) => {
+  const createCard = async (profileId?: string, hours: number = 48) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('consultation-card', {
-        body: { action: 'create', profile_id, hours }
+      const consultationCardFn = httpsCallable(functions, 'consultationCard');
+      const result = await consultationCardFn({
+        action: 'create',
+        profileId, // camelCase
+        hours
       });
-
-      if (error) throw error;
+      const data = result.data as any;
 
       toast({
         title: 'Cartão de consulta criado',
@@ -21,7 +24,7 @@ export function useConsultationCard() {
       });
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating consultation card:', error);
       toast({
         title: 'Erro ao criar cartão',
@@ -37,13 +40,13 @@ export function useConsultationCard() {
   const viewCard = async (token: string) => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('consultation-card', {
-        body: { action: 'view', token }
+      const consultationCardFn = httpsCallable(functions, 'consultationCard');
+      const result = await consultationCardFn({
+        action: 'view',
+        token
       });
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
+      return result.data;
+    } catch (error: any) {
       console.error('Error viewing consultation card:', error);
       toast({
         title: 'Erro ao visualizar cartão',
@@ -59,17 +62,17 @@ export function useConsultationCard() {
   const revokeCard = async (token: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('consultation-card', {
-        body: { action: 'revoke', token }
+      const consultationCardFn = httpsCallable(functions, 'consultationCard');
+      await consultationCardFn({
+        action: 'revoke',
+        token
       });
-
-      if (error) throw error;
 
       toast({
         title: 'Cartão revogado',
         description: 'O link não está mais acessível'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error revoking consultation card:', error);
       toast({
         title: 'Erro ao revogar cartão',

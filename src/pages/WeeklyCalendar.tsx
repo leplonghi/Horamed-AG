@@ -1,151 +1,44 @@
 import { useState, useEffect } from "react";
-import { decrementStockWithProjection } from "@/lib/stockHelpers";
-import { supabase } from "@/integrations/supabase/client";
+import { useWeeklyDoses } from "@/hooks/useWeeklyDoses";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill, XCircle, SkipForward, TrendingUp, Calendar, Target } from "lucide-react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO, isBefore } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import DoseStatusDialog from "@/components/DoseStatusDialog";
 import logo from "@/assets/logo_HoraMed.png";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-interface DoseInstance {
-  id: string;
-  due_at: string;
-  status: string;
-  item_id: string;
-  items: {
-    name: string;
-  };
-}
-
 export default function WeeklyCalendar() {
   const [currentWeekStart, setCurrentWeekStart] = useState(
     startOfWeek(new Date(), { weekStartsOn: 0 })
   );
-  const [doses, setDoses] = useState<DoseInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedDose, setSelectedDose] = useState<{ id: string; name: string } | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+
   const { activeProfile } = useUserProfiles();
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
-  useEffect(() => {
-    fetchWeekDoses();
-  }, [currentWeekStart]);
+  const currentWeekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 });
+  const { data: doses, isLoading: loading, updateDoseStatus } = useWeeklyDoses(currentWeekStart, currentWeekEnd, activeProfile?.id);
 
-  // Reload data when active profile changes
-  useEffect(() => {
-    if (activeProfile) {
-      setLoading(true);
-      fetchWeekDoses();
-    }
-  }, [activeProfile?.id]);
+  const [selectedDose, setSelectedDose] = useState<{ id: string; name: string, itemId: string } | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-  useEffect(() => {
-    // Mark past scheduled doses as missed automatically
-    markPastDosesAsMissed();
-  }, [doses]);
-
-  const markPastDosesAsMissed = async () => {
-    try {
-      const now = new Date();
-      const pastScheduledDoses = doses.filter(
-        (dose) => dose.status === 'scheduled' && isBefore(parseISO(dose.due_at), now)
-      );
-
-      if (pastScheduledDoses.length > 0) {
-        const doseIds = pastScheduledDoses.map((d) => d.id);
-        await supabase
-          .from("dose_instances")
-          .update({ status: 'missed' })
-          .in('id', doseIds);
-        
-        // Refresh data
-        fetchWeekDoses();
-      }
-    } catch (error) {
-      console.error("Error marking past doses as missed:", error);
-    }
-  };
-
-  const fetchWeekDoses = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 0 });
-
-      let dosesQuery = supabase
-        .from("dose_instances")
-        .select(`
-          id,
-          due_at,
-          status,
-          item_id,
-          items!inner (name, user_id, profile_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", currentWeekStart.toISOString())
-        .lte("due_at", weekEnd.toISOString());
-
-      if (activeProfile) {
-        dosesQuery = dosesQuery.eq("items.profile_id", activeProfile.id);
-      }
-
-      const { data, error } = await dosesQuery.order("due_at", { ascending: true });
-
-      if (error) throw error;
-      setDoses(data || []);
-    } catch (error) {
-      console.error("Error fetching week doses:", error);
-      toast.error(t('weeklyCalendar.loadError'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDoseClick = (doseId: string, doseName: string) => {
-    setSelectedDose({ id: doseId, name: doseName });
+  const handleDoseClick = (doseId: string, doseName: string, itemId: string) => {
+    setSelectedDose({ id: doseId, name: doseName, itemId });
     setDialogOpen(true);
   };
 
-  const updateDoseStatus = async (doseId: string, newStatus: 'taken' | 'missed' | 'skipped') => {
-    try {
-      const updateData: any = { status: newStatus };
-      
-      const dose = doses.find(d => d.id === doseId);
-      if (!dose) return;
-
-      if (newStatus === 'taken') {
-        updateData.taken_at = new Date().toISOString();
-        
-        // Decrement stock with projection recalculation
-        await decrementStockWithProjection(dose.item_id);
-      } else {
-        updateData.taken_at = null;
-      }
-
-      const { error } = await supabase
-        .from("dose_instances")
-        .update(updateData)
-        .eq("id", doseId);
-
-      if (error) throw error;
-      
-      const statusText = newStatus === 'taken' ? t('weeklyCalendar.taken') : newStatus === 'missed' ? t('weeklyCalendar.missed') : t('weeklyCalendar.skipped');
-      toast.success(t('weeklyCalendar.markedAs', { status: statusText }) + (newStatus === 'taken' ? ' 💚' : ''));
-      fetchWeekDoses();
-    } catch (error) {
-      console.error("Error updating dose status:", error);
-      toast.error(t('weeklyCalendar.updateError'));
-    }
+  const handleUpdateStatus = async (newStatus: 'taken' | 'missed' | 'skipped') => {
+    if (!selectedDose) return;
+    await updateDoseStatus({
+      doseId: selectedDose.id,
+      newStatus,
+      itemId: selectedDose.itemId
+    });
   };
 
   const goToPreviousWeek = () => {
@@ -170,10 +63,11 @@ export default function WeeklyCalendar() {
   }
 
   // Calculate weekly stats
-  const totalWeekDoses = doses.length;
-  const takenDoses = doses.filter(d => d.status === 'taken').length;
-  const missedDoses = doses.filter(d => d.status === 'missed').length;
-  const skippedDoses = doses.filter(d => d.status === 'skipped').length;
+  const safeDoses = doses || [];
+  const totalWeekDoses = safeDoses.length;
+  const takenDoses = safeDoses.filter(d => d.status === 'taken').length;
+  const missedDoses = safeDoses.filter(d => d.status === 'missed').length;
+  const skippedDoses = safeDoses.filter(d => d.status === 'skipped').length;
   const weeklyAdherence = totalWeekDoses > 0 ? Math.round((takenDoses / totalWeekDoses) * 100) : 0;
 
   return (
@@ -188,7 +82,7 @@ export default function WeeklyCalendar() {
                 <h1 className="text-3xl font-bold text-foreground">Calendário Semanal</h1>
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
-                  {format(currentWeekStart, "d MMM", { locale: ptBR })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 0 }), "d MMM yyyy", { locale: ptBR })}
+                  {format(currentWeekStart, "d MMM", { locale: dateLocale })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 0 }), "d MMM yyyy", { locale: dateLocale })}
                 </p>
               </div>
             </div>
@@ -222,7 +116,7 @@ export default function WeeklyCalendar() {
                 </div>
                 <p className="text-3xl font-bold text-foreground">{weeklyAdherence}%</p>
                 <div className="w-full bg-primary/20 rounded-full h-2 mt-2">
-                  <div 
+                  <div
                     className="bg-primary rounded-full h-2 transition-all duration-500"
                     style={{ width: `${weeklyAdherence}%` }}
                   />
@@ -298,8 +192,8 @@ export default function WeeklyCalendar() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-7 gap-4">
             {weekDays.map((day) => {
-              const dayDoses = doses.filter((dose) =>
-                isSameDay(parseISO(dose.due_at), day)
+              const dayDoses = safeDoses.filter((dose) =>
+                isSameDay(parseISO(dose.dueAt), day)
               );
               const isToday = isSameDay(day, new Date());
               const takenToday = dayDoses.filter(d => d.status === 'taken').length;
@@ -308,17 +202,16 @@ export default function WeeklyCalendar() {
               return (
                 <Card
                   key={day.toISOString()}
-                  className={`p-4 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 ${
-                    isToday 
-                      ? "border-primary border-2 bg-gradient-to-br from-primary/10 to-primary/5 ring-2 ring-primary/20" 
+                  className={`p-4 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 ${isToday
+                      ? "border-primary border-2 bg-gradient-to-br from-primary/10 to-primary/5 ring-2 ring-primary/20"
                       : "border-border hover:border-primary/50"
-                  }`}
+                    }`}
                 >
                   <div className="space-y-3">
                     {/* Day Header */}
                     <div className="text-center space-y-1">
                       <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        {format(day, "EEE", { locale: ptBR })}
+                        {format(day, "EEE", { locale: dateLocale })}
                       </p>
                       <div className={`text-3xl font-bold ${isToday ? "text-primary" : "text-foreground"}`}>
                         {format(day, "d")}
@@ -328,7 +221,7 @@ export default function WeeklyCalendar() {
                           Hoje
                         </Badge>
                       )}
-                      
+
                       {/* Progress Indicator */}
                       {dayDoses.length > 0 && (
                         <div className="space-y-1 pt-2">
@@ -339,10 +232,9 @@ export default function WeeklyCalendar() {
                             </span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-1.5">
-                            <div 
-                              className={`rounded-full h-1.5 transition-all duration-500 ${
-                                adherenceToday === 100 ? "bg-success" : adherenceToday >= 50 ? "bg-primary" : "bg-destructive"
-                              }`}
+                            <div
+                              className={`rounded-full h-1.5 transition-all duration-500 ${adherenceToday === 100 ? "bg-success" : adherenceToday >= 50 ? "bg-primary" : "bg-destructive"
+                                }`}
                               style={{ width: `${adherenceToday}%` }}
                             />
                           </div>
@@ -360,25 +252,24 @@ export default function WeeklyCalendar() {
                         dayDoses.map((dose) => (
                           <button
                             key={dose.id}
-                            onClick={() => handleDoseClick(dose.id, dose.items.name)}
-                            className={`w-full p-2.5 rounded-lg border text-left transition-all hover:scale-105 hover:shadow-md group ${
-                              dose.status === "taken"
+                            onClick={() => handleDoseClick(dose.id, dose.medicationName, dose.itemId)}
+                            className={`w-full p-2.5 rounded-lg border text-left transition-all hover:scale-105 hover:shadow-md group ${dose.status === "taken"
                                 ? "bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-sm"
                                 : dose.status === "missed"
-                                ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-sm"
-                                : dose.status === "skipped"
-                                ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-sm"
-                                : "bg-gradient-to-br from-primary/5 to-card border-primary/30 shadow-sm"
-                            }`}
+                                  ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-sm"
+                                  : dose.status === "skipped"
+                                    ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-sm"
+                                    : "bg-gradient-to-br from-primary/5 to-card border-primary/30 shadow-sm"
+                              }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-semibold truncate leading-tight">
-                                  {dose.items.name}
+                                  {dose.medicationName}
                                 </p>
                                 <div className="flex items-center gap-1.5 mt-1">
                                   <p className="text-xs text-muted-foreground font-medium">
-                                    {format(parseISO(dose.due_at), "HH:mm")}
+                                    {format(parseISO(dose.dueAt), "HH:mm")}
                                   </p>
                                 </div>
                               </div>
@@ -409,13 +300,13 @@ export default function WeeklyCalendar() {
         </div>
       </div>
       <Navigation />
-      
+
       {selectedDose && (
         <DoseStatusDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           doseName={selectedDose.name}
-          onSelectStatus={(status) => updateDoseStatus(selectedDose.id, status)}
+          onSelectStatus={handleUpdateStatus}
         />
       )}
     </>

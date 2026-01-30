@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth, updateDocument } from "@/integrations/firebase";
+import { storage } from "@/integrations/firebase/client";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Camera, User } from "lucide-react";
@@ -12,95 +14,75 @@ interface AvatarUploadProps {
 }
 
 export default function AvatarUpload({ avatarUrl, userEmail, onUploadComplete }: AvatarUploadProps) {
+  const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
-  const [displayUrl, setDisplayUrl] = useState<string | null>(null);
-
-  // Fetch signed URL for display
-  const fetchSignedUrl = async (path: string) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .createSignedUrl(path, 3600); // 1 hour expiry
-
-      if (error) throw error;
-      return data?.signedUrl || null;
-    } catch (error) {
-      console.error('Error fetching signed URL:', error);
-      return null;
-    }
-  };
+  const [displayUrl, setDisplayUrl] = useState<string | null>(avatarUrl);
 
   // Update display URL when avatarUrl changes
   useEffect(() => {
-    if (avatarUrl) {
-      // Extract path from URL if it's a full URL, or use as-is if it's a path
-      const path = avatarUrl.includes('/storage/v1/') 
-        ? avatarUrl.split('/avatars/')[1] 
-        : avatarUrl;
-      
-      if (path) {
-        fetchSignedUrl(path).then(url => {
-          if (url) setDisplayUrl(url);
-        });
-      }
-    } else {
-      setDisplayUrl(null);
-    }
+    setDisplayUrl(avatarUrl);
   }, [avatarUrl]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
       setUploading(true);
-      
+
       if (!event.target.files || event.target.files.length === 0) {
+        return;
+      }
+
+      if (!user) {
+        toast.error("Não autenticado");
         return;
       }
 
       const file = event.target.files[0];
       const fileExt = file.name.split('.').pop();
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) throw new Error("Não autenticado");
+      const fileName = `avatars/${user.uid}/avatar.${fileExt}`;
+      const storageRef = ref(storage, fileName);
 
-      const fileName = `${user.id}/avatar.${fileExt}`;
+      // Upload file
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // Delete old avatar if exists
-      if (avatarUrl) {
-        const oldPath = avatarUrl.includes('/storage/v1/') 
-          ? avatarUrl.split('/avatars/')[1] 
-          : avatarUrl;
-        if (oldPath) {
-          await supabase.storage.from('avatars').remove([oldPath]);
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          // Progress monitoring if needed
+        },
+        (error) => {
+          console.error("Error uploading avatar:", error);
+          toast.error("Erro ao fazer upload da foto");
+          setUploading(false);
+        },
+        async () => {
+          // Upload completed successfully
+          try {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+            // Update profile with public URL
+            // Assuming profile is at users/{uid}/profile/me based on other migrations
+            const { error: updateError } = await updateDocument(
+              `users/${user.uid}/profile`,
+              'me',
+              { avatarUrl: downloadURL } // camelCase
+            );
+
+            if (updateError) throw updateError;
+
+            setDisplayUrl(downloadURL);
+            onUploadComplete(downloadURL);
+            toast.success("Foto atualizada com sucesso!");
+          } catch (error: any) {
+            console.error("Error updating profile:", error);
+            toast.error("Erro ao atualizar perfil");
+          } finally {
+            setUploading(false);
+          }
         }
-      }
+      );
 
-      // Upload new avatar
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Update profile with file path (not public URL)
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: fileName })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      // Fetch signed URL for immediate display
-      const signedUrl = await fetchSignedUrl(fileName);
-      if (signedUrl) {
-        setDisplayUrl(signedUrl);
-      }
-
-      onUploadComplete(fileName);
-      toast.success("Foto atualizada com sucesso!");
     } catch (error: any) {
-      console.error("Error uploading avatar:", error);
-      toast.error("Erro ao fazer upload da foto");
-    } finally {
+      console.error("Error setup upload:", error);
+      toast.error("Erro ao iniciar upload");
       setUploading(false);
     }
   };
@@ -118,7 +100,7 @@ export default function AvatarUpload({ avatarUrl, userEmail, onUploadComplete }:
             {userEmail ? getInitials(userEmail) : <User className="h-8 w-8" />}
           </AvatarFallback>
         </Avatar>
-        
+
         <label htmlFor="avatar-upload" className="absolute bottom-0 right-0">
           <Button
             type="button"
@@ -142,7 +124,7 @@ export default function AvatarUpload({ avatarUrl, userEmail, onUploadComplete }:
           />
         </label>
       </div>
-      
+
       <p className="text-xs text-muted-foreground text-center">
         Clique no ícone da câmera para alterar sua foto
       </p>

@@ -2,7 +2,6 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { supabase } from '@/integrations/supabase/client';
 
 interface MedicalReportData {
   profile: {
@@ -79,7 +78,7 @@ export async function generateMedicalReport(
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.secondary);
   doc.text(
-    language === 'pt' 
+    language === 'pt'
       ? `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
       : `Generated: ${format(new Date(), "MM/dd/yyyy 'at' HH:mm")}`,
     logoImage ? 50 : 15,
@@ -90,7 +89,7 @@ export async function generateMedicalReport(
 
   // Patient Info Section
   yPos = addSectionHeader(doc, language === 'pt' ? '👤 Dados do Paciente' : '👤 Patient Info', yPos);
-  
+
   const patientInfo = [
     [language === 'pt' ? 'Nome' : 'Name', data.profile.full_name || '-'],
     [language === 'pt' ? 'Data de Nascimento' : 'Birth Date', data.profile.birth_date ? format(new Date(data.profile.birth_date), 'dd/MM/yyyy') : '-'],
@@ -121,7 +120,7 @@ export async function generateMedicalReport(
   yPos = addSectionHeader(doc, language === 'pt' ? '📊 Resumo de Adesão' : '📊 Adherence Summary', yPos);
 
   const adherenceColor = data.adherence.overall >= 80 ? COLORS.success :
-                        data.adherence.overall >= 60 ? COLORS.warning : COLORS.danger;
+    data.adherence.overall >= 60 ? COLORS.warning : COLORS.danger;
 
   doc.setFillColor(...adherenceColor);
   doc.roundedRect(15, yPos, 60, 30, 3, 3, 'F');
@@ -131,11 +130,11 @@ export async function generateMedicalReport(
   doc.setFontSize(8);
   doc.text(language === 'pt' ? 'ADESÃO GERAL' : 'OVERALL ADHERENCE', 45, yPos + 26, { align: 'center' });
 
-  const trendText = data.adherence.trend === 'up' 
+  const trendText = data.adherence.trend === 'up'
     ? (language === 'pt' ? '↑ Melhorando' : '↑ Improving')
     : data.adherence.trend === 'down'
-    ? (language === 'pt' ? '↓ Reduzindo' : '↓ Declining')
-    : (language === 'pt' ? '→ Estável' : '→ Stable');
+      ? (language === 'pt' ? '↓ Reduzindo' : '↓ Declining')
+      : (language === 'pt' ? '→ Estável' : '→ Stable');
 
   doc.setTextColor(...COLORS.secondary);
   doc.setFontSize(10);
@@ -194,7 +193,7 @@ export async function generateMedicalReport(
       ]],
       body: data.vitals.slice(0, 7).map(vital => [
         format(new Date(vital.date), 'dd/MM'),
-        vital.pressao_sistolica && vital.pressao_diastolica 
+        vital.pressao_sistolica && vital.pressao_diastolica
           ? `${vital.pressao_sistolica}/${vital.pressao_diastolica}`
           : '-',
         vital.frequencia_cardiaca ? `${vital.frequencia_cardiaca} bpm` : '-',
@@ -314,7 +313,7 @@ function addFooter(doc: jsPDF, language: 'pt' | 'en') {
     doc.setFontSize(7);
     doc.setTextColor(150, 150, 150);
     doc.text(
-      language === 'pt' 
+      language === 'pt'
         ? 'Este relatório é apenas informativo e não substitui consulta médica.'
         : 'This report is for informational purposes only and does not replace medical consultation.',
       105,
@@ -325,48 +324,45 @@ function addFooter(doc: jsPDF, language: 'pt' | 'en') {
 }
 
 async function fetchReportData(): Promise<MedicalReportData> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { auth, fetchDocument, fetchCollection, orderBy, limit, where } = await import("@/integrations/firebase");
+  const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
 
   const thirtyDaysAgo = subDays(new Date(), 30);
   const sixtyDaysAgo = subDays(new Date(), 60);
 
   // Fetch profile
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('full_name, birth_date, weight_kg, height_cm')
-    .eq('user_id', user.id)
-    .single();
+  const { data: profileData } = await fetchDocument<any>(
+    `users/${user.uid}/profile`,
+    'me'
+  );
 
-  // Fetch medications with adherence
-  const { data: items } = await supabase
-    .from('items')
-    .select(`
-      id, name, dose_text, category,
-      schedules (times)
-    `)
-    .eq('user_id', user.id)
-    .eq('is_active', true);
+  // Fetch medications
+  const { data: items } = await fetchCollection<any>(
+    `users/${user.uid}/items`,
+    [where('isActive', '==', true)]
+  );
 
-  // Fetch dose instances for adherence calculation
-  const { data: doses } = await supabase
-    .from('dose_instances')
-    .select('item_id, status, due_at')
-    .gte('due_at', thirtyDaysAgo.toISOString());
+  // Fetch dose instances
+  const { data: doses } = await fetchCollection<any>(
+    `users/${user.uid}/doses`,
+    [where('dueAt', '>=', thirtyDaysAgo.toISOString())]
+  );
 
   // Calculate adherence per medication
   const medications = (items || []).map(item => {
-    const itemDoses = (doses || []).filter(d => d.item_id === item.id);
+    const itemDoses = (doses || []).filter(d => d.itemId === item.id);
     const taken = itemDoses.filter(d => d.status === 'taken').length;
     const total = itemDoses.length;
     const adherenceRate = total > 0 ? Math.round((taken / total) * 100) : 0;
-    
-    const schedules = item.schedules as any[];
-    const times = schedules?.[0]?.times || [];
+
+    // In Firebase structure, schedules might be a subcollection or array
+    // Assuming it's processed similarly
+    const times = item.schedules?.[0]?.times || [];
 
     return {
       name: item.name,
-      dose_text: item.dose_text,
+      dose_text: item.doseText,
       category: item.category,
       times: Array.isArray(times) ? times : [],
       adherenceRate
@@ -374,66 +370,66 @@ async function fetchReportData(): Promise<MedicalReportData> {
   });
 
   // Calculate overall adherence
-  const allCurrentDoses = (doses || []).filter(d => new Date(d.due_at) >= thirtyDaysAgo);
-  const allPreviousDoses = (doses || []).filter(d => 
-    new Date(d.due_at) >= sixtyDaysAgo && new Date(d.due_at) < thirtyDaysAgo
+  const allCurrentDoses = (doses || []).filter(d => new Date(d.dueAt) >= thirtyDaysAgo);
+
+  // Need to fetch older doses for trend
+  const { data: oldDoses } = await fetchCollection<any>(
+    `users/${user.uid}/doses`,
+    [
+      where('dueAt', '>=', sixtyDaysAgo.toISOString()),
+      where('dueAt', '<', thirtyDaysAgo.toISOString())
+    ]
   );
 
   const currentTaken = allCurrentDoses.filter(d => d.status === 'taken').length;
-  const previousTaken = allPreviousDoses.filter(d => d.status === 'taken').length;
+  const previousTaken = (oldDoses || []).filter(d => d.status === 'taken').length;
 
-  const overallAdherence = allCurrentDoses.length > 0 
-    ? Math.round((currentTaken / allCurrentDoses.length) * 100) 
+  const overallAdherence = allCurrentDoses.length > 0
+    ? Math.round((currentTaken / allCurrentDoses.length) * 100)
     : 0;
-  const lastMonthAdherence = allPreviousDoses.length > 0
-    ? Math.round((previousTaken / allPreviousDoses.length) * 100)
+  const lastMonthAdherence = (oldDoses || []).length > 0
+    ? Math.round((previousTaken / oldDoses.length) * 100)
     : 0;
 
-  const trend: 'up' | 'down' | 'stable' = overallAdherence > lastMonthAdherence 
-    ? 'up' 
-    : overallAdherence < lastMonthAdherence 
-    ? 'down' 
-    : 'stable';
+  const trend: 'up' | 'down' | 'stable' = overallAdherence > lastMonthAdherence
+    ? 'up'
+    : overallAdherence < lastMonthAdherence
+      ? 'down'
+      : 'stable';
 
   // Fetch vital signs
-  const { data: vitals } = await supabase
-    .from('sinais_vitais')
-    .select('data_medicao, pressao_sistolica, pressao_diastolica, frequencia_cardiaca, glicemia, peso_kg')
-    .eq('user_id', user.id)
-    .order('data_medicao', { ascending: false })
-    .limit(10);
+  const { data: vitals } = await fetchCollection<any>(
+    `users/${user.uid}/sinaisVitais`,
+    [orderBy('dataMedicao', 'desc'), limit(10)]
+  );
 
   // Fetch side effects
-  const { data: sideEffectsData } = await supabase
-    .from('side_effects_log')
-    .select('recorded_at, item_id, side_effect_tags, notes, items(name)')
-    .eq('user_id', user.id)
-    .order('recorded_at', { ascending: false })
-    .limit(10);
+  const { data: sideEffectsData } = await fetchCollection<any>(
+    `users/${user.uid}/sideEffectsLog`,
+    [orderBy('recordedAt', 'desc'), limit(10)]
+  );
 
-  // Fetch drug interactions
-  const { data: interactions } = await supabase
-    .from('drug_interactions')
-    .select('*');
+  // Fetch drug interactions (global collection)
+  const { data: interactions } = await fetchCollection<any>('drugInteractions');
 
   // Filter relevant interactions
   const medNames = medications.map(m => m.name.toLowerCase());
   const relevantInteractions = (interactions || []).filter(int => {
-    return medNames.some(n => n.includes(int.drug_a.toLowerCase())) &&
-           medNames.some(n => n.includes(int.drug_b.toLowerCase()));
+    return medNames.some(n => n.includes(int.drugA.toLowerCase())) &&
+      medNames.some(n => n.includes(int.drugB.toLowerCase()));
   }).map(int => ({
-    drugA: int.drug_a,
-    drugB: int.drug_b,
-    severity: int.interaction_type,
+    drugA: int.drugA,
+    drugB: int.drugB,
+    severity: int.interactionType,
     description: int.description
   }));
 
   return {
     profile: {
-      full_name: profileData?.full_name || user.email || 'Paciente',
-      birth_date: profileData?.birth_date,
-      weight_kg: profileData?.weight_kg,
-      height_cm: profileData?.height_cm
+      full_name: profileData?.fullName || user.email || 'Paciente',
+      birth_date: profileData?.birthDate,
+      weight_kg: profileData?.weightKg,
+      height_cm: profileData?.heightCm
     },
     medications,
     adherence: {
@@ -442,17 +438,17 @@ async function fetchReportData(): Promise<MedicalReportData> {
       trend
     },
     vitals: (vitals || []).map(v => ({
-      date: v.data_medicao,
-      pressao_sistolica: v.pressao_sistolica,
-      pressao_diastolica: v.pressao_diastolica,
-      frequencia_cardiaca: v.frequencia_cardiaca,
+      date: v.dataMedicao,
+      pressao_sistolica: v.pressaoSistolica,
+      pressao_diastolica: v.pressaoDiastolica,
+      frequencia_cardiaca: v.frequenciaCardiaca,
       glicemia: v.glicemia,
-      peso_kg: v.peso_kg
+      peso_kg: v.pesoKg
     })),
     sideEffects: (sideEffectsData || []).map(se => ({
-      date: se.recorded_at,
-      medication: (se.items as any)?.name || 'Desconhecido',
-      tags: se.side_effect_tags || [],
+      date: se.recordedAt,
+      medication: se.itemName || 'Desconhecido',
+      tags: se.sideEffectTags || [],
       notes: se.notes
     })),
     interactions: relevantInteractions
@@ -472,7 +468,8 @@ export async function downloadMedicalReport(language: 'pt' | 'en' = 'pt') {
 }
 
 export async function shareMedicalReport(language: 'pt' | 'en' = 'pt'): Promise<string> {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { auth, setDocument } = await import("@/integrations/firebase");
+  const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
 
   // Generate token for sharing
@@ -481,13 +478,14 @@ export async function shareMedicalReport(language: 'pt' | 'en' = 'pt'): Promise<
   expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
   // Save share record
-  const { error } = await supabase
-    .from('medical_shares')
-    .insert({
-      user_id: user.id,
-      token,
-      expires_at: expiresAt.toISOString()
-    });
+  const { error } = await setDocument(
+    'medicalShares',
+    token,
+    {
+      userId: user.uid,
+      expiresAt: expiresAt.toISOString()
+    }
+  );
 
   if (error) throw error;
 

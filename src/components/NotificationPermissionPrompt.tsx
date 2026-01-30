@@ -8,6 +8,7 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationPermissionPromptProps {
   onRequestPermission: () => Promise<boolean>;
@@ -19,32 +20,77 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [wasDenied, setWasDenied] = useState(false);
-  
+
   const isNative = Capacitor.isNativePlatform();
-  
+
+  const updateRemoteFlag = async (isDismissed: boolean) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tutorial_flags")
+        .eq("user_id", user.id)
+        .single();
+
+      const currentFlags = (profile?.tutorial_flags as Record<string, any>) || {};
+
+      await supabase.from("profiles").update({
+        tutorial_flags: {
+          ...currentFlags,
+          notifications_prompt_dismissed: isDismissed
+        }
+      }).eq("user_id", user.id);
+    } catch (e) {
+      console.error("Error updating notification flags", e);
+    }
+  };
+
   useEffect(() => {
     const checkPermissions = async () => {
-      // Check if user already dismissed
+      // Check if user already dismissed locally
       const alreadyDismissed = localStorage.getItem('notification_prompt_dismissed');
       if (alreadyDismissed) {
         setDismissed(true);
         return;
       }
-      
+
+      // Check remote dismissal
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("tutorial_flags")
+            .eq("user_id", user.id)
+            .single();
+
+          const flags = (profile?.tutorial_flags as Record<string, any>) || {};
+          if (flags["notifications_prompt_dismissed"]) {
+            localStorage.setItem('notification_prompt_dismissed', 'true');
+            setDismissed(true);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Error checking remote flags", e);
+      }
+
       if (isNative) {
         // Check native permissions - ALWAYS try to show prompt on mobile
         try {
           const pushStatus = await PushNotifications.checkPermissions();
           const localStatus = await LocalNotifications.checkPermissions();
-          
+
           console.log("[NotificationPrompt] Native permissions - Push:", pushStatus.receive, "Local:", localStatus.display);
-          
+
           // Show prompt if not granted
           if (pushStatus.receive !== 'granted' || localStatus.display !== 'granted') {
             // Show prompt immediately on native to ensure permission dialog appears
             console.log("[NotificationPrompt] Showing native permission prompt...");
             setShow(true);
-            
+
             // If permission was denied before, show instructions
             if (pushStatus.receive === 'denied') {
               setWasDenied(true);
@@ -71,22 +117,23 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
         }
       }
     };
-    
+
     checkPermissions();
-    
+
     // Listen for the event from usePushNotifications
     const handleNeedPermission = () => {
+      // Need to re-check dismissed state here? State should handle it.
       if (!dismissed) {
         setShow(true);
       }
     };
-    
+
     // Listen for denied event from native
     const handleNativeDenied = () => {
       setWasDenied(true);
       setShow(true);
     };
-    
+
     window.addEventListener('notification-permission-needed', handleNeedPermission);
     window.addEventListener('native-notification-denied', handleNativeDenied);
     return () => {
@@ -94,23 +141,28 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
       window.removeEventListener('native-notification-denied', handleNativeDenied);
     };
   }, [isNative, dismissed]);
-  
+
   const handleEnable = async () => {
     setLoading(true);
-    
+
     try {
       if (isNative) {
         // Request native permissions
         const pushResult = await PushNotifications.requestPermissions();
         const localResult = await LocalNotifications.requestPermissions();
-        
+
         if (pushResult.receive === 'granted' && localResult.display === 'granted') {
           await PushNotifications.register();
           toast.success(language === 'pt' ? "✓ Notificações ativadas!" : "✓ Notifications enabled!");
           setShow(false);
+          // Don't mark as dismissed, but maybe "configured"? 
+          // Actually if enabled, we don't show the prompt anyway due to permission checks.
+          // But to be consistent with "Don't ask again content", let's update the flag saying we handled it.
+          updateRemoteFlag(true);
+          localStorage.setItem('notification_prompt_dismissed', 'true');
         } else {
-          toast.error(language === 'pt' 
-            ? "Permissão negada. Ative nas configurações do celular." 
+          toast.error(language === 'pt'
+            ? "Permissão negada. Ative nas configurações do celular."
             : "Permission denied. Enable in phone settings.");
         }
       } else {
@@ -118,6 +170,8 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
         const granted = await onRequestPermission();
         if (granted) {
           setShow(false);
+          updateRemoteFlag(true);
+          localStorage.setItem('notification_prompt_dismissed', 'true');
         }
       }
     } catch (error) {
@@ -127,25 +181,26 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
       setLoading(false);
     }
   };
-  
+
   const handleDismiss = () => {
     setShow(false);
     setDismissed(true);
     localStorage.setItem('notification_prompt_dismissed', 'true');
+    updateRemoteFlag(true);
   };
-  
+
   const handleLater = () => {
     setShow(false);
     // Will show again next session
   };
-  
+
   if (!show || dismissed) return null;
-  
+
   // If permission was denied, show different UI with instructions
   if (wasDenied) {
     const isAndroid = /android/i.test(navigator.userAgent);
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    
+
     return (
       <AnimatePresence>
         {show && !dismissed && (
@@ -165,9 +220,9 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
                     <h3 className="font-semibold text-sm">
                       {language === 'pt' ? '🔔 Notificações bloqueadas' : '🔔 Notifications blocked'}
                     </h3>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-6 w-6 -mt-1 -mr-2"
                       onClick={handleDismiss}
                     >
@@ -176,9 +231,9 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     {isNative ? (
-                      language === 'pt' 
+                      language === 'pt'
                         ? isAndroid
-                          ? 'Para receber lembretes, vá em Configurações > Apps > HoraMed > Notificações e ative.' 
+                          ? 'Para receber lembretes, vá em Configurações > Apps > HoraMed > Notificações e ative.'
                           : isIOS
                             ? 'Para receber lembretes, vá em Ajustes > Notificações > HoraMed e ative.'
                             : 'Para receber lembretes, ative as notificações nas configurações do seu celular.'
@@ -188,8 +243,8 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
                             ? 'To receive reminders, go to Settings > Notifications > HoraMed and enable.'
                             : 'To receive reminders, enable notifications in your phone settings.'
                     ) : (
-                      language === 'pt' 
-                        ? 'Para receber lembretes, ative as notificações nas configurações do navegador (clique no 🔒 na barra de endereço).' 
+                      language === 'pt'
+                        ? 'Para receber lembretes, ative as notificações nas configurações do navegador (clique no 🔒 na barra de endereço).'
                         : 'To receive reminders, enable notifications in browser settings (click the 🔒 in the address bar).'
                     )}
                   </p>
@@ -206,7 +261,7 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
       </AnimatePresence>
     );
   }
-  
+
   return (
     <AnimatePresence>
       {show && !dismissed && (
@@ -226,9 +281,9 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
                   <h3 className="font-semibold text-sm">
                     {language === 'pt' ? '🔔 Ativar lembretes?' : '🔔 Enable reminders?'}
                   </h3>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     className="h-6 w-6 -mt-1 -mr-2"
                     onClick={handleDismiss}
                   >
@@ -236,8 +291,8 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {language === 'pt' 
-                    ? 'Nunca esqueça de tomar seus medicamentos! Receba alertas nos horários certos.' 
+                  {language === 'pt'
+                    ? 'Nunca esqueça de tomar seus medicamentos! Receba alertas nos horários certos.'
                     : 'Never forget your medications! Get alerts at the right times.'}
                 </p>
                 <div className="flex gap-2 mt-3">

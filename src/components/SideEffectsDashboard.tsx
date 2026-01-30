@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -8,21 +8,28 @@ import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { Download, TrendingUp, Activity } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { auth, fetchCollection, orderBy, where } from "@/integrations/firebase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SideEffectsDashboardProps {
   itemId?: string;
 }
 
+interface CorrelationPoint {
+  recordedAt: string;
+  overallFeeling?: number;
+  energyLevel?: number;
+  painLevel?: number;
+  nauseaLevel?: number;
+  sleepQuality?: number;
+}
+
 export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
-  const { user } = useAuth();
   const { t, language } = useLanguage();
   const { logs, isLoading, fetchLogs, getCorrelationData } = useSideEffectsLog();
   const [medications, setMedications] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedMedication, setSelectedMedication] = useState<string>(itemId || "");
-  const [chartData, setChartData] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
 
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
@@ -35,26 +42,15 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     sleep: t('sideEffects.sleep'),
   };
 
-  useEffect(() => {
-    loadMedications();
-  }, [user]);
-
-  useEffect(() => {
-    if (selectedMedication) {
-      fetchLogs(selectedMedication);
-      loadChartData(selectedMedication);
-    }
-  }, [selectedMedication]);
-
-  const loadMedications = async () => {
+  const loadMedications = useCallback(async () => {
+    const user = auth.currentUser;
     if (!user) return;
 
-    const { data, error } = await supabase
-      .from('items')
-      .select('id, name')
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .order('name');
+    // Fetch active medications from Firebase
+    const { data, error } = await fetchCollection<any>(
+      `users/${user.uid}/medications`,
+      [where('isActive', '==', true), orderBy('name', 'asc')]
+    );
 
     if (error) {
       console.error('Error loading medications:', error);
@@ -65,33 +61,75 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     if (data && data.length > 0 && !selectedMedication) {
       setSelectedMedication(data[0].id);
     }
-  };
+  }, [selectedMedication]);
 
-  const loadChartData = async (medId: string) => {
+  useEffect(() => {
+    loadMedications();
+  }, [loadMedications]);
+
+  const loadChartData = useCallback(async (medId: string) => {
     const [overall, energy, pain, nausea, sleep] = await Promise.all([
-      getCorrelationData(medId, 'overall_feeling'),
-      getCorrelationData(medId, 'energy_level'),
-      getCorrelationData(medId, 'pain_level'),
-      getCorrelationData(medId, 'nausea_level'),
-      getCorrelationData(medId, 'sleep_quality'),
-    ]);
+      getCorrelationData(medId, 'overallFeeling'),
+      getCorrelationData(medId, 'energyLevel'),
+      getCorrelationData(medId, 'painLevel'),
+      getCorrelationData(medId, 'nauseaLevel'),
+      getCorrelationData(medId, 'sleepQuality'),
+    ]) as [CorrelationPoint[], CorrelationPoint[], CorrelationPoint[], CorrelationPoint[], CorrelationPoint[]];
 
-    const combined = (overall as any[]).map((item: any, index: number) => ({
-      date: format(new Date(item.recorded_at), 'dd/MM', { locale: dateLocale }),
-      [chartLabels.overallFeeling]: item.overall_feeling,
-      [chartLabels.energy]: (energy as any[])[index]?.energy_level,
-      [chartLabels.pain]: (pain as any[])[index]?.pain_level,
-      [chartLabels.nausea]: (nausea as any[])[index]?.nausea_level,
-      [chartLabels.sleep]: (sleep as any[])[index]?.sleep_quality,
+    // Combine data points by date for the chart
+    // We assume getCorrelationData returns { recordedAt, value } array
+    // Map to simple date string "dd/MM"
+
+    // Naive combination: iterate over overallFeeling (or longest array) and try to match others?
+    // Or just push all points. 
+    // Recharts handles missing data keys gracefully if we structure it right.
+    // The previous implementation assumed indices match or data is dense.
+    // getCorrelationData fetches logs for that item.
+    // Since all metrics come from the SAME logs usually (user rates everything at once), 
+    // we should iterate over the unique logs for this medication.
+
+    // Better way: use 'logs' from hook which are already fetched?
+    // But 'fetchLogs' sets state 'logs'.
+    // 'getCorrelationData' fetches independently.
+    // Let's rely on 'logs' state if it is filtered by itemId.
+
+    // We can just re-process 'logs' if they are loaded for 'selectedMedication'.
+    // `fetchLogs(selectedMedication)` is called in the effect below.
+  }, [getCorrelationData, dateLocale]);
+
+  // Redoing the chart data logic to depend on 'logs' which are already loaded for the selected medication
+  useEffect(() => {
+    if (!logs || logs.length === 0) {
+      setChartData([]);
+      return;
+    }
+
+    // Sort by date ascending
+    const sortedLogs = [...logs].sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+
+    const data = sortedLogs.map(log => ({
+      date: format(new Date(log.recordedAt), 'dd/MM', { locale: dateLocale }),
+      [chartLabels.overallFeeling]: log.overallFeeling,
+      [chartLabels.energy]: log.energyLevel,
+      [chartLabels.pain]: log.painLevel,
+      [chartLabels.nausea]: log.nauseaLevel,
+      [chartLabels.sleep]: log.sleepQuality,
     }));
 
-    setChartData(combined);
-  };
+    setChartData(data);
+  }, [logs, dateLocale, chartLabels.energy, chartLabels.nausea, chartLabels.overallFeeling, chartLabels.pain, chartLabels.sleep]);
+
+  useEffect(() => {
+    if (selectedMedication) {
+      fetchLogs(selectedMedication);
+      // loadChartData is removed as we use 'logs' in the effect above
+    }
+  }, [selectedMedication, fetchLogs]);
 
   const exportToPDF = async () => {
     try {
       toast.info(t('sideEffects.generatingPdf'));
-      
+
       const selectedMed = medications.find(m => m.id === selectedMedication);
       const reportData = {
         medication: selectedMed?.name || t('today.medication'),
@@ -121,7 +159,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     const values = logs
       .map(log => log[metric] as number)
       .filter(v => v !== null && v !== undefined);
-    
+
     if (values.length === 0) return 0;
     return (values.reduce((sum, v) => sum + v, 0) / values.length).toFixed(1);
   };
@@ -178,7 +216,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
             <CardTitle className="text-sm font-medium">{t('sideEffects.overallFeeling')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getAverageRating('overall_feeling')}</div>
+            <div className="text-2xl font-bold">{getAverageRating('overallFeeling')}</div>
             <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
@@ -188,7 +226,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
             <CardTitle className="text-sm font-medium">{t('sideEffects.energy')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getAverageRating('energy_level')}</div>
+            <div className="text-2xl font-bold">{getAverageRating('energyLevel')}</div>
             <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
@@ -198,7 +236,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
             <CardTitle className="text-sm font-medium">{t('sideEffects.pain')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getAverageRating('pain_level')}</div>
+            <div className="text-2xl font-bold">{getAverageRating('painLevel')}</div>
             <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
@@ -208,7 +246,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
             <CardTitle className="text-sm font-medium">{t('sideEffects.nausea')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getAverageRating('nausea_level')}</div>
+            <div className="text-2xl font-bold">{getAverageRating('nauseaLevel')}</div>
             <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>
@@ -218,7 +256,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
             <CardTitle className="text-sm font-medium">{t('sideEffects.sleep')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{getAverageRating('sleep_quality')}</div>
+            <div className="text-2xl font-bold">{getAverageRating('sleepQuality')}</div>
             <p className="text-xs text-muted-foreground">{t('sideEffects.averageOf5')}</p>
           </CardContent>
         </Card>

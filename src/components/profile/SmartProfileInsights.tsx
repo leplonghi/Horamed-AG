@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { 
-  Crown, Bell, AlertTriangle, CheckCircle, 
+import {
+  Crown, Bell, AlertTriangle, CheckCircle,
   FileText, Scale, Users, Gift
 } from "lucide-react";
 import SmartInsightsBase, { Insight } from "@/components/shared/SmartInsightsBase";
@@ -9,63 +9,66 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, fetchDocument, limit, where } from "@/integrations/firebase";
 
 export default function SmartProfileInsights() {
   const navigate = useNavigate();
   const { isPremium, daysLeft } = useSubscription();
   const { profiles } = useUserProfiles();
   const { t } = useTranslation();
+  const user = auth.currentUser;
 
-  // Check if user has weight records
-  const { data: hasWeightRecords } = useQuery({
-    queryKey: ["profile-weight-check"],
+  // Check if user has vital signs records (Firebase)
+  const { data: hasVitalSigns } = useQuery({
+    queryKey: ["profile-vitals-check", user?.uid],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
-      
-      const { count } = await supabase
-        .from("sinais_vitais")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .not("peso_kg", "is", null);
-      
-      return (count || 0) > 0;
-    }
+      // Check if any vitalSigns exist
+      const { data } = await fetchCollection(`users/${user.uid}/vitalSigns`, [limit(1)]);
+      return data && data.length > 0;
+    },
+    enabled: !!user
   });
 
-  // Check notification preferences
+  // Check notification preferences (Firebase)
   const { data: notificationsEnabled } = useQuery({
-    queryKey: ["profile-notifications-check"],
+    queryKey: ["profile-notifications-check", user?.uid],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return true;
-      
-      const { data } = await supabase
-        .from("notification_preferences")
-        .select("push_enabled")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      
-      return data?.push_enabled ?? false;
-    }
+      if (!user) return true; // Default to true if check fails to avoid annoying user if not critical
+
+      // Logic: check if we have explicit disabled setting.
+      // Assuming we migrate references to users/{uid}/settings/notifications
+
+      const { data } = await fetchDocument<any>(`users/${user.uid}/settings`, 'notifications');
+
+      if (data) {
+        return data.pushEnabled !== false; // Default true unless explicitly false
+      }
+
+      // Fallback: check browser permission
+      if ('Notification' in window) {
+        return Notification.permission === 'granted';
+      }
+
+      return false;
+    },
+    enabled: !!user
   });
 
-  // Check referral stats
+  // Check referral stats (Firebase)
   const { data: referralCount = 0 } = useQuery({
-    queryKey: ["profile-referral-count"],
+    queryKey: ["profile-referral-count", user?.uid],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return 0;
-      
-      const { count } = await supabase
-        .from("referrals")
-        .select("*", { count: "exact", head: true })
-        .eq("referrer_user_id", user.id)
-        .eq("status", "active");
-      
-      return count || 0;
-    }
+
+      const { data } = await fetchCollection<any>(
+        `users/${user.uid}/referrals`,
+        [where('status', '==', 'active')]
+      );
+
+      return data ? data.length : 0;
+    },
+    enabled: !!user
   });
 
   const insights = useMemo(() => {
@@ -116,17 +119,17 @@ export default function SmartProfileInsights() {
       });
     }
 
-    // No weight records
-    if (!hasWeightRecords) {
+    // No vitals records
+    if (hasVitalSigns === false) {
       result.push({
-        id: "no-weight",
+        id: "no-vitals",
         type: "info",
         icon: <Scale className="h-5 w-5" />,
         title: t('profile.trackYourWeight'),
         description: t('profile.trackYourWeightDesc'),
         action: {
           label: t('common.start'),
-          onClick: () => navigate('/peso')
+          onClick: () => navigate('/sinais-vitais')
         }
       });
     }
@@ -173,7 +176,7 @@ export default function SmartProfileInsights() {
     }
 
     return result.slice(0, 2);
-  }, [isPremium, daysLeft, notificationsEnabled, hasWeightRecords, profiles, referralCount, navigate, t]);
+  }, [isPremium, daysLeft, notificationsEnabled, hasVitalSigns, profiles, referralCount, navigate, t]);
 
   if (insights.length === 0) return null;
 

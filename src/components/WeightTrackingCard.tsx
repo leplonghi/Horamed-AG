@@ -2,11 +2,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection, orderBy, where, limit } from "@/integrations/firebase";
 import { Scale, Plus, History } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import WeightRegistrationModal from "./WeightRegistrationModal";
+import VitalsRegistrationModal from "./VitalsRegistrationModal";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -21,27 +21,13 @@ export default function WeightTrackingCard({ userId, profileId }: WeightTracking
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
-  const { data: latestWeight, refetch } = useQuery({
+  const { data: latestLog, refetch } = useQuery({
     queryKey: ["latest-weight", userId, profileId],
     queryFn: async () => {
-      let query = supabase
-        .from("weight_logs")
-        .select("*")
-        .eq("user_id", userId);
-      
-      if (profileId) {
-        query = query.eq("profile_id", profileId);
-      } else {
-        query = query.is("profile_id", null);
-      }
-      
-      const { data, error } = await query
-        .order("recorded_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data;
+      // Use Firebase collection path
+      const path = profileId ? `users/${userId}/profiles/${profileId}/weightLogs` : `users/${userId}/weightLogs`;
+      const { data } = await fetchCollection<any>(path, [orderBy("recordedAt", "desc"), limit(1)]);
+      return data && data.length > 0 ? data[0] : null;
     },
   });
 
@@ -51,29 +37,29 @@ export default function WeightTrackingCard({ userId, profileId }: WeightTracking
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Scale className="h-5 w-5 text-primary" />
-            {t('weightCard.title')}
+            {language === 'pt' ? 'Controle de Peso' : 'Weight Tracking'}
           </CardTitle>
           <CardDescription>
-            {t('weightCard.description')}
+            {language === 'pt' ? 'Mantenha seu peso atualizado para dosagens precisas.' : 'Keep your weight updated for accurate dosages.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t('weightCard.current')}</p>
-              {latestWeight ? (
+              <p className="text-sm text-muted-foreground">{language === 'pt' ? 'Atual' : 'Current'}</p>
+              {latestLog ? (
                 <p className="text-3xl font-bold text-primary">
-                  {latestWeight.weight_kg} <span className="text-lg font-normal">kg</span>
+                  {latestLog.weightKg} <span className="text-lg font-normal">kg</span>
                 </p>
               ) : (
-                <p className="text-sm text-muted-foreground italic">{t('weightCard.notRegistered')}</p>
+                <p className="text-sm text-muted-foreground italic">{language === 'pt' ? 'Não registrado' : 'Not registered'}</p>
               )}
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{t('weightCard.lastMeasurement')}</p>
-              {latestWeight ? (
+              <p className="text-sm text-muted-foreground">{language === 'pt' ? 'Última medição' : 'Last measurement'}</p>
+              {latestLog ? (
                 <p className="text-sm font-medium">
-                  {format(new Date(latestWeight.recorded_at), language === 'pt' ? "dd/MM/yyyy" : "MM/dd/yyyy", { locale: dateLocale })}
+                  {format(new Date(latestLog.recordedAt), language === 'pt' ? "dd/MM/yyyy" : "MM/dd/yyyy", { locale: dateLocale })}
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground italic">-</p>
@@ -86,29 +72,30 @@ export default function WeightTrackingCard({ userId, profileId }: WeightTracking
             onClick={() => setModalOpen(true)}
           >
             <Plus className="h-5 w-5" />
-            {t('weightCard.registerNew')}
+            {language === 'pt' ? 'Registrar Novo Peso' : 'Log New Weight'}
           </Button>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
-            {t('weightCard.tip')}
+            {language === 'pt' ? 'Dica: A Clara usa seu peso para verificar a segurança das doses.' : 'Tip: Clara uses your weight to verify dose safety.'}
           </p>
 
           <Button
             variant="link"
             className="text-xs h-auto p-0 gap-1"
-            onClick={() => navigate(`/peso/historico${profileId ? `?profile=${profileId}` : ""}`)}
+            onClick={() => navigate(`/sinais-vitais?tab=weight${profileId ? `&profile=${profileId}` : ""}`)}
           >
             <History className="h-3 w-3" />
-            {t('weightCard.viewHistory')}
+            {language === 'pt' ? 'Ver histórico completo' : 'View full history'}
           </Button>
         </CardContent>
       </Card>
 
-      <WeightRegistrationModal
+      <VitalsRegistrationModal
         open={modalOpen}
         onOpenChange={setModalOpen}
         profileId={profileId}
         onSuccess={refetch}
+        defaultTab="weight"
       />
     </>
   );

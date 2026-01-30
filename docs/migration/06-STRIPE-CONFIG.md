@@ -1,4 +1,10 @@
-# HoraMed Stripe Configuration
+# HoraMed Stripe Configuration (Firebase Edition)
+
+## Status: MIGRATED TO FIREBASE
+
+The Stripe integration has been migrated from Supabase Edge Functions to **Firebase Cloud Functions** to ensure compatibility with Firebase Auth.
+
+---
 
 ## Account Information
 
@@ -9,129 +15,76 @@
 
 ---
 
-## Price IDs
+## Price IDs (Correct & Active)
 
 ### BRL (Brazilian Real)
 
 | Plan | Price ID | Amount |
 |------|----------|--------|
 | Monthly | `price_1Stun3AY2hnWxlHuDEEMRVTs` | R$ 19,90 |
-| Annual | `price_1StuprHh4P8HSV4YRO4eI5YE` | R$ 199,90 |
+| Annual | `price_1SuWEwAY2hnWxlHuG2WrgNhx` | R$ 199,90 |
 
 ### USD (US Dollar)
 
 | Plan | Price ID | Amount |
 |------|----------|--------|
 | Monthly | `price_1SturuAY2hnWxlHuHVLxgKae` | $3.99 |
-| Annual | `price_1StusNHh4P8HSV4YF0mk0mcI` | $39.99 |
+| Annual | `price_1SieJtAY2hnWxlHuAOa6m5nu` | $39.99 |
 
 ---
 
-## Frontend Configuration
+## Backend Configuration (Firebase Functions)
 
-File: `src/lib/stripeConfig.ts`
+### Functions Implemented
+1. **`createCheckoutSession`** (Callable): Creates Stripe Session for logged-in Firebase user.
+2. **`stripeWebhook`** (HTTP Request): Handles `checkout.session.completed`, subscription updates/deletions.
+3. **`syncSubscription`** (Callable): Manually syncs Stripe status to Firestore.
 
-```typescript
-export const stripeConfig = {
-  prices: {
-    brl: {
-      monthly: {
-        id: 'price_1Stun3AY2hnWxlHuDEEMRVTs',
-        amount: 1990,
-        currency: 'BRL',
-        interval: 'month',
-      },
-      annual: {
-        id: 'price_1StuprHh4P8HSV4YRO4eI5YE',
-        amount: 19990,
-        currency: 'BRL',
-        interval: 'year',
-      },
-    },
-    usd: {
-      monthly: {
-        id: 'price_1SturuAY2hnWxlHuHVLxgKae',
-        amount: 399,
-        currency: 'USD',
-        interval: 'month',
-      },
-      annual: {
-        id: 'price_1StusNHh4P8HSV4YF0mk0mcI',
-        amount: 3999,
-        currency: 'USD',
-        interval: 'year',
-      },
-    },
-  },
-};
+### Webhook Endpoint
+The Webhook URL for Stripe Dashboard should be:
 ```
-
----
-
-## Webhook Configuration
-
-### Endpoint URL
-
-For production, configure webhook at:
-```
-https://zmsuqdwleyqpdthaqvbi.supabase.co/functions/v1/stripe-webhook
+https://us-central1-<YOUR-PROJECT-ID>.cloudfunctions.net/stripeWebhook
 ```
 
 ### Events to Listen
-
 - `checkout.session.completed`
 - `customer.subscription.created`
 - `customer.subscription.updated`
 - `customer.subscription.deleted`
 - `invoice.paid`
 - `invoice.payment_failed`
-- `setup_intent.succeeded` (for payment method updates)
 
 ---
 
-## Secrets Required
+## Deployment Instructions
 
-| Secret | Where to Find |
-|--------|---------------|
-| `STRIPE_SECRET_KEY` | [Stripe Dashboard → API Keys](https://dashboard.stripe.com/apikeys) |
-| `STRIPE_WEBHOOK_SECRET` | [Stripe Dashboard → Webhooks → Signing secret](https://dashboard.stripe.com/webhooks) |
+To deploy the updated functions with Stripe support:
 
----
+1. **Set Stripe Secret:**
+   ```bash
+   firebase functions:config:set stripe.secret="sk_live_..." stripe.webhook_secret="whsec_..."
+   ```
 
-## Customer Portal
+2. **Deploy Functions:**
+   ```bash
+   firebase deploy --only functions
+   ```
 
-Ensure customer portal is configured:
-1. Go to [Stripe Customer Portal Settings](https://dashboard.stripe.com/settings/billing/portal)
-2. Enable portal
-3. Configure allowed actions:
-   - Cancel subscriptions
-   - Update payment methods
-   - View invoices
-
----
-
-## Migration Notes
-
-When migrating to new environment:
-
-1. **Create new products/prices** in new Stripe account OR use existing account
-2. **Update `stripeConfig.ts`** with new price IDs
-3. **Configure new webhook** endpoint pointing to new Supabase project
-4. **Update secrets** in new environment:
-   - `STRIPE_SECRET_KEY`
-   - `STRIPE_WEBHOOK_SECRET`
-5. **Test checkout flow** before going live
+3. **Verify:**
+   - Go to Stripe Dashboard > Developers > Webhooks.
+   - Update the endpoint URL to the one provided by Firebase deploy output.
 
 ---
 
-## Domain Configuration
+## Firestore Schema
 
-Success/Cancel URLs are configured to:
+Subscription data is stored in:
+`users/{uid}/subscription/current`
 
-| Event | URL |
-|-------|-----|
-| Success | `https://app.horamed.net/assinatura/sucesso` |
-| Cancel | `https://app.horamed.net/assinatura/cancelado` |
-| Customer Portal Return | `https://app.horamed.net/assinatura` |
-
-Update these in `create-checkout` and `customer-portal` edge functions if domain changes.
+Fields:
+- `status`: 'active', 'trialing', 'past_due', 'canceled', etc.
+- `planType`: 'premium' or 'free' (derived from status)
+- `stripeCustomerId`: 'cus_...'
+- `stripeSubscriptionId`: 'sub_...'
+- `trialEndsAt`: Timestamp
+- `currentPeriodEnd`: Timestamp

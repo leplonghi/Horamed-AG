@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Search, TrendingDown, MapPin, ExternalLink, Truck, Store, Lock } from "lucide-react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface PharmacyPrice {
   name: string;
   price: number;
@@ -58,7 +59,7 @@ const Pharmacy = () => {
 
   const searchPrices = async () => {
     if (!medicationName.trim()) {
-      toast.error("Digite o nome do medicamento");
+      toast.error(t("toast.pharmacy.nameRequired"));
       return;
     }
 
@@ -71,10 +72,10 @@ const Pharmacy = () => {
       if (error) throw error;
 
       setResults(data);
-      toast.success("Preços encontrados!");
+      toast.success(t("toast.pharmacy.pricesFound"));
     } catch (error) {
       console.error('Error searching prices:', error);
-      toast.error("Erro ao buscar preços");
+      toast.error(t("toast.pharmacy.pricesError"));
     } finally {
       setLoading(false);
     }

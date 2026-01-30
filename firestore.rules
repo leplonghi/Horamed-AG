@@ -1,0 +1,129 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===================================
+    // Helper Functions
+    // ===================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // ===================================
+    // Users Collection
+    // ===================================
+    
+    match /users/{userId} {
+      // Users can read and write their own data
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+      
+      // Family Profiles (subcollection)
+      match /familyProfiles/{profileId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Medications (subcollection)
+      match /medications/{medicationId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Doses (subcollection)
+      match /doses/{doseId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Medical Documents (subcollection)
+      match /documents/{documentId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Medical Reports (subcollection)
+      match /reports/{reportId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Weight History (subcollection)
+      match /weightHistory/{entryId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Vaccination Records (subcollection)
+      match /vaccinations/{vaccinationId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // XP Transactions (subcollection)
+      match /xpTransactions/{transactionId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Achievements (subcollection)
+      match /achievements/{achievementId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Referrals (subcollection)
+      match /referrals/{referralId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+      
+      // Subscriptions (subcollection)
+      match /subscription/{subscriptionId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+      
+      // Push Subscriptions (subcollection)
+      match /pushSubscriptions/{subscriptionId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      // Notification Metrics (subcollection)
+      match /notificationMetrics/{metricId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+    
+    // ===================================
+    // Global Collections (Read-Only)
+    // ===================================
+    
+    // Medication Interactions (global reference data)
+    match /medicationInteractions/{interactionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // Only admins can modify
+    }
+    
+    // Feature Flags (global configuration)
+    match /featureFlags/{flagId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    
+    // ===================================
+    // Admin Collections
+    // ===================================
+    
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Referral Fraud Logs (admin only)
+    match /referralFraudLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}

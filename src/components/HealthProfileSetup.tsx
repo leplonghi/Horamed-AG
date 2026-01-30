@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument } from "@/integrations/firebase";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import {
   Dialog,
   DialogContent,
@@ -25,10 +26,11 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
     weight_kg: "",
     height_cm: "",
   });
+  const { updateProfile, activeProfile } = useUserProfiles();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.birth_date || !formData.weight_kg) {
       toast.error("Por favor, preencha data de nascimento e peso");
       return;
@@ -52,29 +54,30 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
-      // Upsert profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .upsert({
-          user_id: user.id,
-          birth_date: formData.birth_date,
-          weight_kg: weight,
-          height_cm: formData.height_cm ? parseFloat(formData.height_cm) : null,
+      // Update active profile
+      if (activeProfile) {
+        await updateProfile(activeProfile.id, {
+          birthDate: formData.birth_date,
+          weightKg: weight,
+          heightCm: formData.height_cm ? parseFloat(formData.height_cm) : null,
         });
-
-      if (profileError) throw profileError;
+      } else {
+        // Fallback if no active profile? Should not happen in this flow usually
+        // Or we prompt to create one? 
+        // For now, assuming activeProfile exists if user is authenticated and setup is showing
+        console.warn("No active profile to update");
+      }
 
       // Add to health history
-      const { error: historyError } = await supabase
-        .from("health_history")
-        .insert({
-          user_id: user.id,
-          weight_kg: weight,
-          height_cm: formData.height_cm ? parseFloat(formData.height_cm) : null,
-        });
+      const { error: historyError } = await addDocument(`users/${user.uid}/healthHistory`, {
+        userId: user.uid,
+        weightKg: weight,
+        heightCm: formData.height_cm ? parseFloat(formData.height_cm) : null,
+        recordedAt: new Date().toISOString()
+      });
 
       if (historyError) console.warn("Could not save to health history:", historyError);
 
@@ -89,7 +92,7 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
   };
 
   return (
-    <Dialog open={open} onOpenChange={() => {}}>
+    <Dialog open={open} onOpenChange={() => { }}>
       <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">

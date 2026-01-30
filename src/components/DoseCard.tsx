@@ -17,18 +17,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface DoseCardProps {
   dose: {
     id: string;
-    item_id: string;
-    due_at: string;
+    itemId: string;
+    dueAt: string;
     status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-    taken_at: string | null;
+    takenAt: string | null;
     items: {
       name: string;
-      dose_text: string | null;
-      with_food?: boolean | null;
+      doseText: string | null;
+      withFood?: boolean | null;
       category?: string | null;
     };
     stock?: {
-      units_left: number;
+      currentQty: number;
     }[];
   };
   onTake: () => void;
@@ -41,7 +41,7 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
-  const dueTime = new Date(dose.due_at);
+  const dueTime = new Date(dose.dueAt);
   const now = new Date();
   const isPast = dueTime < now;
   const isCurrent = Math.abs(dueTime.getTime() - now.getTime()) < 30 * 60 * 1000; // 30min window
@@ -151,20 +151,20 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
                   <h4 className="font-semibold text-foreground truncate">
                     {dose.items.name}
                   </h4>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 shrink-0"
-                      onClick={handleShowInfo}
-                      title={t('dose.viewMedInfo')}
-                    >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 shrink-0"
+                    onClick={handleShowInfo}
+                    title={t('dose.viewMedInfo')}
+                  >
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
-                {dose.items.dose_text && (
+                {dose.items.doseText && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    {dose.items.dose_text}
-                    {dose.items.with_food && (
+                    {dose.items.doseText}
+                    {dose.items.withFood && (
                       <>
                         <span className="mx-1">•</span>
                         <Utensils className="h-3 w-3" />
@@ -192,16 +192,16 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
                   {isFuture && `🕒 ${formatDistanceToNow(dueTime, { locale: dateLocale, addSuffix: true })}`}
                 </span>
               )}
-              {dose.taken_at && (
+              {dose.takenAt && (
                 <span className="text-success text-xs">
-                  ✓ {language === 'pt' ? 'às' : 'at'} {format(new Date(dose.taken_at), "HH:mm", { locale: dateLocale })}
+                  ✓ {language === 'pt' ? 'às' : 'at'} {format(new Date(dose.takenAt), "HH:mm", { locale: dateLocale })}
                 </span>
               )}
             </div>
 
             {dose.stock && dose.stock.length > 0 && (
               <p className="text-xs text-muted-foreground mb-3">
-                📦 {t('dose.stock')}: {dose.stock[0].units_left} {t('dose.unitsShort')}
+                📦 {t('dose.stock')}: {dose.stock[0].currentQty} {t('dose.unitsShort')}
               </p>
             )}
 

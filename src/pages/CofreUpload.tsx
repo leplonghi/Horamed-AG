@@ -1,7 +1,9 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Upload, FileText, ArrowLeft, Loader2, Camera, Edit3 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, storage, functions, addDocument, fetchCollection } from "@/integrations/firebase";
+import { ref, uploadBytes, deleteObject } from "firebase/storage";
+import { httpsCallable } from "firebase/functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -18,7 +20,7 @@ export default function CofreUpload() {
   const { t, language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -40,55 +42,46 @@ export default function CofreUpload() {
       return new Promise((resolve) => {
         const img = new Image();
         const reader = new FileReader();
-        
+
         reader.onload = (e) => {
           img.src = e.target?.result as string;
         };
-        
+
         img.onload = () => {
           const minWidth = 800;
           const minHeight = 600;
-          
+
           if (img.width < minWidth || img.height < minHeight) {
-            resolve({ 
-              valid: false, 
+            resolve({
+              valid: false,
               error: t('cofre.upload.imageTooSmall', { width: String(img.width), height: String(img.height) })
             });
           } else {
             resolve({ valid: true });
           }
         };
-        
+
         img.onerror = () => {
           resolve({ valid: false, error: t('cofre.upload.cannotReadImage') });
         };
-        
+
         reader.readAsDataURL(file);
       });
     }
-    
+
     return { valid: true };
   };
 
   const extractFromImage = async (base64: string) => {
     let attempts = 0;
     let success = false;
-    
+
+    const extractDocument = httpsCallable(functions, 'extractDocument');
+
     while (attempts < 3 && !success) {
       try {
-        const { data, error } = await supabase.functions.invoke('extract-document', {
-          body: { image: base64 }
-        });
-
-        if (error) {
-          if (error.message?.includes('400') || error.message?.includes('Invalid')) {
-            throw error;
-          }
-          if (attempts === 2) throw error;
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          continue;
-        }
+        const result = await extractDocument({ image: base64 });
+        const data = result.data as any;
 
         if (data) {
           success = true;
@@ -126,43 +119,45 @@ export default function CofreUpload() {
         setIsExtracting(true);
         setUploading(true);
         toast.loading(t('cofre.upload.analyzing'), { id: "extract" });
-        
+
         try {
           // First, upload the file
-          const { data: { user } } = await supabase.auth.getUser();
+          const user = auth.currentUser;
           if (!user) throw new Error(t('cofre.upload.userNotAuth'));
 
           const fileExt = firstFile.name.split('.').pop();
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const filePath = `${user.id}/${fileName}`;
+          const filePath = `${user.uid}/${fileName}`;
+          const fileRef = ref(storage, filePath);
 
           toast.loading(t('cofre.upload.uploading'), { id: "extract" });
 
-          const { error: uploadError } = await supabase.storage
-            .from('cofre-saude')
-            .upload(filePath, firstFile);
-
-          if (uploadError) throw uploadError;
+          await uploadBytes(fileRef, firstFile);
 
           // Now extract data from the file
           toast.loading(t('cofre.upload.aiProcessing'), { id: "extract" });
 
           if (isPDF(firstFile)) {
             console.log('Processando PDF completo...');
-            
+
             const reader = new FileReader();
             reader.onloadend = async () => {
               try {
                 const base64 = reader.result as string;
                 const data = await extractFromImage(base64);
-                
+
                 if (data) {
-                  await saveDocumentAutomatically(data, user.id, filePath, firstFile.type);
+                  await saveDocumentAutomatically(data, user.uid, filePath, firstFile.type);
                 } else {
                   throw new Error(t('cofre.upload.cannotExtractPdf'));
                 }
               } catch (err) {
-                await supabase.storage.from('cofre-saude').remove([filePath]);
+                try {
+                  const fileRef = ref(storage, filePath);
+                  await deleteObject(fileRef);
+                } catch (delErr) {
+                  console.error("Error deleting file", delErr);
+                }
                 throw err;
               }
             };
@@ -171,18 +166,28 @@ export default function CofreUpload() {
             const reader = new FileReader();
             reader.onloadend = async () => {
               const base64 = reader.result as string;
-              
+
               try {
                 const data = await extractFromImage(base64);
-                
+
                 if (data) {
-                  await saveDocumentAutomatically(data, user.id, filePath, firstFile.type);
+                  await saveDocumentAutomatically(data, user.uid, filePath, firstFile.type);
                 } else {
-                  await supabase.storage.from('cofre-saude').remove([filePath]);
+                  try {
+                    const fileRef = ref(storage, filePath);
+                    await deleteObject(fileRef);
+                  } catch (delErr) {
+                    console.error("Error deleting file", delErr);
+                  }
                   throw new Error(t('cofre.upload.cannotExtractImage'));
                 }
               } catch (err: any) {
-                await supabase.storage.from('cofre-saude').remove([filePath]);
+                try {
+                  const fileRef = ref(storage, filePath);
+                  await deleteObject(fileRef);
+                } catch (delErr) {
+                  console.error("Error deleting file", delErr);
+                }
                 throw err;
               }
             };
@@ -191,10 +196,10 @@ export default function CofreUpload() {
         } catch (error: any) {
           console.error('Erro ao processar documento:', error);
           toast.dismiss("extract");
-          
+
           let errorMessage = "";
           let suggestions = "";
-          
+
           if (error.message?.includes('Invalid') || error.message?.includes('formato')) {
             errorMessage = t('cofre.upload.invalidFormat');
             suggestions = t('cofre.upload.useFormats');
@@ -205,7 +210,7 @@ export default function CofreUpload() {
             errorMessage = t('cofre.upload.lowQuality');
             suggestions = t('cofre.upload.qualityTips');
           }
-          
+
           toast.error(`${errorMessage} ${suggestions}`, { duration: 8000 });
           setIsExtracting(false);
           setUploading(false);
@@ -218,115 +223,112 @@ export default function CofreUpload() {
     try {
       toast.loading(t('cofre.upload.saving'), { id: "extract" });
 
-      const { data: categoriaData } = await supabase
-        .from('categorias_saude')
-        .select('id')
-        .eq('slug', extractedData.category)
-        .maybeSingle();
-
       // Build comprehensive metadata based on category
       const metaData: any = {
         // Dados do médico
-        doctor_name: extractedData.doctor_name,
-        doctor_registration: extractedData.doctor_registration,
-        doctor_state: extractedData.doctor_state,
+        doctorName: extractedData.doctor_name,
+        doctorRegistration: extractedData.doctor_registration,
+        doctorState: extractedData.doctor_state,
         specialty: extractedData.specialty,
-        
+
         // Dados do emitente
-        emitter_name: extractedData.emitter_name,
-        emitter_address: extractedData.emitter_address,
-        emitter_city: extractedData.emitter_city,
-        emitter_state: extractedData.emitter_state,
-        emitter_zip: extractedData.emitter_zip,
-        emitter_phone: extractedData.emitter_phone,
-        emitter_cnpj: extractedData.emitter_cnpj,
-        
+        emitterName: extractedData.emitter_name,
+        emitterAddress: extractedData.emitter_address,
+        emitterCity: extractedData.emitter_city,
+        emitterState: extractedData.emitter_state,
+        emitterZip: extractedData.emitter_zip,
+        emitterPhone: extractedData.emitter_phone,
+        emitterCnpj: extractedData.emitter_cnpj,
+
         // Dados do paciente
-        patient_name: extractedData.patient_name,
-        patient_age: extractedData.patient_age,
-        patient_cpf: extractedData.patient_cpf,
-        patient_address: extractedData.patient_address,
-        
+        patientName: extractedData.patient_name,
+        patientAge: extractedData.patient_age,
+        patientCpf: extractedData.patient_cpf,
+        patientAddress: extractedData.patient_address,
+
         // Outros dados
         diagnosis: extractedData.diagnosis,
         notes: extractedData.notes,
-        followup_date: extractedData.followup_date,
-        prescription_type: extractedData.prescription_type,
+        followupDate: extractedData.followup_date,
+        prescriptionType: extractedData.prescription_type,
       };
 
       // RECEITA: Store all prescription details including package info
       if (extractedData.category === 'receita' && extractedData.prescriptions?.length > 0) {
         metaData.prescriptions = extractedData.prescriptions.map((med: any) => ({
-          drug_name: med.drug_name,
-          commercial_name: med.commercial_name,
+          drugName: med.drug_name,
+          commercialName: med.commercial_name,
           dose: med.dose,
           frequency: med.frequency,
           duration: med.duration,
-          duration_days: med.duration_days,
+          durationDays: med.duration_days,
           instructions: med.instructions,
-          with_food: med.with_food,
-          is_generic: med.is_generic,
-          package_type: med.package_type,
-          package_quantity: med.package_quantity,
-          active_ingredient: med.active_ingredient,
+          withFood: med.with_food,
+          isGeneric: med.is_generic,
+          packageType: med.package_type,
+          packageQuantity: med.package_quantity,
+          activeIngredient: med.active_ingredient,
         }));
-        metaData.prescription_count = extractedData.prescriptions.length;
-        metaData.prescription_date = extractedData.issued_at;
+        metaData.prescriptionCount = extractedData.prescriptions.length;
+        metaData.prescriptionDate = extractedData.issued_at;
       }
 
       // EXAME: Store exam values
       if (extractedData.category === 'exame' && extractedData.extracted_values?.length > 0) {
-        metaData.extracted_values = extractedData.extracted_values;
-        metaData.exam_type = extractedData.exam_type;
+        metaData.extractedValues = extractedData.extracted_values;
+        metaData.examType = extractedData.exam_type;
       }
 
       // VACINAÇÃO: Store vaccine details
       if (extractedData.category === 'vacinacao') {
-        metaData.vaccine_name = extractedData.vaccine_name;
-        metaData.dose_number = extractedData.dose_number;
-        metaData.next_dose_date = extractedData.next_dose_date;
+        metaData.vaccineName = extractedData.vaccine_name;
+        metaData.doseNumber = extractedData.dose_number;
+        metaData.nextDoseDate = extractedData.next_dose_date;
       }
 
-      const { data: newDoc, error: insertError } = await supabase
-        .from('documentos_saude')
-        .insert({
-          user_id: userId,
-          profile_id: activeProfile?.id,
-          categoria_id: categoriaData?.id,
-          title: extractedData.title,
-          file_path: filePath,
-          mime_type: mimeType,
-          issued_at: extractedData.issued_at || null,
-          expires_at: extractedData.expires_at || null,
-          provider: extractedData.provider || null,
-          confidence_score: extractedData.confidence_score || 0,
-          status_extraction: 'confirmed',
-          meta: metaData,
-          ocr_text: JSON.stringify(extractedData),
-        })
-        .select()
-        .single();
+      const documentData = {
+        userId: userId,
+        profileId: activeProfile?.id,
+        categorySlug: extractedData.category,
+        title: extractedData.title,
+        filePath: filePath,
+        mimeType: mimeType,
+        issuedAt: extractedData.issued_at || null,
+        expiresAt: extractedData.expires_at || null,
+        provider: extractedData.provider || null,
+        confidenceScore: extractedData.confidence_score || 0,
+        extractionStatus: 'confirmed',
+        meta: metaData,
+        ocrText: JSON.stringify(extractedData),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
 
-      if (insertError) throw insertError;
+      const { data: newDoc, error: insertError } = await addDocument(
+        `users/${userId}/healthDocuments`,
+        documentData
+      );
+
+      if (insertError || !newDoc) throw insertError || new Error("Failed to create document");
 
       // Create related records based on category
       const createdRecords = await createRelatedRecords(extractedData, newDoc.id, userId);
 
       toast.dismiss("extract");
-      
+
       // Show comprehensive success message
       const createdItems = [];
       if (createdRecords.consulta) createdItems.push(t('cofre.upload.consultationSaved'));
       if (createdRecords.exame) createdItems.push(t('cofre.upload.examSaved', { count: String(createdRecords.valoresCount || 0) }));
       if (createdRecords.evento) createdItems.push(t('cofre.upload.vaccineReminder'));
-      
+
       if (createdItems.length > 0) {
         toast.success(t('cofre.upload.docSaved'), { duration: 4000 });
         toast.info(createdItems.join("\n"), { duration: 5000 });
       } else {
         toast.success(t('cofre.upload.docSavedShort'), { duration: 3000 });
       }
-      
+
       // Show document summary
       const summary = [];
       if (extractedData.title) summary.push(`📄 ${extractedData.title}`);
@@ -340,7 +342,7 @@ export default function CofreUpload() {
         }
       }
       if (extractedData.issued_at) summary.push(`📅 ${new Date(extractedData.issued_at).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US')}`);
-      
+
       if (summary.length > 0) {
         toast.info(summary.join(" • "), { duration: 4000 });
       }
@@ -356,7 +358,12 @@ export default function CofreUpload() {
       console.error("Erro ao salvar:", error);
       toast.dismiss("extract");
       toast.error(t('cofre.upload.saveError'));
-      await supabase.storage.from('cofre-saude').remove([filePath]);
+      try {
+        const fileRef = ref(storage, filePath);
+        await deleteObject(fileRef);
+      } catch (delErr) {
+        console.error("Error deleting file", delErr);
+      }
     } finally {
       setIsExtracting(false);
       setUploading(false);
@@ -365,86 +372,93 @@ export default function CofreUpload() {
 
   const createRelatedRecords = async (extractedData: any, documentId: string, userId: string) => {
     const results: any = { consulta: false, exame: false, evento: false, valoresCount: 0 };
-    
+
     try {
       // CONSULTA: Create consultation record
       if (extractedData.category === 'consulta') {
         const consultaData = {
-          user_id: userId,
-          profile_id: activeProfile?.id,
-          documento_id: documentId,
-          data_consulta: extractedData.issued_at || new Date().toISOString(),
-          medico_nome: extractedData.doctor_name || null,
+          userId: userId,
+          profileId: activeProfile?.id,
+          documentId: documentId,
+          dataConsulta: extractedData.issued_at || new Date().toISOString(),
+          medicoNome: extractedData.doctor_name || null,
           especialidade: extractedData.specialty || null,
           local: extractedData.provider || null,
           observacoes: extractedData.diagnosis || extractedData.notes || null,
           status: 'realizada',
+          createdAt: new Date().toISOString()
         };
 
-        const { error } = await supabase.from('consultas_medicas').insert(consultaData);
+        const { error } = await addDocument(`users/${userId}/consultations`, consultaData);
         if (!error) results.consulta = true;
       }
 
       // EXAME: Create exam record with values
       if (extractedData.category === 'exame' && extractedData.extracted_values?.length > 0) {
-        const { data: exame } = await supabase
-          .from('exames_laboratoriais')
-          .insert({
-            user_id: userId,
-            profile_id: activeProfile?.id,
-            documento_id: documentId,
-            data_exame: extractedData.issued_at || new Date().toISOString().split('T')[0],
-            laboratorio: extractedData.provider || null,
-          })
-          .select()
-          .single();
+        const examData = {
+          userId: userId,
+          profileId: activeProfile?.id,
+          documentId: documentId,
+          dataExame: extractedData.issued_at || new Date().toISOString().split('T')[0],
+          laboratorio: extractedData.provider || null,
+          createdAt: new Date().toISOString()
+        };
 
-        if (exame) {
+        const { data: createdExam } = await addDocument(`users/${userId}/exams`, examData);
+
+        if (createdExam && createdExam.id) {
           results.exame = true;
+          const exameId = createdExam.id;
+
           // Insert exam values
           const valores = extractedData.extracted_values.map((val: any) => ({
-            exame_id: exame.id,
-            parametro: val.parameter,
-            valor: val.value ? parseFloat(val.value) : null,
-            valor_texto: val.value?.toString() || null,
-            unidade: val.unit || null,
-            referencia_texto: val.reference_range || null,
-            referencia_min: val.reference_min ? parseFloat(val.reference_min) : null,
-            referencia_max: val.reference_max ? parseFloat(val.reference_max) : null,
+            examId: exameId,
+            parameter: val.parameter,
+            value: val.value ? parseFloat(val.value) : null,
+            valueText: val.value?.toString() || null,
+            unit: val.unit || null,
+            referenceText: val.reference_range || null,
+            referenceMin: val.reference_min ? parseFloat(val.reference_min) : null,
+            referenceMax: val.reference_max ? parseFloat(val.reference_max) : null,
             status: val.status || null,
           }));
 
-          const { data: insertedValores } = await supabase.from('valores_exames').insert(valores).select();
-          results.valoresCount = insertedValores?.length || 0;
+          // We'd typically batch add these, but for now simple iteration or just storing in the exam doc
+          // Storing in a subcollection 'results' for the exam
+          const resultsPromises = valores.map((val: any) => addDocument(`users/${userId}/exams/${exameId}/results`, val));
+          await Promise.all(resultsPromises);
+
+          results.valoresCount = valores.length;
         }
       }
 
       // VACINAÇÃO: Create health event
       if (extractedData.category === 'vacinacao') {
         const eventData = {
-          user_id: userId,
-          profile_id: activeProfile?.id,
-          related_document_id: documentId,
-          type: 'reforco_vacina' as const,
+          userId: userId,
+          profileId: activeProfile?.id,
+          relatedDocumentId: documentId,
+          type: 'reforco_vacina',
           title: extractedData.vaccine_name || 'Vacina',
-          due_date: extractedData.next_dose_date || extractedData.issued_at || new Date().toISOString().split('T')[0],
+          dueDate: extractedData.next_dose_date || extractedData.issued_at || new Date().toISOString().split('T')[0],
           notes: extractedData.dose_number ? `Dose ${extractedData.dose_number}` : null,
+          createdAt: new Date().toISOString()
         };
 
-        const { error } = await supabase.from('eventos_saude').insert(eventData);
+        const { error } = await addDocument(`users/${userId}/healthEvents`, eventData);
         if (!error) results.evento = true;
       }
     } catch (error) {
       console.error("Error creating related records:", error);
       // Don't throw - document is already saved
     }
-    
+
     return results;
   };
 
   const addMedicationsFromPrescription = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       toast.loading(t('cofre.upload.addingMeds'), { id: "add-meds" });
@@ -459,41 +473,43 @@ export default function CofreUpload() {
         }
 
         // Create medication item
-        const { data: newItem, error: itemError } = await supabase
-          .from('items')
-          .insert({
-            user_id: user.id,
-            profile_id: activeProfile?.id,
-            name: med.drug_name || med.commercial_name,
-            dose_text: med.dose,
-            category: 'medicamento',
-            notes: med.instructions,
-            with_food: med.with_food || false,
-            treatment_end_date: endDate,
-            treatment_duration_days: med.duration_days ? parseInt(med.duration_days) : null,
-          })
-          .select()
-          .single();
+        const itemData = {
+          userId: user.uid,
+          profileId: activeProfile?.id,
+          name: med.drug_name || med.commercial_name,
+          doseText: med.dose,
+          category: 'medicamento',
+          notes: med.instructions,
+          withFood: med.with_food || false,
+          treatmentEndDate: endDate,
+          treatmentDurationDays: med.duration_days ? parseInt(med.duration_days) : null,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        };
+
+        const { data: newItem, error: itemError } = await addDocument(`users/${user.uid}/medications`, itemData);
 
         if (itemError || !newItem) continue;
 
         // Create schedule based on frequency
         const times = parseFrequencyToTimes(med.frequency || '');
-        
-        await supabase.from('schedules').insert({
-          item_id: newItem.id,
-          freq_type: 'daily',
+
+        await addDocument(`users/${user.uid}/schedules`, {
+          itemId: newItem.id,
+          freqType: 'daily',
           times: times,
-          is_active: true,
+          isActive: true,
+          createdAt: new Date().toISOString()
         });
 
         // Create stock if package info available
         if (med.package_quantity) {
-          await supabase.from('stock').insert({
-            item_id: newItem.id,
-            units_total: parseInt(med.package_quantity) || 30,
-            units_left: parseInt(med.package_quantity) || 30,
-            unit_label: med.package_type || (language === 'pt' ? 'comprimidos' : 'tablets'),
+          await addDocument(`users/${user.uid}/stock`, {
+            itemId: newItem.id,
+            unitsTotal: parseInt(med.package_quantity) || 30,
+            unitsLeft: parseInt(med.package_quantity) || 30,
+            unitLabel: med.package_type || (language === 'pt' ? 'comprimidos' : 'tablets'),
+            createdAt: new Date().toISOString()
           });
         }
       }
@@ -512,7 +528,7 @@ export default function CofreUpload() {
   const parseFrequencyToTimes = (frequency: string): string[] => {
     // Parse common frequency patterns like "8/8h", "12/12h", "3x ao dia"
     const times: string[] = [];
-    
+
     if (frequency.includes('8/8') || frequency.includes('8h')) {
       times.push('08:00', '16:00', '00:00');
     } else if (frequency.includes('12/12') || frequency.includes('12h')) {
@@ -531,12 +547,12 @@ export default function CofreUpload() {
       // Default to 3 times a day
       times.push('08:00', '14:00', '20:00');
     }
-    
+
     return times;
   };
 
   const requirementsTitle = language === 'pt' ? 'Requisitos para melhor extração' : 'Requirements for best extraction';
-  const requirementsImages = language === 'pt' 
+  const requirementsImages = language === 'pt'
     ? 'mínimo 800x600px, com boa iluminação e sem sombras'
     : 'minimum 800x600px, with good lighting and no shadows';
   const requirementsPdfs = language === 'pt'
@@ -558,14 +574,14 @@ export default function CofreUpload() {
   const aiIdentifies = language === 'pt' ? 'IA identifica exames, receitas, vacinas e consultas' : 'AI identifies exams, prescriptions, vaccines, and consultations';
   const dataFilled = language === 'pt' ? 'Dados são preenchidos e salvos automaticamente' : 'Data is filled and saved automatically';
   const medsFound = language === 'pt' ? 'medicamento(s)' : 'medication(s)';
-  const medsFoundDesc = language === 'pt' 
+  const medsFoundDesc = language === 'pt'
     ? 'encontrados nesta receita. Vamos criar lembretes automáticos nos horários corretos!'
     : 'found in this prescription. Let\'s create automatic reminders at the right times!';
   const doseLabel = language === 'pt' ? 'Dose' : 'Dose';
   const frequencyLabel = language === 'pt' ? 'Frequência' : 'Frequency';
   const durationLabel = language === 'pt' ? 'Duração' : 'Duration';
   const daysLabel = language === 'pt' ? 'dias' : 'days';
-  const adjustInfo = language === 'pt' 
+  const adjustInfo = language === 'pt'
     ? 'Você poderá ajustar horários e doses depois na página "Rotina"'
     : 'You can adjust times and doses later on the "Routine" page';
   const notNowBtn = language === 'pt' ? 'Agora Não' : 'Not Now';
@@ -733,7 +749,7 @@ export default function CofreUpload() {
       </div>
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} feature="Carteira de documentos" />
-      
+
       {/* Medication suggestion modal */}
       {showMedicationModal && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
@@ -756,7 +772,7 @@ export default function CofreUpload() {
                   <strong>{extractedMedications.length} {medsFound}</strong> {medsFoundDesc}
                 </p>
               </div>
-              
+
               <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
                 {extractedMedications.map((med, idx) => (
                   <div key={idx} className="p-4 border border-blue-200 dark:border-blue-800 bg-background rounded-lg">
@@ -819,7 +835,7 @@ export default function CofreUpload() {
           </Card>
         </div>
       )}
-      
+
       <Navigation />
     </div>
   );

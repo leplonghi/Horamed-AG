@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
+import { functions } from "@/integrations/firebase/client"; // For functions if needed
+import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
@@ -7,13 +10,11 @@ import { useResilientReminders } from "./useResilientReminders";
 
 interface DoseInstance {
   id: string;
-  due_at: string;
+  scheduledTime: string; // camelCase
   status: string;
-  item_id: string;
-  items: {
-    name: string;
-    dose_text: string | null;
-  };
+  medicationId: string; // camelCase
+  medicationName?: string; // Manually populated
+  doseText?: string;
 }
 
 interface AlarmSettings {
@@ -92,38 +93,71 @@ export const useMedicationAlarm = () => {
 
     const checkUpcomingDoses = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = auth.currentUser;
         if (!user) return;
 
         const now = new Date();
         const alertWindow = new Date(now.getTime() + (settings.alertMinutes + 5) * 60000);
+        const nowIso = now.toISOString();
+        const alertWindowIso = alertWindow.toISOString();
 
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select(`
-            id,
-            due_at,
-            status,
-            item_id,
-            items (
-              name,
-              dose_text
-            )
-          `)
-          .eq("status", "scheduled")
-          .gte("due_at", now.toISOString())
-          .lte("due_at", alertWindow.toISOString())
-          .order("due_at");
+        // Query Doses
+        const dosesRef = collection(db, 'users', user.uid, 'doses');
+        const dosesQuery = query(
+          dosesRef,
+          where('status', '==', 'scheduled'),
+          where('scheduledTime', '>=', nowIso),
+          where('scheduledTime', '<=', alertWindowIso),
+          orderBy('scheduledTime'),
+          limit(20) // Safety limit
+        );
 
-        if (doses && doses.length > 0) {
-          doses.forEach((dose: DoseInstance) => {
-            const doseKey = `${dose.id}-${dose.due_at}`;
-            
+        const dosesSnap = await getDocs(dosesQuery);
+
+        if (!dosesSnap.empty) {
+          // Manually join with medication Names if possible or trust them to be embedded?
+          // Best practice in NoSQL is embedding 'name' in dose at creation time.
+          // Let's assume they are embedded as 'medicationName' or similar. 
+          // If not, we might need to fetch them.
+
+          // For now, let's assume we can fetch associated medications efficiently or they are cached.
+          // To be safe, let's fetch active medications once and map them, or just fetch needed ones.
+          // Ideally, the dose object should have { medicationName: "...", ... }
+
+          // FETCH helper
+          const fetchMedName = async (medId: string) => {
+            // Basic implementation: check cache or fetch doc
+            try {
+              const docSnap = await getDocs(query(collection(db, 'users', user.uid, 'medications'), where('id', '==', medId), limit(1)));
+              if (!docSnap.empty) return docSnap.docs[0].data().name;
+            } catch (e) { console.error(e); }
+            return "Medicamento";
+          };
+
+          const dosesToProcess: DoseInstance[] = await Promise.all(dosesSnap.docs.map(async (d) => {
+            const data = d.data();
+            let name = data.medicationName;
+            if (!name && data.medicationId) {
+              name = await fetchMedName(data.medicationId);
+            }
+            return {
+              id: d.id,
+              scheduledTime: data.scheduledTime,
+              status: data.status,
+              medicationId: data.medicationId,
+              medicationName: name,
+              doseText: data.doseText
+            };
+          }));
+
+          dosesToProcess.forEach((dose: DoseInstance) => {
+            const doseKey = `${dose.id}-${dose.scheduledTime}`;
+
             // Only notify if we haven't notified about this dose yet
             if (!notifiedDoses.current.has(doseKey)) {
-              const dueTime = new Date(dose.due_at);
+              const dueTime = new Date(dose.scheduledTime);
               const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / 60000);
-              
+
               // Trigger alarm based on settings
               if (minutesUntil <= settings.alertMinutes && minutesUntil >= 0) {
                 playAlarm();
@@ -166,16 +200,16 @@ export const useMedicationAlarm = () => {
   };
 
   const showNotification = async (dose: DoseInstance, minutesUntil: number) => {
-    const title = minutesUntil === 0 
-      ? "⏰ Hora do remédio!" 
+    const title = minutesUntil === 0
+      ? "⏰ Hora do remédio!"
       : `⏰ Remédio em ${minutesUntil} minutos`;
-    
-    const body = `${dose.items.name}${dose.items.dose_text ? ` - ${dose.items.dose_text}` : ""}`;
+
+    const body = `${dose.medicationName}${dose.doseText ? ` - ${dose.doseText}` : ""}`;
 
     // Use resilient reminder system with automatic fallback
     const success = await scheduleReminder({
       doseId: dose.id,
-      itemId: dose.item_id,
+      itemId: dose.medicationId,
       title,
       body,
       scheduledAt: new Date(Date.now() + 100), // Schedule immediately
@@ -187,16 +221,16 @@ export const useMedicationAlarm = () => {
 
     // Send push notification for wearables and background delivery
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (user) {
-        await supabase.functions.invoke('send-dose-notification', {
-          body: {
-            doseId: dose.id,
-            userId: user.id,
-            title,
-            body,
-            scheduledAt: new Date().toISOString(),
-          },
+        // Using Firebase Callable Function
+        const sendDoseNotification = httpsCallable(functions, 'sendDoseNotification');
+        await sendDoseNotification({
+          doseId: dose.id,
+          userId: user.uid,
+          title,
+          body,
+          scheduledAt: new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -216,11 +250,11 @@ export const useMedicationAlarm = () => {
 
   const scheduleNotificationsForNextDay = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const user = auth.currentUser;
+      if (!user) return;
 
-      const { error } = await supabase.functions.invoke("schedule-dose-notifications");
-      if (error) throw error;
+      const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
+      await scheduleDoseNotifications();
 
       console.log('Scheduled notifications for next 24 hours');
     } catch (error) {

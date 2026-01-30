@@ -39,7 +39,7 @@ export default function PWAInstallPrompt() {
   // Retry after longer delay if beforeinstallprompt fires late
   useEffect(() => {
     if (isInstalled || isStandalone) return;
-    
+
     const timer = setTimeout(() => {
       if ((canInstall || isIOS) && !showPrompt) {
         requestShowPrompt();
@@ -87,7 +87,7 @@ export default function PWAInstallPrompt() {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
             onClick={hidePrompt}
           />
-          
+
           {/* Modal */}
           <motion.div
             initial={{ opacity: 0, y: 100, scale: 0.95 }}
@@ -117,9 +117,9 @@ export default function PWAInstallPrompt() {
               <div className="px-6 pb-8 pt-2 text-center">
                 {/* App Icon */}
                 <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-[28px] flex items-center justify-center mb-5 shadow-xl shadow-primary/30 ring-4 ring-primary/20">
-                  <img 
-                    src="/favicon.png" 
-                    alt="HoraMed" 
+                  <img
+                    src="/favicon.png?v=7"
+                    alt="HoraMed"
                     className="w-14 h-14"
                   />
                 </div>
@@ -176,7 +176,7 @@ export default function PWAInstallPrompt() {
                       {iosStep === 2 && 'Role a lista e encontre'}
                       {iosStep === 3 && 'Confirme a instalação'}
                     </p>
-                    
+
                     <div className="space-y-4">
                       {iosStep === 1 && (
                         <motion.div
@@ -197,7 +197,7 @@ export default function PWAInstallPrompt() {
                           </div>
                         </motion.div>
                       )}
-                      
+
                       {iosStep === 2 && (
                         <motion.div
                           initial={{ opacity: 0, x: -10 }}
@@ -217,7 +217,7 @@ export default function PWAInstallPrompt() {
                           </div>
                         </motion.div>
                       )}
-                      
+
                       {iosStep === 3 && (
                         <motion.div
                           initial={{ opacity: 0, x: -10 }}
@@ -245,13 +245,12 @@ export default function PWAInstallPrompt() {
                         <button
                           key={step}
                           onClick={() => setIosStep(step)}
-                          className={`w-2.5 h-2.5 rounded-full transition-all ${
-                            step === iosStep 
-                              ? 'bg-primary w-6' 
-                              : step < iosStep 
-                                ? 'bg-primary/60' 
-                                : 'bg-gray-300 dark:bg-gray-600'
-                          }`}
+                          className={`w-2.5 h-2.5 rounded-full transition-all ${step === iosStep
+                            ? 'bg-primary w-6'
+                            : step < iosStep
+                              ? 'bg-primary/60'
+                              : 'bg-gray-300 dark:bg-gray-600'
+                            }`}
                         />
                       ))}
                     </div>
@@ -285,7 +284,7 @@ export default function PWAInstallPrompt() {
                       Instalar App
                     </Button>
                   )}
-                  
+
                   <Button
                     onClick={handleDismiss}
                     variant="ghost"

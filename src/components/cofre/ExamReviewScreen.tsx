@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, updateDocument, addDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
@@ -35,48 +35,55 @@ export default function ExamReviewScreen({ documentId, extractedData, onComplete
     toast.loading(t('examReview.saving'), { id: "save-exam" });
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error(t('errors.notAuthenticated'));
 
       // Update document
-      await supabase
-        .from('documentos_saude')
-        .update({
-          status_extraction: 'reviewed',
+      await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        documentId,
+        {
+          extractionStatus: 'reviewed',
           meta: {
             ...extractedData,
-            exam_type: examType,
+            examType: examType,
             provider: lab,
             notes: notes,
-          }
-        })
-        .eq('id', documentId);
+          },
+          updatedAt: new Date().toISOString()
+        }
+      );
 
       // Create exam record
-      const { data: exame } = await supabase
-        .from('exames_laboratoriais')
-        .insert({
-          user_id: user.id,
-          profile_id: activeProfile?.id,
-          documento_id: documentId,
-          data_exame: examDate,
-          laboratorio: lab || null,
-        })
-        .select()
-        .single();
+      const examData = {
+        userId: user.uid,
+        profileId: activeProfile?.id,
+        documentId: documentId,
+        dataExame: examDate,
+        laboratorio: lab || null,
+        createdAt: new Date().toISOString()
+      };
 
-      if (exame && extractedData.extracted_values?.length > 0) {
+      const { data: newExam, error: examError } = await addDocument(`users/${user.uid}/exams`, examData);
+
+      if (examError || !newExam) throw examError || new Error("Failed to create exam");
+
+      if (newExam.id && extractedData.extracted_values?.length > 0) {
         // Insert exam values
         const valores = extractedData.extracted_values.map((val: any) => ({
-          exame_id: exame.id,
-          parametro: val.parameter,
-          valor: val.value ? parseFloat(val.value) : null,
-          valor_texto: val.value?.toString() || null,
-          unidade: val.unit || null,
-          referencia_texto: val.reference_range || null,
+          examId: newExam.id,
+          parameter: val.parameter,
+          value: val.value ? parseFloat(val.value) : null,
+          valueText: val.value?.toString() || null,
+          unit: val.unit || null,
+          referenceText: val.reference_range || null,
+          createdAt: new Date().toISOString()
         }));
 
-        await supabase.from('valores_exames').insert(valores);
+        // Batch add or loop
+        for (const valor of valores) {
+          await addDocument(`users/${user.uid}/exams/${newExam.id}/results`, valor);
+        }
       }
 
       toast.dismiss("save-exam");
@@ -181,8 +188,8 @@ export default function ExamReviewScreen({ documentId, extractedData, onComplete
           </CardContent>
         </Card>
 
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           className="w-full h-12"
           disabled={processing || !examType}
         >

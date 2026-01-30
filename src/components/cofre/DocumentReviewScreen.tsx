@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, updateDocument } from "@/integrations/firebase";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -37,16 +37,21 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
     toast.loading(t('docReview.saving'), { id: "save-doc" });
 
     try {
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+
       // Update document
-      await supabase
-        .from('documentos_saude')
-        .update({
+      await updateDocument(
+        `users/${user.uid}/healthDocuments`,
+        documentId,
+        {
           title,
-          issued_at: date,
+          issuedAt: date,
           notes,
-          status_extraction: 'reviewed',
-        })
-        .eq('id', documentId);
+          extractionStatus: 'reviewed',
+          updatedAt: new Date().toISOString()
+        }
+      );
 
       toast.dismiss("save-doc");
       toast.success(t('docReview.savedSuccess'));
@@ -134,8 +139,8 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
           </CardContent>
         </Card>
 
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           className="w-full h-12"
           disabled={processing || !title}
         >

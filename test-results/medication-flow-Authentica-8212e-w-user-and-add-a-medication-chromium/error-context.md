@@ -1,0 +1,312 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - list
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - generic:
+            - generic:
+              - link:
+                - /url: /
+                - img
+              - button:
+                - img
+                - generic: Premium
+            - generic:
+              - button:
+                - img
+              - button:
+                - img
+              - generic:
+                - button:
+                  - img
+                  - generic: Alternar tema
+              - link:
+                - /url: /perfil
+                - generic:
+                  - generic: TE
+      - main:
+        - generic:
+          - heading [level=1]: Boa noite
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - heading [level=2]: Tudo certo por hoje
+                - paragraph: Dia concluído
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic:
+                - generic:
+                  - generic: Clara
+                - paragraph: Boa noite! Última checagem do dia?
+                - paragraph: Garanta que tomou tudo antes de dormir.
+        - generic:
+          - generic:
+            - generic:
+              - button:
+                - img
+              - generic:
+                - heading [level=4]: janeiro
+                - paragraph: "2026"
+              - button:
+                - img
+            - generic:
+              - button:
+                - img
+          - generic:
+            - generic:
+              - button:
+                - generic: dom
+                - generic: "25"
+              - button:
+                - generic: seg
+                - generic: "26"
+              - button:
+                - generic: ter
+                - generic: "27"
+              - button:
+                - generic: qua
+                - generic: "28"
+              - button:
+                - generic: qui
+                - generic: "29"
+              - button:
+                - generic: sex
+                - generic: "30"
+              - button:
+                - generic: sáb
+                - generic: "31"
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - generic: Completo
+            - generic:
+              - generic:
+                - img
+                - generic:
+                  - generic: "75"
+              - generic: Parcial
+            - generic:
+              - img
+              - generic: Pendente
+            - generic:
+              - generic:
+                - img
+              - generic: Perdido
+        - generic:
+          - generic:
+            - generic:
+              - img
+              - generic: Premium
+              - generic: 7 dias grátis
+            - generic:
+              - generic:
+                - img
+                - generic: Medicamentos ilimitados
+              - generic:
+                - img
+                - generic: Clara IA sem limites
+              - generic:
+                - img
+                - generic: Relatórios para médico
+              - generic:
+                - img
+                - generic: Proteção de sequência
+            - generic:
+              - generic:
+                - generic: R$ 29,90
+                - generic: R$ 19,90
+                - generic: /mês
+              - paragraph: Menos de R$ 0,67/dia
+      - navigation:
+        - generic:
+          - generic:
+            - link:
+              - /url: /hoje
+              - generic:
+                - img
+              - generic: Hoje
+            - link:
+              - /url: /medicamentos
+              - generic:
+                - img
+              - generic: Rotina
+            - link:
+              - /url: /carteira
+              - generic:
+                - img
+              - generic: Carteira
+            - link:
+              - /url: /perfil
+              - generic:
+                - img
+              - generic: Perfil
+    - navigation:
+      - generic:
+        - generic:
+          - link:
+            - /url: /hoje
+            - generic:
+              - img
+            - generic: Hoje
+          - link:
+            - /url: /medicamentos
+            - generic:
+              - img
+            - generic: Rotina
+          - link:
+            - /url: /carteira
+            - generic:
+              - img
+            - generic: Carteira
+          - link:
+            - /url: /perfil
+            - generic:
+              - img
+            - generic: Perfil
+    - generic:
+      - generic:
+        - button:
+          - img
+    - button:
+      - img
+    - button:
+      - img
+    - button:
+      - img
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - img
+          - generic:
+            - generic:
+              - heading [level=3]: 🔔 Notificações bloqueadas
+              - button:
+                - img
+            - paragraph: Para receber lembretes, ative as notificações nas configurações do navegador (clique no 🔒 na barra de endereço).
+            - generic:
+              - button: Entendi
+  - dialog "Adicionar Item" [active] [ref=e2]:
+    - generic [ref=e4]:
+      - heading "Adicionar Item" [level=2] [ref=e5]
+      - paragraph [ref=e6]: "Passo 1: Identificação"
+    - generic [ref=e7]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: "1"
+        - generic [ref=e11]: Identificação
+      - generic [ref=e14]:
+        - generic [ref=e15]: "2"
+        - generic [ref=e16]: Horários
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - generic [ref=e22]: "1"
+          - text: Nome do medicamento
+          - generic [ref=e23]: "*"
+        - combobox [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]:
+            - img
+            - generic [ref=e26]: Buscar medicamento...
+          - img
+        - paragraph [ref=e27]: Preencher os dados
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: "2"
+          - text: Tipo
+        - generic [ref=e31]:
+          - generic [ref=e32] [cursor=pointer]:
+            - generic [ref=e33]:
+              - img [ref=e35]
+              - img [ref=e39]
+            - generic [ref=e41]:
+              - generic [ref=e42]: Medicamento
+              - generic [ref=e43]: Remédios prescritos ou de farmácia
+          - generic [ref=e44] [cursor=pointer]:
+            - img [ref=e47]
+            - generic [ref=e50]:
+              - generic [ref=e51]: Vitamina
+              - generic [ref=e52]: Vitaminas e minerais
+          - generic [ref=e53] [cursor=pointer]:
+            - img [ref=e56]
+            - generic [ref=e58]:
+              - generic [ref=e59]: Suplemento
+              - generic [ref=e60]: Suplementos alimentares
+          - generic [ref=e61] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e68]:
+              - generic [ref=e69]: Outro
+              - generic [ref=e70]: Outros produtos de saúde
+      - generic [ref=e71]:
+        - generic [ref=e72]:
+          - img [ref=e73]
+          - text: Para que você usa?
+        - generic [ref=e75]:
+          - button "Energia" [ref=e76] [cursor=pointer]:
+            - img [ref=e77]
+            - text: Energia
+          - button "Sono" [ref=e79] [cursor=pointer]:
+            - img [ref=e80]
+            - text: Sono
+          - button "Imunidade" [ref=e82] [cursor=pointer]:
+            - img [ref=e83]
+            - text: Imunidade
+          - button "Performance" [ref=e85] [cursor=pointer]:
+            - img [ref=e86]
+            - text: Performance
+          - button "Hidratação" [ref=e92] [cursor=pointer]:
+            - img [ref=e93]
+            - text: Hidratação
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - text: Dose
+          - textbox "wizard.dosePlaceholder" [ref=e98]
+        - generic [ref=e99]:
+          - generic [ref=e100]: Spacer
+          - generic [ref=e102] [cursor=pointer]:
+            - generic [ref=e103]: 🍽️
+            - generic [ref=e104]: Tomar com alimentos
+      - generic [ref=e106]:
+        - generic [ref=e107]:
+          - generic [ref=e108]: "3"
+          - text: Tipo de Alerta
+        - generic [ref=e109]:
+          - generic [ref=e113] [cursor=pointer]:
+            - generic [ref=e115]: Suave
+            - paragraph [ref=e116]: Notificação discreta, ideal para horários tranquilos
+          - generic [ref=e120] [cursor=pointer]:
+            - generic [ref=e122]: Normal
+            - paragraph [ref=e123]: Notificação padrão com som e vibração
+          - generic [ref=e127] [cursor=pointer]:
+            - generic [ref=e129]: Urgente
+            - paragraph [ref=e130]: Notificação com mais ênfase, repete a cada 5 min
+          - generic [ref=e134] [cursor=pointer]:
+            - generic [ref=e136]: Crítico
+            - paragraph [ref=e137]: Alarme persistente, repete até confirmação
+      - generic [ref=e138]:
+        - generic [ref=e139]:
+          - text: Observação
+          - generic [ref=e140]: 0/200
+        - 'textbox "Ex: Tomar com água, após as refeições..." [ref=e141]'
+    - generic [ref=e142]:
+      - button "Voltar" [ref=e143] [cursor=pointer]:
+        - img
+        - text: Voltar
+      - button "Próximo" [ref=e144] [cursor=pointer]:
+        - text: Próximo
+        - img
+    - button "Close" [ref=e145] [cursor=pointer]:
+      - img [ref=e146]
+      - generic [ref=e149]: Close
+```

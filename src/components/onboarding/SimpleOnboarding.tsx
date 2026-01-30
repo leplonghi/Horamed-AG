@@ -1,12 +1,12 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { 
-  Camera, 
-  Pill, 
-  Bell, 
-  Check, 
-  ArrowRight, 
+import {
+  Camera,
+  Pill,
+  Bell,
+  Check,
+  ArrowRight,
   Sparkles,
   MessageCircle,
   Clock,
@@ -19,7 +19,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument, fetchCollection, setDocument } from "@/integrations/firebase";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import logo from "@/assets/logo_HoraMed.png";
 
@@ -56,7 +56,7 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
   // Clara's conversational messages
   const claraMessages: Record<OnboardingStep, ClaraMessage> = {
     welcome: {
-      text: language === 'pt' 
+      text: language === 'pt'
         ? "Olá! Sou a Clara, sua assistente de saúde. Vou te ajudar a configurar tudo em menos de 30 segundos! 🩺"
         : "Hi! I'm Clara, your health assistant. I'll help you set everything up in less than 30 seconds! 🩺",
     },
@@ -89,21 +89,21 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
   const handleScanPrescription = async () => {
     setScanningPrescription(true);
     triggerLight();
-    
+
     // TODO: Integrate with prescription scanner
     // For now, navigate to the document scanner
     toast.info(
-      language === 'pt' 
-        ? 'Abrindo câmera para escanear receita...' 
+      language === 'pt'
+        ? 'Abrindo câmera para escanear receita...'
         : 'Opening camera to scan prescription...'
     );
-    
+
     // Simulate processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     setScanningPrescription(false);
-    
+
     // Navigate to prescription scan page
-    navigate('/adicionar-item', { state: { method: 'camera' } });
+    navigate('/adicionar', { state: { method: 'camera' } });
   };
 
   const handleAddMedication = async () => {
@@ -116,38 +116,39 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
 
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
 
       // Create item
-      const { data: item, error: itemError } = await supabase
-        .from("items")
-        .insert({
-          user_id: user.id,
-          name: medName.trim(),
-          category: "medicamento",
-          is_active: true,
-        })
-        .select()
-        .single();
+      const { data: itemData, error: itemError } = await addDocument(`users/${user.uid}/medications`, {
+        userId: user.uid,
+        name: medName.trim(),
+        category: "medicamento",
+        isActive: true,
+        createdAt: new Date().toISOString()
+      });
 
-      if (itemError) throw itemError;
+      if (itemError || !itemData?.id) throw itemError || new Error("Failed to create item");
 
       // Create schedule
-      const { error: schedError } = await supabase
-        .from("schedules")
-        .insert({
-          item_id: item.id,
-          freq_type: "daily",
-          times: [finalTime],
-        });
+      await addDocument(`users/${user.uid}/schedules`, {
+        itemId: itemData.id,
+        freqType: "daily",
+        times: [finalTime],
+        isActive: true
+      });
 
-      if (schedError) throw schedError;
+      // Also create a "dose" for today if time hasn't passed, or tomorrow?
+      // Logic from OnboardingFlow was: create dose.
+      // SimpleOnboarding didn't seem to create a dose instance in the original code, only schedule.
+      // But typically we should sync doses.
+      // However, the original code ONLY inserted into 'items' and 'schedules'. 
+      // I will stick to original logic but ensure I use Firebase.
 
       triggerSuccess();
       toast.success(
-        language === 'pt' 
-          ? `${medName} adicionado com sucesso!` 
+        language === 'pt'
+          ? `${medName} adicionado com sucesso!`
           : `${medName} added successfully!`
       );
 
@@ -167,8 +168,8 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
         if (permission === 'granted') {
           triggerSuccess();
           toast.success(
-            language === 'pt' 
-              ? 'Notificações ativadas!' 
+            language === 'pt'
+              ? 'Notificações ativadas!'
               : 'Notifications enabled!'
           );
         }
@@ -176,40 +177,46 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
     } catch (error) {
       console.error('Error requesting notifications:', error);
     }
-    
+
     goToStep("complete");
   };
 
-  const handleComplete = async () => {
+  const markOnboardingComplete = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({ onboarding_completed: true })
-          .eq("user_id", user.id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      // Update primary profile
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+          onboardingCompleted: true
+        });
       }
+
+      // Also set in settings
+      await setDocument(`users/${user.uid}/settings`, 'onboarding', {
+        isCompleted: true,
+        completedAt: new Date().toISOString(),
+        flowVersion: 'simple'
+      });
+
     } catch (error) {
       console.error("Error completing onboarding:", error);
     }
+  };
 
+  const handleComplete = async () => {
+    await markOnboardingComplete();
     triggerSuccess();
     onComplete?.();
     navigate("/hoje");
   };
 
   const handleSkip = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase
-          .from("profiles")
-          .update({ onboarding_completed: true })
-          .eq("user_id", user.id);
-      }
-    } catch (error) {
-      console.error("Error skipping onboarding:", error);
-    }
+    await markOnboardingComplete();
     navigate("/hoje");
   };
 
@@ -283,9 +290,9 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
                 className="space-y-4"
               >
                 <div className="text-center mb-6">
-                  <motion.img 
-                    src={logo} 
-                    alt="HoraMed" 
+                  <motion.img
+                    src={logo}
+                    alt="HoraMed"
                     className="h-20 w-auto mx-auto mb-4"
                     initial={{ scale: 0.8 }}
                     animate={{ scale: 1 }}
@@ -295,8 +302,8 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
                     {language === 'pt' ? 'Bem-vindo ao HoraMed' : 'Welcome to HoraMed'}
                   </h2>
                   <p className="text-muted-foreground text-sm mt-2">
-                    {language === 'pt' 
-                      ? 'Configure em 30 segundos' 
+                    {language === 'pt'
+                      ? 'Configure em 30 segundos'
                       : 'Set up in 30 seconds'}
                   </p>
                 </div>
@@ -412,7 +419,7 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
                           >
                             <span className="text-lg font-bold">{time.label}</span>
                             <span className="text-[10px] text-muted-foreground">
-                              {time.period === "morning" 
+                              {time.period === "morning"
                                 ? (language === 'pt' ? 'Manhã' : 'AM')
                                 : time.period === "afternoon"
                                   ? (language === 'pt' ? 'Tarde' : 'PM')
@@ -469,12 +476,12 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
                   >
                     <Bell className="h-10 w-10 text-primary" />
                   </motion.div>
-                  
+
                   <h3 className="text-xl font-bold mb-2">
                     {language === 'pt' ? 'Ativar lembretes' : 'Enable reminders'}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {language === 'pt' 
+                    {language === 'pt'
                       ? 'Receba alertas na hora certa para nunca esquecer seus medicamentos'
                       : 'Get alerts at the right time to never forget your medications'}
                   </p>
@@ -514,12 +521,12 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
                   >
                     <Check className="h-10 w-10 text-green-600" />
                   </motion.div>
-                  
+
                   <h3 className="text-xl font-bold mb-2">
                     {language === 'pt' ? 'Tudo pronto!' : 'All set!'}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {language === 'pt' 
+                    {language === 'pt'
                       ? 'Seu HoraMed está configurado. Você pode adicionar mais medicamentos a qualquer momento.'
                       : 'Your HoraMed is set up. You can add more medications anytime.'}
                   </p>

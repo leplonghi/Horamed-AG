@@ -8,7 +8,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where } from "@/integrations/firebase";
 
 function MonthlyReportWidget() {
   const navigate = useNavigate();
@@ -21,19 +21,25 @@ function MonthlyReportWidget() {
   const { data: hasEnoughData = false } = useQuery({
     queryKey: ["monthly-report-eligibility"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return false;
 
       const monthStart = startOfMonth(lastMonth);
       const monthEnd = endOfMonth(lastMonth);
 
-      const { count } = await supabase
-        .from('dose_instances')
-        .select('id', { count: 'exact', head: true })
-        .gte('due_at', monthStart.toISOString())
-        .lte('due_at', monthEnd.toISOString());
+      // Fetch doses in range
+      // Optimization: We could use count() if supported, but filtered fetch + length check for small range is okay for client side logic if dataset isn't huge.
+      // Or limit to 7 items to minimize read cost if we only care if it's >= 7.
 
-      return (count || 0) >= 7;
+      const { data } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [
+          where('dueAt', '>=', monthStart.toISOString()),
+          where('dueAt', '<=', monthEnd.toISOString())
+        ]
+      );
+
+      return (data?.length || 0) >= 7;
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000,
@@ -53,11 +59,11 @@ function MonthlyReportWidget() {
             <div className="p-2 rounded-lg bg-purple-500/20">
               <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
-                {language === 'pt' 
-                  ? `📊 Relatório de ${monthName}` 
+                {language === 'pt'
+                  ? `📊 Relatório de ${monthName}`
                   : `📊 ${monthName} Report`}
               </p>
               <p className="text-xs text-muted-foreground">

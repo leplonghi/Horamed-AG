@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,21 +9,19 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import OceanBackground from "@/components/ui/OceanBackground";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { auth, addDocument, fetchCollection, orderBy, limit, where } from "@/integrations/firebase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { 
-  Activity, 
-  Heart, 
-  Thermometer, 
-  Droplet, 
-  Scale, 
+import {
+  Activity,
+  Heart,
+  Thermometer,
+  Droplet,
+  Scale,
   Wind,
-  Plus,
   History,
   TrendingUp,
   TrendingDown,
@@ -37,15 +35,15 @@ import { cn } from "@/lib/utils";
 
 interface VitalSign {
   id: string;
-  data_medicao: string;
-  pressao_sistolica: number | null;
-  pressao_diastolica: number | null;
-  frequencia_cardiaca: number | null;
-  temperatura: number | null;
-  glicemia: number | null;
-  saturacao_oxigenio: number | null;
-  peso_kg: number | null;
-  observacoes: string | null;
+  measuredAt: string;
+  systolic: number | null;
+  diastolic: number | null;
+  heartRate: number | null;
+  temperature: number | null;
+  bloodSugar: number | null;
+  oxygenSaturation: number | null;
+  weightKg: number | null;
+  notes: string | null;
 }
 
 interface VitalCardProps {
@@ -66,12 +64,12 @@ interface VitalCardProps {
   max?: string;
 }
 
-function VitalCard({ 
-  title, 
-  icon, 
-  currentValue, 
-  unit, 
-  lastDate, 
+function VitalCard({
+  title,
+  icon,
+  currentValue,
+  unit,
+  lastDate,
   trend,
   colorClass,
   inputName,
@@ -84,9 +82,9 @@ function VitalCard({
   max
 }: VitalCardProps) {
   const { language } = useLanguage();
-  
+
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
-  
+
   return (
     <Card className={cn(
       "border-2 transition-all hover:border-primary/30",
@@ -120,19 +118,19 @@ function VitalCard({
           {trend && currentValue && (
             <TrendIcon className={cn(
               "h-5 w-5",
-              trend === 'up' ? "text-red-500" : 
-              trend === 'down' ? "text-green-500" : 
-              "text-muted-foreground"
+              trend === 'up' ? "text-red-500" :
+                trend === 'down' ? "text-green-500" :
+                  "text-muted-foreground"
             )} />
           )}
         </div>
-        
+
         {lastDate && (
           <p className="text-xs text-muted-foreground">
             {lastDate}
           </p>
         )}
-        
+
         {/* Input for new value */}
         <div className="pt-2 border-t">
           <Label htmlFor={inputName} className="text-xs text-muted-foreground">
@@ -156,120 +154,141 @@ function VitalCard({
 }
 
 export default function SinaisVitais() {
-  const { user } = useAuth();
   const { activeProfile } = useUserProfiles();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  
+
   const [formData, setFormData] = useState({
-    pressao_sistolica: "",
-    pressao_diastolica: "",
-    frequencia_cardiaca: "",
-    temperatura: "",
-    glicemia: "",
-    saturacao_oxigenio: "",
-    peso_kg: "",
-    observacoes: ""
+    systolic: "",
+    diastolic: "",
+    heartRate: "",
+    temperature: "",
+    bloodSugar: "",
+    oxygenSaturation: "",
+    weightKg: "",
+    notes: ""
   });
 
-  // Fetch latest vital signs
+  // Fetch latest vital signs from Firebase
   const { data: latestVitals, isLoading } = useQuery({
-    queryKey: ["latest-vitals", user?.id, activeProfile?.id],
+    queryKey: ["latest-vitals", activeProfile?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
-      
-      let query = supabase
-        .from("sinais_vitais")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_medicao", { ascending: false })
-        .limit(1);
-      
+      const user = auth.currentUser;
+      if (!user) return null;
+
+      const queryConstraints = [
+        orderBy("measuredAt", "desc"),
+        limit(1)
+      ];
+
       if (activeProfile?.id) {
-        query = query.eq("profile_id", activeProfile.id);
+        queryConstraints.push(where("profileId", "==", activeProfile.id));
       }
-      
-      const { data, error } = await query.maybeSingle();
+
+      const { data, error } = await fetchCollection<VitalSign>(
+        `users/${user.uid}/vitalSigns`,
+        queryConstraints
+      );
+
       if (error) throw error;
-      return data as VitalSign | null;
+      return (data && data.length > 0) ? data[0] : null;
     },
-    enabled: !!user?.id,
+    enabled: !!auth.currentUser,
   });
 
   // Fetch previous vitals for trend comparison
+  // NOTE: Firebase limit(2) gets last 2 if ordered by date desc.
+  // So we fetch 2 items, take the second one as 'previous'.
   const { data: previousVitals } = useQuery({
-    queryKey: ["previous-vitals", user?.id, activeProfile?.id],
+    queryKey: ["previous-vitals", activeProfile?.id],
     queryFn: async () => {
-      if (!user?.id) return null;
-      
-      let query = supabase
-        .from("sinais_vitais")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_medicao", { ascending: false })
-        .range(1, 1);
-      
+      const user = auth.currentUser;
+      if (!user) return null;
+
+      const queryConstraints = [
+        orderBy("measuredAt", "desc"),
+        limit(2)
+      ];
+
       if (activeProfile?.id) {
-        query = query.eq("profile_id", activeProfile.id);
+        queryConstraints.push(where("profileId", "==", activeProfile.id));
       }
-      
-      const { data, error } = await query.maybeSingle();
+
+      const { data, error } = await fetchCollection<VitalSign>(
+        `users/${user.uid}/vitalSigns`,
+        queryConstraints
+      );
+
       if (error) throw error;
-      return data as VitalSign | null;
+      if (data && data.length > 1) {
+        return data[1]; // Return the second most recent
+      }
+      return null;
     },
-    enabled: !!user?.id,
+    enabled: !!auth.currentUser,
   });
 
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
-      if (!user?.id) throw new Error("Not authenticated");
-      
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+
       const hasAnyValue = Object.entries(formData).some(([key, value]) => {
-        if (key === 'observacoes') return false;
+        if (key === 'notes') return false;
         return value !== "";
       });
-      
+
       if (!hasAnyValue) {
-        throw new Error(language === 'pt' 
-          ? "Preencha pelo menos um campo" 
+        throw new Error(language === 'pt'
+          ? "Preencha pelo menos um campo"
           : "Fill at least one field");
       }
-      
+
       const insertData: any = {
-        user_id: user.id,
-        profile_id: activeProfile?.id || null,
-        data_medicao: new Date().toISOString(),
+        userId: user.uid,
+        profileId: activeProfile?.id || null, // Assuming activeProfile has an ID, or null if not yet loaded?
+        measuredAt: new Date().toISOString(),
       };
-      
-      if (formData.pressao_sistolica) insertData.pressao_sistolica = parseInt(formData.pressao_sistolica);
-      if (formData.pressao_diastolica) insertData.pressao_diastolica = parseInt(formData.pressao_diastolica);
-      if (formData.frequencia_cardiaca) insertData.frequencia_cardiaca = parseInt(formData.frequencia_cardiaca);
-      if (formData.temperatura) insertData.temperatura = parseFloat(formData.temperatura);
-      if (formData.glicemia) insertData.glicemia = parseInt(formData.glicemia);
-      if (formData.saturacao_oxigenio) insertData.saturacao_oxigenio = parseInt(formData.saturacao_oxigenio);
-      if (formData.peso_kg) insertData.peso_kg = parseFloat(formData.peso_kg);
-      if (formData.observacoes) insertData.observacoes = formData.observacoes;
-      
-      const { error } = await supabase.from("sinais_vitais").insert(insertData);
+
+      if (formData.systolic) insertData.systolic = parseInt(formData.systolic);
+      if (formData.diastolic) insertData.diastolic = parseInt(formData.diastolic);
+      if (formData.heartRate) insertData.heartRate = parseInt(formData.heartRate);
+      if (formData.temperature) insertData.temperature = parseFloat(formData.temperature);
+      if (formData.bloodSugar) insertData.bloodSugar = parseInt(formData.bloodSugar);
+      if (formData.oxygenSaturation) insertData.oxygenSaturation = parseInt(formData.oxygenSaturation);
+      if (formData.weightKg) insertData.weightKg = parseFloat(formData.weightKg);
+      if (formData.notes) insertData.notes = formData.notes;
+
+      const { error } = await addDocument(`users/${user.uid}/vitalSigns`, insertData);
       if (error) throw error;
+
+      // Also update latest weight in profile if provided
+      if (insertData.weightKg && activeProfile?.id) {
+        const { updateDocument } = await import("@/integrations/firebase");
+        await updateDocument(`users/${user.uid}/profiles`, activeProfile.id, {
+          weightKg: insertData.weightKg
+        });
+      }
     },
     onSuccess: () => {
       toast.success(language === 'pt' ? "Sinais vitais salvos!" : "Vital signs saved!");
       setFormData({
-        pressao_sistolica: "",
-        pressao_diastolica: "",
-        frequencia_cardiaca: "",
-        temperatura: "",
-        glicemia: "",
-        saturacao_oxigenio: "",
-        peso_kg: "",
-        observacoes: ""
+        systolic: "",
+        diastolic: "",
+        heartRate: "",
+        temperature: "",
+        bloodSugar: "",
+        oxygenSaturation: "",
+        weightKg: "",
+        notes: ""
       });
       queryClient.invalidateQueries({ queryKey: ["latest-vitals"] });
       queryClient.invalidateQueries({ queryKey: ["previous-vitals"] });
+      // Invalidate profile cache to reflect new weight
+      queryClient.invalidateQueries({ queryKey: ["userProfiles"] });
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -296,13 +315,13 @@ export default function SinaisVitais() {
     <div className="min-h-screen bg-background relative">
       <OceanBackground variant="page" />
       <Header />
-      
+
       <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6 page-container relative z-10">
         <PageHeroHeader
           icon={<Activity className="h-6 w-6 text-primary" />}
           title={language === 'pt' ? "Sinais Vitais" : "Vital Signs"}
-          subtitle={language === 'pt' 
-            ? "Acompanhe sua pressão, peso, glicemia e outros indicadores de saúde" 
+          subtitle={language === 'pt'
+            ? "Acompanhe sua pressão, peso, glicemia e outros indicadores de saúde"
             : "Track your blood pressure, weight, blood sugar, and other health indicators"}
         />
 
@@ -320,7 +339,7 @@ export default function SinaisVitais() {
         </div>
 
         {/* Vital Signs Grid */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
@@ -340,9 +359,9 @@ export default function SinaisVitais() {
                 <p className="text-xs text-muted-foreground mb-1">
                   {language === 'pt' ? 'Último registro' : 'Last reading'}
                 </p>
-                {latestVitals?.pressao_sistolica && latestVitals?.pressao_diastolica ? (
+                {latestVitals?.systolic && latestVitals?.diastolic ? (
                   <p className="text-2xl font-bold text-primary">
-                    {latestVitals.pressao_sistolica}/{latestVitals.pressao_diastolica} 
+                    {latestVitals.systolic}/{latestVitals.diastolic}
                     <span className="text-sm font-normal text-muted-foreground"> mmHg</span>
                   </p>
                 ) : (
@@ -351,31 +370,31 @@ export default function SinaisVitais() {
                   </p>
                 )}
               </div>
-              
+
               <div className="pt-2 border-t grid grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="pressao_sistolica" className="text-xs text-muted-foreground">
+                  <Label htmlFor="systolic" className="text-xs text-muted-foreground">
                     {language === 'pt' ? 'Sistólica' : 'Systolic'}
                   </Label>
                   <Input
-                    id="pressao_sistolica"
+                    id="systolic"
                     type="number"
                     placeholder="120"
-                    value={formData.pressao_sistolica}
-                    onChange={(e) => updateField('pressao_sistolica')(e.target.value)}
+                    value={formData.systolic}
+                    onChange={(e) => updateField('systolic')(e.target.value)}
                     className="mt-1 h-10"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="pressao_diastolica" className="text-xs text-muted-foreground">
+                  <Label htmlFor="diastolic" className="text-xs text-muted-foreground">
                     {language === 'pt' ? 'Diastólica' : 'Diastolic'}
                   </Label>
                   <Input
-                    id="pressao_diastolica"
+                    id="diastolic"
                     type="number"
                     placeholder="80"
-                    value={formData.pressao_diastolica}
-                    onChange={(e) => updateField('pressao_diastolica')(e.target.value)}
+                    value={formData.diastolic}
+                    onChange={(e) => updateField('diastolic')(e.target.value)}
                     className="mt-1 h-10"
                   />
                 </div>
@@ -387,14 +406,14 @@ export default function SinaisVitais() {
           <VitalCard
             title={language === 'pt' ? 'Peso' : 'Weight'}
             icon={<Scale className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
-            currentValue={latestVitals?.peso_kg?.toString() || null}
+            currentValue={latestVitals?.weightKg?.toString() || null}
             unit="kg"
-            lastDate={formatDate(latestVitals?.data_medicao || null)}
-            trend={getTrend(latestVitals?.peso_kg || null, previousVitals?.peso_kg || null)}
+            lastDate={formatDate(latestVitals?.measuredAt || null)}
+            trend={getTrend(latestVitals?.weightKg || null, previousVitals?.weightKg || null)}
             colorClass="bg-blue-100 dark:bg-blue-900/30"
-            inputName="peso_kg"
-            inputValue={formData.peso_kg}
-            onInputChange={updateField('peso_kg')}
+            inputName="weightKg"
+            inputValue={formData.weightKg}
+            onInputChange={updateField('weightKg')}
             placeholder="75.5"
             step="0.1"
             min="20"
@@ -405,14 +424,14 @@ export default function SinaisVitais() {
           <VitalCard
             title={language === 'pt' ? 'Frequência Cardíaca' : 'Heart Rate'}
             icon={<Activity className="h-4 w-4 text-pink-600 dark:text-pink-400" />}
-            currentValue={latestVitals?.frequencia_cardiaca?.toString() || null}
+            currentValue={latestVitals?.heartRate?.toString() || null}
             unit="bpm"
-            lastDate={formatDate(latestVitals?.data_medicao || null)}
-            trend={getTrend(latestVitals?.frequencia_cardiaca || null, previousVitals?.frequencia_cardiaca || null)}
+            lastDate={formatDate(latestVitals?.measuredAt || null)}
+            trend={getTrend(latestVitals?.heartRate || null, previousVitals?.heartRate || null)}
             colorClass="bg-pink-100 dark:bg-pink-900/30"
-            inputName="frequencia_cardiaca"
-            inputValue={formData.frequencia_cardiaca}
-            onInputChange={updateField('frequencia_cardiaca')}
+            inputName="heartRate"
+            inputValue={formData.heartRate}
+            onInputChange={updateField('heartRate')}
             placeholder="72"
             min="30"
             max="200"
@@ -422,14 +441,14 @@ export default function SinaisVitais() {
           <VitalCard
             title={language === 'pt' ? 'Glicemia' : 'Blood Sugar'}
             icon={<Droplet className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
-            currentValue={latestVitals?.glicemia?.toString() || null}
+            currentValue={latestVitals?.bloodSugar?.toString() || null}
             unit="mg/dL"
-            lastDate={formatDate(latestVitals?.data_medicao || null)}
-            trend={getTrend(latestVitals?.glicemia || null, previousVitals?.glicemia || null)}
+            lastDate={formatDate(latestVitals?.measuredAt || null)}
+            trend={getTrend(latestVitals?.bloodSugar || null, previousVitals?.bloodSugar || null)}
             colorClass="bg-purple-100 dark:bg-purple-900/30"
-            inputName="glicemia"
-            inputValue={formData.glicemia}
-            onInputChange={updateField('glicemia')}
+            inputName="bloodSugar"
+            inputValue={formData.bloodSugar}
+            onInputChange={updateField('bloodSugar')}
             placeholder="100"
             min="20"
             max="600"
@@ -439,14 +458,14 @@ export default function SinaisVitais() {
           <VitalCard
             title={language === 'pt' ? 'Temperatura' : 'Temperature'}
             icon={<Thermometer className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
-            currentValue={latestVitals?.temperatura?.toString() || null}
+            currentValue={latestVitals?.temperature?.toString() || null}
             unit="°C"
-            lastDate={formatDate(latestVitals?.data_medicao || null)}
-            trend={getTrend(latestVitals?.temperatura || null, previousVitals?.temperatura || null)}
+            lastDate={formatDate(latestVitals?.measuredAt || null)}
+            trend={getTrend(latestVitals?.temperature || null, previousVitals?.temperature || null)}
             colorClass="bg-orange-100 dark:bg-orange-900/30"
-            inputName="temperatura"
-            inputValue={formData.temperatura}
-            onInputChange={updateField('temperatura')}
+            inputName="temperature"
+            inputValue={formData.temperature}
+            onInputChange={updateField('temperature')}
             placeholder="36.5"
             step="0.1"
             min="30"
@@ -457,14 +476,14 @@ export default function SinaisVitais() {
           <VitalCard
             title={language === 'pt' ? 'Saturação O₂' : 'Oxygen Saturation'}
             icon={<Wind className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
-            currentValue={latestVitals?.saturacao_oxigenio?.toString() || null}
+            currentValue={latestVitals?.oxygenSaturation?.toString() || null}
             unit="%"
-            lastDate={formatDate(latestVitals?.data_medicao || null)}
+            lastDate={formatDate(latestVitals?.measuredAt || null)}
             trend={null}
             colorClass="bg-cyan-100 dark:bg-cyan-900/30"
-            inputName="saturacao_oxigenio"
-            inputValue={formData.saturacao_oxigenio}
-            onInputChange={updateField('saturacao_oxigenio')}
+            inputName="oxygenSaturation"
+            inputValue={formData.oxygenSaturation}
+            onInputChange={updateField('oxygenSaturation')}
             placeholder="98"
             min="70"
             max="100"
@@ -478,18 +497,18 @@ export default function SinaisVitais() {
               {language === 'pt' ? 'Observações' : 'Observations'}
             </CardTitle>
             <CardDescription>
-              {language === 'pt' 
-                ? 'Anotações sobre como você está se sentindo' 
+              {language === 'pt'
+                ? 'Anotações sobre como você está se sentindo'
                 : 'Notes about how you are feeling'}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
-              placeholder={language === 'pt' 
-                ? 'Ex: Medição após acordar, em jejum...' 
+              placeholder={language === 'pt'
+                ? 'Ex: Medição após acordar, em jejum...'
                 : 'E.g.: Measurement after waking up, fasting...'}
-              value={formData.observacoes}
-              onChange={(e) => updateField('observacoes')(e.target.value)}
+              value={formData.notes}
+              onChange={(e) => updateField('notes')(e.target.value)}
               rows={3}
             />
           </CardContent>
@@ -511,8 +530,8 @@ export default function SinaisVitais() {
 
         {/* Tip */}
         <p className="text-xs text-muted-foreground text-center leading-relaxed">
-          {language === 'pt' 
-            ? '💡 Dica: Meça sua pressão sempre no mesmo horário e posição para resultados mais consistentes.' 
+          {language === 'pt'
+            ? '💡 Dica: Meça sua pressão sempre no mesmo horário e posição para resultados mais consistentes.'
             : '💡 Tip: Measure your blood pressure at the same time and position for more consistent results.'}
         </p>
       </main>

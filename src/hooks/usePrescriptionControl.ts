@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { differenceInDays, parseISO, isAfter, isBefore } from "date-fns";
 
 export interface PrescriptionStatus {
   id: string;
   title: string;
-  issued_at: string | null;
-  expires_at: string | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
   status: 'valid' | 'expiring_soon' | 'expired';
   daysUntilExpiry: number;
   medications: any[];
@@ -19,45 +20,48 @@ export function usePrescriptionControl(profileId?: string) {
   return useQuery({
     queryKey: ["prescription-control", profileId],
     queryFn: async () => {
-      const now = new Date();
-      
-      // First, get the receita category UUID
-      const { data: categoriaReceita } = await supabase
-        .from("categorias_saude")
-        .select("id")
-        .eq("slug", "receita")
-        .single();
+      const user = auth.currentUser;
+      if (!user) return [];
 
-      if (!categoriaReceita) {
-        console.warn("Categoria receita not found");
-        return [];
-      }
-      
-      let query = supabase
-        .from("documentos_saude")
-        .select("id, title, issued_at, expires_at, meta, created_at")
-        .eq("categoria_id", categoriaReceita.id)
-        .order("created_at", { ascending: false });
+      const now = new Date();
+
+      // In Firebase, we simply query for documents with type "prescription" or "receita"
+      // Assuming 'documents' subcollection has a 'type' field.
+
+      const docsRef = collection(db, 'users', user.uid, 'documents');
+
+      // Note: Firestore requires composite index for query on (type, profileId, createdAt).
+      // We will query by type and filter profileId in memory if needed to avoid index issues for now, or use simple query.
+      let q = query(docsRef, where("category", "==", "receita"));
 
       if (profileId) {
-        query = query.eq("profile_id", profileId);
+        // If we have an index, we can add this. 
+        q = query(docsRef, where("category", "==", "receita"), where("profileId", "==", profileId));
       }
 
-      const { data: prescriptions, error } = await query;
-      if (error) throw error;
+      const snap = await getDocs(q);
+      const prescriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Sort manually by createdAt DESC
+      prescriptions.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       const statusList: PrescriptionStatus[] = [];
       const medicationMap = new Map<string, string[]>(); // medication name -> prescription IDs
 
-      for (const prescription of prescriptions || []) {
-        const medications = (prescription.meta as any)?.medications || [];
-        const isPurchased = (prescription.meta as any)?.is_purchased === true;
-        
+      for (const prescription of prescriptions) {
+        // Adapt fields from Supabase (issued_at) to Firebase (issuedAt) or keep flexible
+        const issuedAt = (prescription as any).issuedAt || (prescription as any).issued_at;
+        const expiresAt = (prescription as any).expiresAt || (prescription as any).expires_at;
+        // meta might be flattened or kept as map
+        const meta = (prescription as any).meta || {};
+        const medications = meta.medications || (prescription as any).medications || [];
+        const isPurchased = meta.isPurchased === true || (prescription as any).isPurchased === true;
+
         let status: 'valid' | 'expiring_soon' | 'expired' = 'valid';
         let daysUntilExpiry = Infinity;
 
-        if (prescription.expires_at) {
-          const expiryDate = parseISO(prescription.expires_at);
+        if (expiresAt) {
+          const expiryDate = parseISO(expiresAt);
           daysUntilExpiry = differenceInDays(expiryDate, now);
 
           if (isBefore(expiryDate, now)) {
@@ -87,8 +91,8 @@ export function usePrescriptionControl(profileId?: string) {
         statusList.push({
           id: prescription.id,
           title: prescription.title || "Receita sem título",
-          issued_at: prescription.issued_at,
-          expires_at: prescription.expires_at,
+          issuedAt,
+          expiresAt,
           status,
           daysUntilExpiry,
           medications,
@@ -100,6 +104,7 @@ export function usePrescriptionControl(profileId?: string) {
 
       return statusList;
     },
+    enabled: !!auth.currentUser
   });
 }
 
@@ -107,49 +112,43 @@ export function useExpiredPrescriptions(profileId?: string) {
   return useQuery({
     queryKey: ["expired-prescriptions", profileId],
     queryFn: async () => {
+      const user = auth.currentUser;
+      if (!user) return [];
+
       const now = new Date();
-      
-      // First, get the receita category UUID
-      const { data: categoriaReceita } = await supabase
-        .from("categorias_saude")
-        .select("id")
-        .eq("slug", "receita")
-        .single();
 
-      if (!categoriaReceita) {
-        console.warn("Categoria receita not found");
-        return [];
-      }
-      
-      let query = supabase
-        .from("documentos_saude")
-        .select("id, title, issued_at, expires_at, meta")
-        .eq("categoria_id", categoriaReceita.id)
-        .not("expires_at", "is", null)
-        .order("expires_at", { ascending: true });
+      const docsRef = collection(db, 'users', user.uid, 'documents');
 
+      // Query prescriptions
+      let q = query(docsRef, where("category", "==", "receita"));
       if (profileId) {
-        query = query.eq("profile_id", profileId);
+        q = query(docsRef, where("category", "==", "receita"), where("profileId", "==", profileId));
       }
 
-      const { data: prescriptions, error } = await query;
-      if (error) throw error;
+      const snap = await getDocs(q);
+      const prescriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Filtrar receitas vencidas que não foram compradas
-      const expired = (prescriptions || []).filter(p => {
-        if (!p.expires_at) return false;
-        const isPurchased = (p.meta as any)?.is_purchased === true;
-        const isExpired = isBefore(parseISO(p.expires_at), now);
+      // Filter locally
+      const expired = prescriptions.filter((p: any) => {
+        const expiresAt = p.expiresAt || p.expires_at;
+        if (!expiresAt) return false;
+
+        const isPurchased = p.isPurchased === true || p.meta?.isPurchased === true;
+        const isExpired = isBefore(parseISO(expiresAt), now);
         return isExpired && !isPurchased;
       });
+
+      // Sort by expiresAt ASC
+      expired.sort((a, b) => new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime());
 
       return expired.map(p => ({
         id: p.id,
         title: p.title || "Receita sem título",
-        expires_at: p.expires_at,
-        medications: (p.meta as any)?.medications || [],
-        daysExpired: Math.abs(differenceInDays(parseISO(p.expires_at!), now))
+        expiresAt: p.expiresAt || p.expires_at,
+        medications: p.medications || p.meta?.medications || [],
+        daysExpired: Math.abs(differenceInDays(parseISO(p.expiresAt || p.expires_at), now))
       }));
     },
+    enabled: !!auth.currentUser
   });
 }

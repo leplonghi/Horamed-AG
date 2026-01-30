@@ -8,13 +8,13 @@ interface MedicationItem {
   name: string;
   category: string;
   stock?: Array<{
-    units_left: number;
-    unit_label: string;
+    currentQty: number;
+    unitLabel: string;
   }>;
   schedules: Array<{
     id: string;
     times: any;
-    freq_type: string;
+    freqType: string;
   }>;
 }
 
@@ -23,9 +23,9 @@ interface SmartMedicationInsightsProps {
   onActionClick: (action: string, itemId?: string) => void;
 }
 
-export default function SmartMedicationInsights({ 
-  items, 
-  onActionClick 
+export default function SmartMedicationInsights({
+  items,
+  onActionClick
 }: SmartMedicationInsightsProps) {
   const { language } = useLanguage();
 
@@ -35,7 +35,7 @@ export default function SmartMedicationInsights({
     // Check for low stock items
     const lowStockItems = items.filter(item => {
       const stock = item.stock?.[0];
-      return stock && stock.units_left <= 5;
+      return stock && stock.currentQty <= 5;
     });
 
     if (lowStockItems.length > 0) {
@@ -43,7 +43,7 @@ export default function SmartMedicationInsights({
         id: "low-stock",
         type: "warning",
         icon: <Package className="h-5 w-5 text-warning" />,
-        title: language === 'pt' 
+        title: language === 'pt'
           ? `${lowStockItems.length} ${lowStockItems.length === 1 ? 'item' : 'itens'} com estoque baixo`
           : `${lowStockItems.length} ${lowStockItems.length === 1 ? 'item' : 'items'} with low stock`,
         description: language === 'pt'
@@ -57,7 +57,7 @@ export default function SmartMedicationInsights({
     }
 
     // Check for items without schedules
-    const noScheduleItems = items.filter(item => 
+    const noScheduleItems = items.filter(item =>
       !item.schedules || item.schedules.length === 0
     );
 
@@ -93,7 +93,7 @@ export default function SmartMedicationInsights({
     }
 
     // Count supplements
-    const supplements = items.filter(i => 
+    const supplements = items.filter(i =>
       i.category === 'suplemento' || i.category === 'vitamina'
     );
     const medications = items.filter(i => i.category === 'medicamento');

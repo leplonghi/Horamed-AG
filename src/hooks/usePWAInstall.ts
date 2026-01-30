@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { auth, addDocument } from "@/integrations/firebase";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -34,6 +35,28 @@ export function usePWAInstall() {
     isStandalone: false,
     showPrompt: false,
   });
+
+  // Track analytics event
+  const trackEvent = useCallback(async (eventName: string) => {
+    try {
+      const user = auth.currentUser;
+      // Fire and forget, don't await if you don't care about result
+      if (user) {
+        await addDocument(`users/${user.uid}/appMetrics`, {
+          eventName: eventName,
+          eventData: {
+            platform: state.isIOS ? 'ios' : state.isAndroid ? 'android' : 'other',
+            userAgent: navigator.userAgent,
+            standalone: state.isStandalone,
+          },
+          createdAt: new Date().toISOString()
+        });
+      }
+    } catch (error) {
+      // Silent fail
+    }
+  }, [state.isIOS, state.isAndroid, state.isStandalone]);
+
 
   // Detect iOS
   const detectIOS = useCallback(() => {
@@ -140,7 +163,7 @@ export function usePWAInstall() {
         localStorage.setItem(STORAGE_KEYS.INSTALLED, 'true');
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [checkIfInstalled, detectIOS, detectAndroid, checkStandalone]);
@@ -157,16 +180,16 @@ export function usePWAInstall() {
 
     // Listen for app installed
     const installedHandler = () => {
-      setState(prev => ({ 
-        ...prev, 
-        isInstalled: true, 
-        canInstall: false, 
+      setState(prev => ({
+        ...prev,
+        isInstalled: true,
+        canInstall: false,
         showPrompt: false,
         isStandalone: true,
       }));
       localStorage.setItem(STORAGE_KEYS.INSTALLED, 'true');
       setDeferredPrompt(null);
-      
+
       trackEvent('pwa_installed');
     };
 
@@ -178,26 +201,6 @@ export function usePWAInstall() {
     };
   }, []);
 
-  // Track analytics event
-  const trackEvent = useCallback(async (eventName: string) => {
-    try {
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      await supabase.from('app_metrics').insert({
-        event_name: eventName,
-        user_id: user?.id || null,
-        event_data: {
-          platform: state.isIOS ? 'ios' : state.isAndroid ? 'android' : 'other',
-          userAgent: navigator.userAgent,
-          standalone: state.isStandalone,
-        },
-      });
-    } catch (error) {
-      console.error('Error tracking PWA event:', error);
-    }
-  }, [state.isIOS, state.isAndroid, state.isStandalone]);
-
   // Trigger install prompt
   const triggerInstall = useCallback(async () => {
     if (!deferredPrompt) {
@@ -208,7 +211,7 @@ export function usePWAInstall() {
     try {
       await deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
-      
+
       if (outcome === 'accepted') {
         trackEvent('pwa_install_accepted');
         setState(prev => ({ ...prev, showPrompt: false, isInstalled: true }));
@@ -218,7 +221,7 @@ export function usePWAInstall() {
         localStorage.setItem(STORAGE_KEYS.DISMISSED_AT, Date.now().toString());
         setState(prev => ({ ...prev, showPrompt: false }));
       }
-      
+
       setDeferredPrompt(null);
       return outcome === 'accepted';
     } catch (error) {

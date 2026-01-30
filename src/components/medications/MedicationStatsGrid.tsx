@@ -8,8 +8,8 @@ interface MedicationItem {
   name: string;
   category: string;
   stock?: Array<{
-    units_left: number;
-    unit_label: string;
+    currentQty: number;
+    unitLabel: string;
   }>;
 }
 
@@ -18,16 +18,16 @@ interface MedicationStatsGridProps {
   onStatClick?: (filter: string) => void;
 }
 
-export default function MedicationStatsGrid({ 
-  items, 
-  onStatClick 
+export default function MedicationStatsGrid({
+  items,
+  onStatClick
 }: MedicationStatsGridProps) {
   const { language } = useLanguage();
 
   const stats = useMemo(() => {
     const medications = items.filter(i => i.category === 'medicamento');
     const supplements = items.filter(i => i.category === 'suplemento' || i.category === 'vitamina');
-    const lowStock = items.filter(i => i.stock?.[0] && i.stock[0].units_left <= 5);
+    const lowStock = items.filter(i => i.stock?.[0] && i.stock[0].currentQty <= 5);
 
     const result: StatItem[] = [
       {

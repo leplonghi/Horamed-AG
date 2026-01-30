@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Plus, Minus, ShoppingCart, Check } from "lucide-react";
+import { Package, Plus, ShoppingCart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, updateDocument, fetchDocument, functions, httpsCallable } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -61,39 +61,34 @@ export default function QuickRefillModal({
 
     setIsSubmitting(true);
     try {
-      const newTotal = currentUnits + amount;
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+
+      // Calculate new total
+      // NOTE: We trust currentUnits passed from prop, but it might be stale. 
+      // Ideally we fetch fresh currentQty, but for UI responsiveness we can assume simple increment.
+      // Better to fetch fresh just in case.
+
+      const { data: stockData } = await fetchDocument<any>(`users/${user.uid}/stock`, stockId);
+      if (!stockData) throw new Error("Stock item not found");
+
+      const currentQty = stockData.currentQty || 0;
+      const newTotal = currentQty + amount;
 
       // Update stock
-      const { error } = await supabase
-        .from("stock")
-        .update({
-          units_left: newTotal,
-          last_refill_at: new Date().toISOString(),
-        })
-        .eq("id", stockId);
-
-      if (error) throw error;
-
-      // Add to consumption history
-      const { data: stockData } = await supabase
-        .from("stock")
-        .select("consumption_history")
-        .eq("id", stockId)
-        .single();
-
-      const history = [
-        ...((stockData?.consumption_history as any[]) || []),
-        {
-          date: new Date().toISOString(),
-          amount: amount,
-          reason: "refill",
-        },
-      ];
-
-      await supabase
-        .from("stock")
-        .update({ consumption_history: history })
-        .eq("id", stockId);
+      await updateDocument(`users/${user.uid}/stock`, stockId, {
+        currentQty: newTotal,
+        lastRefillAt: new Date().toISOString(),
+        // Append to history
+        consumptionHistory: [
+          ...(stockData.consumptionHistory || []),
+          {
+            date: new Date().toISOString(),
+            amount: amount,
+            reason: "refill",
+          }
+        ]
+      });
 
       setShowSuccess(true);
       setTimeout(() => {
@@ -118,11 +113,11 @@ export default function QuickRefillModal({
 
   const handleBuyOnline = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("affiliate-click", {
-        body: { medication_id: itemId, medication_name: itemName },
-      });
-
-      if (error) throw error;
+      const affiliateClick = httpsCallable(functions, 'affiliateClick');
+      const { data } = await affiliateClick({
+        medication_id: itemId,
+        medication_name: itemName
+      }) as { data: { url: string } };
 
       if (data?.url) {
         window.open(data.url, "_blank");

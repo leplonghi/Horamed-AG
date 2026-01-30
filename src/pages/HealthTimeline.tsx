@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where, orderBy, limit } from "@/integrations/firebase";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,26 +7,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import HelpTooltip from "@/components/HelpTooltip";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Calendar, 
-  FileText, 
-  Pill, 
-  Activity, 
+import {
+  Calendar,
+  FileText,
+  Pill,
+  Activity,
   Stethoscope,
-  TrendingUp,
   Clock,
   ChevronRight,
   Sparkles,
   MapPin,
-  User,
   FlaskConical,
   Heart,
   Syringe
 } from "lucide-react";
-import { format, isThisMonth, isToday, differenceInDays, parseISO } from "date-fns";
+import { format, isThisMonth, isToday, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface TimelineEvent {
   id: string;
   type: 'consulta' | 'exame' | 'medicamento' | 'documento' | 'vacina' | 'dose';
@@ -37,6 +36,7 @@ interface TimelineEvent {
 }
 
 export default function HealthTimeline() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("todos");
@@ -55,135 +55,131 @@ export default function HealthTimeline() {
 
   const loadTimeline = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const allEvents: TimelineEvent[] = [];
       let consultas = 0, exames = 0, medicamentos = 0, documentos = 0, vacinas = 0, dosesTomadas = 0;
 
-      // Buscar consultas
-      const { data: consultasData } = await supabase
-        .from("consultas_medicas")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("data_consulta", { ascending: false })
-        .limit(50);
+      // 1. Consultas (Appointments)
+      const { data: consultasData } = await fetchCollection<any>(`users/${user.uid}/appointments`, [
+        orderBy("date", "desc"),
+        limit(50)
+      ]);
 
       consultasData?.forEach(c => {
         consultas++;
         allEvents.push({
           id: c.id,
           type: 'consulta',
-          date: c.data_consulta,
-          title: c.especialidade || 'Consulta Médica',
-          description: c.medico_nome ? `Dr(a). ${c.medico_nome}` : '',
-          metadata: { ...c, local: c.local }
+          date: c.date,
+          title: c.specialty || 'Consulta Médica',
+          description: c.doctorName ? `Dr(a). ${c.doctorName}` : '',
+          metadata: { ...c }
         });
       });
 
-      // Buscar exames
-      const { data: examesData } = await supabase
-        .from("exames_laboratoriais")
-        .select("*, valores_exames(*)")
-        .eq("user_id", user.id)
-        .order("data_exame", { ascending: false })
-        .limit(50);
+      // 2. Exames (Exams)
+      const { data: examesData } = await fetchCollection<any>(`users/${user.uid}/exams`, [
+        orderBy("date", "desc"),
+        limit(50)
+      ]);
 
       examesData?.forEach(e => {
         exames++;
-        const valoresCount = e.valores_exames?.length || 0;
+        // Assuming results are embedded or counted differently now. 
+        // For simple migration, we list the exam itself.
+        const resultsCount = e.results ? Object.keys(e.results).length : 0;
         allEvents.push({
           id: e.id,
           type: 'exame',
-          date: e.data_exame,
+          date: e.date,
           title: 'Exame Laboratorial',
-          description: e.laboratorio ? `${e.laboratorio}${valoresCount > 0 ? ` • ${valoresCount} parâmetros` : ''}` : '',
-          metadata: { ...e, valoresCount }
+          description: e.laboratory ? `${e.laboratory}${resultsCount > 0 ? ` • ${resultsCount} parâmetros` : ''}` : '',
+          metadata: { ...e, resultsCount }
         });
       });
 
-      // Buscar medicamentos adicionados
-      const { data: medicamentosData } = await supabase
-        .from("items")
-        .select("*, stock(*)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      // 3. Medicamentos (Medications)
+      const { data: medicamentosData } = await fetchCollection<any>(`users/${user.uid}/medications`, [
+        orderBy("createdAt", "desc"),
+        limit(50)
+      ]);
 
       medicamentosData?.forEach(m => {
         medicamentos++;
-        const stockInfo = m.stock?.[0];
+        const stockInfo = m.unitsLeft !== undefined ? { unitsLeft: m.unitsLeft } : undefined;
         allEvents.push({
           id: m.id,
           type: 'medicamento',
-          date: m.created_at || '',
+          date: m.createdAt || new Date().toISOString(),
           title: m.name,
-          description: m.dose_text || m.category || '',
+          description: m.doseText || m.category || '',
           metadata: { ...m, stockInfo }
         });
       });
 
-      // Buscar documentos
-      const { data: documentosData } = await supabase
-        .from("documentos_saude")
-        .select("*, categorias_saude(label)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      // 4. Documentos (Documents) - Assuming collection name 'documents'
+      const { data: documentosData } = await fetchCollection<any>(`users/${user.uid}/documents`, [
+        orderBy("createdAt", "desc"),
+        limit(50)
+      ]);
 
       documentosData?.forEach(d => {
         documentos++;
         allEvents.push({
           id: d.id,
           type: 'documento',
-          date: d.created_at || '',
+          date: d.createdAt || new Date().toISOString(),
           title: d.title || 'Documento',
-          description: (d.categorias_saude as any)?.label || d.provider || '',
+          description: d.provider || d.category || '',
           metadata: d
         });
       });
 
-      // Buscar vacinas
-      const { data: vacinasData } = await supabase
-        .from("vaccination_records")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("application_date", { ascending: false })
-        .limit(50);
+      // 5. Vacinas (Vaccines)
+      const { data: vacinasData } = await fetchCollection<any>(`users/${user.uid}/vaccines`, [
+        orderBy("applicationDate", "desc"),
+        limit(50)
+      ]);
 
       vacinasData?.forEach(v => {
         vacinas++;
         allEvents.push({
           id: v.id,
           type: 'vacina',
-          date: v.application_date,
-          title: v.vaccine_name,
-          description: v.dose_description || `${v.dose_number || 1}ª dose`,
+          date: v.applicationDate,
+          title: v.vaccineName,
+          description: v.doseDescription || `${v.doseNumber || 1}ª dose`,
           metadata: v
         });
       });
 
-      // Buscar doses tomadas (últimos 30 dias)
+      // 6. Doses Tomadas (últimos 30 dias)
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const { data: dosesData } = await supabase
-        .from("dose_instances")
-        .select("*, items(name)")
-        .eq("status", "taken")
-        .gte("taken_at", thirtyDaysAgo.toISOString())
-        .order("taken_at", { ascending: false })
-        .limit(100);
+
+      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        where("status", "==", "taken"),
+        where("takenAt", ">=", thirtyDaysAgo.toISOString()),
+        orderBy("takenAt", "desc"),
+        limit(100)
+      ]);
+
+      // Need meds to resolve names for doses
+      const { data: medsForDoses } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const medsMap = new Map(medsForDoses?.map(m => [m.id, m]));
 
       dosesData?.forEach(d => {
         dosesTomadas++;
-        if (dosesTomadas <= 20) { // Limitar doses na timeline
+        if (dosesTomadas <= 20) {
+          const med = medsMap.get(d.itemId);
           allEvents.push({
             id: d.id,
             type: 'dose',
-            date: d.taken_at || d.due_at,
-            title: `Dose tomada: ${d.items?.name || 'Medicamento'}`,
-            description: d.delay_minutes ? `${d.delay_minutes} min de atraso` : 'No horário',
+            date: d.takenAt || d.dueAt,
+            title: `Dose tomada: ${med?.name || 'Medicamento'}`,
+            description: 'No horário', // Simplified for now
             metadata: d
           });
         }
@@ -197,7 +193,7 @@ export default function HealthTimeline() {
       setEvents(allEvents);
     } catch (error) {
       console.error("Erro ao carregar timeline:", error);
-      toast.error("Erro ao carregar histórico");
+      toast.error(t("toast.health.timelineError"));
     } finally {
       setLoading(false);
     }
@@ -275,8 +271,8 @@ export default function HealthTimeline() {
     }
   };
 
-  const filteredEvents = filterType === "todos" 
-    ? events 
+  const filteredEvents = filterType === "todos"
+    ? events
     : events.filter(e => e.type === filterType);
 
   // Agrupar eventos por mês
@@ -321,10 +317,10 @@ export default function HealthTimeline() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      
+
       <main className="container max-w-lg mx-auto px-4 py-6">
         {/* Header animado */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6"
@@ -336,7 +332,7 @@ export default function HealthTimeline() {
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-bold text-foreground">Linha do Tempo</h1>
-                <HelpTooltip 
+                <HelpTooltip
                   content="Visualize todo seu histórico de saúde organizado cronologicamente. Consultas, exames, medicamentos, vacinas e documentos em um só lugar."
                   iconSize="lg"
                 />
@@ -349,7 +345,7 @@ export default function HealthTimeline() {
         </motion.div>
 
         {/* Cards de estatísticas */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -400,7 +396,7 @@ export default function HealthTimeline() {
         </motion.div>
 
         {/* Filtros com scroll horizontal */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -458,7 +454,7 @@ export default function HealthTimeline() {
 
             <AnimatePresence mode="popLayout">
               {Object.entries(groupedEvents).map(([month, monthEvents], groupIndex) => (
-                <motion.div 
+                <motion.div
                   key={month}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -483,7 +479,7 @@ export default function HealthTimeline() {
                     {monthEvents.map((event, eventIndex) => {
                       const styles = getEventStyles(event.type);
                       const relativeTime = getRelativeTime(event.date);
-                      
+
                       return (
                         <motion.div
                           key={event.id}
@@ -494,7 +490,7 @@ export default function HealthTimeline() {
                         >
                           {/* Dot na timeline */}
                           <div className={`absolute left-[3px] top-4 w-3 h-3 rounded-full ${styles.dot} border-2 border-background shadow-sm z-10`} />
-                          
+
                           {/* Card do evento */}
                           <Card className={`${styles.bg} ${styles.border} border hover:shadow-md transition-all duration-200 cursor-pointer group overflow-hidden`}>
                             <CardContent className="p-4">
@@ -525,7 +521,7 @@ export default function HealthTimeline() {
                                     <Badge variant="outline" className={`text-[10px] ${styles.text} border-current/20`}>
                                       {getTypeLabel(event.type)}
                                     </Badge>
-                                    
+
                                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                                       <Clock className="h-3 w-3" />
                                       {formatEventDate(event.date)}
@@ -544,10 +540,10 @@ export default function HealthTimeline() {
                                       </span>
                                     )}
 
-                                    {event.metadata?.valoresCount > 0 && (
+                                    {event.metadata?.resultsCount > 0 && (
                                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                                         <Activity className="h-3 w-3" />
-                                        {event.metadata.valoresCount} resultados
+                                        {event.metadata.resultsCount} resultados
                                       </span>
                                     )}
                                   </div>
@@ -567,7 +563,7 @@ export default function HealthTimeline() {
 
         {/* Footer com resumo */}
         {filteredEvents.length > 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}

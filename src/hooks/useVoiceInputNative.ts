@@ -32,9 +32,9 @@ type SpeechRecognitionType = new () => {
 };
 
 function getSpeechRecognition(): SpeechRecognitionType | null {
-  const windowWithSpeech = window as unknown as { 
-    SpeechRecognition?: SpeechRecognitionType; 
-    webkitSpeechRecognition?: SpeechRecognitionType 
+  const windowWithSpeech = window as unknown as {
+    SpeechRecognition?: SpeechRecognitionType;
+    webkitSpeechRecognition?: SpeechRecognitionType
   };
   return windowWithSpeech.SpeechRecognition || windowWithSpeech.webkitSpeechRecognition || null;
 }
@@ -44,7 +44,7 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState<string>('');
   const [isSupported, setIsSupported] = useState(true);
-  
+
   const recognitionRef = useRef<InstanceType<SpeechRecognitionType> | null>(null);
   const finalTranscriptRef = useRef<string>('');
   const hasResultsRef = useRef<boolean>(false);
@@ -97,23 +97,23 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
         console.log('Speech recognition started');
         setIsRecording(true);
         setIsProcessing(false);
-        
+
         // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate(50);
         }
-        
+
         toast.info('Ouvindo... Fale agora', { duration: 2000 });
       };
 
       recognition.onresult = (event: SpeechRecognitionEvent) => {
         hasResultsRef.current = true;
         let interimTranscript = '';
-        
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const result = event.results[i];
           const transcript = result[0].transcript;
-          
+
           if (result.isFinal) {
             finalTranscriptRef.current += transcript + ' ';
             console.log('Final transcript:', transcript);
@@ -131,9 +131,9 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
 
       recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
         console.error('Speech recognition error:', event.error);
-        
+
         let errorMessage = 'Erro no reconhecimento de voz';
-        
+
         switch (event.error) {
           case 'not-allowed':
             errorMessage = 'Permissão de microfone negada. Por favor, permita o acesso ao microfone.';
@@ -161,7 +161,7 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
             errorMessage = 'Serviço de reconhecimento não disponível.';
             break;
         }
-        
+
         toast.error(errorMessage);
         options.onError?.(event.error);
         setIsRecording(false);
@@ -172,7 +172,7 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
         console.log('Speech recognition ended');
         setIsRecording(false);
         setIsProcessing(false);
-        
+
         const finalText = finalTranscriptRef.current.trim();
         if (finalText) {
           console.log('Final transcription result:', finalText);
@@ -182,18 +182,18 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
         } else if (hasResultsRef.current) {
           console.log('Had results but no final text');
         }
-        
+
         // Haptic feedback
         if (navigator.vibrate) {
           navigator.vibrate([50, 50, 50]);
         }
-        
+
         recognitionRef.current = null;
       };
 
       recognition.start();
       console.log('Recognition.start() called');
-      
+
     } catch (error) {
       console.error('Error starting recording:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao iniciar gravação';
@@ -238,6 +238,7 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
     isRecording,
     isProcessing,
     transcription,
+    stream: null, // Native WebSpeech API does not expose the stream directly for visualization
     isSupported,
     startRecording,
     stopRecording,

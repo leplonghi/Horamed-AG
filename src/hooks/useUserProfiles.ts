@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, addDocument, updateDocument, deleteDocument, where, orderBy } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useProfileCacheContext } from "@/contexts/ProfileCacheContext";
 
 export interface UserProfile {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  avatar_url?: string | null;
-  birth_date?: string | null;
+  avatarUrl?: string | null;
+  birthDate?: string | null;
+  weightKg?: number | null;
+  heightCm?: number | null;
+  gender?: string | null;
+  bloodType?: string | null;
   relationship: string;
-  is_primary: boolean;
-  created_at: string;
-  updated_at: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function useUserProfiles() {
@@ -23,14 +27,14 @@ export function useUserProfiles() {
       return cached ? JSON.parse(cached) : [];
     } catch { return []; }
   });
-  
+
   const [activeProfile, setActiveProfile] = useState<UserProfile | null>(() => {
     try {
       const cached = localStorage.getItem('cachedActiveProfile');
       return cached ? JSON.parse(cached) : null;
     } catch { return null; }
   });
-  
+
   const [loading, setLoading] = useState(!profiles.length);
   const { prefetchAllProfiles } = useProfileCacheContext();
 
@@ -40,48 +44,48 @@ export function useUserProfiles() {
 
   const loadProfiles = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_primary', { ascending: false })
-        .order('name');
+      const { data, error } = await fetchCollection<UserProfile>(
+        `users/${user.uid}/profiles`,
+        [orderBy('isPrimary', 'desc'), orderBy('name', 'asc')]
+      );
 
       if (error) throw error;
 
       const profilesList = data || [];
       setProfiles(profilesList);
-      
+
       // Cache profiles in localStorage for instant load
       localStorage.setItem('cachedProfiles', JSON.stringify(profilesList));
-      
+
       // Determine active profile
       const savedProfileId = localStorage.getItem('activeProfileId');
       let newActiveProfile: UserProfile | null = null;
-      
+
       if (savedProfileId && profilesList.length > 0) {
         newActiveProfile = profilesList.find(p => p.id === savedProfileId) || null;
       }
-      
+
       if (!newActiveProfile && profilesList.length > 0) {
-        newActiveProfile = profilesList.find(p => p.is_primary) || profilesList[0];
+        newActiveProfile = profilesList.find(p => p.isPrimary) || profilesList[0];
       }
-      
+
       if (newActiveProfile) {
         setActiveProfile(newActiveProfile);
         localStorage.setItem('activeProfileId', newActiveProfile.id);
         localStorage.setItem('cachedActiveProfile', JSON.stringify(newActiveProfile));
       }
-      
+
       // Prefetch in background - don't await
       if (profilesList.length > 0) {
-        prefetchAllProfiles(profilesList, user.id).catch(console.error);
+        // We'll pass standard snake_case IDs if prefetch expects them, 
+        // but here we just pass the list and uid
+        prefetchAllProfiles(profilesList as any, user.uid).catch(console.error);
       }
     } catch (error) {
       console.error('Error loading profiles:', error);
@@ -92,21 +96,17 @@ export function useUserProfiles() {
 
   const createProfile = async (profile: Partial<UserProfile> & { name: string }) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .insert([{
-          user_id: user.id,
-          name: profile.name,
-          avatar_url: profile.avatar_url,
-          birth_date: profile.birth_date,
-          relationship: profile.relationship || 'self',
-          is_primary: profile.is_primary || false
-        }])
-        .select()
-        .single();
+      const { data, error } = await addDocument(`users/${user.uid}/profiles`, {
+        userId: user.uid,
+        name: profile.name,
+        avatarUrl: profile.avatarUrl || null,
+        birthDate: profile.birthDate || null,
+        relationship: profile.relationship || 'self',
+        isPrimary: profile.isPrimary || false
+      });
 
       if (error) throw error;
 
@@ -122,10 +122,10 @@ export function useUserProfiles() {
 
   const updateProfile = async (id: string, updates: Partial<UserProfile>) => {
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .update(updates)
-        .eq('id', id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const { error } = await updateDocument(`users/${user.uid}/profiles`, id, updates);
 
       if (error) throw error;
 
@@ -140,10 +140,10 @@ export function useUserProfiles() {
 
   const deleteProfile = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('user_profiles')
-        .delete()
-        .eq('id', id);
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const { error } = await deleteDocument(`users/${user.uid}/profiles`, id);
 
       if (error) throw error;
 
@@ -167,7 +167,7 @@ export function useUserProfiles() {
     localStorage.setItem('activeProfileId', profile.id);
     localStorage.setItem('cachedActiveProfile', JSON.stringify(profile));
     toast.success(`Perfil: ${profile.name}`, { duration: 1000 });
-    
+
     // Notify components about profile switch
     window.dispatchEvent(new CustomEvent('profile-switched', { detail: profile }));
   };

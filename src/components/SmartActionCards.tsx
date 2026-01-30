@@ -47,7 +47,7 @@ export function SmartActionCards() {
         <div className="h-1 w-1 rounded-full bg-primary animate-pulse" />
         <h3 className="heading-section">{t('smartActions.title')}</h3>
       </div>
-      
+
       <div className="space-y-3">
         {suggestions.slice(0, 3).map((suggestion, index) => (
           <motion.div
@@ -56,7 +56,7 @@ export function SmartActionCards() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card 
+            <Card
               className={`${getPriorityColor(suggestion.priority)} shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)] transition-all cursor-pointer group`}
               onClick={() => navigate(suggestion.actionPath)}
             >
@@ -66,9 +66,9 @@ export function SmartActionCards() {
                     <h4 className="heading-card text-base">{suggestion.title}</h4>
                     <p className="text-subtitle leading-relaxed">{suggestion.description}</p>
                   </div>
-                  
-                  <Button 
-                    size="sm" 
+
+                  <Button
+                    size="sm"
                     className="shrink-0 gap-2 group-hover:gap-3 transition-all"
                   >
                     {suggestion.actionLabel}
@@ -82,10 +82,10 @@ export function SmartActionCards() {
       </div>
 
       {suggestions.length > 3 && (
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full text-subtitle"
-          onClick={() => navigate('/medications')}
+          onClick={() => navigate('/medicamentos')}
         >
           {t('smartActions.seeMore', { count: String(remaining), label: remainingLabel })}
         </Button>
