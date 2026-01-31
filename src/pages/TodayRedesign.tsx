@@ -41,6 +41,11 @@ import SocialProofBanner from "@/components/fomo/SocialProofBanner";
 import StreakRiskAlert from "@/components/fomo/StreakRiskAlert";
 import PremiumBenefitsMini from "@/components/fomo/PremiumBenefitsMini";
 import VitalsGlanceWidget from "@/components/VitalsGlanceWidget";
+// 10/10 Polish: Import externalized components and confetti
+import { TodayStatusCard } from "@/components/today/TodayStatusCard";
+import ReactConfetti from "react-confetti";
+import { useWindowSize } from "react-use";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TimelineItem {
   id: string;
@@ -54,69 +59,33 @@ interface TimelineItem {
   itemId?: string;
 }
 
-// Memoized status card - Progresso visual limpo
-const TodayStatusCard = memo(function TodayStatusCard({
-  streak,
-  taken,
-  total,
-  language
-}: {
-  streak: number;
-  taken: number;
-  total: number;
-  language: string;
-}) {
-  if (total === 0) return null;
+interface StockItem {
+  id: string; // Firestore ID usually
+  itemId?: string; // Sometimes distinct or same
+  itemName: string;
+  currentQty: number;
+  alertThreshold?: number;
+}
 
-  const progressPercent = Math.round((taken / total) * 100);
-  const isComplete = taken === total;
 
-  return (
-    <Card className={cn(
-      "p-4 border transition-all backdrop-blur-xl shadow-[var(--shadow-glass)]",
-      isComplete
-        ? "bg-gradient-to-br from-green-500/15 to-emerald-500/5 border-green-500/30"
-        : "bg-gradient-to-br from-muted/50 to-muted/30 border-border/40"
-    )}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          {streak > 0 && (
-            <span className="px-2.5 py-1 bg-orange-500/15 text-orange-600 dark:text-orange-400 rounded-full text-sm font-bold">
-              🔥 {streak} {language === 'pt' ? 'dias' : 'days'}
-            </span>
-          )}
-        </div>
-        <div className="text-right">
-          <span className={cn(
-            "text-2xl font-bold",
-            isComplete ? "text-green-600 dark:text-green-400" : "text-foreground"
-          )}>
-            {taken}/{total}
-          </span>
-          <p className="text-xs text-muted-foreground">
-            {language === 'pt' ? 'doses hoje' : 'doses today'}
-          </p>
-        </div>
-      </div>
-      <div className="h-3 bg-muted rounded-full overflow-hidden">
-        <motion.div
-          className={cn(
-            "h-full rounded-full transition-colors",
-            isComplete ? "bg-green-500" : "bg-primary"
-          )}
-          initial={{ width: 0 }}
-          animate={{ width: `${progressPercent}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        />
-      </div>
-      {isComplete && (
-        <p className="text-center text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
-          {language === 'pt' ? '✓ Tudo certo por hoje!' : '✓ All done for today!'}
-        </p>
-      )}
-    </Card>
-  );
-});
+
+const safeDate = (value: any): Date => {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  // Handle Firestore Timestamp
+  if (typeof value?.toDate === 'function') {
+    return value.toDate();
+  }
+  // Handle strings/numbers
+  const d = new Date(value);
+  // Check for Invalid Date
+  if (isNaN(d.getTime())) {
+    console.warn("Invalid date encountered:", value);
+    return new Date(); // Fallback to current time to prevent crash
+  }
+  return d;
+};
+
 export default function TodayRedesign() {
   const navigate = useNavigate();
   const {
@@ -143,6 +112,9 @@ export default function TodayRedesign() {
   const { t, language } = useLanguage();
   useSmartRedirect();
   const { overdueDoses } = useOverdueDoses();
+  const { width, height } = useWindowSize(); // Window size for confetti
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
   const [lowStockItems, setLowStockItems] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
@@ -172,15 +144,15 @@ export default function TodayRedesign() {
       const user = auth.currentUser;
       if (!user) return;
 
-      const { data: stockData } = await fetchCollection<any>(
+      const { data: stockData } = await fetchCollection<StockItem>(
         `users/${user.uid}/stock`,
         []
       );
 
       if (stockData) {
         const lowItems = stockData
-          .filter((s: any) => s.currentQty <= (s.alertThreshold || 5))
-          .map((s: any) => s.itemName)
+          .filter((s) => s.currentQty <= (s.alertThreshold || 5))
+          .map((s) => s.itemName)
           .filter(Boolean);
         setLowStockItems(lowItems);
       }
@@ -258,11 +230,11 @@ export default function TodayRedesign() {
 
       const counts: Record<string, number> = {};
       dosesResult.data?.forEach((dose: any) => {
-        const key = format(new Date(dose.dueAt), "yyyy-MM-dd");
+        const key = format(safeDate(dose.dueAt), "yyyy-MM-dd");
         counts[key] = (counts[key] || 0) + 1;
       });
       appointmentsResult.data?.forEach((apt: any) => {
-        const key = format(new Date(apt.date), "yyyy-MM-dd");
+        const key = format(safeDate(apt.date), "yyyy-MM-dd");
         counts[key] = (counts[key] || 0) + 1;
       });
       eventsResult.data?.forEach((event: any) => {
@@ -300,7 +272,7 @@ export default function TodayRedesign() {
       if (tomorrowDoses && tomorrowDoses.length > 0) {
         const dose = tomorrowDoses[0];
         setNextDayDose({
-          time: format(new Date(dose.dueAt), "HH:mm"),
+          time: format(safeDate(dose.dueAt), "HH:mm"),
           name: dose.itemName || ""
         });
       } else {
@@ -309,7 +281,7 @@ export default function TodayRedesign() {
     } catch (error) {
       console.error("Error loading tomorrow doses:", error);
     }
-  }, [activeProfile?.id]);
+  }, [activeProfile?.id, reloadTrigger]);
 
   const loadData = useCallback(async (date: Date, forceLoading = false) => {
     try {
@@ -328,7 +300,7 @@ export default function TodayRedesign() {
           const cachedDoses = (cached.todayDoses || []) as any[];
           const cachedItems: TimelineItem[] = cachedDoses.map((dose: any) => ({
             id: dose.id,
-            time: format(new Date(dose.dueAt), "HH:mm"),
+            time: format(safeDate(dose.dueAt), "HH:mm"),
             type: "medication",
             title: dose.itemName,
             subtitle: dose.doseText || undefined,
@@ -404,7 +376,7 @@ export default function TodayRedesign() {
       doses.forEach((dose: any) => {
         items.push({
           id: dose.id,
-          time: format(new Date(dose.dueAt), "HH:mm"),
+          time: format(safeDate(dose.dueAt), "HH:mm"),
           type: "medication",
           title: dose.itemName,
           subtitle: dose.doseText || undefined,
@@ -418,7 +390,7 @@ export default function TodayRedesign() {
       appointments.forEach((apt: any) => {
         items.push({
           id: apt.id,
-          time: format(new Date(apt.date), "HH:mm"),
+          time: format(safeDate(apt.date), "HH:mm"),
           type: "appointment",
           title: apt.specialty || t('todayRedesign.appointmentDefault'),
           subtitle: apt.doctorName ? t('todayRedesign.doctorPrefix', { name: apt.doctorName }) : apt.location,
@@ -449,7 +421,7 @@ export default function TodayRedesign() {
         // Find next pending dose for Hero widget
         const pendingDoses = doses
           .filter((d: any) => d.status === "scheduled")
-          .sort((a: any, b: any) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+          .sort((a: any, b: any) => safeDate(a.dueAt).getTime() - safeDate(b.dueAt).getTime());
 
         if (pendingDoses.length > 0) {
           setNextPendingDose(pendingDoses[0]);
@@ -467,7 +439,7 @@ export default function TodayRedesign() {
     } finally {
       setLoading(false);
     }
-  }, [activeProfile?.id, t, getProfileCache, loadTomorrowFirstDose]);
+  }, [activeProfile?.id, t, getProfileCache, loadTomorrowFirstDose, reloadTrigger]); // Added reloadTrigger dependency
 
   // Load greeting/quote once on mount or when key dependencies change
   useEffect(() => {
@@ -600,13 +572,19 @@ export default function TodayRedesign() {
     const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
     const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
 
+    // Only update if external changes happen (not our own optimistic updates)
+    // Actually, we can just trigger a reload
+    const handleRemoteChange = () => {
+      setReloadTrigger(prev => prev + 1);
+    }
+
     const qDoses = firestoreQuery(collection(db, dosesPath));
     const qApts = firestoreQuery(collection(db, appointmentsPath));
     const qEvents = firestoreQuery(collection(db, eventsPath));
 
-    const unsubDoses = onSnapshot(qDoses, handleRealtimeChange);
-    const unsubApts = onSnapshot(qApts, handleRealtimeChange);
-    const unsubEvents = onSnapshot(qEvents, handleRealtimeChange);
+    const unsubDoses = onSnapshot(qDoses, handleRemoteChange);
+    const unsubApts = onSnapshot(qApts, handleRemoteChange);
+    const unsubEvents = onSnapshot(qEvents, handleRemoteChange);
 
     return () => {
       unsubDoses();
@@ -616,7 +594,7 @@ export default function TodayRedesign() {
         window.clearTimeout(realtimeDebounceRef.current);
       }
     };
-  }, [activeProfile?.id, handleRealtimeChange]);
+  }, [activeProfile?.id]);
   // Memoized callbacks para evitar re-render do HeroNextDose
   const markAsTaken = useCallback(async (doseId: string, itemId: string, itemName: string) => {
     try {
@@ -657,8 +635,11 @@ export default function TodayRedesign() {
         medicationName: itemName
       });
 
-      // Reload data in background
-      loadData(selectedDate);
+      // Trigger confetti for positive reinforcement
+      setShowConfetti(true);
+
+      // Reload data via trigger
+      setReloadTrigger(prev => prev + 1);
       streakData.refresh();
       criticalAlerts.refresh();
     } catch (error) {
@@ -666,7 +647,7 @@ export default function TodayRedesign() {
       toast.error(t('todayRedesign.confirmDoseError'));
       throw error;
     }
-  }, [t, selectedDate, showFeedback, loadData, streakData, criticalAlerts, activeProfile?.id]);
+  }, [t, showFeedback, streakData, criticalAlerts, activeProfile?.id]); // Removed loadData from deps
 
   const snoozeDose = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -689,13 +670,14 @@ export default function TodayRedesign() {
         });
 
         toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
-        loadData(selectedDate);
+        toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
+        setReloadTrigger(prev => prev + 1);
       }
     } catch (error) {
       console.error("Error snoozing dose:", error);
       toast.error(t('todayRedesign.snoozeError'));
     }
-  }, [t, selectedDate, loadData, activeProfile?.id]);
+  }, [t, activeProfile?.id]); // Removed loadData from deps
 
   // Memoize allDoneToday to avoid HeroNextDose re-render
   const allDoneToday = useMemo(() =>
@@ -704,124 +686,164 @@ export default function TodayRedesign() {
   );
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen bg-background relative overflow-x-hidden">
+      {showConfetti && (
+        <div className="fixed inset-0 z-[100] pointer-events-none">
+          <ReactConfetti
+            width={width}
+            height={height}
+            recycle={false}
+            numberOfPieces={400}
+            onConfettiComplete={() => setShowConfetti(false)}
+          />
+        </div>
+      )}
       <OceanBackground variant="page" />
       <Header />
 
       <main className="page-container container mx-auto max-w-2xl px-4 space-y-6 relative z-10">
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 📍 HEADER - Saudação simples e limpa */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <div className="pt-2">
-          <h1 className="text-2xl font-bold text-foreground">
-            {greeting}{userName ? `, ${userName}` : ''}
-          </h1>
-        </div>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 🔴 BLOCO PRINCIPAL - PRÓXIMA DOSE (SEMPRE VISÍVEL NO TOPO) */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <HeroNextDose
-          dose={nextPendingDose}
-          nextDayDose={nextDayDose}
-          onTake={markAsTaken}
-          onSnooze={snoozeDose}
-          allDoneToday={allDoneToday}
-        />
+        {loading ? (
+          <div className="space-y-6 pt-2 animate-pulse">
+            {/* Header Skeleton */}
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-2/3 max-w-[200px]" />
+              <Skeleton className="h-4 w-1/2 max-w-[150px]" />
+            </div>
 
-        {/* Banner de doses atrasadas */}
-        <div id="overdue-banner">
-          <OverdueDosesBanner />
-        </div>
+            {/* Hero Card Skeleton */}
+            <Skeleton className="h-48 w-full rounded-3xl" />
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 🤖 CLARA PROATIVA - Sugestões contextuais inteligentes */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <ClaraProactiveCard
-          overdueDoses={overdueDoses.length}
-          lowStockItems={lowStockItems}
-          currentStreak={streakData.currentStreak}
-          todayProgress={todayStats}
-          onOpenClara={openClara}
-          onActionClick={handleClaraAction}
-        />
+            {/* Stats Pulse Skeleton */}
+            <div className="grid grid-cols-2 gap-4">
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
+            </div>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 📊 STATUS DO DIA - Memoizado */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <TodayStatusCard
-          streak={streakData.currentStreak}
-          taken={todayStats.taken}
-          total={todayStats.total}
-          language={language}
-        />
+            {/* Timeline Skeleton */}
+            <div className="space-y-4 pt-4">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 📍 HEADER - Saudação simples e limpa */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <div className="pt-2">
+              <h1 className="text-2xl font-bold text-foreground">
+                {greeting}{userName ? `, ${userName}` : ''}
+              </h1>
+            </div>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 🏥 VITAL SIGNS GLANCE (Quick Stats) */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <VitalsGlanceWidget profileId={activeProfile?.id} />
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🔴 BLOCO PRINCIPAL - PRÓXIMA DOSE (SEMPRE VISÍVEL NO TOPO) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <HeroNextDose
+              dose={nextPendingDose}
+              nextDayDose={nextDayDose}
+              onTake={markAsTaken}
+              onSnooze={snoozeDose}
+              allDoneToday={allDoneToday}
+            />
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* ⚠️ ALERTAS (Compactos, não competem com ação principal) */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {criticalAlerts.alerts.length > 0 && (
-          <CriticalAlertBanner
-            alerts={criticalAlerts.alerts}
-            onDismiss={(id) => criticalAlerts.dismissAlert(id)}
-            onDismissAll={() => criticalAlerts.dismissAll()}
-          />
-        )}
+            {/* Banner de doses atrasadas */}
+            <div id="overdue-banner">
+              <OverdueDosesBanner />
+            </div>
 
-        <StockAlertWidget />
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🤖 CLARA PROATIVA - Sugestões contextuais inteligentes */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <ClaraProactiveCard
+              overdueDoses={overdueDoses.length}
+              lowStockItems={lowStockItems}
+              currentStreak={streakData.currentStreak}
+              todayProgress={todayStats}
+              onOpenClara={openClara}
+              onActionClick={handleClaraAction}
+            />
 
-        {/* Drug Interaction Alert */}
-        <DrugInteractionAlert />
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 📊 STATUS DO DIA - Memoizado */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <TodayStatusCard
+              streak={streakData.currentStreak}
+              taken={todayStats.taken}
+              total={todayStats.total}
+              language={language}
+            />
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* 📅 CALENDÁRIO (SECUNDÁRIO - Abaixo da ação principal) */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        <ModernWeekCalendar
-          selectedDate={selectedDate}
-          onDateSelect={setSelectedDate}
-          profileId={activeProfile?.id}
-        />
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 🏥 VITAL SIGNS GLANCE (Quick Stats) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <VitalsGlanceWidget profileId={activeProfile?.id} />
 
-        {/* Timeline para dias selecionados (não hoje) */}
-        {format(selectedDate, "yyyy-MM-dd") !== format(new Date(), "yyyy-MM-dd") && (
-          <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
-        )}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* ⚠️ ALERTAS (Compactos, não competem com ação principal) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {criticalAlerts.alerts.length > 0 && (
+              <CriticalAlertBanner
+                alerts={criticalAlerts.alerts}
+                onDismiss={(id) => criticalAlerts.dismissAlert(id)}
+                onDismissAll={() => criticalAlerts.dismissAll()}
+              />
+            )}
 
-        {/* Widgets secundários */}
-        <ExpiredPrescriptionsAlert />
-        <VaccineRemindersWidget />
-        <MonthlyReportWidget />
+            <StockAlertWidget />
 
-        {/* 🎯 FOMO - Streak risk alert */}
-        <StreakRiskAlert
-          currentStreak={streakData.currentStreak}
-          hasPendingDoses={todayStats.total > todayStats.taken}
-        />
+            {/* Drug Interaction Alert */}
+            <DrugInteractionAlert />
 
-        {/* 🎯 FOMO - Premium benefits teaser */}
-        <PremiumBenefitsMini variant="vertical" />
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* 📅 CALENDÁRIO (SECUNDÁRIO - Abaixo da ação principal) */}
+            {/* ═══════════════════════════════════════════════════════════════ */}
+            <ModernWeekCalendar
+              selectedDate={selectedDate}
+              onDateSelect={setSelectedDate}
+              profileId={activeProfile?.id}
+            />
 
-        {/* Milestone Reward Modal */}
-        {milestone && (
-          <MilestoneReward
-            visible={showMilestoneReward}
-            onClose={handleMilestoneClose}
-            onShare={handleMilestoneShare}
-            milestone={milestone}
-          />
-        )}
+            {/* Timeline Completa - Visão do dia inteiro */}
+            <div className="mt-6 mb-24 px-1">
+              <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
+            </div>
 
-        {/* Achievement Share Dialog */}
-        {selectedAchievement && (
-          <AchievementShareDialog
-            achievement={selectedAchievement}
-            open={shareDialogOpen}
-            onOpenChange={setShareDialogOpen}
-          />
+            {/* Widgets secundários */}
+            <ExpiredPrescriptionsAlert />
+            <VaccineRemindersWidget />
+            <MonthlyReportWidget />
+
+            {/* 🎯 FOMO - Streak risk alert */}
+            <StreakRiskAlert
+              currentStreak={streakData.currentStreak}
+              hasPendingDoses={todayStats.total > todayStats.taken}
+            />
+
+            {/* 🎯 FOMO - Premium benefits teaser */}
+            <PremiumBenefitsMini variant="vertical" />
+
+            {/* Milestone Reward Modal */}
+            {milestone && (
+              <MilestoneReward
+                visible={showMilestoneReward}
+                onClose={handleMilestoneClose}
+                onShare={handleMilestoneShare}
+                milestone={milestone}
+              />
+            )}
+
+            {/* Achievement Share Dialog */}
+            {selectedAchievement && (
+              <AchievementShareDialog
+                achievement={selectedAchievement}
+                open={shareDialogOpen}
+                onOpenChange={setShareDialogOpen}
+              />
+            )}
+          </>
         )}
       </main>
 

@@ -43,6 +43,9 @@ export interface NotificationResult {
 }
 
 // Sound mapping for different notification types
+// NOTE: For native sounds to work, files must be placed in:
+// Android: android/app/src/main/res/raw/
+// iOS: ios/App/App/public/ (and included in Xcode project)
 const SOUND_MAP: Record<string, string | undefined> = {
   default: undefined, // Use system default
   gentle: "gentle_notification.wav",

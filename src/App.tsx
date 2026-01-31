@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner, toast } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
@@ -23,9 +23,9 @@ import SplashScreen from "./components/SplashScreen";
 import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import ScrollToTop from "./components/ScrollToTop";
+import TodayRedesign from "./pages/TodayRedesign";
 
 // Lazy loaded components for code splitting
-const TodayRedesign = lazy(() => import("./pages/TodayRedesign"));
 const MedicamentosHub = lazy(() => import("./pages/MedicamentosHub"));
 const Progress = lazy(() => import("./pages/Progress"));
 const Achievements = lazy(() => import("./pages/Achievements"));
@@ -89,10 +89,10 @@ const ConsultationCardView = lazy(() => import("./pages/ConsultationCardView"));
 const DrugInteractions = lazy(() => import("./pages/DrugInteractions"));
 // Admin route removed - feature flags managed via Supabase Dashboard only
 const NotFound = lazy(() => import("./pages/NotFound"));
+const IntegrationsHub = lazy(() => import("./pages/IntegrationsHub"));
 
 // Critical floating components - always rendered, no lazy loading needed
 import HealthAIButton from "./components/HealthAIButton";
-import FloatingAddButton from "./components/FloatingAddButton";
 const PWAInstallPrompt = lazy(() => import("./components/PWAInstallPrompt"));
 const NotificationPermissionPrompt = lazy(() => import("./components/NotificationPermissionPrompt"));
 
@@ -207,6 +207,8 @@ function AppContent() {
           <Route path="/perfil/indique-e-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
           <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
           <Route path="/recompensas" element={<ProtectedRoute><Recompensas /></ProtectedRoute>} />
+          <Route path="/integracoes" element={<ProtectedRoute><IntegrationsHub /></ProtectedRoute>} />
+          <Route path="/conectar-dispositivos" element={<Navigate to="/integracoes" replace />} />
           <Route path="/peso" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
           <Route path="/peso/historico" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
           <Route path="/sinais-vitais" element={<ProtectedRoute><HealthVitals /></ProtectedRoute>} />
@@ -272,7 +274,6 @@ function AppContent() {
       {showNavigation && (
         <>
           <HealthAIButton />
-          <FloatingAddButton />
         </>
       )}
       {/* PWA prompt should always be available */}

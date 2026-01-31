@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, addDays, addHours, setHours, setMinutes } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { ptBR, enUS } from 'date-fns/locale';
 import { Bell, BellOff, Plus, Trash2, Clock, Calendar, Volume2, VolumeX, Vibrate, RefreshCw, Play, Settings, ChevronRight, AlertCircle, CheckCircle, Cloud, CloudOff } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,15 +43,15 @@ const defaultForm: CreateAlarmForm = {
 };
 
 const recurrenceLabels: Record<RecurrenceType, string> = {
-  once: 'Uma vez',
-  hourly: 'A cada hora',
-  daily: 'Diariamente',
-  weekly: 'Semanalmente',
-  monthly: 'Mensalmente',
+  once: 'alarm.recurrence.once',
+  hourly: 'alarm.recurrence.hourly',
+  daily: 'alarm.recurrence.daily',
+  weekly: 'alarm.recurrence.weekly',
+  monthly: 'alarm.recurrence.monthly',
 };
 
 export default function AlarmManager() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     alarms,
     loading,
@@ -120,12 +120,12 @@ export default function AlarmManager() {
     const isTomorrow = date.toDateString() === addDays(now, 1).toDateString();
 
     if (isToday) {
-      return `Hoje às ${format(date, 'HH:mm')}`;
+      return `${t('alarm.todayAt')} ${format(date, 'HH:mm')}`;
     }
     if (isTomorrow) {
-      return `Amanhã às ${format(date, 'HH:mm')}`;
+      return `${t('alarm.tomorrowAt')} ${format(date, 'HH:mm')}`;
     }
-    return format(date, "dd/MM 'às' HH:mm", { locale: ptBR });
+    return format(date, `dd/MM '${t('alarm.at')}' HH:mm`, { locale: language === 'pt' ? ptBR : enUS });
   };
 
   // Get status badge for alarm
@@ -135,15 +135,15 @@ export default function AlarmManager() {
     const isPast = scheduledTime < now;
 
     if (!alarm.enabled) {
-      return <Badge variant="secondary" className="text-xs">Desativado</Badge>;
+      return <Badge variant="secondary" className="text-xs">{t('alarm.status.disabled')}</Badge>;
     }
     if (isPast && alarm.recurrence === 'once') {
-      return <Badge variant="outline" className="text-xs text-muted-foreground">Expirado</Badge>;
+      return <Badge variant="outline" className="text-xs text-muted-foreground">{t('alarm.status.expired')}</Badge>;
     }
     if (alarm.recurrence !== 'once') {
-      return <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">{recurrenceLabels[alarm.recurrence]}</Badge>;
+      return <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">{t(`alarm.recurrence.${alarm.recurrence}`)}</Badge>;
     }
-    return <Badge variant="default" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">Ativo</Badge>;
+    return <Badge variant="default" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">{t('alarm.status.active')}</Badge>;
   };
 
   // Permission status component
@@ -153,7 +153,7 @@ export default function AlarmManager() {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Seu navegador não suporta notificações. Use Chrome, Firefox, Edge ou Safari 16.4+.
+            {t('alarm.perm.unsupported')}
           </AlertDescription>
         </Alert>
       );
@@ -164,7 +164,7 @@ export default function AlarmManager() {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Notificações bloqueadas. Ative nas configurações do navegador para receber alarmes.
+            {t('alarm.perm.blocked')}
           </AlertDescription>
         </Alert>
       );
@@ -175,9 +175,9 @@ export default function AlarmManager() {
         <Alert className="mb-4">
           <Bell className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Ative as notificações para receber alarmes</span>
+            <span>{t('alarm.perm.enable')}</span>
             <Button size="sm" onClick={requestPermission}>
-              Ativar
+              {t('alarm.perm.btnEnable')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -199,10 +199,10 @@ export default function AlarmManager() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5 text-primary" />
-                Alarmes e Lembretes
+                {t('alarm.header.title')}
               </CardTitle>
               <CardDescription>
-                Agende notificações para lembrar de medicamentos e compromissos
+                {t('alarm.header.desc')}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function AlarmManager() {
                 size="sm"
                 onClick={syncWithCloud}
                 disabled={syncing}
-                title="Sincronizar com a nuvem"
+                title={t("aria.syncCloud")}
               >
                 <Cloud className={cn("h-4 w-4", syncing && "animate-pulse")} />
               </Button>
@@ -222,30 +222,30 @@ export default function AlarmManager() {
                 disabled={permissionStatus !== 'granted'}
               >
                 <Play className="h-4 w-4 mr-1" />
-                Testar
+                {t('alarm.header.test')}
               </Button>
               <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" disabled={permissionStatus !== 'granted'}>
                     <Plus className="h-4 w-4 mr-1" />
-                    Novo Alarme
+                    {t('alarm.header.new')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-md">
                   <DialogHeader>
-                    <DialogTitle>Criar Novo Alarme</DialogTitle>
+                    <DialogTitle>{t('alarm.form.createTitle')}</DialogTitle>
                     <DialogDescription>
-                      Configure quando você quer ser lembrado
+                      {t('alarm.form.createDesc')}
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-4 py-4">
                     {/* Title */}
                     <div className="space-y-2">
-                      <Label htmlFor="alarm-title">Título *</Label>
+                      <Label htmlFor="alarm-title">{t('alarm.form.title')}</Label>
                       <Input
                         id="alarm-title"
-                        placeholder="Ex: Tomar medicamento"
+                        placeholder={t("placeholder.alarmTitle")}
                         value={form.title}
                         onChange={(e) => setForm({ ...form, title: e.target.value })}
                       />
@@ -253,10 +253,10 @@ export default function AlarmManager() {
 
                     {/* Message */}
                     <div className="space-y-2">
-                      <Label htmlFor="alarm-message">Mensagem (opcional)</Label>
+                      <Label htmlFor="alarm-message">{t('alarm.form.message')}</Label>
                       <Input
                         id="alarm-message"
-                        placeholder="Descrição adicional"
+                        placeholder={t("placeholder.alarmDescription")}
                         value={form.message}
                         onChange={(e) => setForm({ ...form, message: e.target.value })}
                       />
@@ -267,7 +267,7 @@ export default function AlarmManager() {
                       <div className="space-y-2">
                         <Label htmlFor="alarm-date">
                           <Calendar className="h-3 w-3 inline mr-1" />
-                          Data
+                          {t('alarm.form.date')}
                         </Label>
                         <Input
                           id="alarm-date"
@@ -279,7 +279,7 @@ export default function AlarmManager() {
                       <div className="space-y-2">
                         <Label htmlFor="alarm-time">
                           <Clock className="h-3 w-3 inline mr-1" />
-                          Hora
+                          {t('alarm.form.time')}
                         </Label>
                         <Input
                           id="alarm-time"
@@ -294,7 +294,7 @@ export default function AlarmManager() {
                     <div className="space-y-2">
                       <Label>
                         <RefreshCw className="h-3 w-3 inline mr-1" />
-                        Repetir
+                        {t('alarm.form.repeat')}
                       </Label>
                       <Select
                         value={form.recurrence}
@@ -304,9 +304,9 @@ export default function AlarmManager() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {Object.entries(recurrenceLabels).map(([value, label]) => (
+                          {Object.entries(recurrenceLabels).map(([value, labelKey]) => (
                             <SelectItem key={value} value={value}>
-                              {label}
+                              {t(labelKey)}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -320,7 +320,7 @@ export default function AlarmManager() {
                       <div className="flex items-center justify-between">
                         <Label htmlFor="alarm-sound" className="flex items-center gap-2 cursor-pointer">
                           {form.sound ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-                          Som
+                          {t('alarm.form.sound')}
                         </Label>
                         <Switch
                           id="alarm-sound"
@@ -332,7 +332,7 @@ export default function AlarmManager() {
                       <div className="flex items-center justify-between">
                         <Label htmlFor="alarm-vibrate" className="flex items-center gap-2 cursor-pointer">
                           <Vibrate className="h-4 w-4" />
-                          Vibrar
+                          {t('alarm.form.vibrate')}
                         </Label>
                         <Switch
                           id="alarm-vibrate"
@@ -344,7 +344,7 @@ export default function AlarmManager() {
                       <div className="flex items-center justify-between">
                         <Label htmlFor="alarm-interaction" className="flex items-center gap-2 cursor-pointer">
                           <Bell className="h-4 w-4" />
-                          Persistente
+                          {t('alarm.form.persistent')}
                         </Label>
                         <Switch
                           id="alarm-interaction"
@@ -357,13 +357,13 @@ export default function AlarmManager() {
 
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
-                      Cancelar
+                      {t('alarm.form.cancel')}
                     </Button>
-                    <Button 
-                      onClick={handleSubmit} 
+                    <Button
+                      onClick={handleSubmit}
                       disabled={!form.title.trim() || isSubmitting}
                     >
-                      {isSubmitting ? 'Criando...' : 'Criar Alarme'}
+                      {isSubmitting ? t('alarm.form.submitting') : t('alarm.form.submit')}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -377,15 +377,15 @@ export default function AlarmManager() {
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold text-primary">{alarms.filter(a => a.enabled).length}</div>
-              <div className="text-xs text-muted-foreground">Ativos</div>
+              <div className="text-xs text-muted-foreground">{t('alarm.stats.active')}</div>
             </div>
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold">{alarms.filter(a => a.recurrence !== 'once').length}</div>
-              <div className="text-xs text-muted-foreground">Recorrentes</div>
+              <div className="text-xs text-muted-foreground">{t('alarm.stats.recurring')}</div>
             </div>
             <div className="text-center p-3 bg-muted/50 rounded-lg">
               <div className="text-2xl font-bold">{alarms.length}</div>
-              <div className="text-xs text-muted-foreground">Total</div>
+              <div className="text-xs text-muted-foreground">{t('alarm.stats.total')}</div>
             </div>
           </div>
         </CardContent>
@@ -394,26 +394,26 @@ export default function AlarmManager() {
       {/* Alarms List */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Alarmes Agendados</CardTitle>
+          <CardTitle className="text-base">{t('alarm.list.title')}</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
-              Carregando alarmes...
+              {t('alarm.list.loading')}
             </div>
           ) : alarms.length === 0 ? (
             <div className="text-center py-8">
               <BellOff className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">Nenhum alarme agendado</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <p className="text-muted-foreground">{t('alarm.list.empty')}</p>
+              <Button
+                variant="outline"
+                size="sm"
                 className="mt-3"
                 onClick={() => setIsCreateOpen(true)}
                 disabled={permissionStatus !== 'granted'}
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Criar primeiro alarme
+                {t('alarm.list.createFirst')}
               </Button>
             </div>
           ) : (
@@ -424,8 +424,8 @@ export default function AlarmManager() {
                     key={alarm.id}
                     className={cn(
                       "flex items-center justify-between p-3 rounded-lg border transition-colors",
-                      alarm.enabled 
-                        ? "bg-card hover:bg-muted/50" 
+                      alarm.enabled
+                        ? "bg-card hover:bg-muted/50"
                         : "bg-muted/30 opacity-60"
                     )}
                   >
@@ -479,10 +479,9 @@ export default function AlarmManager() {
           <div className="flex items-start gap-3 text-sm text-muted-foreground">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-foreground mb-1">Importante para iOS</p>
+              <p className="font-medium text-foreground mb-1">{t('alarm.ios.title')}</p>
               <p>
-                No iPhone/iPad, as notificações só funcionam se o app estiver instalado na tela inicial
-                (Compartilhar → Adicionar à Tela de Início). Safari requer iOS 16.4 ou superior.
+                {t('alarm.ios.message')}
               </p>
             </div>
           </div>

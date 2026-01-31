@@ -155,7 +155,7 @@ export default function MedicamentosHub() {
       const [medicationsResult, schedulesResult, stockResult] = await Promise.all([
         fetchCollection<any>(
           `users/${user.uid}/medications`,
-          [where('isActive', '==', true), orderBy('category'), orderBy('name')]
+          [where('isActive', '==', true)]
         ),
         fetchCollection<any>(`users/${user.uid}/schedules`, []),
         fetchCollection<any>(`users/${user.uid}/stock`, [])
@@ -163,7 +163,12 @@ export default function MedicamentosHub() {
 
       if (medicationsResult.error) throw medicationsResult.error;
 
-      const medications = medicationsResult.data || [];
+      // Client-side sort to avoid composite index requirement
+      const medications = (medicationsResult.data || []).sort((a: any, b: any) => {
+        const catCompare = (a.category || '').localeCompare(b.category || '');
+        if (catCompare !== 0) return catCompare;
+        return (a.name || '').localeCompare(b.name || '');
+      });
       const allSchedules = schedulesResult.data || [];
       const allStock = stockResult.data || [];
 
@@ -195,7 +200,7 @@ export default function MedicamentosHub() {
       setItems(fullData as MedicationItem[]);
     } catch (error) {
       console.error("Error fetching items:", error);
-      toast.error(t('common.error'));
+      toast.error(t('common.error') + (import.meta.env.DEV ? `: ${(error as Error).message}` : ''));
     } finally {
       setLoading(false);
     }
@@ -328,7 +333,7 @@ export default function MedicamentosHub() {
             </div>
             <Button
               size="sm"
-              className="rounded-xl hover-lift gap-1.5 shadow-lg h-10 px-4 bg-accent-highlight text-accent-highlight-foreground hover:bg-accent-highlight/90 font-bold tracking-wide transition-all border border-black/5"
+              className="rounded-xl hover-lift gap-1.5 shadow-lg h-10 px-4 bg-gradient-to-br from-primary to-blue-600 text-white hover:brightness-110 font-bold tracking-wide transition-all border border-white/10 shadow-primary/25"
               onClick={() => setWizardOpen(true)}
             >
               <Plus className="h-4 w-4 stroke-[3]" />

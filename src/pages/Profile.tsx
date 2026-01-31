@@ -3,7 +3,7 @@ import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
 import {
   Bell, Shield, HelpCircle, LogOut, FileDown,
-  Crown, FileText, Smartphone, Activity, BookOpen, Plane
+  Crown, FileText, Smartphone, Activity, BookOpen, Plane, Gift, Watch
 } from "lucide-react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 // New refined components
 import ProfileHeroHeader from "@/components/profile/ProfileHeroHeader";
 import PlanOverviewCard from "@/components/profile/PlanOverviewCard";
+import ProfileGamification from "@/components/profile/ProfileGamification";
 import SmartProfileInsights from "@/components/profile/SmartProfileInsights"; // Keep smart insights, mostly for critical alerts
 import OceanBackground from "@/components/ui/OceanBackground";
 import { ProfileMenuSection, ProfileMenuItem } from "@/components/profile/ProfileMenu";
@@ -95,7 +96,12 @@ export default function Profile() {
           <ProfileHeroHeader userEmail={userEmail} onLogout={handleLogout} />
         </motion.div>
 
-        {/* 2. PLAN OVERVIEW - High Priority */}
+        {/* 2. GAMIFICATION - Badges, Streaks, Rewards */}
+        <motion.div variants={itemVariants}>
+          <ProfileGamification />
+        </motion.div>
+
+        {/* 3. PLAN OVERVIEW - High Priority */}
         <motion.div variants={itemVariants}>
           <PlanOverviewCard />
         </motion.div>
@@ -160,9 +166,17 @@ export default function Profile() {
           <SmartProfileInsights />
         </motion.div>
 
-        {/* 5. SETTINGS GROUP - Consolidate Account, Prefs, Support */}
+        {/* 6. SETTINGS GROUP - Consolidate Account, Prefs, Support */}
         <motion.div variants={itemVariants} className="space-y-4">
           <ProfileMenuSection title={t('common.settings')}>
+            <ProfileMenuItem
+              icon={Watch}
+              label={t('profile.devices')}
+              onClick={() => navigate('/integracoes')}
+              color="text-indigo-500"
+              bgColor="bg-indigo-500/10"
+            />
+
             <Dialog>
               <DialogTrigger asChild>
                 <div role="button" tabIndex={0} className="w-full">

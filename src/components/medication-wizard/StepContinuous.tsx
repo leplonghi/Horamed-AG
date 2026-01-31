@@ -215,7 +215,7 @@ export default function StepContinuous({
                   type="number"
                   min="1"
                   max="365"
-                  placeholder="Ex: 7, 14, 30"
+                  placeholder={t("placeholder.days")}
                   value={treatmentDays || ""}
                   onChange={(e) => onTreatmentDaysChange(e.target.value ? parseInt(e.target.value) : null)}
                 />

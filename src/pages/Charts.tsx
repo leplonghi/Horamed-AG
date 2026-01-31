@@ -120,7 +120,7 @@ export default function Charts() {
       const startDateStr = startDate.toISOString();
 
       // Fetch doses
-      let filters = [where("dueAt", ">=", startDateStr)];
+      const filters = [where("dueAt", ">=", startDateStr)];
       if (activeProfile) {
         filters.push(where("profileId", "==", activeProfile.id));
       }

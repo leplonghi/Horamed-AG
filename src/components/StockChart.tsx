@@ -7,7 +7,9 @@ import InfoDialog from "./InfoDialog";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function StockChart() {
+  const { t } = useTranslation();
   const { activeProfile } = useUserProfiles();
   // Fetch stock projections for the active profile (or all if activeProfile is null/undefined logic handled in hook?)
   // The hook filters by profileId if provided. If we want all, we pass undefined.
@@ -82,7 +84,7 @@ export default function StockChart() {
                 Controle de Estoque
               </h3>
               <InfoDialog
-                title="Controle de estoque"
+                title={t("tools.stock")}
                 description="Acompanhe a quantidade disponível de cada medicamento. O sistema calcula automaticamente quando vai acabar e envia alertas para você não ficar sem remédio."
                 triggerClassName="h-5 w-5"
               />

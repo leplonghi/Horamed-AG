@@ -11,7 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import FloatingActionHub from "./FloatingActionHub";
 
 // Clara avatar loaded via URL to reduce bundle size
-const claraAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/clara-avatar.webp`;
+const claraAvatarUrl = "/images/clara.jpg";
 
 interface Message {
   role: "user" | "assistant";
@@ -174,8 +174,8 @@ export default function HealthAIButton() {
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-foreground'
                           }`}>
                           <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                         </div>

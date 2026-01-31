@@ -79,7 +79,7 @@ export default function Rotina() {
   const filteredItems = useMemo(() => {
     if (!items) return [];
 
-    let result = items.filter((item) => {
+    const result = items.filter((item) => {
       const matchesTab = activeTab === "todos" || item.category === activeTab;
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesTab && matchesSearch;

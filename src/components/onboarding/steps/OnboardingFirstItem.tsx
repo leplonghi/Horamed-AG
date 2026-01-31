@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, ArrowLeft, Pill } from "lucide-react";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface Props {
   value: string;
   onChange: (value: string) => void;
@@ -20,6 +21,7 @@ const suggestions = [
 ];
 
 export default function OnboardingFirstItem({ value, onChange, onNext, onBack }: Props) {
+  const { t } = useTranslation();
   const [focused, setFocused] = useState(false);
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -53,7 +55,7 @@ export default function OnboardingFirstItem({ value, onChange, onNext, onBack }:
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Ex: Pressão, Vitamina D, Tratamento diário"
+          placeholder={t("placeholder.treatment")}
           className="h-14 text-lg"
           onFocus={() => setFocused(true)}
           onBlur={() => setTimeout(() => setFocused(false), 200)}

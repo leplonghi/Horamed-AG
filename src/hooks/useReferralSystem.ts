@@ -1,19 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth, fetchCollection, fetchDocument, updateDocument, setDocument, orderBy, where } from '@/integrations/firebase';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { generateReferralCode } from '@/lib/referrals';
 
-/**
- * Generate a unique referral code
- */
-function generateReferralCode(): string {
-  const prefix = 'HR';
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar looking characters
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return `${prefix}-${code}`;
-}
+
 
 interface ReferralStats {
   referralCode: string; // referral_code

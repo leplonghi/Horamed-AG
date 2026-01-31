@@ -54,8 +54,8 @@ const getGenAI = () => {
 // Price Configuration (Updated 2026-01-30)
 const PRICES = {
     BRL: {
-        monthly: 'price_1SvI3uHh4P8HSV4YQvyCQGtN',  // R$ 19,90/mês
-        annual: 'price_1StuprHh4P8HSV4YRO4eI5YE',   // R$ 199,90/ano
+        monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y',  // R$ 19,90/mês (Test Mode)
+        annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',   // R$ 199,90/ano (Test Mode)
     },
     USD: {
         monthly: 'price_1SvI4XHh4P8HSV4YGE6v1szt',  // US$ 3,99/mês
@@ -120,6 +120,22 @@ export const onUserDelete = functions.auth.user().onDelete(async (user) => {
  * ==================================================================
  */
 
+// Helper to calculate discount based on active referrals
+async function calculateReferralDiscount(uid: string): Promise<number> {
+    const snapshot = await db.collection(`users/${uid}/referrals`)
+        .where('status', '==', 'active')
+        .get();
+
+    let totalDiscount = 0;
+    snapshot.docs.forEach(doc => {
+        const d = doc.data();
+        if (d.planType === 'premium_monthly') totalDiscount += 20;
+        else if (d.planType === 'premium_annual') totalDiscount += 40;
+    });
+
+    return Math.min(totalDiscount, 100);
+}
+
 // Create Checkout Session (Renamed to match Frontend)
 export const createCheckoutSession = functions.https.onCall(async (data, context) => {
     functions.logger.info('createCheckoutSession called', { data, authUid: context.auth?.uid });
@@ -177,13 +193,30 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
             functions.logger.info('Stripe customer created', { customerId });
         }
 
-        functions.logger.info('Creating checkout session', { customerId, priceId });
+        // Calculate Referral Discount
+        const discountPercent = await calculateReferralDiscount(uid);
+        let couponId: string | undefined;
+
+        if (discountPercent > 0) {
+            functions.logger.info('Applying referral discount', { discountPercent, uid });
+            // Create a coupon for this session (or reusable if preferred, but dynamic % is easier this way)
+            const coupon = await stripe.coupons.create({
+                percent_off: discountPercent,
+                duration: 'forever',
+                name: `Referral Discount (${discountPercent}%)`,
+                metadata: { firebaseUid: uid }
+            });
+            couponId = coupon.id;
+        }
+
+        functions.logger.info('Creating checkout session', { customerId, priceId, couponId });
 
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
             payment_method_types: ['card'],
             customer: customerId,
             line_items: [{ price: priceId, quantity: 1 }],
+            discounts: couponId ? [{ coupon: couponId }] : undefined,
             success_url: `https://app.horamed.net/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `https://app.horamed.net/assinatura/cancelado`,
             client_reference_id: uid,
@@ -205,6 +238,62 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
         throw new functions.https.HttpsError('internal', error.message || 'Payment init failed');
     }
 });
+
+// Trigger to update Stripe Subscription when Referrals change
+export const onReferralChange = functions.firestore.document('users/{userId}/referrals/{referralId}')
+    .onWrite(async (change, context) => {
+        const { userId } = context.params;
+        const after = change.after.exists ? change.after.data() : null;
+        const before = change.before.exists ? change.before.data() : null;
+
+        // Only proceed if status changed to/from 'active' or if it's a new active referral
+        const statusChanged = after?.status !== before?.status;
+        const isActiveInvolved = after?.status === 'active' || before?.status === 'active';
+
+        if (!statusChanged && !isActiveInvolved && after) return; // No relevant change
+
+        functions.logger.info(`Referral change detected for user ${userId}, syncing Stripe...`);
+
+        try {
+            // Recalculate discount
+            const newDiscount = await calculateReferralDiscount(userId);
+
+            // Get user's current Stripe Subscription ID
+            const subDoc = await db.collection(`users/${userId}/subscription`).doc('current').get();
+            const subData = subDoc.data();
+
+            if (!subData || subData.status !== 'active' || !subData.stripeSubscriptionId) {
+                functions.logger.info('No active Stripe subscription to update.');
+                return;
+            }
+
+            const stripe = getStripe();
+            const subscriptionId = subData.stripeSubscriptionId;
+
+            // Create new coupon
+            let couponId = undefined;
+            if (newDiscount > 0) {
+                const coupon = await stripe.coupons.create({
+                    percent_off: newDiscount,
+                    duration: 'forever',
+                    name: `Updated Referral Discount (${newDiscount}%)`,
+                    metadata: { firebaseUid: userId, reason: 'referral_update' }
+                });
+                couponId = coupon.id;
+            }
+
+            // Update Subscription in Stripe
+            // Note: This replaces existing discounts
+            await stripe.subscriptions.update(subscriptionId, {
+                discounts: couponId ? [{ coupon: couponId }] : [], // Passing empty array removes discounts if 0
+            });
+
+            functions.logger.info(`Stripe subscription ${subscriptionId} updated with ${newDiscount}% discount.`);
+
+        } catch (error) {
+            functions.logger.error('Error syncing referral discount to Stripe:', error);
+        }
+    });
 
 export const createCustomerPortal = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Login required');
@@ -802,3 +891,25 @@ export const claraConsultationPrep = functions.https.onCall(async (data, context
         throw new functions.https.HttpsError('internal', 'Report generation failed');
     }
 });
+
+/**
+ * ==================================================================
+ * 7. REWARDS SYSTEM (NEW)
+ * ==================================================================
+ */
+
+import { handleStreakMilestone } from './rewards/handleStreakMilestone';
+import { handleReferralSignup, handleReferralFirstWeek, handleReferralPremiumConversion } from './rewards/handleReferral';
+import { applyCreditsToRenewal } from './rewards/applyCreditsToRenewal';
+import { resetMonthlyProtections, syncProtectionAvailable } from './rewards/resetMonthlyProtections';
+
+export {
+    handleStreakMilestone,
+    handleReferralSignup,
+    handleReferralFirstWeek,
+    handleReferralPremiumConversion,
+    applyCreditsToRenewal,
+    resetMonthlyProtections,
+    syncProtectionAvailable
+};
+

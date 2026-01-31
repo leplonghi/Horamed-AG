@@ -36,11 +36,11 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
 
   const handleTake = useCallback(async () => {
     if (!dose || isSubmitting || optimisticTaken) return;
-    
+
     // Optimistic update - instant feedback
     setIsSubmitting(true);
     setOptimisticTaken(true);
-    
+
     try {
       await onTake(dose.id, dose.item_id, dose.items.name);
     } catch {
@@ -66,7 +66,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
       >
         <Card className="p-10 bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/40 backdrop-blur-xl shadow-[var(--shadow-glass)]">
           <div className="flex flex-col items-center text-center gap-4">
-            <motion.div 
+            <motion.div
               className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30"
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
@@ -111,7 +111,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
               </h2>
               {nextDayDose ? (
                 <p className="text-sm text-muted-foreground">
-                  {language === 'pt' 
+                  {language === 'pt'
                     ? `Próxima às ${nextDayDose.time}`
                     : `Next at ${nextDayDose.time}`
                   }
@@ -147,7 +147,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
               </p>
               <h2 className="text-2xl font-bold text-foreground">{nextDayDose.name}</h2>
               <p className="text-base text-muted-foreground mt-1">
-                {language === 'pt' 
+                {language === 'pt'
                   ? `Amanhã às ${nextDayDose.time}`
                   : `Tomorrow at ${nextDayDose.time}`
                 }
@@ -175,10 +175,10 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
       >
         <Card className={cn(
           "p-6 transition-all backdrop-blur-xl shadow-[var(--shadow-glass)]",
-          isOverdue 
+          isOverdue
             ? "bg-gradient-to-br from-destructive/20 to-orange-500/10 border-destructive/40 ring-2 ring-destructive/30"
-            : isNow 
-              ? "bg-gradient-to-br from-primary/20 to-primary/10 border-primary/40 ring-2 ring-primary/30"
+            : isNow
+              ? "bg-gradient-to-br from-primary/20 to-primary/10 border-primary ring-2 ring-primary/30 shadow-glow"
               : "bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30"
         )}>
           <div className="space-y-5">
@@ -186,15 +186,15 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
             <div className="flex items-center justify-between">
               <span className={cn(
                 "text-xs uppercase tracking-wider font-bold px-3 py-1 rounded-full",
-                isOverdue 
+                isOverdue
                   ? "bg-destructive/20 text-destructive"
-                  : isNow 
+                  : isNow
                     ? "bg-primary/20 text-primary"
                     : "bg-muted text-muted-foreground"
               )}>
-                {isOverdue 
+                {isOverdue
                   ? (language === 'pt' ? '⚠️ ATRASADA' : '⚠️ OVERDUE')
-                  : isNow 
+                  : isNow
                     ? (language === 'pt' ? '🔔 AGORA' : '🔔 NOW')
                     : (language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE')
                 }
@@ -220,31 +220,34 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
             </div>
 
             <div className="space-y-3">
-              {/* Botão principal: AÇÃO ÓBVIA - "Tomei agora" */}
-              <Button 
-                size="lg" 
+              <Button
+                size="lg"
                 onClick={handleTake}
                 disabled={isSubmitting}
                 className={cn(
-                  "w-full h-20 text-xl font-bold rounded-2xl shadow-lg transition-all active:scale-[0.97]",
+                  "w-full h-20 text-xl font-bold rounded-2xl shadow-lg transition-all active:scale-[0.97] group relative overflow-hidden",
                   "flex flex-col items-center justify-center gap-1",
-                  isOverdue 
-                    ? "bg-destructive hover:bg-destructive/90 shadow-destructive/30"
-                    : "bg-primary hover:bg-primary/90 shadow-primary/30"
+                  isOverdue
+                    ? "bg-destructive hover:bg-destructive/90 shadow-destructive/30 animate-[pulse_2s_infinite]"
+                    : "bg-primary hover:bg-primary/90 shadow-primary/30",
+                  isNow && !isOverdue && "shadow-[0_0_20px_rgba(59,130,246,0.4)]"
                 )}
               >
-                <div className="flex items-center gap-2">
+                {/* Shine effect */}
+                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
+
+                <div className="flex items-center gap-2 relative z-20">
                   <Check className="h-7 w-7" />
                   <span>{language === 'pt' ? 'Tomei agora' : 'I took it'}</span>
                 </div>
-                <span className="text-xs font-normal opacity-80">
+                <span className="text-xs font-normal opacity-80 relative z-20">
                   {language === 'pt' ? 'Toque para confirmar' : 'Tap to confirm'}
                 </span>
               </Button>
 
               {/* Botão secundário: Adiar - mais discreto */}
               {onSnooze && (
-                <Button 
+                <Button
                   variant="ghost"
                   size="lg"
                   onClick={handleSnooze}

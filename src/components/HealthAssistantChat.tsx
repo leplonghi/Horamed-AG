@@ -160,8 +160,12 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-primary text-primary-foreground rounded-t-lg shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <Heart className="h-4 w-4 sm:h-5 sm:w-5" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-primary-foreground/20">
+              <img
+                src="/images/clara.jpg"
+                alt="Clara"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <h3 className="font-semibold text-sm sm:text-base">Clara</h3>

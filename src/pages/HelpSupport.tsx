@@ -57,7 +57,7 @@ export default function HelpSupport() {
                   <BookOpen className="h-5 w-5 text-primary" />
                   <h3 className="font-semibold text-foreground">{t('help.howItWorks')}</h3>
                 </div>
-                
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <h4 className="font-semibold text-foreground">{t('help.step1Title')}</h4>
@@ -93,7 +93,7 @@ export default function HelpSupport() {
 
               <Card className="p-6 space-y-4">
                 <h3 className="font-semibold text-foreground">{t('help.mainFeatures')}</h3>
-                
+
                 <div className="space-y-3">
                   <div className="bg-primary/5 p-3 rounded-lg">
                     <h4 className="font-semibold text-sm mb-1">{t('help.stockControl')}</h4>
@@ -257,6 +257,16 @@ export default function HelpSupport() {
                     <AccordionTrigger>{t('help.faq10Q')}</AccordionTrigger>
                     <AccordionContent>{t('help.faq10A')}</AccordionContent>
                   </AccordionItem>
+
+                  <AccordionItem value="faq-11">
+                    <AccordionTrigger>{t('help.faq11Q')}</AccordionTrigger>
+                    <AccordionContent>{t('help.faq11A')}</AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="faq-12">
+                    <AccordionTrigger>{t('help.faq12Q')}</AccordionTrigger>
+                    <AccordionContent>{t('help.faq12A')}</AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </Card>
             </TabsContent>
@@ -287,8 +297,8 @@ export default function HelpSupport() {
             </p>
           </Card>
 
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => navigate("/terms")}
           >

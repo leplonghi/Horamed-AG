@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function AdBanner() {
+  const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
   const { hasFeature } = useSubscription();
@@ -16,7 +18,7 @@ export default function AdBanner() {
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
-        aria-label="Fechar"
+        aria-label={t("aria.close")}
       >
         <X className="h-4 w-4" />
       </button>

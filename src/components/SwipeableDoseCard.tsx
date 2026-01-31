@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { cn } from "@/lib/utils";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface DoseItem {
   id: string;
   due_at: string;
@@ -36,6 +37,7 @@ export default function SwipeableDoseCard({
   isTaking, 
   delay = 0 
 }: SwipeableDoseCardProps) {
+  const { t } = useTranslation();
   const time = format(new Date(dose.due_at), "HH:mm");
   const { triggerSuccess, triggerWarning, triggerLight } = useHapticFeedback();
   const [isExiting, setIsExiting] = useState(false);
@@ -176,7 +178,7 @@ export default function SwipeableDoseCard({
               whileTap={{ scale: 0.92 }}
               onClick={onSkip}
               className="p-2 rounded-xl text-muted-foreground hover:bg-muted/50 transition-colors"
-              aria-label="Pular dose"
+              aria-label={t("aria.skipDose")}
             >
               <X className="w-5 h-5" />
             </motion.button>
@@ -193,7 +195,7 @@ export default function SwipeableDoseCard({
                 isOverdue ? "bg-destructive hover:bg-destructive/90" : "bg-success hover:bg-success/90",
                 isTaking && "opacity-60"
               )}
-              aria-label="Marcar como tomado"
+              aria-label={t("aria.markTaken")}
             >
               {isTaking ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -16,6 +16,13 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useWeightInsights, MedicationMarker } from "@/hooks/useWeightInsights";
 import { motion } from "framer-motion";
 
+interface WeightLog {
+  id: string;
+  weightKg: number | string;
+  recordedAt: string;
+  notes?: string;
+}
+
 export default function WeightHistory() {
   const [searchParams] = useSearchParams();
   const profileId = searchParams.get("profile");
@@ -35,7 +42,7 @@ export default function WeightHistory() {
         ? `users/${user.uid}/profiles/${profileId}/weightLogs`
         : `users/${user.uid}/weightLogs`;
 
-      const { data, error } = await fetchCollection<any>(
+      const { data, error } = await fetchCollection<WeightLog>(
         collectionPath,
         [orderBy("recordedAt", "desc")]
       );
@@ -224,7 +231,7 @@ export default function WeightHistory() {
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
                     }}
-                    formatter={(value: any) => [`${value} kg`, language === 'pt' ? 'Peso' : 'Weight']}
+                    formatter={(value: number | string) => [`${value} kg`, language === 'pt' ? 'Peso' : 'Weight']}
                   />
 
                   {/* Medication start markers */}

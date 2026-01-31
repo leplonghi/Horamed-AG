@@ -40,7 +40,7 @@ export function useMedications(profileId?: string) {
             const user = auth.currentUser;
             if (!user) throw new Error("User not authenticated");
 
-            let medConstraints = [where("isActive", "==", true)];
+            const medConstraints = [where("isActive", "==", true)];
             if (profileId) {
                 medConstraints.push(where("profileId", "==", profileId));
             }

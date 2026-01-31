@@ -37,7 +37,7 @@ export const useOverdueDoses = () => {
       const twoHoursAgoIso = twoHoursAgo.toISOString();
 
       // Fetch Items (Medications)
-      let itemsRef = collection(db, 'users', user.uid, 'medications');
+      const itemsRef = collection(db, 'users', user.uid, 'medications');
       let itemsQuery = query(itemsRef);
 
       if (profileId) {

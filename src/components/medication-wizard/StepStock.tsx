@@ -158,7 +158,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
                   id="units"
                   type="number"
                   min="1"
-                  placeholder="Ex: 30"
+                  placeholder={t("placeholder.quantity")}
                   value={stock.unitsTotal || ""}
                   onChange={(e) => onStockChange({ 
                     ...stock, 

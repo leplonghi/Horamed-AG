@@ -106,14 +106,18 @@ def check_frontend_integration():
         print("❌ Diretório src não encontrado!")
         return False
     
-    # Procurar por uso de VITE_STRIPE_PUBLISHABLE_KEY
+    # Procurar por uso de VITE_STRIPE_PUBLISHABLE_KEY ou chamadas ao backend
     found_usage = False
     for file_path in src_dir.rglob("*.tsx"):
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
             content = f.read()
             if "VITE_STRIPE_PUBLISHABLE_KEY" in content:
                 found_usage = True
-                print(f"✅ Encontrado uso do Stripe em: {file_path}")
+                print(f"✅ Encontrado uso do Stripe (Client-side): {file_path}")
+                break
+            if "createCheckoutSession" in content:
+                found_usage = True
+                print(f"✅ Encontrado uso do Stripe (Server-side Checkout): {file_path}")
                 break
     
     if not found_usage:

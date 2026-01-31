@@ -358,7 +358,7 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
                     ) : (
                       <img
                         src={preview}
-                        alt="Preview"
+                        alt={t("alt.preview")}
                         className="w-full h-auto max-h-64 object-contain bg-muted"
                       />
                     )}

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, FileText, Shield, AlertCircle, CreditCard, Lock, Cookie, Mail } from "lucide-react";
+import { ArrowLeft, FileText, Shield, AlertCircle, CreditCard, Lock, Cookie, Mail, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Separator } from "@/components/ui/separator";
@@ -41,7 +41,7 @@ export default function Terms() {
 
           {/* Accordion with all sections */}
           <Accordion type="multiple" className="space-y-4">
-            
+
             {/* 1. Terms of Use */}
             <AccordionItem value="terms" className="border rounded-lg px-6">
               <AccordionTrigger className="hover:no-underline">
@@ -54,7 +54,7 @@ export default function Terms() {
                 <div>
                   <h4 className="font-semibold mb-2">1.1. Aceitação dos Termos</h4>
                   <p className="text-muted-foreground">
-                    Ao instalar, acessar ou utilizar o aplicativo HoraMed, você declara que leu, compreendeu e concorda integralmente com este Documento Legal. 
+                    Ao instalar, acessar ou utilizar o aplicativo HoraMed, você declara que leu, compreendeu e concorda integralmente com este Documento Legal.
                     Caso não concorde com qualquer disposição, não deve utilizar o HoraMed.
                   </p>
                 </div>
@@ -108,7 +108,7 @@ export default function Terms() {
                 <div>
                   <h4 className="font-semibold mb-2">1.6. Licença de Uso</h4>
                   <p className="text-muted-foreground">
-                    O HoraMed é disponibilizado por meio de licença de uso <strong>limitada, pessoal, não exclusiva, intransferível e revogável</strong>, 
+                    O HoraMed é disponibilizado por meio de licença de uso <strong>limitada, pessoal, não exclusiva, intransferível e revogável</strong>,
                     para fins estritamente pessoais e não comerciais.
                   </p>
                 </div>
@@ -116,7 +116,7 @@ export default function Terms() {
                 <div>
                   <h4 className="font-semibold mb-2">1.7. Propriedade Intelectual</h4>
                   <p className="text-muted-foreground">
-                    Todos os direitos sobre a marca "HoraMed", interface, layout, conteúdos e código-fonte pertencem a Luis Eduardo Paim Longhi. 
+                    Todos os direitos sobre a marca "HoraMed", interface, layout, conteúdos e código-fonte pertencem a Luis Eduardo Paim Longhi.
                     O uso não autorizado é proibido e poderá ensejar medidas legais.
                   </p>
                 </div>
@@ -163,7 +163,7 @@ export default function Terms() {
                 <div>
                   <h4 className="font-semibold mb-2">Limitação de Responsabilidade</h4>
                   <p className="text-muted-foreground">
-                    O Responsável não é responsável por decisões médicas tomadas com base exclusivamente em informações do HoraMed. 
+                    O Responsável não é responsável por decisões médicas tomadas com base exclusivamente em informações do HoraMed.
                     O app é disponibilizado "no estado em que se encontra" (as is), sem garantias de funcionamento contínuo ou livre de erros.
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export default function Terms() {
                 <div>
                   <h4 className="font-semibold mb-2">3.3. Renovação Automática</h4>
                   <p className="text-muted-foreground">
-                    O plano Premium tem renovação automática ao final de cada período. Alterações de preço serão avisadas com antecedência, 
+                    O plano Premium tem renovação automática ao final de cada período. Alterações de preço serão avisadas com antecedência,
                     permitindo cancelamento antes da renovação.
                   </p>
                 </div>
@@ -418,12 +418,46 @@ export default function Terms() {
               </AccordionContent>
             </AccordionItem>
 
-            {/* 8. Changes */}
+            {/* 8. Rewards & Referrals - NOVO */}
+            <AccordionItem value="rewards" className="border rounded-lg px-6">
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex items-center gap-2">
+                  <Gift className="h-5 w-5 text-primary" />
+                  <span className="font-semibold">8. Programa de Recompensas e Indicações</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4 text-sm pt-4">
+                <div>
+                  <h4 className="font-semibold mb-2">8.1. Natureza do Programa</h4>
+                  <p className="text-muted-foreground">
+                    O HoraMed oferece recompensas promocionais (dias Premium, créditos em reais) baseadas em engajamento e indicações.
+                    Este programa é uma liberalidade da empresa e não constitui direito adquirido vitalício.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">8.2. Créditos e Dias Premium</h4>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
+                    <li><strong>Dias Premium:</strong> Prolongam o acesso gratuito a funcionalidades pagas. Não são reembolsáveis em dinheiro.</li>
+                    <li><strong>Créditos (R$):</strong> Acumulados por usuários Premium (via indicações). Servem <strong>exclusivamente</strong> como desconto automático na próxima renovação da assinatura.</li>
+                    <li><strong>Sem Saque:</strong> Os créditos <strong>não têm valor de saque</strong>, não podem ser transferidos para contas bancárias e expiram se a assinatura for cancelada definitivamente.</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold mb-2">8.3. Indicações (Referrals)</h4>
+                  <p className="text-muted-foreground">
+                    A indicação de novos usuários gera recompensas apenas quando confirmados critérios de elegibilidade (ex: novo dispositivo, uso real do app).
+                    Autocadastro ou fraude resultarão no bloqueio da conta e perda de todos os créditos.
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* 9. Changes (Renumbered from 8) */}
             <AccordionItem value="changes" className="border rounded-lg px-6">
               <AccordionTrigger className="hover:no-underline">
                 <div className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
-                  <span className="font-semibold">8. Alterações deste Documento</span>
+                  <span className="font-semibold">9. Alterações deste Documento</span>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="space-y-4 text-sm pt-4">

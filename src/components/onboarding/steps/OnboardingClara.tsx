@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle } from "lucide-react";
 // Clara avatar loaded via URL to reduce bundle size
-const claraAvatarUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/avatars/clara-avatar.webp`;
+const claraAvatarUrl = "/images/clara.jpg";
 
 interface Props {
   onComplete: () => void;

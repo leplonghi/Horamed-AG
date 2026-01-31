@@ -167,7 +167,7 @@ export function StockTab({
                                                             id="adjustment"
                                                             type="number"
                                                             min="1"
-                                                            placeholder="Ex: 30"
+                                                            placeholder={t("placeholder.quantity")}
                                                             value={adjustmentAmount || ""}
                                                             onChange={(e) => setAdjustmentAmount(parseInt(e.target.value) || 0)}
                                                         />

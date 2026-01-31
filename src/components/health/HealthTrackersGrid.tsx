@@ -157,7 +157,7 @@ export default function HealthTrackersGrid() {
       if (!user) return;
 
       const now = new Date().toISOString();
-      let updateData: Partial<VitalSign> = { measuredAt: now };
+      const updateData: Partial<VitalSign> = { measuredAt: now };
 
       switch (type) {
         case "glucose":

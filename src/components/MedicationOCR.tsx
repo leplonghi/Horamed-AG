@@ -7,6 +7,7 @@ import { Camera, Upload, X, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { functions, httpsCallable } from "@/integrations/firebase";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface OCRResult {
   name: string;
   dose?: string;
@@ -21,6 +22,7 @@ interface MedicationOCRProps {
 }
 
 export default function MedicationOCR({ onResult }: MedicationOCRProps) {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,7 +132,7 @@ export default function MedicationOCR({ onResult }: MedicationOCRProps) {
           <div className="relative rounded-lg overflow-hidden border-2 border-primary/20">
             <img
               src={preview}
-              alt="Preview"
+              alt={t("alt.preview")}
               className="w-full h-48 object-cover"
             />
             <Button

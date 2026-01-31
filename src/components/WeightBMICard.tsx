@@ -14,12 +14,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { auth, fetchCollection, fetchDocument, orderBy, limit, where } from "@/integrations/firebase";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface WeightBMICardProps {
   userId: string;
   profileId?: string;
 }
 
 export default function WeightBMICard({ userId, profileId }: WeightBMICardProps) {
+  const { t } = useTranslation();
   const [modalOpen, setModalOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -285,7 +287,7 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
                 <button
                   onClick={() => setInfoOpen(!infoOpen)}
                   className="text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label="Informações sobre IMC"
+                  aria-label={t("aria.bmiInfo")}
                 >
                   <Info className="h-4 w-4" />
                 </button>

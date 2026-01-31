@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MicroCelebration from "@/components/celebrations/MicroCelebration";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 // Quick time suggestions for faster selection
 const QUICK_TIMES = [
   { label: "Manhã", time: "08:00", icon: "🌅" },
@@ -19,6 +20,7 @@ const QUICK_TIMES = [
 ];
 
 export default function OnboardingWow() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -141,7 +143,7 @@ export default function OnboardingWow() {
                   <Input
                     value={itemName}
                     onChange={(e) => setItemName(e.target.value)}
-                    placeholder="Ex: Losartana, Metformina..."
+                    placeholder={t("placeholder.medications")}
                     className="h-14 text-lg text-center"
                     autoFocus={inputFocused}
                     onKeyDown={(e) => e.key === 'Enter' && itemName.trim() && setStep(2)}

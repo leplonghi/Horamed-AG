@@ -158,7 +158,13 @@ export default function ImprovedClaraButton({
             transition={{ duration: 0.5, repeat: hasUnreadSuggestion ? Infinity : 0, repeatDelay: 3 }}
             className="flex items-center gap-2"
           >
-            <Heart className="h-6 w-6 shrink-0" />
+            <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/20">
+              <img
+                src="/images/clara.jpg"
+                alt="Clara"
+                className="h-full w-full object-cover"
+              />
+            </div>
             <AnimatePresence>
               {isHovered && (
                 <motion.span

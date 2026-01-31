@@ -297,7 +297,7 @@ export default function AddItem() {
     const times: string[] = [];
     const [startHour, startMinute] = startTime.split(":").map(Number);
     let currentHour = startHour;
-    let currentMinute = startMinute;
+    const currentMinute = startMinute;
 
     const hoursInDay = 24;
     const dosesPerDay = Math.floor(hoursInDay / intervalHours);
@@ -844,7 +844,7 @@ export default function AddItem() {
                       id="duration-days"
                       type="number"
                       min="1"
-                      placeholder="Ex: 7, 14, 30"
+                      placeholder={t("placeholder.days")}
                       value={formData.treatment_duration_days || ""}
                       onChange={(e) =>
                         setFormData({
@@ -1153,7 +1153,7 @@ export default function AddItem() {
                           id="units-total"
                           type="number"
                           min="1"
-                          placeholder="Ex: 30"
+                          placeholder={t("placeholder.quantity")}
                           value={stockData.units_total || ""}
                           onChange={(e) =>
                             setStockData({

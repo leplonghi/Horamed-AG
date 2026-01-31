@@ -9,6 +9,19 @@ import {
 } from "@/integrations/firebase";
 
 /**
+ * Generate a unique referral code
+ */
+export function generateReferralCode(): string {
+  const prefix = 'HR';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excluding similar looking characters
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `${prefix}-${code}`;
+}
+
+/**
  * Get cumulative discount percentage from all active referrals for premium users
  */
 export async function getReferralDiscountForUser(userId: string): Promise<number> {

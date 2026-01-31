@@ -10,7 +10,6 @@ import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
-import FloatingActionButton from "@/components/FloatingActionButton";
 import { cn } from "@/lib/utils";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { motion, AnimatePresence } from "framer-motion";
@@ -519,7 +518,6 @@ export default function Medications() {
         </div>
       </div>
 
-      <FloatingActionButton />
       <Navigation />
       <UpgradeModal open={showUpgradeModal} onOpenChange={setShowUpgradeModal} feature="medication" />
 

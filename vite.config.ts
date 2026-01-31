@@ -11,6 +11,13 @@ export default defineConfig(({ mode }) => {
     server: {
       host: "::",
       port: 8080,
+      strictPort: false,
+      hmr: {
+        overlay: true,
+      },
+      watch: {
+        usePolling: false,
+      },
     },
     plugins: [
       react(),
@@ -85,8 +92,8 @@ export default defineConfig(({ mode }) => {
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}"],
           navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/supabase/],
-          skipWaiting: false,
-          clientsClaim: false,
+          skipWaiting: true,
+          clientsClaim: true,
           cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
@@ -151,27 +158,46 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom'],
-            'router': ['react-router-dom'],
-            'ui-core': ['@radix-ui/react-dialog', '@radix-ui/react-popover'],
-            'ui-forms': ['@radix-ui/react-checkbox', '@radix-ui/react-radio-group', '@radix-ui/react-switch', '@radix-ui/react-slider'],
-            'ui-display': ['@radix-ui/react-tabs', '@radix-ui/react-toast', '@radix-ui/react-accordion', '@radix-ui/react-collapsible'],
-            'ui-menu': ['@radix-ui/react-dropdown-menu', '@radix-ui/react-context-menu', '@radix-ui/react-menubar'],
-            'charts': ['recharts'],
-            'motion': ['framer-motion'],
-            'date': ['date-fns', 'date-fns-tz'],
-            'forms': ['react-hook-form', '@hookform/resolvers', 'zod'],
-            'supabase': ['@supabase/supabase-js'],
-            'pdf': ['jspdf', 'jspdf-autotable'],
-          },
+      target: 'es2015',
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true, // Remove console.logs in production
+          drop_debugger: true,
+          pure_funcs: ['console.log', 'console.info', 'console.debug'],
         },
       },
+      rollupOptions: {
+        output: {
+          manualChunks: (id) => {
+            if (id.includes('node_modules')) {
+              if (id.includes('firebase')) {
+                return 'firebase';
+              }
+              // Group everything else into vendor to ensure robust React execution
+              return 'vendor';
+            }
+          },
+          // Optimize chunk file names
+          chunkFileNames: 'assets/[name]-[hash].js',
+          entryFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash].[ext]',
+        },
+      },
+      // Increase chunk size warning limit
+      chunkSizeWarningLimit: 2000,
+      // Enable source maps for production debugging (optional, remove if not needed)
+      sourcemap: false,
     },
     optimizeDeps: {
       exclude: ["@capacitor/core", "@capacitor/app"],
+      include: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'date-fns',
+        'framer-motion',
+      ],
     },
   };
 });

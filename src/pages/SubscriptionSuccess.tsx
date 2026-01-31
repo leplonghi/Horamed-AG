@@ -37,12 +37,12 @@ const SubscriptionSuccess = () => {
     // Hide confetti after 5 seconds
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [syncWithStripe, refresh]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-background flex items-center justify-center p-4">
       <ConfettiExplosion trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
-      
+
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -56,7 +56,7 @@ const SubscriptionSuccess = () => {
               <CheckCircle className="w-10 h-10 text-green-500" />
             )}
           </div>
-          
+
           <div className="space-y-2">
             <h1 className="text-2xl font-bold text-foreground">
               {syncing ? "Ativando sua assinatura..." : t('subscription.welcomePremium')}
@@ -83,15 +83,15 @@ const SubscriptionSuccess = () => {
               </div>
 
               <div className="space-y-3">
-                <Button 
+                <Button
                   onClick={() => navigate("/hoje")}
                   className="w-full"
                 >
                   {t('subscription.startUsing')}
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
-                
-                <Button 
+
+                <Button
                   variant="outline"
                   onClick={() => navigate("/assinatura")}
                   className="w-full"

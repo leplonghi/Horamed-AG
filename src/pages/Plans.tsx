@@ -71,7 +71,7 @@ export default function Plans() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const planType = billingCycle === 'annual' ? 'annual' : 'monthly';
+      const planType = billingCycle === 'annual' ? 'annual' : billingCycle === 'monthly' ? 'monthly' : 'lifetime';
 
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
       const { data }: any = await createCheckoutSession({
@@ -148,6 +148,44 @@ export default function Plans() {
         animate="show"
         className="max-w-4xl mx-auto px-4 py-8 space-y-8"
       >
+        {/* Founder Offer Banner */}
+        <motion.div variants={itemVariants} className="w-full">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-2 text-center md:text-left">
+                <Badge className="bg-white/20 text-white border-0 hover:bg-white/30 backdrop-blur-sm">
+                  ⭐ {t('plans.founderOffer') || "Oferta Fundador"}
+                </Badge>
+                <h2 className="text-2xl md:text-3xl font-bold">
+                  {t('plans.lifetimeAccess') || "Acesso Vitalício"}
+                </h2>
+                <p className="text-white/90 max-w-md">
+                  {t('plans.payOnce') || "Pague uma única vez e tenha acesso Premium para sempre. Sem mensalidades."}
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2 min-w-[200px]">
+                <div className="text-3xl font-bold">
+                  {isBrazil ? 'R$ 97,00' : '$29.99'}
+                </div>
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full font-bold shadow-lg text-orange-600 hover:text-orange-700"
+                  onClick={() => {
+                    setBillingCycle("lifetime" as any); // Hack to trigger handleUpgrade logic
+                    setTimeout(handleUpgrade, 100);
+                  }}
+                >
+                  {t('plans.getLifetime') || "Quero Vitalício"}
+                </Button>
+                <span className="text-xs text-white/70">
+                  {t('plans.limitedSlots') || "Vagas limitadas"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </motion.div>
         {/* Hero Section */}
         <motion.div variants={itemVariants} className="text-center space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full">

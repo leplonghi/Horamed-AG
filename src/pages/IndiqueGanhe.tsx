@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, fetchDocument, fetchCollection, orderBy } from "@/integrations/firebase";
+import { useAuth, fetchDocument, fetchCollection, setDocument, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Copy, Share2, Gift, Crown, Users, Sparkles, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { getReferralDiscountForUser, getFreeExtraSlotsForUser } from "@/lib/referrals";
+import { getReferralDiscountForUser, getFreeExtraSlotsForUser, generateReferralCode } from "@/lib/referrals";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -42,6 +42,19 @@ export default function IndiqueGanhe() {
 
       if (profile?.referralCode) {
         setReferralCode(profile.referralCode);
+      } else {
+        // Generate and save if missing
+        const newCode = generateReferralCode();
+        await setDocument(
+          `users/${user.uid}/profile`,
+          'me',
+          {
+            referralCode: newCode,
+            userId: user.uid
+          },
+          true
+        );
+        setReferralCode(newCode);
       }
 
       // Get referrals from subcollection

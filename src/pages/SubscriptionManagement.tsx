@@ -37,8 +37,8 @@ export default function SubscriptionManagement() {
   const [cancelingSubscription, setCancelingSubscription] = useState(false);
 
   // Calculate if within 7-day free cancellation window
-  const daysSubscribed = subscription?.started_at
-    ? differenceInDays(new Date(), new Date(subscription.started_at))
+  const daysSubscribed = subscription?.startedAt
+    ? differenceInDays(new Date(), new Date(subscription.startedAt))
     : 0;
   const isWithinFreeCancellation = daysSubscribed <= 7;
 
@@ -49,7 +49,7 @@ export default function SubscriptionManagement() {
       // Remove the query param
       window.history.replaceState({}, '', '/assinatura');
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleOpenPaymentModal = () => {
     setShowPaymentModal(true);
@@ -156,26 +156,26 @@ export default function SubscriptionManagement() {
 
             {/* Plan Details */}
             <div className="space-y-3 pt-4 border-t">
-              {subscription?.started_at && (
+              {subscription?.startedAt && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Início
                   </span>
                   <span className="font-medium">
-                    {format(new Date(subscription.started_at), "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                    {format(new Date(subscription.startedAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                   </span>
                 </div>
               )}
 
-              {subscription?.expires_at && !isPremium && (
+              {subscription?.expiresAt && !isPremium && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     Expira em
                   </span>
                   <span className="font-medium">
-                    {format(new Date(subscription.expires_at), "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                    {format(new Date(subscription.expiresAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                     {daysLeft !== null && daysLeft > 0 && (
                       <span className="text-muted-foreground ml-2">
                         ({daysLeft} dias)
@@ -408,8 +408,8 @@ export default function SubscriptionManagement() {
                   ) : (
                     <p>
                       Sua assinatura permanecerá ativa até <strong>
-                        {subscription?.expires_at
-                          ? format(new Date(subscription.expires_at), "dd 'de' MMMM", { locale: ptBR })
+                        {subscription?.expiresAt
+                          ? format(new Date(subscription.expiresAt), "dd 'de' MMMM", { locale: ptBR })
                           : 'o final do período'}
                       </strong>. Após essa data, você será rebaixado para o plano gratuito.
                     </p>

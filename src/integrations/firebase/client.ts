@@ -17,16 +17,42 @@ const firebaseConfig = {
     measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 }
 
-// Validate config presence
+// Only log in development (will be removed in production by terser)
+if (import.meta.env.DEV) {
+    console.log('🔥 Firebase Client Initialization', {
+        mode: import.meta.env.MODE,
+        isDev: import.meta.env.DEV,
+        isProd: import.meta.env.PROD,
+        hasApiKey: !!firebaseConfig.apiKey,
+        hasAuthDomain: !!firebaseConfig.authDomain,
+        hasProjectId: !!firebaseConfig.projectId,
+        hasAppId: !!firebaseConfig.appId,
+        projectId: firebaseConfig.projectId,
+    });
+}
+
+// Validate config presence (use console.error - not removed in production)
 const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'];
 const missingKeys = requiredKeys.filter(key => !Object.prototype.hasOwnProperty.call(firebaseConfig, key) || !firebaseConfig[key as keyof typeof firebaseConfig]);
 
 if (missingKeys.length > 0) {
-    console.error(`Missing Firebase configuration keys: ${missingKeys.join(', ')}`);
+    const errorMsg = `❌ Missing Firebase configuration keys: ${missingKeys.join(', ')}`;
+    console.error(errorMsg);
+    console.error('🔍 Available env vars:', Object.keys(import.meta.env).filter(k => k.startsWith('VITE_')));
+    throw new Error(errorMsg);
 }
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig)
+let app;
+try {
+    app = initializeApp(firebaseConfig);
+    if (import.meta.env.DEV) {
+        console.log('✅ Firebase app initialized successfully');
+    }
+} catch (error) {
+    console.error('❌ Failed to initialize Firebase app:', error);
+    throw error;
+}
 
 // Initialize services
 export const auth = getAuth(app)

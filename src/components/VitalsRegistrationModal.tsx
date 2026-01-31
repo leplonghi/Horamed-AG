@@ -209,7 +209,7 @@ export default function VitalsRegistrationModal({
                                     max="500"
                                     value={weight}
                                     onChange={(e) => setWeight(e.target.value)}
-                                    placeholder="Ex: 70.5"
+                                    placeholder={t("placeholder.weight")}
                                     className="text-2xl h-14 text-center"
                                     inputMode="decimal"
                                     autoFocus={activeTab === 'weight'}
@@ -260,7 +260,7 @@ export default function VitalsRegistrationModal({
                                 <Input
                                     id="glucose"
                                     type="number"
-                                    placeholder="Ex: 95"
+                                    placeholder={t("placeholder.glucose")}
                                     value={glucose}
                                     onChange={(e) => setGlucose(e.target.value)}
                                     className="text-2xl h-14 text-center"
@@ -294,7 +294,7 @@ export default function VitalsRegistrationModal({
                                 id="notes"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
-                                placeholder="Ex: Tontura, exagerei na comida..."
+                                placeholder={t("placeholder.notes")}
                                 rows={2}
                                 className="text-sm"
                             />

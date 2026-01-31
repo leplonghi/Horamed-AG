@@ -24,9 +24,10 @@ import {
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
-import {
 import { useTranslation } from "@/contexts/LanguageContext";
+import {
   LineChart as RechartsLineChart,
+
   Line,
   XAxis,
   YAxis,

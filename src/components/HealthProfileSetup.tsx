@@ -14,12 +14,14 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Scale, Calendar, Ruler } from "lucide-react";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface HealthProfileSetupProps {
   open: boolean;
   onComplete: () => void;
 }
 
 export default function HealthProfileSetup({ open, onComplete }: HealthProfileSetupProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     birth_date: "",
@@ -133,7 +135,7 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
                 step="0.1"
                 min="1"
                 max="500"
-                placeholder="Ex: 70.5"
+                placeholder={t("placeholder.weight")}
                 value={formData.weight_kg}
                 onChange={(e) =>
                   setFormData({ ...formData, weight_kg: e.target.value })
@@ -153,7 +155,7 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
                 step="0.1"
                 min="50"
                 max="250"
-                placeholder="Ex: 175"
+                placeholder={t("placeholder.height")}
                 value={formData.height_cm}
                 onChange={(e) =>
                   setFormData({ ...formData, height_cm: e.target.value })

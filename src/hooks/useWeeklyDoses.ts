@@ -24,7 +24,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             if (!user) throw new Error("User not authenticated");
 
             // 1. Fetch Medications (to get names)
-            let medConstraints = [];
+            const medConstraints = [];
             if (profileId) {
                 medConstraints.push(where("profileId", "==", profileId));
             }

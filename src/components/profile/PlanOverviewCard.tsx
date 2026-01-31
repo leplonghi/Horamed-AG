@@ -15,7 +15,7 @@ export default function PlanOverviewCard() {
         <motion.div
             whileHover={{ scale: 1.01 }}
             className={cn(
-                "relative overflow-hidden rounded-3xl p-6 shadow-lg",
+                "relative overflow-hidden rounded-2xl p-4 shadow-sm",
                 isPremium
                     ? "bg-gradient-to-br from-amber-500/90 to-orange-600 text-white"
                     : "bg-card border border-border/50"
@@ -24,77 +24,72 @@ export default function PlanOverviewCard() {
             {/* Background decorations for Premium */}
             {isPremium && (
                 <>
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 w-32 h-32 bg-yellow-400/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-                    <Sparkles className="absolute top-4 right-4 h-6 w-6 text-yellow-200/50 animate-pulse" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                    <div className="absolute bottom-0 left-0 w-16 h-16 bg-yellow-400/20 rounded-full blur-xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+                    <Sparkles className="absolute top-2 right-2 h-4 w-4 text-yellow-200/50 animate-pulse" />
                 </>
             )}
 
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <div className={cn(
-                            "p-2 rounded-xl",
-                            isPremium ? "bg-white/20" : "bg-primary/10"
+            <div className="relative z-10 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                    <div className={cn(
+                        "p-1.5 rounded-lg shrink-0",
+                        isPremium ? "bg-white/20" : "bg-primary/10"
+                    )}>
+                        <Crown className={cn(
+                            "h-5 w-5",
+                            isPremium ? "text-white" : "text-primary"
+                        )} />
+                    </div>
+                    <div>
+                        <h3 className={cn(
+                            "text-sm font-bold leading-none",
+                            !isPremium && "text-foreground"
                         )}>
-                            <Crown className={cn(
-                                "h-6 w-6",
-                                isPremium ? "text-white" : "text-primary"
-                            )} />
-                        </div>
-                        <div>
-                            <h3 className={cn(
-                                "text-lg font-bold leading-tight",
-                                !isPremium && "text-foreground"
-                            )}>
-                                {isPremium ? "HoraMed Premium" : t('common.free')}
-                            </h3>
-                            <p className={cn(
-                                "text-sm font-medium",
-                                isPremium ? "text-white/80" : "text-muted-foreground"
-                            )}>
-                                {isPremium
-                                    ? t('profile.unlimitedAccess') || "Acesso Ilimitado"
-                                    : daysLeft !== null && daysLeft > 0
-                                        ? `${daysLeft} ${t('profile.daysLeft')}`
-                                        : t('profile.upgradeToUnlock')
-                                }
-                            </p>
-                        </div>
+                            {isPremium ? "Premium" : t('common.free')}
+                        </h3>
+                        <p className={cn(
+                            "text-xs font-medium mt-0.5",
+                            isPremium ? "text-white/80" : "text-muted-foreground"
+                        )}>
+                            {isPremium
+                                ? t('profile.unlimitedAccess')
+                                : daysLeft !== null && daysLeft > 0
+                                    ? `${daysLeft} dias restantes`
+                                    : "Upgrade"}
+                        </p>
                     </div>
                 </div>
 
                 <Button
                     onClick={() => navigate('/planos')}
-                    size="lg"
+                    size="sm"
                     variant={isPremium ? "secondary" : "default"}
                     className={cn(
-                        "rounded-xl shadow-md font-semibold h-12 px-6",
+                        "rounded-lg shadow-sm font-semibold h-8 px-3 text-xs",
                         isPremium
-                            ? "bg-white text-orange-600 hover:bg-white/90 border-0"
+                            ? "bg-white/20 text-white hover:bg-white/30 border-0 backdrop-blur-sm"
                             : "bg-primary hover:bg-primary/90"
                     )}
                 >
                     {isPremium ? (
-                        <span className="flex items-center gap-2">
-                            {t('profile.manageSubscription')}
-                        </span>
+                        t('common.manage')
                     ) : (
-                        <span className="flex items-center gap-2">
-                            {t('common.upgrade')} <ChevronRight className="h-4 w-4" />
+                        <span className="flex items-center gap-1">
+                            {t('common.upgrade')} <ChevronRight className="h-3 w-3" />
                         </span>
                     )}
                 </Button>
             </div>
 
             {!isPremium && (
-                <div className="mt-4 pt-4 border-t border-border/40 grid grid-cols-2 gap-2">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-primary" />
+                <div className="mt-3 pt-3 border-t border-border/40 grid grid-cols-2 gap-1">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Check className="h-2.5 w-2.5 text-primary" />
                         <span>{t('common.multiProfile')}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Check className="h-3 w-3 text-primary" />
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <Check className="h-2.5 w-2.5 text-primary" />
                         <span>{t('common.advancedAI')}</span>
                     </div>
                 </div>

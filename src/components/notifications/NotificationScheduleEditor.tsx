@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
     Clock, Plus, X, Bell, BellOff, Volume2, Vibrate, Trash2,
-    Sun, Moon, Sunrise, Sunset, Edit3, Check, AlertCircle, Copy
+    Sun, Moon, Sunrise, Sunset, Edit3, Check, AlertCircle, Copy, Play
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -111,6 +111,22 @@ export default function NotificationScheduleEditor({
         toast.success(language === 'pt' ? 'Template aplicado!' : 'Template applied!');
     };
 
+
+    const playSound = (soundName: string) => {
+        // In a real scenario, these would point to different files in public/sounds/
+        const soundFile = "sounds/notification.mp3";
+
+        try {
+            const audio = new Audio(`/${soundFile}`);
+            audio.play().catch(err => {
+                console.error("Error playing sound preview:", err);
+                toast.error(language === 'pt' ? 'Erro ao reproduzir som' : 'Error playing sound');
+            });
+            toast.info(language === 'pt' ? 'Reproduzindo som...' : 'Playing sound...');
+        } catch (error) {
+            console.error("Audio error:", error);
+        }
+    };
 
     const addSchedule = (time: string) => {
         if (schedules.some(s => s.time === time)) {
@@ -346,7 +362,16 @@ export default function NotificationScheduleEditor({
                                                             <TimeIcon className="w-5 h-5 text-primary" />
                                                         </div>
                                                         <div className="flex-1">
-                                                            <p className="text-2xl font-bold tracking-tight">{schedule.time}</p>
+                                                            {isEditing ? (
+                                                                <Input
+                                                                    type="time"
+                                                                    value={schedule.time}
+                                                                    onChange={(e) => updateSchedule(schedule.id, { time: e.target.value })}
+                                                                    className="text-2xl font-bold tracking-tight h-10 w-32 p-1"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-2xl font-bold tracking-tight">{schedule.time}</p>
+                                                            )}
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 <Badge variant="secondary" className="text-xs">
                                                                     <NotifIcon className="w-3 h-3 mr-1" />
@@ -439,21 +464,32 @@ export default function NotificationScheduleEditor({
                                                                     <Label className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                                                                         {language === 'pt' ? 'Som' : 'Sound'}
                                                                     </Label>
-                                                                    <Select
-                                                                        value={schedule.sound}
-                                                                        onValueChange={(value) => updateSchedule(schedule.id, { sound: value })}
-                                                                    >
-                                                                        <SelectTrigger className="h-11">
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {SOUND_OPTIONS.map((opt) => (
-                                                                                <SelectItem key={opt.value} value={opt.value}>
-                                                                                    {opt.label}
-                                                                                </SelectItem>
-                                                                            ))}
-                                                                        </SelectContent>
-                                                                    </Select>
+                                                                    <div className="flex gap-2">
+                                                                        <Select
+                                                                            value={schedule.sound}
+                                                                            onValueChange={(value) => updateSchedule(schedule.id, { sound: value })}
+                                                                        >
+                                                                            <SelectTrigger className="h-11 flex-1">
+                                                                                <SelectValue />
+                                                                            </SelectTrigger>
+                                                                            <SelectContent>
+                                                                                {SOUND_OPTIONS.map((opt) => (
+                                                                                    <SelectItem key={opt.value} value={opt.value}>
+                                                                                        {opt.label}
+                                                                                    </SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                        <Button
+                                                                            variant="outline"
+                                                                            size="icon"
+                                                                            className="h-11 w-11 shrink-0"
+                                                                            onClick={() => playSound(schedule.sound || 'default')}
+                                                                            title={language === 'pt' ? 'Ouvir som' : 'Preview sound'}
+                                                                        >
+                                                                            <Play className="w-4 h-4 text-primary" />
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
 
                                                                 {/* Vibration Toggle */}

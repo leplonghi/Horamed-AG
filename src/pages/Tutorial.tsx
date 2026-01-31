@@ -15,6 +15,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
+  Gift,
+  Users,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
@@ -149,6 +151,32 @@ export default function Tutorial() {
         },
       ],
     },
+    {
+      id: "recompensas",
+      title: t('tutorial.rewards'),
+      icon: Gift,
+      sections: [
+        {
+          title: t('tutorial.referralQ'),
+          icon: Users,
+          steps: [
+            t('tutorial.referralStep1'),
+            t('tutorial.referralStep2'),
+            t('tutorial.referralStep3'),
+          ],
+          tip: t('tutorial.referralTip'),
+        },
+        {
+          title: t('tutorial.streakQ'),
+          icon: Gift,
+          steps: [
+            t('tutorial.streakStep1'),
+            t('tutorial.streakStep2'),
+            t('tutorial.streakStep3'),
+          ],
+        },
+      ],
+    },
   ];
 
   return (
@@ -162,7 +190,7 @@ export default function Tutorial() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               {tutorials.map((tutorial) => (
                 <TabsTrigger key={tutorial.id} value={tutorial.id} className="gap-2">
                   <tutorial.icon className="h-4 w-4" />
@@ -171,42 +199,44 @@ export default function Tutorial() {
               ))}
             </TabsList>
 
-            {tutorials.map((tutorial) => (
-              <TabsContent key={tutorial.id} value={tutorial.id} className="space-y-4">
-                {tutorial.sections.map((section, idx) => (
-                  <Card key={idx}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-xl">
-                        <section.icon className="h-5 w-5 text-primary" />
-                        {section.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <ol className="space-y-2">
-                        {section.steps.map((step, stepIdx) => (
-                          <li key={stepIdx} className="flex gap-3">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
-                              {stepIdx + 1}
-                            </span>
-                            <span className="text-sm pt-0.5">{step}</span>
-                          </li>
-                        ))}
-                      </ol>
+            {
+              tutorials.map((tutorial) => (
+                <TabsContent key={tutorial.id} value={tutorial.id} className="space-y-4">
+                  {tutorial.sections.map((section, idx) => (
+                    <Card key={idx}>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          <section.icon className="h-5 w-5 text-primary" />
+                          {section.title}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <ol className="space-y-2">
+                          {section.steps.map((step, stepIdx) => (
+                            <li key={stepIdx} className="flex gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
+                                {stepIdx + 1}
+                              </span>
+                              <span className="text-sm pt-0.5">{step}</span>
+                            </li>
+                          ))}
+                        </ol>
 
-                      {section.tip && (
-                        <div className="flex gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-                          <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                          <p className="text-sm">
-                            <strong>{t('tutorial.tip')}</strong> {section.tip}
-                          </p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </TabsContent>
-            ))}
-          </Tabs>
+                        {section.tip && (
+                          <div className="flex gap-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                            <AlertCircle className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                            <p className="text-sm">
+                              <strong>{t('tutorial.tip')}</strong> {section.tip}
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </TabsContent>
+              ))
+            }
+          </Tabs >
 
           <Card className="bg-primary/5 border-primary/20">
             <CardContent className="pt-6">
@@ -222,8 +252,8 @@ export default function Tutorial() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </div >
+      </div >
       <Navigation />
     </>
   );

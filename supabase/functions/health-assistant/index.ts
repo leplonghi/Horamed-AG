@@ -81,7 +81,7 @@ serve(async (req) => {
     }
     
     let contextInfo = "";
-    let quickActions: string[] = [];
+    const quickActions: string[] = [];
     
     // Get health profile
     const { data: profile } = await supabase

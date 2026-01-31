@@ -12,6 +12,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_WIDTH = "16rem";
@@ -249,10 +250,10 @@ const SidebarRail = React.forwardRef<HTMLButtonElement, React.ComponentProps<"bu
       <button
         ref={ref}
         data-sidebar="rail"
-        aria-label="Toggle Sidebar"
+        aria-label={t("aria.toggleSidebar")}
         tabIndex={-1}
         onClick={toggleSidebar}
-        title="Toggle Sidebar"
+        title={t("aria.toggleSidebar")}
         className={cn(
           "absolute inset-y-0 z-20 hidden w-4 -translate-x-1/2 transition-all ease-linear after:absolute after:inset-y-0 after:left-1/2 after:w-[2px] group-data-[side=left]:-right-4 group-data-[side=right]:left-0 hover:after:bg-sidebar-border sm:flex",
           "[[data-side=left]_&]:cursor-w-resize [[data-side=right]_&]:cursor-e-resize",

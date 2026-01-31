@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface ExtractedData {
   title?: string;
   category?: string;
@@ -54,6 +55,7 @@ export default function DocumentReviewModal({
   onConfirm,
   onSkip,
 }: DocumentReviewModalProps) {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<ExtractedData>(extractedData);
 
   const confidenceScore = extractedData.confidence_score || 0;
@@ -146,7 +148,7 @@ export default function DocumentReviewModal({
               <ScrollArea className="h-[500px] border rounded-lg">
                 <img
                   src={imagePreview}
-                  alt="Document preview"
+                  alt={t("alt.documentPreview")}
                   className="w-full h-auto"
                 />
               </ScrollArea>
@@ -169,7 +171,7 @@ export default function DocumentReviewModal({
                     value={formData.title || ""}
                     onChange={(e) => updateField("title", e.target.value)}
                     className={getFieldConfidenceClass(!!formData.title)}
-                    placeholder="Nome do documento"
+                    placeholder={t("placeholder.documentName")}
                   />
                 </div>
 
@@ -228,7 +230,7 @@ export default function DocumentReviewModal({
                     value={formData.provider || ""}
                     onChange={(e) => updateField("provider", e.target.value)}
                     className={getFieldConfidenceClass(!!formData.provider)}
-                    placeholder="Ex: Laboratório Sabin, Hospital Albert Einstein"
+                    placeholder={t("placeholder.institution")}
                   />
                 </div>
 
@@ -364,7 +366,7 @@ export default function DocumentReviewModal({
                         value={formData.vaccine_name || ""}
                         onChange={(e) => updateField("vaccine_name", e.target.value)}
                         className={getFieldConfidenceClass(!!formData.vaccine_name)}
-                        placeholder="COVID-19, Influenza..."
+                        placeholder={t("placeholder.vaccineName")}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -404,7 +406,7 @@ export default function DocumentReviewModal({
                         value={formData.doctor_name || ""}
                         onChange={(e) => updateField("doctor_name", e.target.value)}
                         className={getFieldConfidenceClass(!!formData.doctor_name)}
-                        placeholder="Dr. João Silva"
+                        placeholder={t("placeholder.doctorName")}
                       />
                     </div>
                     <div>
@@ -413,7 +415,7 @@ export default function DocumentReviewModal({
                         id="specialty"
                         value={formData.specialty || ""}
                         onChange={(e) => updateField("specialty", e.target.value)}
-                        placeholder="Ex: Cardiologia, Dermatologia"
+                        placeholder={t("placeholder.specialty")}
                       />
                     </div>
                   </div>
@@ -426,7 +428,7 @@ export default function DocumentReviewModal({
                     value={formData.notes || ""}
                     onChange={(e) => updateField("notes", e.target.value)}
                     rows={3}
-                    placeholder="Adicione notas ou observações sobre este documento"
+                    placeholder={t("placeholder.documentNotes")}
                   />
                 </div>
               </div>

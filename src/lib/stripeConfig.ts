@@ -5,16 +5,18 @@
  * Separate products for BRL (Brazil) and USD (International).
  */
 
-// Brazilian prices (BRL) - Account: AY2hnWxlHu
-export const STRIPE_PRICES_BRL = {
-  monthly: 'price_1Stun3AY2hnWxlHuDEEMRVTs', // R$ 19,90/mês
-  annual: 'price_1SuWEwAY2hnWxlHuG2WrgNhx',  // R$ 199,90/ano
-} as const;
-
 // International prices (USD) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_USD = {
   monthly: 'price_1SturuAY2hnWxlHuHVLxgKae', // $3.99/month
   annual: 'price_1SieJtAY2hnWxlHuAOa6m5nu',  // $39.90/year
+  lifetime: 'price_LIFETIME_USD_PLACEHOLDER', // $29.99 (Founder)
+} as const;
+
+// Brazilian prices (BRL) - Account: AY2hnWxlHu
+export const STRIPE_PRICES_BRL = {
+  monthly: 'price_1Stun3AY2hnWxlHuDEEMRVTs', // R$ 19,90/mês
+  annual: 'price_1SuWEwAY2hnWxlHuG2WrgNhx',  // R$ 199,90/ano
+  lifetime: 'price_LIFETIME_BRL_PLACEHOLDER', // R$ 97,00 (Fundador)
 } as const;
 
 // Legacy export for backward compatibility
@@ -38,12 +40,14 @@ export const PRICING = {
     annual: 199.90,
     currency: 'BRL',
     symbol: 'R$',
+    lifetime: 97.00
   },
   usd: {
     monthly: 3.99,
     annual: 39.99,
     currency: 'USD',
     symbol: '$',
+    lifetime: 29.99
   },
   trial_days: 7,
 } as const;

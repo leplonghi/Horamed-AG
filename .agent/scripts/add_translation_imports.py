@@ -4,6 +4,7 @@ Script para adicionar imports do useTranslation em arquivos que usam t()
 """
 
 import re
+import sys
 from pathlib import Path
 
 def add_translation_import(file_path: Path) -> bool:
@@ -58,14 +59,17 @@ def add_translation_import(file_path: Path) -> bool:
         return False
 
 def main():
-    src_dir = Path("src/pages")
+    if len(sys.argv) > 1:
+        target_dir = Path(sys.argv[1])
+    else:
+        target_dir = Path("src")
     
-    if not src_dir.exists():
-        print(f"❌ Directory does not exist: {src_dir}")
+    if not target_dir.exists():
+        print(f"❌ Directory does not exist: {target_dir}")
         return
     
-    files = list(src_dir.rglob("*.tsx")) + list(src_dir.rglob("*.ts"))
-    print(f"🔍 Found {len(files)} files to check\n")
+    files = list(target_dir.rglob("*.tsx")) + list(target_dir.rglob("*.ts"))
+    print(f"🔍 Found {len(files)} files to check in {target_dir}\n")
     
     updated_count = 0
     for file_path in files:

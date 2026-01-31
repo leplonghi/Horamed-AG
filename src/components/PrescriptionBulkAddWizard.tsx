@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 type SchedulePreset = "1x" | "2x" | "3x";
 
 interface Medication {
@@ -351,7 +352,7 @@ export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, o
                           <Input
                             id={`stock-${actualIdx}`}
                             type="number"
-                            placeholder="Ex: 30"
+                            placeholder={t("placeholder.quantity")}
                             value={med.stockTotal}
                             onChange={(e) => handleStockChange(actualIdx, e.target.value)}
                           />

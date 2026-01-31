@@ -73,6 +73,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.settings': 'Configurações',
     'common.help': 'Ajuda',
     'common.logout': 'Sair',
+    'common.language': 'Idioma',
     'common.login': 'Entrar',
     'common.signup': 'Cadastrar',
     'common.copy': 'Copiar',
@@ -185,7 +186,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizard.addItem': 'Adicionar Item',
     'wizard.step1': 'Identificação',
     'wizard.step2': 'Horários',
-    'wizard.step3': 'Estoque',
+    'wizard.step3': 'Configurações Adicionais',
     'wizard.medicationName': 'Nome do medicamento',
     'wizard.searchMedication': 'Buscar medicamento...',
     'wizard.typeName': 'Ou digite o nome aqui...',
@@ -215,7 +216,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizard.hydration': 'Hidratação',
     'wizard.hydrationDesc': 'Eletrólitos, isotônicos',
     'wizard.notes': 'Observação',
-    'wizard.notesPlaceholder': 'Ex: Tomar com água, após as refeições...',
+
     'wizard.continuousUse': 'Uso contínuo',
     'wizard.noEndDate': 'Sem data de término',
     'wizard.start': 'Início',
@@ -227,6 +228,26 @@ const translations: Record<Language, Record<string, string>> = {
     'wizard.specificDaysDesc': 'Escolher quais dias',
     'wizard.weekly': 'Semanal',
     'wizard.weeklyDesc': 'Uma vez por semana (ex: Ozempic)',
+
+    'wizard.dosePlaceholder': 'Ex: 1 comprimido, 2 cápsulas, 5ml',
+
+    'wizard.step1Desc': 'Passo 1 de 3 - Remédio, suplemento ou vitamina',
+    'wizard.step2Desc': 'Passo 2 de 3',
+    'wizard.step3Desc': 'Passo 3 de 3',
+    'wizard.whenToTake': 'Quando você toma?',
+    'wizard.customTimesTitle': 'Horários personalizados',
+    'wizard.addTime': 'Adicionar horário',
+    'wizard.stockControlTitle': '▶ Controle de Estoque',
+    'wizard.enableStock': 'Ativar controle',
+    'wizard.treatmentDurationTitle': '▶ Duração do Tratamento',
+    'wizard.durationDays': 'Duração (dias)',
+    'wizard.notesTitle': '▶ Observações',
+    'wizard.notesPlaceholder': 'Observações adicionais...',
+    'wizard.continue': 'Continuar',
+    'wizard.save': 'Salvar ✓',
+    'wizard.saving': 'Salvando...',
+
+
     'wizard.whichDays': 'Quais dias?',
     'wizard.times': 'Horários',
     'wizard.time': 'horário',
@@ -327,7 +348,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wizard.removeTime': 'Remover este horário',
     'wizard.addAnotherTime': 'Adicionar outro horário',
     'wizard.timesSummary': 'Resumo dos horários:',
-    'wizard.continue': 'Continuar',
+
     // StepFrequency translations
     'wizard.frequencyTip': 'Defina com que frequência você precisa tomar este medicamento. Isso determina quais dias aparecerão lembretes.',
     'wizard.everyDay': 'Todos os dias',
@@ -537,7 +558,19 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportData': 'Exportar dados',
     'profile.deleteAccount': 'Excluir conta',
     'profile.daysLeft': 'dias restantes',
+
     'profile.7daysFree': '7 dias grátis',
+    'profile.devices': 'Dispositivos e Apps',
+    'profile.manageCaregivers': 'Gerenciar Cuidadores',
+    'profile.alarmsLabel': 'Alarmes',
+    'profile.wellnessWidgets': 'Widgets de Bem-Estar',
+    'profile.disableBiometric': 'Desativar Biometria',
+    'profile.support': 'Suporte',
+    'profile.helpLabel': 'Ajuda e Suporte',
+    'profile.termsLabel': 'Termos de Uso',
+    'profile.logout': 'Sair',
+    'profile.logoutSuccess': 'Logout realizado com sucesso!',
+    'profile.logoutError': 'Erro ao sair',
 
     // Wallet/Cofre
     'wallet.title': 'Carteira de Saúde',
@@ -821,8 +854,7 @@ const translations: Record<Language, Record<string, string>> = {
     // Profile page
     'profile.whatCanYouDo': 'O que você pode fazer aqui?',
     'profile.whatCanYouDoDesc': 'Gerencie sua <strong>conta</strong>, crie <strong>perfis familiares</strong> (Premium), configure <strong>notificações</strong> e veja seu <strong>plano de assinatura</strong>.',
-    'profile.logoutSuccess': 'Logout realizado com sucesso',
-    'profile.logoutError': 'Erro ao fazer logout',
+
     'profile.relationSelf': 'Você',
     'profile.relationChild': 'Filho(a)',
     'profile.relationParent': 'Pai/Mãe',
@@ -865,11 +897,11 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.exportDesc': 'Baixe seus dados em PDF',
     'profile.tutorialLabel': 'Tutorial',
     'profile.tutorialDesc': 'Aprenda a usar o app',
-    'profile.helpLabel': 'Ajuda e Suporte',
+
     'profile.helpDesc': 'Dúvidas e contato',
     'profile.privacyLabel': 'Privacidade',
     'profile.privacyDesc': 'Política de privacidade',
-    'profile.termsLabel': 'Termos de Uso',
+
     'profile.termsDesc': 'Termos e condições',
     'profile.biometricLogin': 'Login Biométrico',
     'profile.biometricEnabled': 'Ativado neste dispositivo',
@@ -890,9 +922,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.referralSuccessDesc': 'Continue indicando para ganhar mais descontos',
     'profile.allConfigured': 'Tudo configurado!',
     'profile.allConfiguredDesc': 'Seu perfil está completo',
-    'profile.manageCaregivers': 'Gerenciar Cuidadores',
-    'profile.wellnessWidgets': 'Widgets de Bem-Estar',
-    'profile.disableBiometric': 'Desativar Biometria',
+
     'profile.healthTools': 'Ferramentas',
     'profile.avatarUpdated': 'Foto de perfil atualizada!',
     'profile.avatarUpdateError': 'Erro ao atualizar foto',
@@ -954,15 +984,7 @@ const translations: Record<Language, Record<string, string>> = {
     'toast.referral.createAccountInfo': 'Para aplicar o código, você precisa criar uma nova conta ou entrar com o código aplicado.',
     'toast.referral.codeNotAvailable': 'Código de indicação não disponível',
     'toast.referral.codeCopied': 'Código copiado!',
-    'toast.referral.sharedSuccess': 'Compartilhado com sucesso!',
 
-    // Toast Messages - Profile
-    'toast.profile.createError': 'Erro ao criar perfil. Tente novamente.',
-
-    // Toast Messages - Pharmacy
-    'toast.pharmacy.nameRequired': 'Digite o nome do medicamento',
-    'toast.pharmacy.pricesFound': 'Preços encontrados!',
-    'toast.pharmacy.pricesError': 'Erro ao buscar preços',
 
     // Toast Messages - Notifications
     'toast.notifications.configurePermissions': 'Configure as permissões de notificação para receber alertas',
@@ -3327,6 +3349,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.settings': 'Settings',
     'common.help': 'Help',
     'common.logout': 'Logout',
+    'common.language': 'Language',
     'common.login': 'Login',
     'common.signup': 'Sign up',
     'common.copy': 'Copy',
@@ -3825,6 +3848,7 @@ const translations: Record<Language, Record<string, string>> = {
     'profile.support': 'Support',
     'profile.logoutSuccess': 'Successfully logged out!',
     'profile.logoutError': 'Error logging out',
+    'profile.devices': 'Devices & Apps',
 
     'profile.unlimitedAccess': 'Unlimited Access',
     'profile.createProfile': 'Create Profile',

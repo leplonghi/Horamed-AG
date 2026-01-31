@@ -79,7 +79,7 @@ export default function WeeklyCalendar() {
             <div className="flex items-center gap-3">
               <img src={logo} alt="HoraMed" className="h-12 w-auto drop-shadow-md" />
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Calendário Semanal</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t('calendar.weeklyTitle')}</h1>
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Calendar className="h-3 w-3" />
                   {format(currentWeekStart, "d MMM", { locale: dateLocale })} - {format(endOfWeek(currentWeekStart, { weekStartsOn: 0 }), "d MMM yyyy", { locale: dateLocale })}
@@ -111,7 +111,7 @@ export default function WeeklyCalendar() {
             <Card className="p-5 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">Adesao</p>
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide">{t('stats.adherence')}</p>
                   <TrendingUp className="h-5 w-5 text-primary" />
                 </div>
                 <p className="text-3xl font-bold text-foreground">{weeklyAdherence}%</p>
@@ -127,33 +127,33 @@ export default function WeeklyCalendar() {
             <Card className="p-5 bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-success uppercase tracking-wide">Tomadas</p>
+                  <p className="text-xs font-semibold text-success uppercase tracking-wide">{t('stats.taken')}</p>
                   <CheckCircle2 className="h-5 w-5 text-success" />
                 </div>
                 <p className="text-3xl font-bold text-foreground">{takenDoses}</p>
-                <p className="text-xs text-muted-foreground">de {totalWeekDoses} doses</p>
+                <p className="text-xs text-muted-foreground">de {totalWeekDoses} {t('medications.doses')}</p>
               </div>
             </Card>
 
             <Card className="p-5 bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-destructive uppercase tracking-wide">Esquecidas</p>
+                  <p className="text-xs font-semibold text-destructive uppercase tracking-wide">{t('stats.missed')}</p>
                   <XCircle className="h-5 w-5 text-destructive" />
                 </div>
                 <p className="text-3xl font-bold text-foreground">{missedDoses}</p>
-                <p className="text-xs text-muted-foreground">requer atencao</p>
+                <p className="text-xs text-muted-foreground">{t('stats.requiresAttention')}</p>
               </div>
             </Card>
 
             <Card className="p-5 bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-lg hover:shadow-xl transition-all hover:scale-105">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-warning uppercase tracking-wide">Puladas</p>
+                  <p className="text-xs font-semibold text-warning uppercase tracking-wide">{t('stats.skipped')}</p>
                   <SkipForward className="h-5 w-5 text-warning" />
                 </div>
                 <p className="text-3xl font-bold text-foreground">{skippedDoses}</p>
-                <p className="text-xs text-muted-foreground">intencionalmente</p>
+                <p className="text-xs text-muted-foreground">{t('stats.intentionally')}</p>
               </div>
             </Card>
           </div>
@@ -165,26 +165,26 @@ export default function WeeklyCalendar() {
                   <Pill className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-foreground">Legenda do Calendario</h3>
-                  <p className="text-xs text-muted-foreground">Status das medicacoes</p>
+                  <h3 className="text-base font-bold text-foreground">{t('calendar.legend')}</h3>
+                  <p className="text-xs text-muted-foreground">{t('calendar.medicationStatus')}</p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-3">
                 <Badge variant="outline" className="bg-success/10 border-success/30 px-3 py-1.5 shadow-sm">
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-success" />
-                  <span className="text-success font-medium">Tomado</span>
+                  <span className="text-success font-medium">{t('status.taken')}</span>
                 </Badge>
                 <Badge variant="outline" className="bg-destructive/10 border-destructive/30 px-3 py-1.5 shadow-sm">
                   <XCircle className="h-3.5 w-3.5 mr-1.5 text-destructive" />
-                  <span className="text-destructive font-medium">Esquecido</span>
+                  <span className="text-destructive font-medium">{t('status.missed')}</span>
                 </Badge>
                 <Badge variant="outline" className="bg-warning/10 border-warning/30 px-3 py-1.5 shadow-sm">
                   <SkipForward className="h-3.5 w-3.5 mr-1.5 text-warning" />
-                  <span className="text-warning font-medium">Pulado</span>
+                  <span className="text-warning font-medium">{t('status.skipped')}</span>
                 </Badge>
                 <Badge variant="outline" className="bg-primary/10 border-primary/30 px-3 py-1.5 shadow-sm">
                   <Circle className="h-3.5 w-3.5 mr-1.5 text-primary" />
-                  <span className="text-primary font-medium">Agendado</span>
+                  <span className="text-primary font-medium">{t('status.scheduled')}</span>
                 </Badge>
               </div>
             </div>
@@ -203,8 +203,8 @@ export default function WeeklyCalendar() {
                 <Card
                   key={day.toISOString()}
                   className={`p-4 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1 ${isToday
-                      ? "border-primary border-2 bg-gradient-to-br from-primary/10 to-primary/5 ring-2 ring-primary/20"
-                      : "border-border hover:border-primary/50"
+                    ? "border-primary border-2 bg-gradient-to-br from-primary/10 to-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-primary/50"
                     }`}
                 >
                   <div className="space-y-3">
@@ -218,7 +218,7 @@ export default function WeeklyCalendar() {
                       </div>
                       {isToday && (
                         <Badge variant="outline" className="bg-primary/10 border-primary/30 text-[10px]">
-                          Hoje
+                          {t('common.today')}
                         </Badge>
                       )}
 
@@ -246,7 +246,7 @@ export default function WeeklyCalendar() {
                     <div className="space-y-2">
                       {dayDoses.length === 0 ? (
                         <div className="text-center py-4 px-2 bg-muted/50 rounded-lg">
-                          <p className="text-xs text-muted-foreground">Sem doses</p>
+                          <p className="text-xs text-muted-foreground">{t('calendar.noDoses')}</p>
                         </div>
                       ) : (
                         dayDoses.map((dose) => (
@@ -254,12 +254,12 @@ export default function WeeklyCalendar() {
                             key={dose.id}
                             onClick={() => handleDoseClick(dose.id, dose.medicationName, dose.itemId)}
                             className={`w-full p-2.5 rounded-lg border text-left transition-all hover:scale-105 hover:shadow-md group ${dose.status === "taken"
-                                ? "bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-sm"
-                                : dose.status === "missed"
-                                  ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-sm"
-                                  : dose.status === "skipped"
-                                    ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-sm"
-                                    : "bg-gradient-to-br from-primary/5 to-card border-primary/30 shadow-sm"
+                              ? "bg-gradient-to-br from-success/10 to-success/5 border-success/30 shadow-sm"
+                              : dose.status === "missed"
+                                ? "bg-gradient-to-br from-destructive/10 to-destructive/5 border-destructive/30 shadow-sm"
+                                : dose.status === "skipped"
+                                  ? "bg-gradient-to-br from-warning/10 to-warning/5 border-warning/30 shadow-sm"
+                                  : "bg-gradient-to-br from-primary/5 to-card border-primary/30 shadow-sm"
                               }`}
                           >
                             <div className="flex items-start justify-between gap-2">

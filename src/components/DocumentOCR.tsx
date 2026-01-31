@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { convertPDFToImages, isPDF } from "@/lib/pdfProcessor";
 import { Progress } from "@/components/ui/progress";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface OCRResult {
   title: string;
   issued_at?: string;
@@ -27,6 +28,7 @@ interface DocumentOCRProps {
 }
 
 export default function DocumentOCR({ onResult }: DocumentOCRProps) {
+  const { t } = useTranslation();
   const [preview, setPreview] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -267,7 +269,7 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
             ) : (
               <img
                 src={preview}
-                alt="Preview do documento"
+                alt={t("alt.documentPreview")}
                 className="w-full h-auto max-h-64 object-contain bg-muted"
               />
             )}

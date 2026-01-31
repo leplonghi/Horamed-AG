@@ -13,7 +13,10 @@ import VoiceControlButton from "./VoiceControlButton";
 import logo from "@/assets/logo_HoraMed.png";
 import { useAuth, fetchDocument } from "@/integrations/firebase";
 
+import { useTranslation } from "@/contexts/LanguageContext";
+
 function Header() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>("");
@@ -88,7 +91,7 @@ function Header() {
             {/* Account Settings Link (Avatar) - Hidden on mobile to avoid redundancy with ProfileSelector */}
             <Link to="/perfil" className="hidden sm:block shrink-0">
               <Avatar className="h-8 w-8 md:h-9 md:w-9 ring-1 ring-border hover-scale cursor-pointer">
-                <AvatarImage src={avatarUrl || undefined} alt="Avatar" />
+                <AvatarImage src={avatarUrl || undefined} alt={t("alt.avatar")} />
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
                   {userEmail ? getInitials(userEmail) : <User className="h-4 w-4" />}
                 </AvatarFallback>

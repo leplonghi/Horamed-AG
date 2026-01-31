@@ -1,0 +1,312 @@
+{
+    "name": "HoraMed WhatsApp Workflow",
+    "nodes": [
+        {
+            "parameters": {
+                "path": "whatsapp-webhook",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "id": "webhook-trigger",
+            "name": "Webhook (HoraMed Backend)"
+        },
+        {
+            "parameters": {
+                "path": "whatsapp-incoming",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                250
+            ],
+            "id": "whatsapp-message-trigger",
+            "name": "Webhook (WhatsApp Incoming)"
+        },
+        {
+            "parameters": {
+                "jsCode": "const input = $input.first().json.body;\n\n// Normalize input from both sources\nconst eventType = input.event_type || 'user_message';\nconst userId = input.user_id || input.from;\nconst payload = input.payload || input.message?.text || '';\n\nreturn [{\n  json: {\n    eventType,\n    userId,\n    payload,\n    timestamp: new Date().toISOString(),\n    originalInput: input\n  }\n}];"
+            },
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                250,
+                120
+            ],
+            "id": "normalize-input",
+            "name": "Normalize Input"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.eventType }}",
+                            "operation": "contains",
+                            "value2": "medication_"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                500,
+                0
+            ],
+            "id": "is-system-event",
+            "name": "Is System Event?"
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.eventType }}",
+                            "value2": "user_message"
+                        }
+                    ]
+                }
+            },
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                500,
+                250
+            ],
+            "id": "is-user-message",
+            "name": "Is User Message?"
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{ $json.payload }}",
+                "rules": {
+                    "rules": [
+                        {
+                            "value2": "1",
+                            "output": 0
+                        },
+                        {
+                            "value2": "2",
+                            "output": 1
+                        },
+                        {
+                            "value2": "relatorio",
+                            "output": 2
+                        },
+                        {
+                            "value2": "proximo",
+                            "output": 3
+                        },
+                        {
+                            "value2": "hoje",
+                            "output": 4
+                        },
+                        {
+                            "value2": "ajuda",
+                            "output": 5
+                        }
+                    ]
+                },
+                "fallbackOutput": 6
+            },
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 3,
+            "position": [
+                750,
+                250
+            ],
+            "id": "command-switch",
+            "name": "Router de Comandos"
+        },
+        {
+            "parameters": {
+                "content": "HoraMed 💊\nEstá na hora de tomar seu medicamento:\n\n• Remédio: {{ $json.originalInput.medication_name }}\n• Dose: {{ $json.originalInput.dosage }}\n\nResponda:\n1️⃣ Já tomei\n2️⃣ Lembrar mais tarde"
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                750,
+                -100
+            ],
+            "id": "format-reminder",
+            "name": "Format Reminder"
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1.6,
+            "position": [
+                1000,
+                600
+            ],
+            "id": "ai-agent",
+            "name": "AI Agent (Natural Language)"
+        },
+        {
+            "parameters": {
+                "content": "Perfeito ✅ Registro feito. Continue cuidando da sua saúde 💙"
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                100
+            ],
+            "id": "confirm-medication-msg",
+            "name": "Msg: Confirmacao"
+        },
+        {
+            "parameters": {
+                "content": "Ok! Lembraremos você novamente em 15 minutos."
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                200
+            ],
+            "id": "snooze-msg",
+            "name": "Msg: Adiar"
+        },
+        {
+            "parameters": {
+                "content": "Comandos disponíveis:\n1 - Já tomei\n2 - Lembrar mais tarde\nrelatorio - Ver resumo semanal\nproximo - Próximo medicamento\nhoje - Lista do dia"
+            },
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                500
+            ],
+            "id": "help-msg",
+            "name": "Msg: Ajuda"
+        }
+    ],
+    "connections": {
+        "Webhook (HoraMed Backend)": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Webhook (WhatsApp Incoming)": {
+            "main": [
+                [
+                    {
+                        "node": "Normalize Input",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Normalize Input": {
+            "main": [
+                [
+                    {
+                        "node": "Is System Event?",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "Is User Message?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is System Event?": {
+            "main": [
+                [
+                    {
+                        "node": "Format Reminder",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Is User Message?": {
+            "main": [
+                [
+                    {
+                        "node": "Router de Comandos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Router de Comandos": {
+            "main": [
+                [
+                    {
+                        "node": "Msg: Confirmacao",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Msg: Adiar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "ai-agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "ai-agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "ai-agent",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Msg: Ajuda",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "AI Agent (Natural Language)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

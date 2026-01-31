@@ -233,17 +233,17 @@ export default function AddMedicationWizard() {
           {step === 0 && (
             <div className="space-y-6">
               <div className="text-center space-y-2">
-                <h1 className="text-2xl font-bold">Adicionar Medicamento</h1>
-                <p className="text-muted-foreground">Como você quer adicionar?</p>
+                <h1 className="text-2xl font-bold">{t('meds.addMedication')}</h1>
+                <p className="text-muted-foreground">{t('wizard.chooseMethod')}</p>
               </div>
 
               {isProcessingOCR ? (
                 <Card className="p-8">
                   <div className="flex flex-col items-center gap-4">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                    <p className="text-muted-foreground">Processando imagem...</p>
+                    <p className="text-muted-foreground">{t('wizard.analyzingImage')}</p>
                     {imagePreview && (
-                      <img src={imagePreview} alt="Preview" className="max-h-32 rounded-lg opacity-50" />
+                      <img src={imagePreview} alt={t("alt.preview")} className="max-h-32 rounded-lg opacity-50" />
                     )}
                   </div>
                 </Card>
@@ -258,8 +258,8 @@ export default function AddMedicationWizard() {
                         <Sparkles className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold">Digitar manualmente</h3>
-                        <p className="text-sm text-muted-foreground">Preencha os dados do medicamento</p>
+                        <h3 className="font-semibold">{t('wizard.typeManually')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('wizard.typeManuallyDesc')}</p>
                       </div>
                     </div>
                   </Card>
@@ -273,8 +273,8 @@ export default function AddMedicationWizard() {
                         <Camera className="h-6 w-6 text-blue-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold">Escanear receita</h3>
-                        <p className="text-sm text-muted-foreground">Tire foto e extraímos os dados</p>
+                        <h3 className="font-semibold">{t('meds.scanPrescription')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('wizard.scanDesc')}</p>
                       </div>
                       {!hasFeature('ocr') && (
                         <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Premium</span>
@@ -291,8 +291,8 @@ export default function AddMedicationWizard() {
                         <Image className="h-6 w-6 text-purple-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold">Importar da galeria</h3>
-                        <p className="text-sm text-muted-foreground">Use uma foto já existente</p>
+                        <h3 className="font-semibold">{t('wizard.uploadDesc')}</h3>
+                        <p className="text-sm text-muted-foreground">{t('wizard.galleryImportDesc')}</p>
                       </div>
                       {!hasFeature('ocr') && (
                         <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded-full">Premium</span>
@@ -303,7 +303,7 @@ export default function AddMedicationWizard() {
               )}
 
               <Button variant="ghost" className="w-full" onClick={() => navigate(-1)}>
-                Cancelar
+                {t('common.cancel')}
               </Button>
             </div>
           )}
@@ -336,14 +336,14 @@ export default function AddMedicationWizard() {
               <Card>
                 <CardHeader>
                   <CardTitle>
-                    {step === 1 && "Informações do Item"}
-                    {step === 2 && "Horários"}
-                    {step === 3 && "Configurações Adicionais"}
+                    {step === 1 && t('wizard.step1')}
+                    {step === 2 && t('wizard.step2')}
+                    {step === 3 && t('wizard.step3')}
                   </CardTitle>
                   <CardDescription>
-                    {step === 1 && "Passo 1 de 3 - Remédio, suplemento ou vitamina"}
-                    {step === 2 && "Passo 2 de 3"}
-                    {step === 3 && "Passo 3 de 3"}
+                    {step === 1 && t('wizard.step1Desc')}
+                    {step === 2 && t('wizard.step2Desc')}
+                    {step === 3 && t('wizard.step3Desc')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -351,7 +351,7 @@ export default function AddMedicationWizard() {
                   {step === 1 && (
                     <>
                       <div className="space-y-2">
-                        <Label htmlFor="name">Nome do Medicamento</Label>
+                        <Label htmlFor="name">{t('wizard.medicationName')}</Label>
                         <Popover open={openCombobox} onOpenChange={setOpenCombobox}>
                           <PopoverTrigger asChild>
                             <Button
@@ -361,14 +361,14 @@ export default function AddMedicationWizard() {
                               className="w-full justify-between h-auto min-h-[40px] text-left font-normal"
                             >
                               <span className={cn("truncate", !name && "text-muted-foreground")}>
-                                {name || "Digite ou selecione um medicamento..."}
+                                {name || t('wizard.searchMedication')}
                               </span>
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-full p-0 bg-background z-50" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
-                                placeholder="Buscar medicamento..."
+                                placeholder={t('wizard.searchMedication')}
                                 value={name}
                                 onValueChange={setName}
                               />
@@ -413,7 +413,7 @@ export default function AddMedicationWizard() {
                           </PopoverContent>
                         </Popover>
                         <p className="text-xs text-muted-foreground">
-                          💊 Selecione da lista ou digite o nome do seu medicamento
+                          💊 {t('wizard.typeAtLeast2')}
                         </p>
                       </div>
                       <div className="space-y-2">
@@ -427,8 +427,7 @@ export default function AddMedicationWizard() {
                       </div>
                       <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
                         <p className="text-sm text-blue-700 dark:text-blue-300">
-                          💡 <strong>Dica:</strong> Você pode escanear uma receita para preencher
-                          automático
+                          💡 <strong>{t('wizard.tip')}:</strong> {t('wizard.scanDesc')}
                         </p>
                         <Button
                           variant="outline"
@@ -437,7 +436,7 @@ export default function AddMedicationWizard() {
                           onClick={() => navigate("/scan")}
                         >
                           <Camera className="h-4 w-4 mr-2" />
-                          Escanear Receita
+                          {t('meds.scanPrescription')}
                         </Button>
                       </div>
                     </>
@@ -447,7 +446,7 @@ export default function AddMedicationWizard() {
                   {step === 2 && (
                     <>
                       <div className="space-y-2">
-                        <Label>Quando você toma?</Label>
+                        <Label>{t('wizard.whenToTake')}</Label>
                         <RadioGroup value={schedulePreset} onValueChange={(v) => setSchedulePreset(v as SchedulePreset)}>
                           {Object.entries(presetSchedules).map(([key, preset]) => (
                             <div
@@ -466,7 +465,7 @@ export default function AddMedicationWizard() {
 
                       {schedulePreset === "custom" && (
                         <div className="space-y-2">
-                          <Label>Horários personalizados</Label>
+                          <Label>{t('wizard.customTimesTitle')}</Label>
                           {customTimes.map((time, idx) => (
                             <div key={idx} className="flex gap-2">
                               <Input
@@ -527,7 +526,7 @@ export default function AddMedicationWizard() {
                                 <Input
                                   id="stock"
                                   type="number"
-                                  placeholder="Ex: 30"
+                                  placeholder={t("placeholder.quantity")}
                                   value={stockTotal}
                                   onChange={(e) => setStockTotal(e.target.value)}
                                 />

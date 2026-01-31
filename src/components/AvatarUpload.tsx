@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Camera, User } from "lucide-react";
 import { toast } from "sonner";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface AvatarUploadProps {
   avatarUrl: string | null;
   userEmail: string;
@@ -14,6 +15,7 @@ interface AvatarUploadProps {
 }
 
 export default function AvatarUpload({ avatarUrl, userEmail, onUploadComplete }: AvatarUploadProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [uploading, setUploading] = useState(false);
   const [displayUrl, setDisplayUrl] = useState<string | null>(avatarUrl);
@@ -95,7 +97,7 @@ export default function AvatarUpload({ avatarUrl, userEmail, onUploadComplete }:
     <div className="flex flex-col items-center gap-4">
       <div className="relative">
         <Avatar className="h-24 w-24">
-          <AvatarImage src={displayUrl || undefined} alt="Avatar" />
+          <AvatarImage src={displayUrl || undefined} alt={t("alt.avatar")} />
           <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
             {userEmail ? getInitials(userEmail) : <User className="h-8 w-8" />}
           </AvatarFallback>

@@ -10,7 +10,9 @@ import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useToast } from '@/hooks/use-toast';
 import { QRCodeSVG } from 'qrcode.react';
 
+import { useTranslation } from "@/contexts/LanguageContext";
 export default function ConsultationCardGenerator() {
+  const { t } = useTranslation();
   const { profiles } = useUserProfiles();
   const { loading, createCard } = useConsultationCard();
   const { toast } = useToast();
@@ -67,7 +69,7 @@ export default function ConsultationCardGenerator() {
             <Label>Perfil</Label>
             <Select value={selectedProfile} onValueChange={setSelectedProfile}>
               <SelectTrigger>
-                <SelectValue placeholder="Meu perfil principal" />
+                <SelectValue placeholder={t("placeholder.profileName")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Meu perfil principal</SelectItem>

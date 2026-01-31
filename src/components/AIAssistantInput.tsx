@@ -6,12 +6,14 @@ import { motion } from "framer-motion";
 import { useHealthAgent } from "@/hooks/useHealthAgent";
 import UpgradeModal from "@/components/UpgradeModal";
 
+import { useTranslation } from "@/contexts/LanguageContext";
 interface AIAssistantInputProps {
   onResponse?: (response: string) => void;
   onUserMessage?: (message: string) => void;
 }
 
 export default function AIAssistantInput({ onResponse, onUserMessage }: AIAssistantInputProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const { processQuery, isProcessing } = useHealthAgent();
@@ -65,7 +67,7 @@ export default function AIAssistantInput({ onResponse, onUserMessage }: AIAssist
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Como posso ajudar? (ex.: organize meus horários de medicamentos)"
+                  placeholder={t("placeholder.aiQuery")}
                   className="flex-1 bg-background"
                   disabled={isProcessing}
                 />

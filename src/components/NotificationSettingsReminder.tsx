@@ -37,7 +37,7 @@ export function NotificationSettingsReminder() {
     try {
       // First check local storage for speed
       const stored = localStorage.getItem(STORAGE_KEY);
-      let localState: ReminderState | null = stored ? JSON.parse(stored) : null;
+      const localState: ReminderState | null = stored ? JSON.parse(stored) : null;
 
       // If locally configured, don't show (failsafe)
       if (localState?.configured) return;

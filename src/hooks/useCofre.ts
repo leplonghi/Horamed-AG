@@ -75,7 +75,7 @@ export function useDocumentos(filters: ListDocumentsFilters = {}) {
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
 
-      let constraints = [];
+      const constraints = [];
       if (filters.profileId) constraints.push(where("profileId", "==", filters.profileId));
 
       // Category handling (might need to fetch category ID first if filtering by slug)

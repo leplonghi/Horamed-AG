@@ -81,7 +81,7 @@ function VitalCard({
   min,
   max
 }: VitalCardProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const TrendIcon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
 
@@ -103,7 +103,7 @@ function VitalCard({
         <div className="flex items-end justify-between">
           <div>
             <p className="text-xs text-muted-foreground mb-1">
-              {language === 'pt' ? 'Último registro' : 'Last reading'}
+              {t('vitals.lastReading')}
             </p>
             {currentValue ? (
               <p className="text-2xl font-bold text-primary">
@@ -111,7 +111,7 @@ function VitalCard({
               </p>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                {language === 'pt' ? 'Não registrado' : 'Not recorded'}
+                {t('vitals.notRecorded')}
               </p>
             )}
           </div>
@@ -134,7 +134,7 @@ function VitalCard({
         {/* Input for new value */}
         <div className="pt-2 border-t">
           <Label htmlFor={inputName} className="text-xs text-muted-foreground">
-            {language === 'pt' ? 'Novo registro' : 'New reading'}
+            {t('vitals.newReading')}
           </Label>
           <Input
             id={inputName}
@@ -242,9 +242,7 @@ export default function SinaisVitais() {
       });
 
       if (!hasAnyValue) {
-        throw new Error(language === 'pt'
-          ? "Preencha pelo menos um campo"
-          : "Fill at least one field");
+        throw new Error(t('vitals.fillOne'));
       }
 
       const insertData: any = {
@@ -274,7 +272,7 @@ export default function SinaisVitais() {
       }
     },
     onSuccess: () => {
-      toast.success(language === 'pt' ? "Sinais vitais salvos!" : "Vital signs saved!");
+      toast.success(t('vitals.saved'));
       setFormData({
         systolic: "",
         diastolic: "",
@@ -319,10 +317,8 @@ export default function SinaisVitais() {
       <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6 page-container relative z-10">
         <PageHeroHeader
           icon={<Activity className="h-6 w-6 text-primary" />}
-          title={language === 'pt' ? "Sinais Vitais" : "Vital Signs"}
-          subtitle={language === 'pt'
-            ? "Acompanhe sua pressão, peso, glicemia e outros indicadores de saúde"
-            : "Track your blood pressure, weight, blood sugar, and other health indicators"}
+          title={t('vitals.title')}
+          subtitle={t('vitals.subtitle')}
         />
 
         {/* Quick Actions */}
@@ -334,7 +330,7 @@ export default function SinaisVitais() {
             className="gap-2"
           >
             <History className="h-4 w-4" />
-            {language === 'pt' ? 'Ver Histórico' : 'View History'}
+            {t('vitals.viewHistory')}
           </Button>
         </div>
 
@@ -351,13 +347,13 @@ export default function SinaisVitais() {
                 <div className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30">
                   <Heart className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
-                {language === 'pt' ? 'Pressão Arterial' : 'Blood Pressure'}
+                {t('vitals.bloodPressure')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">
-                  {language === 'pt' ? 'Último registro' : 'Last reading'}
+                  {t('vitals.lastReading')}
                 </p>
                 {latestVitals?.systolic && latestVitals?.diastolic ? (
                   <p className="text-2xl font-bold text-primary">
@@ -366,7 +362,7 @@ export default function SinaisVitais() {
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">
-                    {language === 'pt' ? 'Não registrado' : 'Not recorded'}
+                    {t('vitals.notRecorded')}
                   </p>
                 )}
               </div>
@@ -374,7 +370,7 @@ export default function SinaisVitais() {
               <div className="pt-2 border-t grid grid-cols-2 gap-2">
                 <div>
                   <Label htmlFor="systolic" className="text-xs text-muted-foreground">
-                    {language === 'pt' ? 'Sistólica' : 'Systolic'}
+                    {t('vitals.systolic')}
                   </Label>
                   <Input
                     id="systolic"
@@ -404,7 +400,7 @@ export default function SinaisVitais() {
 
           {/* Weight */}
           <VitalCard
-            title={language === 'pt' ? 'Peso' : 'Weight'}
+            title={t('vitals.weight')}
             icon={<Scale className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
             currentValue={latestVitals?.weightKg?.toString() || null}
             unit="kg"
@@ -422,7 +418,7 @@ export default function SinaisVitais() {
 
           {/* Heart Rate */}
           <VitalCard
-            title={language === 'pt' ? 'Frequência Cardíaca' : 'Heart Rate'}
+            title={t('vitals.heartRate')}
             icon={<Activity className="h-4 w-4 text-pink-600 dark:text-pink-400" />}
             currentValue={latestVitals?.heartRate?.toString() || null}
             unit="bpm"
@@ -439,7 +435,7 @@ export default function SinaisVitais() {
 
           {/* Blood Sugar */}
           <VitalCard
-            title={language === 'pt' ? 'Glicemia' : 'Blood Sugar'}
+            title={t('vitals.bloodSugar')}
             icon={<Droplet className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
             currentValue={latestVitals?.bloodSugar?.toString() || null}
             unit="mg/dL"
@@ -456,7 +452,7 @@ export default function SinaisVitais() {
 
           {/* Temperature */}
           <VitalCard
-            title={language === 'pt' ? 'Temperatura' : 'Temperature'}
+            title={t('vitals.temperature')}
             icon={<Thermometer className="h-4 w-4 text-orange-600 dark:text-orange-400" />}
             currentValue={latestVitals?.temperature?.toString() || null}
             unit="°C"
@@ -474,7 +470,7 @@ export default function SinaisVitais() {
 
           {/* Oxygen Saturation */}
           <VitalCard
-            title={language === 'pt' ? 'Saturação O₂' : 'Oxygen Saturation'}
+            title={t('vitals.oxygenSaturation')}
             icon={<Wind className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />}
             currentValue={latestVitals?.oxygenSaturation?.toString() || null}
             unit="%"
@@ -494,19 +490,15 @@ export default function SinaisVitais() {
         <Card className="border-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">
-              {language === 'pt' ? 'Observações' : 'Observations'}
+              {t('vitals.observations')}
             </CardTitle>
             <CardDescription>
-              {language === 'pt'
-                ? 'Anotações sobre como você está se sentindo'
-                : 'Notes about how you are feeling'}
+              {t('vitals.observationsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
-              placeholder={language === 'pt'
-                ? 'Ex: Medição após acordar, em jejum...'
-                : 'E.g.: Measurement after waking up, fasting...'}
+              placeholder={t('vitals.observationsPlaceholder')}
               value={formData.notes}
               onChange={(e) => updateField('notes')(e.target.value)}
               rows={3}
@@ -525,14 +517,12 @@ export default function SinaisVitais() {
           ) : (
             <Save className="h-5 w-5" />
           )}
-          {language === 'pt' ? 'Salvar Sinais Vitais' : 'Save Vital Signs'}
+          {t('vitals.save')}
         </Button>
 
         {/* Tip */}
         <p className="text-xs text-muted-foreground text-center leading-relaxed">
-          {language === 'pt'
-            ? '💡 Dica: Meça sua pressão sempre no mesmo horário e posição para resultados mais consistentes.'
-            : '💡 Tip: Measure your blood pressure at the same time and position for more consistent results.'}
+          {t('vitals.tip')}
         </p>
       </main>
 

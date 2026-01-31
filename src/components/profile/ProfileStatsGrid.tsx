@@ -77,7 +77,7 @@ export default function ProfileStatsGrid() {
 
       let streak = 0;
       const today = new Date();
-      let currentDate = new Date(today);
+      const currentDate = new Date(today);
 
       for (let i = 0; i < 30; i++) {
         const dateStr = currentDate.toISOString().split('T')[0];
