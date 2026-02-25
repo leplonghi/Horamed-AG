@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface VitalSign {
   id: string;
@@ -302,7 +303,7 @@ export default function SinaisVitais() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return null;
-    return format(new Date(dateStr), language === 'pt' ? "dd/MM/yyyy 'às' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale });
+    return format(safeDateParse(dateStr), language === 'pt' ? "dd/MM/yyyy 'às' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale });
   };
 
   const updateField = (field: string) => (value: string) => {
@@ -436,12 +437,12 @@ export default function SinaisVitais() {
           {/* Blood Sugar */}
           <VitalCard
             title={t('vitals.bloodSugar')}
-            icon={<Droplet className="h-4 w-4 text-purple-600 dark:text-purple-400" />}
+            icon={<Droplet className="h-4 w-4 text-teal-600 dark:text-teal-400" />}
             currentValue={latestVitals?.bloodSugar?.toString() || null}
             unit="mg/dL"
             lastDate={formatDate(latestVitals?.measuredAt || null)}
             trend={getTrend(latestVitals?.bloodSugar || null, previousVitals?.bloodSugar || null)}
-            colorClass="bg-purple-100 dark:bg-purple-900/30"
+            colorClass="bg-teal-100 dark:bg-teal-900/30"
             inputName="bloodSugar"
             inputValue={formData.bloodSugar}
             onInputChange={updateField('bloodSugar')}

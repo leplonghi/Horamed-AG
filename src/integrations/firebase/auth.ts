@@ -9,8 +9,17 @@ import {
     updateProfile,
     GoogleAuthProvider,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
+    setPersistence,
+    browserLocalPersistence,
 } from 'firebase/auth'
 import { auth } from './client'
+
+// Set persistence to local as early as possible
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.error('Failed to set auth persistence:', err);
+});
 
 export interface AuthState {
     user: User | null
@@ -19,7 +28,7 @@ export interface AuthState {
 }
 
 /**
- * Hook to get current auth state
+ * Hook to get current auth state and handle redirect results
  */
 export function useAuth(): AuthState {
     const [user, setUser] = useState<User | null>(null)
@@ -27,14 +36,27 @@ export function useAuth(): AuthState {
     const [error, setError] = useState<Error | null>(null)
 
     useEffect(() => {
+        // Handle redirect result (useful for mobile browsers where popup might fail)
+        getRedirectResult(auth).then((result) => {
+            if (result?.user) {
+                setUser(result.user)
+            }
+        }).catch((err) => {
+            console.error('Auth redirect error:', err);
+            // This is likely the "missing initial state" error seen in the user's screenshot
+            if (err.code === 'auth/missing-initial-state' || err.code === 'auth/internal-error') {
+                setError(err);
+            }
+        });
+
         const unsubscribe = onAuthStateChanged(
             auth,
             (user) => {
                 setUser(user)
                 setLoading(false)
             },
-            (error) => {
-                setError(error)
+            (err) => {
+                setError(err)
                 setLoading(false)
             }
         )
@@ -78,11 +100,25 @@ export async function signUp(email: string, password: string, displayName?: stri
 /**
  * Sign in with Google
  */
-export async function signInWithGoogle() {
+export async function signInWithGoogle(options?: { prompt?: string, login_hint?: string }) {
     try {
         const provider = new GoogleAuthProvider()
-        const result = await signInWithPopup(auth, provider)
-        return { user: result.user, error: null }
+        provider.setCustomParameters({
+            prompt: 'select_account',
+            ...options
+        })
+
+        // Detect if mobile browser
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (isMobile) {
+            // For mobile, redirect is usually more reliable than popup
+            await signInWithRedirect(auth, provider)
+            return { user: null, error: null } // User will be redirected
+        } else {
+            const result = await signInWithPopup(auth, provider)
+            return { user: result.user, error: null }
+        }
     } catch (error: any) {
         return { user: null, error }
     }
@@ -133,3 +169,4 @@ export async function getIdToken(): Promise<string | null> {
         return null
     }
 }
+

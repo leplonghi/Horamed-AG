@@ -16,11 +16,11 @@ export default function AIResponseCard({ response, onClose }: AIResponseCardProp
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
       >
-        <Card className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-2 border-purple-200/50 dark:border-purple-800/50">
+        <Card className="bg-gradient-to-r from-teal-50 to-pink-50 dark:from-teal-950/20 dark:to-pink-950/20 border-2 border-teal-200/50 dark:border-teal-800/50">
           <CardContent className="pt-6">
             <div className="flex gap-3">
               <div className="flex-shrink-0">
-                <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                <div className="p-2 bg-gradient-to-br from-teal-500 to-pink-500 rounded-lg">
                   <Bot className="h-5 w-5 text-white" />
                 </div>
               </div>

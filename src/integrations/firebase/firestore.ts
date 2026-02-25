@@ -222,6 +222,24 @@ export async function deleteDocument(
 }
 
 /**
+ * Delete documents matching a set of constraints
+ */
+export async function deleteDocuments(
+    collectionName: string,
+    constraints: QueryConstraint[]
+) {
+    try {
+        const q = query(collection(db, collectionName), ...constraints)
+        const snapshot = await getDocs(q)
+        const deletes = snapshot.docs.map((d) => deleteDoc(doc(db, collectionName, d.id)))
+        await Promise.all(deletes)
+        return { error: null }
+    } catch (error: any) {
+        return { error }
+    }
+}
+
+/**
  * Fetch a single document (one-time read)
  */
 export async function fetchDocument<T = DocumentData>(

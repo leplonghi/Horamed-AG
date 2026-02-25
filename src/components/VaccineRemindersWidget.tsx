@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export function VaccineRemindersWidget() {
   const { activeProfile } = useUserProfiles();
@@ -74,7 +75,7 @@ export function VaccineRemindersWidget() {
               )}
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(reminder.next_dose_date), dateFormat, { locale: dateLocale })}
+                {format(safeDateParse(reminder.next_dose_date), dateFormat, { locale: dateLocale })}
               </div>
             </div>
           </div>

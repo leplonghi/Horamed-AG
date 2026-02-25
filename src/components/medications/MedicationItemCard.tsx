@@ -9,7 +9,7 @@ export interface MedicationItem {
     name: string;
     doseText: string | null;
     category: string;
-    withFood: boolean;
+    withFood?: boolean;
     isActive: boolean;
     schedules: Array<{
         id: string;

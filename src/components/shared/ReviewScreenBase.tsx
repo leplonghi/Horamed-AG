@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export interface ExtractedInfo {
   provider?: string;
@@ -72,7 +73,7 @@ export default function ReviewScreenBase({
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return null;
     try {
-      return format(new Date(dateStr), dateFormat, { locale: dateLocale });
+      return format(safeDateParse(dateStr), dateFormat, { locale: dateLocale });
     } catch {
       return dateStr;
     }

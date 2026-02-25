@@ -19,6 +19,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/integrations/firebase/auth";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCollection, orderBy, limit } from "@/integrations/firebase";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface ClaraProactiveCardProps {
   overdueDoses?: number;
@@ -153,7 +154,7 @@ function ClaraProactiveCard({
 
     // Priority 4.5: Vitals feedback (Symbiosis)
     if (latestPressure) {
-      const pDate = new Date(latestPressure.recordedAt);
+      const pDate = safeDateParse(latestPressure.recordedAt);
       const daysSince = (new Date().getTime() - pDate.getTime()) / (1000 * 60 * 60 * 24);
 
       if (daysSince > 7) {

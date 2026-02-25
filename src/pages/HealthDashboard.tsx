@@ -3,6 +3,9 @@ import { auth, fetchCollection, where, orderBy, limit } from "@/integrations/fir
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import Header from "@/components/Header";
+import Navigation from "@/components/Navigation";
+import OceanBackground from "@/components/ui/OceanBackground";
+import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import HealthToolsGrid from "@/components/health/HealthToolsGrid";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,41 +16,39 @@ import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
-  LineChart,
   Pill,
   Target,
   Calendar,
   FileText,
   CheckCircle2,
-  Clock
+  Clock,
+  Heart,
+  Footprints,
+  Moon,
+  Gauge,
+  Plus,
+  Share2
 } from "lucide-react";
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse } from "@/lib/safeDateUtils";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import {
-  LineChart as RechartsLineChart,
-
-  Line,
+  Area,
+  Bar,
+  ComposedChart,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Bar,
-  ComposedChart,
-  Area
-} from 'recharts';
-
-interface ExamValue {
-  parametro: string;
-  valor: number;
-  data: string;
-  status: string;
-  referencia_min?: number;
-  referencia_max?: number;
-}
+  LineChart as RechartsLineChart,
+  Line
+} from "recharts";
 
 interface AdherenceData {
   data: string;
@@ -56,37 +57,38 @@ interface AdherenceData {
   tomadas: number;
 }
 
-interface CorrelationData {
-  data: string;
-  adesao: number;
-  peso?: number;
-  pressao?: number;
-  glicemia?: number;
+interface PeriodComparison {
+  mesAtual: { adesao: number; dosesTomadas: number; dosesTotal: number; medicamentos: number };
+  mesAnterior: { adesao: number; dosesTomadas: number; dosesTotal: number; medicamentos: number };
+  tendencias: { adesao: "up" | "down" | "stable"; doses: "up" | "down" | "stable"; medicamentos: "up" | "down" | "stable" };
+  variacoes: { adesao: number; doses: number; medicamentos: number };
 }
 
-interface PeriodComparison {
-  mesAtual: {
-    adesao: number;
-    dosesTomadas: number;
-    dosesTotal: number;
-    medicamentos: number;
-  };
-  mesAnterior: {
-    adesao: number;
-    dosesTomadas: number;
-    dosesTotal: number;
-    medicamentos: number;
-  };
-  tendencias: {
-    adesao: 'up' | 'down' | 'stable';
-    doses: 'up' | 'down' | 'stable';
-    medicamentos: 'up' | 'down' | 'stable';
-  };
-  variacoes: {
-    adesao: number;
-    doses: number;
-    medicamentos: number;
-  };
+// Circular Progress Component
+function CircularProgress({ value, size = 120, strokeWidth = 10, color = "hsl(var(--primary))" }: {
+  value: number; size?: number; strokeWidth?: number; color?: string;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (value / 100) * circumference;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="hsl(var(--muted))" strokeWidth={strokeWidth} opacity={0.3} />
+        <motion.circle cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          strokeDasharray={circumference} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-bold">{value}%</span>
+        <span className="text-[10px] text-muted-foreground">Progresso</span>
+      </div>
+    </div>
+  );
 }
 
 export default function HealthDashboard() {
@@ -94,17 +96,18 @@ export default function HealthDashboard() {
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
   const [loading, setLoading] = useState(true);
-  const [pesoData, setPesoData] = useState<any[]>([]);
-  const [pressaoData, setPressaoData] = useState<any[]>([]);
-  const [glicemiaData, setGlicemiaData] = useState<any[]>([]);
-  const [examesAlterados, setExamesAlterados] = useState<ExamValue[]>([]);
+  const [pesoData, setPesoData] = useState<{ data: string; peso: number }[]>([]);
+  const [pressaoData, setPressaoData] = useState<{ data: string; sistolica: number; diastolica: number }[]>([]);
+  const [glicemiaData, setGlicemiaData] = useState<{ data: string; glicemia: number }[]>([]);
   const [adherenceData, setAdherenceData] = useState<AdherenceData[]>([]);
-  const [correlationData, setCorrelationData] = useState<CorrelationData[]>([]);
   const [stats, setStats] = useState({
     medicamentosAtivos: 0,
     taxaAdesao: 0,
     proximosEventos: 0,
-    documentosVencendo: 0
+    documentosVencendo: 0,
+    lastWeight: null as number | null,
+    lastBP: null as string | null,
+    lastGlucose: null as number | null,
   });
   const [periodComparison, setPeriodComparison] = useState<PeriodComparison | null>(null);
 
@@ -121,294 +124,153 @@ export default function HealthDashboard() {
       const thirtyDaysAgo = subDays(new Date(), 30);
       const hoje = new Date().toISOString().split("T")[0];
 
-      // === ESTATÍSTICAS PRINCIPAIS ===
-
-      // Medicamentos ativos
-      // We need to filter by profile_id and is_active in memory or simple query
-      // Firestore doesn't support complex logical OR/AND combined easily without composite indexes for everything.
-      // We'll fetch all active items and filter in code for profile.
-      const { data: allActiveMeds } = await fetchCollection<any>(
+      // Active medications
+      const { data: allActiveMeds } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/medications`,
         [where("isActive", "==", true)]
       );
-
       const activeMeds = activeProfile
-        ? allActiveMeds?.filter(m => m.profileId === activeProfile.id)
+        ? allActiveMeds?.filter((m: Record<string, unknown>) => m.profileId === activeProfile.id)
         : allActiveMeds;
 
-      const activeMedsCount = activeMeds?.length || 0;
-
-      // Taxa de adesão nos últimos 30 dias
-      const { data: recentDoses } = await fetchCollection<any>(
+      // Adherence (30 days)
+      const { data: recentDoses } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/doses`,
         [where("dueAt", ">=", thirtyDaysAgo.toISOString())]
       );
-
-      // Need to join with items to filter by profile if needed.
-      // We will need to fetch all items to map itemID -> profileId
-      const { data: allItems } = await fetchCollection<any>(`users/${user.uid}/medications`);
-      const itemProfileMap = new Map(allItems?.map(i => [i.id, i.profileId]));
-
+      const { data: allItems } = await fetchCollection<Record<string, unknown>>(`users/${user.uid}/medications`);
+      const itemProfileMap = new Map(allItems?.map((i: Record<string, unknown>) => [i.id, i.profileId]));
       const filteredRecentDoses = activeProfile
-        ? recentDoses?.filter(d => itemProfileMap.get(d.itemId) === activeProfile.id)
+        ? recentDoses?.filter((d: Record<string, unknown>) => itemProfileMap.get(d.itemId as string) === activeProfile.id)
         : recentDoses;
 
       const totalDoses = filteredRecentDoses?.length || 0;
-      const takenDoses = filteredRecentDoses?.filter(d => d.status === "taken").length || 0;
+      const takenDoses = filteredRecentDoses?.filter((d: Record<string, unknown>) => d.status === "taken").length || 0;
       const adherenceRate = totalDoses > 0 ? Math.round((takenDoses / totalDoses) * 100) : 0;
 
-      // Próximos eventos (consultas + eventos de saúde)
-      // Appointments
-      const { data: upcomingConsultas } = await fetchCollection<any>(
+      // Upcoming events
+      const { data: upcomingConsultas } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/appointments`,
-        [where("date", ">=", hoje)] // Assuming field is 'date'
+        [where("date", ">=", hoje)]
       );
       const filteredConsultas = activeProfile
-        ? upcomingConsultas?.filter(c => c.profileId === activeProfile.id)
+        ? upcomingConsultas?.filter((c: Record<string, unknown>) => c.profileId === activeProfile.id)
         : upcomingConsultas;
 
-      // Health Events (assuming collection 'healthEvents')
-      const { data: upcomingEventos } = await fetchCollection<any>(
-        `users/${user.uid}/healthEvents`,
-        [where("dueDate", ">=", hoje), where("completedAt", "==", null)]
-      );
-      const filteredEventos = activeProfile
-        ? upcomingEventos?.filter(e => e.profileId === activeProfile.id)
-        : upcomingEventos;
-
-      const upcomingEventsCount = (filteredConsultas?.length || 0) + (filteredEventos?.length || 0);
-
-      // Documentos vencendo em 30 dias
+      // Expiring docs
       const em30Dias = new Date();
       em30Dias.setDate(em30Dias.getDate() + 30);
-      const em30DiasStr = em30Dias.toISOString().split("T")[0];
-
-      const { data: expiringDocs } = await fetchCollection<any>(
+      const { data: expiringDocs } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/documents`,
-        [
-          where("expiresAt", ">=", hoje),
-          where("expiresAt", "<=", em30DiasStr)
-        ]
+        [where("expiresAt", ">=", hoje), where("expiresAt", "<=", em30Dias.toISOString().split("T")[0])]
       );
-
       const filteredExpiringDocs = activeProfile
-        ? expiringDocs?.filter(d => d.profileId === activeProfile.id)
+        ? expiringDocs?.filter((d: Record<string, unknown>) => d.profileId === activeProfile.id)
         : expiringDocs;
 
-      setStats({
-        medicamentosAtivos: activeMedsCount,
-        taxaAdesao: adherenceRate,
-        proximosEventos: upcomingEventsCount,
-        documentosVencendo: filteredExpiringDocs?.length || 0
-      });
-
-      // === DADOS DE ADESÃO POR DIA (últimos 30 dias) ===
-      // Reuse `filteredRecentDoses` which is already last 30 days
-
-      const last30Days = Array.from({ length: 30 }, (_, i) => {
-        const date = subDays(new Date(), 29 - i);
-        return {
-          date: date,
-          dateStr: format(date, "yyyy-MM-dd")
-        };
-      });
-
-      const adherenceByDay: AdherenceData[] = last30Days.map(day => {
-        const dayStr = format(day.date, "yyyy-MM-dd");
-        const dayDoses = filteredRecentDoses?.filter(d => {
-          const doseDate = format(new Date(d.dueAt), "yyyy-MM-dd");
-          return doseDate === dayStr;
-        }) || [];
-
-        const total = dayDoses.length;
-        const taken = dayDoses.filter(d => d.status === "taken").length;
-        const rate = total > 0 ? Math.round((taken / total) * 100) : 0;
-
-        return {
-          data: format(day.date, "dd/MMM", { locale: ptBR }),
-          taxa: rate,
-          total: total,
-          tomadas: taken
-        };
-      });
-
-      setAdherenceData(adherenceByDay);
-
-      // Buscar sinais vitais dos últimos 3 meses
-      const { data: sinais } = await fetchCollection<any>(
+      // Vitals
+      const { data: sinais } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/vitals`,
-        [
-          where("date", ">=", threeMonthsAgo.toISOString()),
-          orderBy("date", "asc")
-        ]
+        [where("date", ">=", threeMonthsAgo.toISOString()), orderBy("date", "asc")]
       );
-
       const filteredSinais = activeProfile
-        ? sinais?.filter(s => s.profileId === activeProfile.id)
+        ? sinais?.filter((s: Record<string, unknown>) => s.profileId === activeProfile.id)
         : sinais;
 
-      // Processar dados de peso
-      const peso = filteredSinais
-        ?.filter(s => s.weightKg)
-        .map(s => ({
-          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
+      const peso = filteredSinais?.filter((s: Record<string, unknown>) => s.weightKg)
+        .map((s: Record<string, unknown>) => ({
+          data: format(safeDateParse(s.date as string), "dd/MMM", { locale: ptBR }),
           peso: parseFloat(String(s.weightKg))
         })) || [];
       setPesoData(peso);
 
-      // Processar dados de pressão
-      const pressao = filteredSinais
-        ?.filter(s => s.systolicBP)
-        .map(s => ({
-          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
-          sistolica: s.systolicBP,
-          diastolica: s.diastolicBP
+      const pressao = filteredSinais?.filter((s: Record<string, unknown>) => s.systolicBP)
+        .map((s: Record<string, unknown>) => ({
+          data: format(safeDateParse(s.date as string), "dd/MMM", { locale: ptBR }),
+          sistolica: s.systolicBP as number,
+          diastolica: s.diastolicBP as number
         })) || [];
       setPressaoData(pressao);
 
-      // Processar dados de glicemia
-      const glicemia = filteredSinais
-        ?.filter(s => s.glucose)
-        .map(s => ({
-          data: format(new Date(s.date), "dd/MMM", { locale: ptBR }),
-          glicemia: s.glucose
+      const glicemia = filteredSinais?.filter((s: Record<string, unknown>) => s.glucose)
+        .map((s: Record<string, unknown>) => ({
+          data: format(safeDateParse(s.date as string), "dd/MMM", { locale: ptBR }),
+          glicemia: s.glucose as number
         })) || [];
       setGlicemiaData(glicemia);
 
-      // Buscar exames com valores alterados
-      // Note: Assuming 'users/{uid}/exams' has a nested structure or subcollection 'results'
-      // Or 'users/{uid}/examResults'
-      // Previous Supabase joined exames_laboratoriais and valores_exames.
-      // Let's assume `users/{uid}/examResults` exists or we have to query differently.
-      // Simplification: We assume `users/{uid}/examResults` which contains individual parameter results, 
-      // or we just skip this if the migration of exams is complex. 
-      // Given the complexity of nested collections in NoSQL, assume `users/{uid}/examResults`.
-      // Filtering by status == 'alterado'.
+      // Latest vitals for grid
+      const lastVital = filteredSinais?.[filteredSinais.length - 1];
+      const lastWeight = lastVital?.weightKg ? parseFloat(String(lastVital.weightKg)) : null;
+      const lastBP = lastVital?.systolicBP ? `${lastVital.systolicBP}/${lastVital.diastolicBP}` : null;
+      const lastGlucose = lastVital?.glucose ? (lastVital.glucose as number) : null;
 
-      const { data: examesResults } = await fetchCollection<any>(
-        `users/${user.uid}/examResults`,
-        [
-          where("status", "==", "alterado"),
-          orderBy("date", "desc"),
-          limit(10)
-        ]
-      );
-
-      const filteredExames = activeProfile ? examesResults?.filter(e => e.profileId === activeProfile.id) : examesResults;
-
-      const alterados: ExamValue[] = (filteredExames || []).map(valor => ({
-        parametro: valor.parameter,
-        valor: valor.value,
-        data: valor.date,
-        status: valor.status,
-        referencia_min: valor.referenceMin,
-        referencia_max: valor.referenceMax
-      }));
-      setExamesAlterados(alterados);
-
-      // === CORRELAÇÃO ADESÃO x SINAIS VITAIS ===
-      const filteredVitalsLast30 = filteredSinais?.filter(s =>
-        new Date(s.date) >= thirtyDaysAgo
-      ) || [];
-
-      // Correlacionar com os dados de adesão já calculados
-      const correlations: CorrelationData[] = last30Days.map((day, index) => {
-        const dayStr = format(day.date, "yyyy-MM-dd");
-        const adesao = adherenceByDay[index]?.taxa || 0;
-
-        // Buscar sinais vitais do dia
-        const dayVitals = filteredVitalsLast30.filter(v => {
-          const vitalDate = format(new Date(v.date), "yyyy-MM-dd");
-          return vitalDate === dayStr;
-        });
-
-        // Use the latest vital of the day
-        const vital = dayVitals[dayVitals.length - 1];
-
-        return {
-          data: format(day.date, "dd/MMM", { locale: ptBR }),
-          adesao: adesao,
-          peso: vital?.weightKg ? parseFloat(String(vital.weightKg)) : undefined,
-          pressao: vital?.systolicBP || undefined,
-          glicemia: vital?.glucose || undefined
-        };
+      setStats({
+        medicamentosAtivos: activeMeds?.length || 0,
+        taxaAdesao: adherenceRate,
+        proximosEventos: filteredConsultas?.length || 0,
+        documentosVencendo: filteredExpiringDocs?.length || 0,
+        lastWeight,
+        lastBP,
+        lastGlucose,
       });
 
-      setCorrelationData(correlations);
+      // Adherence by day
+      const last30Days = Array.from({ length: 30 }, (_, i) => subDays(new Date(), 29 - i));
+      const adherenceByDay: AdherenceData[] = last30Days.map(day => {
+        const dayStr = format(day, "yyyy-MM-dd");
+        const dayDoses = filteredRecentDoses?.filter((d: Record<string, unknown>) =>
+          format(safeDateParse(d.dueAt as string), "yyyy-MM-dd") === dayStr
+        ) || [];
+        const total = dayDoses.length;
+        const taken = dayDoses.filter((d: Record<string, unknown>) => d.status === "taken").length;
+        return {
+          data: format(day, "dd/MMM", { locale: ptBR }),
+          taxa: total > 0 ? Math.round((taken / total) * 100) : 0,
+          total,
+          tomadas: taken
+        };
+      });
+      setAdherenceData(adherenceByDay);
 
-      // === COMPARAÇÃO DE PERÍODOS ===
+      // Period comparison
       const mesAtualInicio = startOfMonth(new Date());
       const mesAtualFim = endOfMonth(new Date());
       const mesAnteriorInicio = startOfMonth(subMonths(new Date(), 1));
       const mesAnteriorFim = endOfMonth(subMonths(new Date(), 1));
 
-      // Fetch doses for larger range to cover both months (optimization)
-      const { data: periodDoses } = await fetchCollection<any>(
+      const { data: periodDoses } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/doses`,
-        [
-          where("dueAt", ">=", mesAnteriorInicio.toISOString()),
-          where("dueAt", "<=", mesAtualFim.toISOString())
-        ]
+        [where("dueAt", ">=", mesAnteriorInicio.toISOString()), where("dueAt", "<=", mesAtualFim.toISOString())]
       );
-
       const filteredPeriodDoses = activeProfile
-        ? periodDoses?.filter(d => itemProfileMap.get(d.itemId) === activeProfile.id)
+        ? periodDoses?.filter((d: Record<string, unknown>) => itemProfileMap.get(d.itemId as string) === activeProfile.id)
         : periodDoses;
 
-      const dosesCurrentMonth = filteredPeriodDoses?.filter(d =>
-        new Date(d.dueAt) >= mesAtualInicio && new Date(d.dueAt) <= mesAtualFim
+      const dosesCurrentMonth = filteredPeriodDoses?.filter((d: Record<string, unknown>) =>
+        safeDateParse(d.dueAt as string) >= mesAtualInicio && safeDateParse(d.dueAt as string) <= mesAtualFim
+      ) || [];
+      const dosesPreviousMonth = filteredPeriodDoses?.filter((d: Record<string, unknown>) =>
+        safeDateParse(d.dueAt as string) >= mesAnteriorInicio && safeDateParse(d.dueAt as string) <= mesAnteriorFim
       ) || [];
 
-      const dosesPreviousMonth = filteredPeriodDoses?.filter(d =>
-        new Date(d.dueAt) >= mesAnteriorInicio && new Date(d.dueAt) <= mesAnteriorFim
-      ) || [];
+      const tc = dosesCurrentMonth.length;
+      const tkc = dosesCurrentMonth.filter((d: Record<string, unknown>) => d.status === "taken").length;
+      const tp = dosesPreviousMonth.length;
+      const tkp = dosesPreviousMonth.filter((d: Record<string, unknown>) => d.status === "taken").length;
+      const ac = tc > 0 ? Math.round((tkc / tc) * 100) : 0;
+      const ap = tp > 0 ? Math.round((tkp / tp) * 100) : 0;
+      const amc = activeMeds?.filter((m: Record<string, unknown>) => safeDateParse(m.createdAt as string) <= mesAtualFim).length || 0;
+      const amp = activeMeds?.filter((m: Record<string, unknown>) => safeDateParse(m.createdAt as string) <= mesAnteriorFim).length || 0;
 
-      const totalCurrentMonth = dosesCurrentMonth.length;
-      const takenCurrentMonth = dosesCurrentMonth.filter(d => d.status === "taken").length;
-      const adherenceCurrentMonth = totalCurrentMonth > 0 ? Math.round((takenCurrentMonth / totalCurrentMonth) * 100) : 0;
-
-      const totalPreviousMonth = dosesPreviousMonth.length;
-      const takenPreviousMonth = dosesPreviousMonth.filter(d => d.status === "taken").length;
-      const adherencePreviousMonth = totalPreviousMonth > 0 ? Math.round((takenPreviousMonth / totalPreviousMonth) * 100) : 0;
-
-      // Meds count snapshots (using created_at approximation)
-      const activeMedsCurrent = activeMeds?.filter(m => new Date(m.createdAt) <= mesAtualFim).length || 0;
-      const activeMedsPrevious = activeMeds?.filter(m => new Date(m.createdAt) <= mesAnteriorFim).length || 0;
-
-      // Calcular tendências e variações
-      const adesaoDiff = adherenceCurrentMonth - adherencePreviousMonth;
-      const dosesDiff = takenCurrentMonth - takenPreviousMonth;
-      const medsDiff = activeMedsCurrent - activeMedsPrevious;
-
-      const getTrend = (diff: number): 'up' | 'down' | 'stable' => {
-        if (diff > 2) return 'up';
-        if (diff < -2) return 'down';
-        return 'stable';
-      };
+      const getTrend = (diff: number): "up" | "down" | "stable" =>
+        diff > 2 ? "up" : diff < -2 ? "down" : "stable";
 
       setPeriodComparison({
-        mesAtual: {
-          adesao: adherenceCurrentMonth,
-          dosesTomadas: takenCurrentMonth,
-          dosesTotal: totalCurrentMonth,
-          medicamentos: activeMedsCurrent
-        },
-        mesAnterior: {
-          adesao: adherencePreviousMonth,
-          dosesTomadas: takenPreviousMonth,
-          dosesTotal: totalPreviousMonth,
-          medicamentos: activeMedsPrevious
-        },
-        tendencias: {
-          adesao: getTrend(adesaoDiff),
-          doses: getTrend(dosesDiff),
-          medicamentos: getTrend(medsDiff)
-        },
-        variacoes: {
-          adesao: adesaoDiff,
-          doses: dosesDiff,
-          medicamentos: medsDiff
-        }
+        mesAtual: { adesao: ac, dosesTomadas: tkc, dosesTotal: tc, medicamentos: amc },
+        mesAnterior: { adesao: ap, dosesTomadas: tkp, dosesTotal: tp, medicamentos: amp },
+        tendencias: { adesao: getTrend(ac - ap), doses: getTrend(tkc - tkp), medicamentos: getTrend(amc - amp) },
+        variacoes: { adesao: ac - ap, doses: tkc - tkp, medicamentos: amc - amp }
       });
 
     } catch (error) {
@@ -419,669 +281,375 @@ export default function HealthDashboard() {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.06 } }
+  };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 16 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+  };
+
   if (loading) {
     return (
-      <>
+      <div className="min-h-screen bg-background relative">
+        <OceanBackground variant="page" />
         <Header />
-        <div className="min-h-screen bg-background pt-20 pb-24 flex items-center justify-center">
+        <div className="flex items-center justify-center pt-40">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
         </div>
-      </>
+        <Navigation />
+      </div>
     );
   }
 
+  const vitalsGrid = [
+    {
+      icon: Heart, label: "Pressão", value: stats.lastBP || "—",
+      unit: "mmHg", color: "text-rose-500", bg: "bg-rose-500/10",
+      onClick: () => navigate("/sinais-vitais"),
+    },
+    {
+      icon: Gauge, label: "Glicemia", value: stats.lastGlucose ?? "—",
+      unit: "mg/dL", color: "text-amber-500", bg: "bg-amber-500/10",
+      onClick: () => navigate("/sinais-vitais"),
+    },
+    {
+      icon: Footprints, label: "Peso", value: stats.lastWeight ?? "—",
+      unit: "kg", color: "text-emerald-500", bg: "bg-emerald-500/10",
+      onClick: () => navigate("/sinais-vitais"),
+    },
+    {
+      icon: Moon, label: "Eventos", value: stats.proximosEventos,
+      unit: "agendados", color: "text-blue-500", bg: "bg-blue-500/10",
+      onClick: () => navigate("/consultas"),
+    },
+  ];
+
   return (
-    <>
+    <div className="min-h-screen bg-background relative">
+      <OceanBackground variant="page" />
       <Header />
-      <div className="min-h-screen bg-background pt-20 pb-24">
-        <div className="max-w-6xl mx-auto p-4 space-y-6">
 
-          {/* Header */}
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <TrendingUp className="h-8 w-8 text-primary" />
-              Dados & Insights
-            </h1>
-            <p className="text-muted-foreground">
-              Análise completa da sua saúde e correlação com adesão aos medicamentos
-            </p>
-          </div>
+      <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-5 page-container relative z-10">
+        {/* Hero Header */}
+        <PageHeroHeader
+          icon={<TrendingUp className="h-6 w-6 text-primary" />}
+          title="Saúde & Dados"
+          subtitle={format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
+        />
 
-          {/* Ferramentas de Saúde */}
-          <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">Ferramentas de Saúde</h2>
-            <HealthToolsGrid />
-          </div>
-
-          {/* Estatísticas Principais */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/medicamentos')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Pill className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold">{stats.medicamentosAtivos}</p>
-                    <p className="text-xs text-muted-foreground truncate">Medicamentos Ativos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/historico')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.taxaAdesao >= 80 ? 'bg-green-500/10' : stats.taxaAdesao >= 50 ? 'bg-yellow-500/10' : 'bg-red-500/10'
-                    }`}>
-                    <Target className={`h-5 w-5 ${stats.taxaAdesao >= 80 ? 'text-green-600' : stats.taxaAdesao >= 50 ? 'text-yellow-600' : 'text-red-600'
-                      }`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold">{stats.taxaAdesao}%</p>
-                    <p className="text-xs text-muted-foreground truncate">Progresso (30d)</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/consultas')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                    <Calendar className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold">{stats.proximosEventos}</p>
-                    <p className="text-xs text-muted-foreground truncate">Próximos Eventos</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="cursor-pointer hover:shadow-lg transition-all" onClick={() => navigate('/carteira')}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${stats.documentosVencendo > 0 ? 'bg-orange-500/10' : 'bg-gray-500/10'
-                    }`}>
-                    <FileText className={`h-5 w-5 ${stats.documentosVencendo > 0 ? 'text-orange-600' : 'text-gray-600'
-                      }`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-2xl font-bold">{stats.documentosVencendo}</p>
-                    <p className="text-xs text-muted-foreground truncate">Docs Vencendo</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Insights Automáticos */}
-          {stats.taxaAdesao < 50 && (
-            <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-red-900 dark:text-red-100 mb-1">
-                      Atenção: Progresso Baixo
-                    </h3>
-                    <p className="text-sm text-red-700 dark:text-red-200 mb-3">
-                      Seu progresso está em {stats.taxaAdesao}%. Manter a regularidade é essencial para o tratamento.
-                    </p>
-                    <Button size="sm" variant="destructive" onClick={() => navigate('/hoje')}>
-                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                      Ver Doses de Hoje
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {stats.documentosVencendo > 0 && (
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-orange-900 dark:text-orange-100 mb-1">
-                      {stats.documentosVencendo} Documento{stats.documentosVencendo > 1 ? 's' : ''} Vencendo em Breve
-                    </h3>
-                    <p className="text-sm text-orange-700 dark:text-orange-200 mb-3">
-                      Verifique seus documentos que estão próximos do vencimento.
-                    </p>
-                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700" onClick={() => navigate('/carteira')}>
-                      <FileText className="h-4 w-4 mr-1.5" />
-                      Abrir Carteira
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Comparação de Períodos */}
-          {periodComparison && (
-            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <LineChart className="h-5 w-5 text-blue-600" />
-                  Evolução Mensal
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Comparação: {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR })} vs {format(new Date(), "MMMM", { locale: ptBR })}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-4">
-                  {/* Taxa de Adesão */}
-                  <div className="bg-background rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">Progresso</span>
-                      {periodComparison.tendencias.adesao === 'up' && (
-                        <Badge variant="default" className="bg-green-500">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          +{periodComparison.variacoes.adesao}%
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.adesao === 'down' && (
-                        <Badge variant="destructive">
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                          {periodComparison.variacoes.adesao}%
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.adesao === 'stable' && (
-                        <Badge variant="secondary">
-                          Estável
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-foreground">
-                          {periodComparison.mesAtual.adesao}%
-                        </span>
-                        <span className="text-sm text-muted-foreground">atual</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Mês anterior: {periodComparison.mesAnterior.adesao}%
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Doses Tomadas */}
-                  <div className="bg-background rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">Doses Tomadas</span>
-                      {periodComparison.tendencias.doses === 'up' && (
-                        <Badge variant="default" className="bg-green-500">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          +{periodComparison.variacoes.doses}
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.doses === 'down' && (
-                        <Badge variant="destructive">
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                          {periodComparison.variacoes.doses}
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.doses === 'stable' && (
-                        <Badge variant="secondary">
-                          Estável
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-foreground">
-                          {periodComparison.mesAtual.dosesTomadas}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          / {periodComparison.mesAtual.dosesTotal}
-                        </span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Mês anterior: {periodComparison.mesAnterior.dosesTomadas} / {periodComparison.mesAnterior.dosesTotal}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Medicamentos */}
-                  <div className="bg-background rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">Medicamentos</span>
-                      {periodComparison.tendencias.medicamentos === 'up' && (
-                        <Badge variant="secondary">
-                          <TrendingUp className="h-3 w-3 mr-1" />
-                          +{periodComparison.variacoes.medicamentos}
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.medicamentos === 'down' && (
-                        <Badge variant="secondary">
-                          <TrendingDown className="h-3 w-3 mr-1" />
-                          {periodComparison.variacoes.medicamentos}
-                        </Badge>
-                      )}
-                      {periodComparison.tendencias.medicamentos === 'stable' && (
-                        <Badge variant="secondary">
-                          Estável
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-3xl font-bold text-foreground">
-                          {periodComparison.mesAtual.medicamentos}
-                        </span>
-                        <span className="text-sm text-muted-foreground">ativos</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Mês anterior: {periodComparison.mesAnterior.medicamentos}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Mensagem de incentivo */}
-                {periodComparison.tendencias.adesao === 'up' && (
-                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-800 dark:text-green-200 flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                      <span>Parabéns! Sua adesão melhorou {periodComparison.variacoes.adesao}% este mês. Continue assim!</span>
-                    </p>
-                  </div>
-                )}
-                {periodComparison.tendencias.adesao === 'down' && (
-                  <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950/20 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                      <span>Sua adesão caiu {Math.abs(periodComparison.variacoes.adesao)}% este mês. Vamos melhorar juntos!</span>
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Adesão ao Longo do Tempo */}
-          {adherenceData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5 text-primary" />
-                  Adesão aos Medicamentos (Últimos 30 dias)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={adherenceData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="data" />
-                    <YAxis yAxisId="left" label={{ value: 'Taxa (%)', angle: -90, position: 'insideLeft' }} />
-                    <YAxis yAxisId="right" orientation="right" label={{ value: 'Doses', angle: 90, position: 'insideRight' }} />
-                    <Tooltip />
-                    <Legend />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="taxa"
-                      fill="hsl(var(--primary))"
-                      fillOpacity={0.2}
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      name="Progresso (%)"
-                    />
-                    <Bar
-                      yAxisId="right"
-                      dataKey="tomadas"
-                      fill="#22c55e"
-                      name="Doses Tomadas"
-                      opacity={0.6}
-                    />
-                    <Bar
-                      yAxisId="right"
-                      dataKey="total"
-                      fill="#94a3b8"
-                      name="Total de Doses"
-                      opacity={0.3}
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Correlação: Adesão x Sinais Vitais */}
-          {correlationData.some(d => d.pressao || d.peso || d.glicemia) && (
-            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5 text-purple-600" />
-                  Correlação: Adesão x Saúde
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Veja como sua adesão aos medicamentos impacta seus sinais vitais ao longo do tempo
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {correlationData.some(d => d.pressao !== undefined) && (
+        {/* General Activity - Circular Progress Card */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show">
+          <Card className={cn(
+            "rounded-3xl border border-border/30 shadow-[var(--shadow-glass)]",
+            "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl overflow-hidden"
+          )}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-6">
+                <CircularProgress value={stats.taxaAdesao} />
+                <div className="flex-1 space-y-3">
                   <div>
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-red-500" />
-                      Adesão vs Pressão Arterial
-                    </h4>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart data={correlationData.filter(d => d.pressao !== undefined)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="data" />
-                        <YAxis yAxisId="left" label={{ value: 'Adesão (%)', angle: -90, position: 'insideLeft' }} />
-                        <YAxis yAxisId="right" orientation="right" label={{ value: 'Pressão', angle: 90, position: 'insideRight' }} />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="adesao"
-                          fill="hsl(var(--primary))"
-                          fillOpacity={0.3}
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={2}
-                          name="Adesão (%)"
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="pressao"
-                          stroke="#ef4444"
-                          strokeWidth={2}
-                          name="Pressão Sistólica"
-                          dot={{ r: 4 }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
+                    <h3 className="text-lg font-bold">Atividade Geral</h3>
+                    <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
                   </div>
-                )}
-
-                {correlationData.some(d => d.glicemia !== undefined) && (
-                  <div>
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-blue-500" />
-                      Adesão vs Glicemia
-                    </h4>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart data={correlationData.filter(d => d.glicemia !== undefined)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="data" />
-                        <YAxis yAxisId="left" label={{ value: 'Adesão (%)', angle: -90, position: 'insideLeft' }} />
-                        <YAxis yAxisId="right" orientation="right" label={{ value: 'Glicemia', angle: 90, position: 'insideRight' }} />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="adesao"
-                          fill="hsl(var(--primary))"
-                          fillOpacity={0.3}
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={2}
-                          name="Adesão (%)"
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="glicemia"
-                          stroke="#3b82f6"
-                          strokeWidth={2}
-                          name="Glicemia (mg/dL)"
-                          dot={{ r: 4 }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-
-                {correlationData.some(d => d.peso !== undefined) && (
-                  <div>
-                    <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      Adesão vs Peso
-                    </h4>
-                    <ResponsiveContainer width="100%" height={250}>
-                      <ComposedChart data={correlationData.filter(d => d.peso !== undefined)}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="data" />
-                        <YAxis yAxisId="left" label={{ value: 'Adesão (%)', angle: -90, position: 'insideLeft' }} />
-                        <YAxis yAxisId="right" orientation="right" label={{ value: 'Peso (kg)', angle: 90, position: 'insideRight' }} />
-                        <Tooltip />
-                        <Legend />
-                        <Area
-                          yAxisId="left"
-                          type="monotone"
-                          dataKey="adesao"
-                          fill="hsl(var(--primary))"
-                          fillOpacity={0.3}
-                          stroke="hsl(var(--primary))"
-                          strokeWidth={2}
-                          name="Adesão (%)"
-                        />
-                        <Line
-                          yAxisId="right"
-                          type="monotone"
-                          dataKey="peso"
-                          stroke="#22c55e"
-                          strokeWidth={2}
-                          name="Peso (kg)"
-                          dot={{ r: 4 }}
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Exames Alterados */}
-          {examesAlterados.length > 0 && (
-            <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <AlertCircle className="h-5 w-5" />
-                  Valores Alterados Recentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {examesAlterados.slice(0, 5).map((exame, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg">
-                      <div>
-                        <p className="font-medium">{exame.parametro}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(exame.data), "dd/MM/yyyy", { locale: ptBR })}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-orange-600">{exame.valor}</p>
-                        {(exame.referencia_min || exame.referencia_max) && (
-                          <p className="text-xs text-muted-foreground">
-                            Ref: {exame.referencia_min} - {exame.referencia_max}
-                          </p>
-                        )}
-                      </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-primary/5 rounded-xl p-2.5">
+                      <p className="text-lg font-bold">{stats.medicamentosAtivos}</p>
+                      <p className="text-[10px] text-muted-foreground">Medicamentos</p>
                     </div>
-                  ))}
+                    <div className="bg-emerald-500/5 rounded-xl p-2.5">
+                      <p className="text-lg font-bold">
+                        {adherenceData.reduce((s, d) => s + d.tomadas, 0)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Doses Tomadas</p>
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-          {/* Sinais Vitais Individuais */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Evolução dos Sinais Vitais</h2>
-              <Button variant="outline" size="sm" onClick={() => navigate('/perfil')}>
-                <Activity className="h-4 w-4 mr-1.5" />
-                Registrar Dados
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-
-            {/* Peso */}
-            {pesoData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Evolução do Peso
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <RechartsLineChart data={pesoData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="data" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="peso"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
+        {/* Vitals 2x2 Grid */}
+        <motion.div variants={containerVariants} initial="hidden" animate="show"
+          className="grid grid-cols-2 gap-3">
+          {vitalsGrid.map((vital) => (
+            <motion.div key={vital.label} variants={itemVariants}>
+              <Card onClick={vital.onClick}
+                className={cn(
+                  "rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] cursor-pointer",
+                  "bg-card/80 backdrop-blur-xl",
+                  "hover:shadow-[var(--shadow-glass-hover)] hover:scale-[1.02] transition-all"
+                )}>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className={cn("p-2.5 rounded-2xl", vital.bg)}>
+                    <vital.icon className={cn("h-5 w-5", vital.color)} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xl font-bold truncate">{vital.value}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {vital.label} · {vital.unit}
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
-            )}
+            </motion.div>
+          ))}
+        </motion.div>
 
-            {/* Pressão Arterial */}
-            {pressaoData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-red-500" />
-                    Pressão Arterial
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <RechartsLineChart data={pressaoData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="data" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="sistolica"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        name="Sistólica"
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="diastolica"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        name="Diastólica"
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
+        {/* Action Bar */}
+        <motion.div variants={itemVariants} initial="hidden" animate="show"
+          className="grid grid-cols-2 gap-3">
+          <Button onClick={() => navigate("/sinais-vitais")}
+            className="h-14 rounded-2xl gap-2 text-base shadow-lg">
+            <Plus className="h-5 w-5" /> Dados
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/relatorios")}
+            className="h-14 rounded-2xl gap-2 text-base border-border/50 bg-card/60 backdrop-blur-sm">
+            <Share2 className="h-5 w-5" /> Relatório
+          </Button>
+        </motion.div>
 
-            {/* Glicemia */}
-            {glicemiaData.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingDown className="h-5 w-5 text-blue-500" />
-                    Glicemia
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <RechartsLineChart data={glicemiaData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="data" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line
-                        type="monotone"
-                        dataKey="glicemia"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                      />
-                    </RechartsLineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+        {/* Health Tools */}
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+            Ferramentas de Saúde
+          </h2>
+          <HealthToolsGrid />
+        </div>
 
-          {/* Empty State */}
-          {pesoData.length === 0 && pressaoData.length === 0 && glicemiaData.length === 0 && adherenceData.length === 0 && (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="font-semibold mb-2">Comece a usar o app para ver insights</h3>
-                <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-                  À medida que você registra suas doses e sinais vitais, esta página mostrará
-                  correlações importantes entre sua adesão aos medicamentos e sua saúde.
+        {/* Alerts */}
+        {stats.taxaAdesao < 50 && (
+          <Card className="rounded-3xl border-rose-200/50 bg-rose-50/50 dark:bg-rose-950/20 backdrop-blur-sm">
+            <CardContent className="p-4 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-rose-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-rose-900 dark:text-rose-100 text-sm">
+                  Atenção: Progresso Baixo ({stats.taxaAdesao}%)
+                </h3>
+                <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
+                  Manter a regularidade é essencial para o tratamento.
                 </p>
-                <div className="flex gap-2 justify-center flex-wrap">
-                  <Button onClick={() => navigate('/hoje')}>
-                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                    Registrar Doses
-                  </Button>
-                  <Button variant="outline" onClick={() => navigate('/perfil')}>
-                    <Activity className="h-4 w-4 mr-1.5" />
-                    Adicionar Sinais Vitais
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Links Rápidos */}
-          <Card className="bg-gradient-to-br from-slate-50 to-gray-50 dark:from-slate-950/20 dark:to-gray-950/20">
-            <CardHeader>
-              <CardTitle className="text-lg">Explore Mais</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-3">
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate('/historico')}>
-                  <Clock className="h-5 w-5 text-primary" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Histórico</div>
-                    <div className="text-xs text-muted-foreground">Ver todas as doses</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate('/timeline')}>
-                  <LineChart className="h-5 w-5 text-primary" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Timeline</div>
-                    <div className="text-xs text-muted-foreground">Linha do tempo</div>
-                  </div>
-                </Button>
-                <Button variant="outline" className="h-auto py-4 flex-col gap-2" onClick={() => navigate('/relatorios')}>
-                  <FileText className="h-5 w-5 text-primary" />
-                  <div className="text-center">
-                    <div className="font-semibold text-sm">Relatórios</div>
-                    <div className="text-xs text-muted-foreground">Gerar PDF</div>
-                  </div>
+                <Button size="sm" variant="destructive" className="mt-2 rounded-xl"
+                  onClick={() => navigate("/hoje")}>
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Ver Doses de Hoje
                 </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
-    </>
+        )}
+
+        {stats.documentosVencendo > 0 && (
+          <Card className="rounded-3xl border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/20 backdrop-blur-sm">
+            <CardContent className="p-4 flex items-start gap-3">
+              <Clock className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-900 dark:text-amber-100 text-sm">
+                  {stats.documentosVencendo} Doc{stats.documentosVencendo > 1 ? "s" : ""} Vencendo
+                </h3>
+                <Button size="sm" className="mt-2 rounded-xl bg-amber-600 hover:bg-amber-700"
+                  onClick={() => navigate("/carteira")}>
+                  <FileText className="h-3.5 w-3.5 mr-1" /> Abrir Carteira
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Period Comparison */}
+        {periodComparison && (
+          <Card className={cn(
+            "rounded-3xl border border-border/30 shadow-[var(--shadow-glass)]",
+            "bg-gradient-to-br from-primary/5 to-card/70 backdrop-blur-xl"
+          )}>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Evolução Mensal
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR })} vs {format(new Date(), "MMMM", { locale: ptBR })}
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: "Progresso", cur: `${periodComparison.mesAtual.adesao}%`, prev: `${periodComparison.mesAnterior.adesao}%`, trend: periodComparison.tendencias.adesao, diff: periodComparison.variacoes.adesao, suffix: "%" },
+                  { label: "Doses", cur: String(periodComparison.mesAtual.dosesTomadas), prev: `/ ${periodComparison.mesAtual.dosesTotal}`, trend: periodComparison.tendencias.doses, diff: periodComparison.variacoes.doses, suffix: "" },
+                  { label: "Meds", cur: String(periodComparison.mesAtual.medicamentos), prev: "ativos", trend: periodComparison.tendencias.medicamentos, diff: periodComparison.variacoes.medicamentos, suffix: "" },
+                ].map((item) => (
+                  <div key={item.label} className="bg-background/60 rounded-2xl p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
+                      {item.trend === "up" && <Badge className="bg-emerald-500 text-[9px] px-1 py-0">↑{Math.abs(item.diff)}{item.suffix}</Badge>}
+                      {item.trend === "down" && <Badge variant="destructive" className="text-[9px] px-1 py-0">↓{Math.abs(item.diff)}{item.suffix}</Badge>}
+                      {item.trend === "stable" && <Badge variant="secondary" className="text-[9px] px-1 py-0">—</Badge>}
+                    </div>
+                    <p className="text-xl font-bold">{item.cur}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.prev}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Adherence Chart */}
+        {adherenceData.length > 0 && (
+          <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Target className="h-4 w-4 text-primary" />
+                Adesão (30 dias)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={220}>
+                <ComposedChart data={adherenceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="data" tick={{ fontSize: 10 }} interval={4} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 10 }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10 }} />
+                  <Tooltip contentStyle={{ borderRadius: 16, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
+                  <Area yAxisId="left" type="monotone" dataKey="taxa" fill="hsl(var(--primary))"
+                    fillOpacity={0.15} stroke="hsl(var(--primary))" strokeWidth={2} name="Progresso (%)" />
+                  <Bar yAxisId="right" dataKey="tomadas" fill="#22c55e" name="Tomadas" opacity={0.5} radius={[4, 4, 0, 0]} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Vitals Charts */}
+        {(pesoData.length > 0 || pressaoData.length > 0 || glicemiaData.length > 0) && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sinais Vitais</h2>
+              <Button variant="ghost" size="sm" className="rounded-xl text-xs h-8" onClick={() => navigate("/sinais-vitais")}>
+                <Activity className="h-3.5 w-3.5 mr-1" /> Registrar
+              </Button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-3">
+              {pesoData.length > 0 && (
+                <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
+                  <CardHeader className="pb-1 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Footprints className="h-4 w-4 text-emerald-500" /> Peso
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-3">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RechartsLineChart data={pesoData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis dataKey="data" tick={{ fontSize: 9 }} />
+                        <YAxis tick={{ fontSize: 9 }} />
+                        <Tooltip contentStyle={{ borderRadius: 12, fontSize: 11 }} />
+                        <Line type="monotone" dataKey="peso" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {pressaoData.length > 0 && (
+                <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
+                  <CardHeader className="pb-1 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-rose-500" /> Pressão Arterial
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-3">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RechartsLineChart data={pressaoData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis dataKey="data" tick={{ fontSize: 9 }} />
+                        <YAxis tick={{ fontSize: 9 }} />
+                        <Tooltip contentStyle={{ borderRadius: 12, fontSize: 11 }} />
+                        <Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} />
+                        <Line type="monotone" dataKey="sistolica" stroke="#ef4444" strokeWidth={2} name="Sistólica" />
+                        <Line type="monotone" dataKey="diastolica" stroke="#3b82f6" strokeWidth={2} name="Diastólica" />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+
+              {glicemiaData.length > 0 && (
+                <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
+                  <CardHeader className="pb-1 pt-4 px-4">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Gauge className="h-4 w-4 text-amber-500" /> Glicemia
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-2 pb-3">
+                    <ResponsiveContainer width="100%" height={180}>
+                      <RechartsLineChart data={glicemiaData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                        <XAxis dataKey="data" tick={{ fontSize: 9 }} />
+                        <YAxis tick={{ fontSize: 9 }} />
+                        <Tooltip contentStyle={{ borderRadius: 12, fontSize: 11 }} />
+                        <Line type="monotone" dataKey="glicemia" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+                      </RechartsLineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {pesoData.length === 0 && pressaoData.length === 0 && glicemiaData.length === 0 && adherenceData.length === 0 && (
+          <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
+            <CardContent className="py-12 text-center">
+              <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-semibold mb-2">Comece a usar o app para ver insights</h3>
+              <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
+                À medida que registrar doses e sinais vitais, esta página trará correlações entre adesão e saúde.
+              </p>
+              <div className="flex gap-2 justify-center flex-wrap">
+                <Button className="rounded-2xl" onClick={() => navigate("/hoje")}>
+                  <CheckCircle2 className="h-4 w-4 mr-1.5" /> Registrar Doses
+                </Button>
+                <Button variant="outline" className="rounded-2xl" onClick={() => navigate("/sinais-vitais")}>
+                  <Activity className="h-4 w-4 mr-1.5" /> Sinais Vitais
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Links */}
+        <Card className={cn(
+          "rounded-3xl border border-border/30 shadow-[var(--shadow-glass)]",
+          "bg-card/60 backdrop-blur-xl"
+        )}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Explore Mais</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { icon: Clock, label: "Histórico", sub: "Ver doses", path: "/historico" },
+                { icon: Calendar, label: "Timeline", sub: "Linha do tempo", path: "/linha-do-tempo" },
+                { icon: FileText, label: "Relatórios", sub: "Gerar PDF", path: "/relatorios" },
+              ].map((link) => (
+                <Button key={link.path} variant="outline"
+                  className="h-auto py-3 flex-col gap-1.5 rounded-2xl border-border/30"
+                  onClick={() => navigate(link.path)}>
+                  <link.icon className="h-4 w-4 text-primary" />
+                  <span className="font-semibold text-xs">{link.label}</span>
+                  <span className="text-[9px] text-muted-foreground">{link.sub}</span>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </main>
+
+      <Navigation />
+    </div>
   );
 }

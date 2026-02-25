@@ -35,17 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('Firebase Auth state changed:', user?.email);
       setUser(user);
       setLoading(false);
 
       if (user && window.location.pathname === '/auth') {
         navigateRef.current('/');
-      }
-
-      if (!user && window.location.pathname !== '/auth' && window.location.pathname !== '/' && !window.location.pathname.startsWith('/landing')) {
-        // Only redirect to auth if not on a public page
-        // navigateRef.current('/auth');
       }
     });
 
@@ -53,13 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      navigateRef.current('/auth');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      throw error;
-    }
+    await firebaseSignOut(auth);
+    navigateRef.current('/auth');
   };
 
   return (

@@ -64,7 +64,6 @@ export default function OnboardingWaiting({
   // Listen for alarm events
   useEffect(() => {
     const handleAlarm = (event: CustomEvent) => {
-      console.log("[OnboardingWaiting] Alarm received:", event.detail);
       setAlarmReceived(true);
       
       // Wait a moment to show the checkmark, then proceed
@@ -86,7 +85,6 @@ export default function OnboardingWaiting({
       // Give 10 extra seconds for the alarm to fire
       const timeout = setTimeout(() => {
         if (!alarmReceived) {
-          console.log("[OnboardingWaiting] Timeout - advancing without alarm");
           onNotificationReceived();
         }
       }, 10000);

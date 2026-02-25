@@ -70,19 +70,7 @@ export default function PharmacyPriceCard({ medicationName, onBuy }: PharmacyPri
   };
 
   const handleBuy = (pharmacy: Pharmacy) => {
-    // Track affiliate click
-    try {
-      const affiliateClick = httpsCallable(functions, 'affiliateClick');
-      affiliateClick({
-        body: { // Maintain compatibility with possible existing structure or update backend
-          pharmacy: pharmacy.name,
-          medication: medicationName,
-          price: pharmacy.price
-        }
-      }).catch(console.error);
-    } catch (e) {
-      console.error("Tracking error", e);
-    }
+
 
     window.open(pharmacy.link, '_blank');
     onBuy?.(pharmacy);

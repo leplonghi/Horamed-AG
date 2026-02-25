@@ -21,7 +21,7 @@ export default function StockDetails() {
     queryFn: async () => {
       const user = auth.currentUser;
       if (!user || !itemId) return null;
-      const { data } = await fetchDocument<any>(`users/${user.uid}/medications`, itemId);
+      const { data } = await fetchDocument<{ id: string; name: string; profileId?: string }>(`users/${user.uid}/medications`, itemId);
       return data;
     },
     enabled: !!itemId,

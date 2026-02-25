@@ -30,19 +30,15 @@ import { StockProjection } from "@/hooks/useStockProjection";
 interface StockTabProps {
     stockProjections: StockProjection[] | undefined;
     isLoading: boolean;
-    onRestock: (itemId: string, itemName: string) => Promise<void>;
     onUpdateStock: (stockId: string, newUnitsLeft: number) => Promise<void>;
     onNavigateToRoutine: () => void;
-    affiliateEnabled: boolean;
 }
 
 export function StockTab({
     stockProjections,
     isLoading,
-    onRestock,
     onUpdateStock,
     onNavigateToRoutine,
-    affiliateEnabled
 }: StockTabProps) {
     const { t } = useTranslation();
     const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -222,17 +218,6 @@ export function StockTab({
                                                 <strong>{percentage <= 10 ? "🚨 Estoque Crítico!" : "⚠️ Estoque Baixo"}</strong>
                                                 <p>{percentage <= 10 ? `Apenas ${item.currentQty} unidades restantes.` : `Considere repor em breve.`}</p>
                                             </div>
-                                            {affiliateEnabled && percentage <= 10 && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => onRestock(item.itemId, item.itemName)}
-                                                    className="shrink-0"
-                                                >
-                                                    <ExternalLink className="h-3 w-3 mr-1" />
-                                                    Comprar
-                                                </Button>
-                                            )}
                                         </div>
                                     )}
 

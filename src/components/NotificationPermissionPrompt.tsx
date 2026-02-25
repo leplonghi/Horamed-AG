@@ -83,12 +83,10 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
           const pushStatus = await PushNotifications.checkPermissions();
           const localStatus = await LocalNotifications.checkPermissions();
 
-          console.log("[NotificationPrompt] Native permissions - Push:", pushStatus.receive, "Local:", localStatus.display);
 
           // Show prompt if not granted
           if (pushStatus.receive !== 'granted' || localStatus.display !== 'granted') {
             // Show prompt immediately on native to ensure permission dialog appears
-            console.log("[NotificationPrompt] Showing native permission prompt...");
             setShow(true);
 
             // If permission was denied before, show instructions

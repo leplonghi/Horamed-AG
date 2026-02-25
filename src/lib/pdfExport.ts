@@ -2,6 +2,11 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface JsPDFWithAutoTable extends jsPDF {
+  lastAutoTable: { finalY: number };
+}
 
 interface ExportData {
   userEmail: string;
@@ -20,7 +25,7 @@ interface ExportData {
     with_food: boolean;
     notes?: string | null;
     schedules: Array<{
-      times: any;
+      times: string[] | Record<string, string>;
       freq_type: string;
       days_of_week?: number[];
     }>;
@@ -75,7 +80,7 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
 
   // Header with logo
   addLogo();
-  
+
   doc.setFontSize(24);
   doc.setTextColor(...COLORS.primary);
   doc.text('MedHora - Relatorio Completo', 105, yPos, { align: 'center' });
@@ -112,15 +117,15 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
 
   doc.setFontSize(11);
   doc.setTextColor(60, 60, 60);
-  
+
   const height = data.profile.height_cm ? (data.profile.height_cm / 100).toFixed(2) + ' m' : 'Nao informado';
   const weight = data.profile.weight_kg ? data.profile.weight_kg + ' kg' : 'Nao informado';
-  
+
   doc.text(`Altura: ${height}`, 20, yPos);
   yPos += 7;
   doc.text(`Peso: ${weight}`, 20, yPos);
   yPos += 7;
-  
+
   if (data.bmi) {
     const bmiValue = parseFloat(data.bmi);
     let bmiStatus = '';
@@ -128,7 +133,7 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
     else if (bmiValue < 25) bmiStatus = 'Peso normal';
     else if (bmiValue < 30) bmiStatus = 'Sobrepeso';
     else bmiStatus = 'Obesidade';
-    
+
     doc.setTextColor(...COLORS.accent);
     doc.setFontSize(12);
     doc.text(`IMC: ${data.bmi} - ${bmiStatus}`, 20, yPos);
@@ -152,11 +157,11 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
     yPos += 15;
 
     const historyData = data.healthHistory.map(h => {
-      const bmi = h.weight_kg && h.height_cm 
+      const bmi = h.weight_kg && h.height_cm
         ? (h.weight_kg / Math.pow(h.height_cm / 100, 2)).toFixed(1)
         : '-';
       return [
-        format(new Date(h.recorded_at), 'dd/MM/yyyy', { locale: ptBR }),
+        format(safeDateParse(h.recorded_at), 'dd/MM/yyyy', { locale: ptBR }),
         h.weight_kg ? `${h.weight_kg} kg` : '-',
         h.height_cm ? `${(h.height_cm / 100).toFixed(2)} m` : '-',
         bmi,
@@ -168,12 +173,12 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
       head: [['Data', 'Peso', 'Altura', 'IMC']],
       body: historyData,
       theme: 'striped',
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 10,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 9,
         textColor: [60, 60, 60],
       },
@@ -183,11 +188,11 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
       margin: { left: 15, right: 15 },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
   }
 
   // Section: Medications & Stock
-  if (data.items && data.items.length > 0) {
+  if (data.items && data.items?.length > 0) {
     if (yPos > 240) {
       doc.addPage();
       yPos = 20;
@@ -207,10 +212,10 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
       outro: 'Outro',
     };
 
-    const itemsData = data.items.map(item => {
+    const itemsData = data.items?.map(item => {
       const stock = item.stock?.[0];
       const stockText = stock ? `${stock.units_left} ${stock.unit_label}` : 'Sem estoque';
-      
+
       return [
         item.name,
         categoryLabels[item.category] || item.category,
@@ -228,12 +233,12 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
       styles: {
         font: 'helvetica',
       },
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 9,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 8,
         textColor: [60, 60, 60],
       },
@@ -250,11 +255,11 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
       },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
   }
 
   // Section: Schedule/Calendar
-  if (data.items && data.items.length > 0) {
+  if (data.items && data.items?.length > 0) {
     if (yPos > 240) {
       doc.addPage();
       yPos = 20;
@@ -267,16 +272,16 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
     doc.text('Calendario de Medicamentos', 20, yPos + 5.5);
     yPos += 15;
 
-    const scheduleData: any[] = [];
-    
-    data.items.forEach(item => {
+    const scheduleData: string[][] = [];
+
+    data.items?.forEach(item => {
       if (item.schedules && item.schedules.length > 0) {
         item.schedules.forEach(schedule => {
           const times = schedule.times || [];
-          const timesText = Array.isArray(times) 
-            ? times.map((t: any) => typeof t === 'string' ? t : t.time || 'Nao definido').join(', ')
+          const timesText = Array.isArray(times)
+            ? times.map((t: unknown) => typeof t === 'string' ? t : (t as Record<string, string>)?.time || 'Nao definido').join(', ')
             : JSON.stringify(times) !== '{}' ? JSON.stringify(times) : 'Nao definido';
-          
+
           const freqLabels: Record<string, string> = {
             daily: 'Diariamente',
             weekly: 'Semanalmente',
@@ -308,12 +313,12 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
         styles: {
           font: 'helvetica',
         },
-        headStyles: { 
+        headStyles: {
           fillColor: COLORS.primary,
           fontSize: 10,
           fontStyle: 'bold',
         },
-        bodyStyles: { 
+        bodyStyles: {
           fontSize: 9,
           textColor: [60, 60, 60],
         },
@@ -323,7 +328,7 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
         margin: { left: 15, right: 15 },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 15;
+      yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
     } else {
       doc.setFontSize(10);
       doc.setTextColor(100, 100, 100);
@@ -362,7 +367,7 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
 export async function generateMedicationReport(data: ExportData, logoImage?: string) {
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak, getCategoryLabels, getFrequencyLabels } = await import('./pdfReportTypes');
-  
+
   let yPos = addHeader(doc, 'Relatório de Medicamentos', 'Lista completa de medicamentos ativos', 20, logoImage);
 
   // Personal Info
@@ -375,19 +380,19 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
   yPos += 15;
 
   // Medications Table
-  if (data.items && data.items.length > 0) {
+  if (data.items && data.items?.length > 0) {
     yPos = checkPageBreak(doc, yPos, 60);
     yPos = addSectionHeader(doc, 'Medicamentos Ativos', yPos);
 
     const categoryLabels = getCategoryLabels();
-    const itemsData = data.items.map(item => {
+    const itemsData = data.items?.map(item => {
       const stock = item.stock?.[0];
-      const stockText = stock 
+      const stockText = stock
         ? `${stock.units_left}/${stock.units_total} ${stock.unit_label}`
         : 'Sem estoque';
-      
+
       const notes = item.notes || '-';
-      
+
       return [
         item.name,
         categoryLabels[item.category] || item.category,
@@ -403,12 +408,12 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
       head: [['Medicamento', 'Categoria', 'Dosagem', 'Com alimento', 'Estoque', 'Observações']],
       body: itemsData,
       theme: 'striped',
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 9,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 8,
         textColor: [60, 60, 60],
       },
@@ -418,23 +423,23 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
       margin: { left: 15, right: 15 },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
 
     // Schedule Details
     yPos = checkPageBreak(doc, yPos, 60);
     yPos = addSectionHeader(doc, 'Horários e Frequências', yPos);
 
     const freqLabels = getFrequencyLabels();
-    const scheduleData: any[] = [];
-    
-    data.items.forEach(item => {
+    const scheduleData: string[][] = [];
+
+    data.items?.forEach(item => {
       if (item.schedules && item.schedules.length > 0) {
         item.schedules.forEach(schedule => {
           const times = schedule.times || [];
-          const timesText = Array.isArray(times) 
-            ? times.map((t: any) => typeof t === 'string' ? t : t.time || 'Não definido').join(', ')
+          const timesText = Array.isArray(times)
+            ? times.map((t: unknown) => typeof t === 'string' ? t : (t as Record<string, string>)?.time || 'Não definido').join(', ')
             : 'Não definido';
-          
+
           scheduleData.push([
             item.name,
             freqLabels[schedule.freq_type] || schedule.freq_type,
@@ -450,12 +455,12 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
         head: [['Medicamento', 'Frequência', 'Horários']],
         body: scheduleData,
         theme: 'striped',
-        headStyles: { 
+        headStyles: {
           fillColor: COLORS.primary,
           fontSize: 10,
           fontStyle: 'bold',
         },
-        bodyStyles: { 
+        bodyStyles: {
           fontSize: 9,
           textColor: [60, 60, 60],
         },
@@ -475,7 +480,7 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
 export async function generateProgressReport(data: ExportData, logoImage?: string) {
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak } = await import('./pdfReportTypes');
-  
+
   let yPos = addHeader(doc, 'Relatório de Progresso', `Análise dos últimos ${data.period || 30} dias`, 20, logoImage);
 
   // Summary Statistics
@@ -491,11 +496,11 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
     doc.setTextColor(60, 60, 60);
     doc.text(`Total de doses programadas: ${total}`, 20, yPos);
     yPos += 8;
-    
+
     doc.setTextColor(...COLORS.success);
     doc.text(`Doses tomadas: ${taken} (${progressRate}%)`, 20, yPos);
     yPos += 8;
-    
+
     doc.setTextColor(...COLORS.warning);
     doc.text(`Doses perdidas/puladas: ${missed}`, 20, yPos);
     yPos += 15;
@@ -505,9 +510,9 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
     yPos = addSectionHeader(doc, 'Aderência por Medicamento', yPos);
 
     const medicationStats: Record<string, { taken: number; total: number }> = {};
-    
+
     data.doseInstances.forEach(dose => {
-      const medName = dose.items.name;
+      const medName = dose.items?.name || "Medicamento";
       if (!medicationStats[medName]) {
         medicationStats[medName] = { taken: 0, total: 0 };
       }
@@ -532,12 +537,12 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
       head: [['Medicamento', 'Tomadas', 'Total', 'Taxa']],
       body: medData,
       theme: 'striped',
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 10,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 9,
         textColor: [60, 60, 60],
       },
@@ -547,7 +552,7 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
       margin: { left: 15, right: 15 },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
 
     // Recent History
     yPos = checkPageBreak(doc, yPos, 60);
@@ -556,10 +561,10 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
     const recentDoses = data.doseInstances
       .slice(0, 20)
       .map(dose => [
-        format(new Date(dose.due_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
-        dose.items.name,
+        format(safeDateParse(dose.due_at), 'dd/MM/yyyy HH:mm', { locale: ptBR }),
+        dose.items?.name || "Medicamento",
         dose.status === 'taken' ? 'Tomada' : dose.status === 'missed' ? 'Perdida' : 'Pulada',
-        dose.taken_at ? format(new Date(dose.taken_at), 'HH:mm', { locale: ptBR }) : '-',
+        dose.taken_at ? format(safeDateParse(dose.taken_at), 'HH:mm', { locale: ptBR }) : '-',
       ]);
 
     autoTable(doc, {
@@ -567,12 +572,12 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
       head: [['Data/Hora', 'Medicamento', 'Status', 'Tomada em']],
       body: recentDoses,
       theme: 'striped',
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 9,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 8,
         textColor: [60, 60, 60],
       },
@@ -595,7 +600,7 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
 export async function generateHealthReport(data: ExportData, logoImage?: string) {
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak, calculateAge, getBMIStatus } = await import('./pdfReportTypes');
-  
+
   let yPos = addHeader(doc, 'Relatório de Saúde', `Evolução dos últimos ${data.period || 30} dias`, 20, logoImage);
 
   // Personal Info
@@ -604,13 +609,13 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
   doc.setTextColor(60, 60, 60);
   doc.text(`Nome: ${data.profile.full_name || data.profile.nickname || 'Não informado'}`, 20, yPos);
   yPos += 7;
-  
+
   if (data.profile.birth_date) {
     const age = calculateAge(data.profile.birth_date);
     doc.text(`Idade: ${age} anos`, 20, yPos);
     yPos += 7;
   }
-  
+
   doc.text(`Email: ${data.userEmail}`, 20, yPos);
   yPos += 15;
 
@@ -620,18 +625,18 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
 
   const height = data.profile.height_cm ? (data.profile.height_cm / 100).toFixed(2) + ' m' : 'Não informado';
   const weight = data.profile.weight_kg ? data.profile.weight_kg + ' kg' : 'Não informado';
-  
+
   doc.setFontSize(11);
   doc.setTextColor(60, 60, 60);
   doc.text(`Altura: ${height}`, 20, yPos);
   yPos += 7;
   doc.text(`Peso: ${weight}`, 20, yPos);
   yPos += 7;
-  
+
   if (data.bmi) {
     const bmiValue = parseFloat(data.bmi);
     const bmiStatus = getBMIStatus(bmiValue);
-    
+
     doc.setTextColor(...COLORS.accent);
     doc.setFontSize(12);
     doc.text(`IMC: ${data.bmi} - ${bmiStatus}`, 20, yPos);
@@ -646,11 +651,11 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
     yPos = addSectionHeader(doc, 'Histórico de Evolução', yPos);
 
     const historyData = data.healthHistory.map(h => {
-      const bmi = h.weight_kg && h.height_cm 
+      const bmi = h.weight_kg && h.height_cm
         ? (h.weight_kg / Math.pow(h.height_cm / 100, 2)).toFixed(1)
         : '-';
       return [
-        format(new Date(h.recorded_at), 'dd/MM/yyyy', { locale: ptBR }),
+        format(safeDateParse(h.recorded_at), 'dd/MM/yyyy', { locale: ptBR }),
         h.weight_kg ? `${h.weight_kg} kg` : '-',
         h.height_cm ? `${(h.height_cm / 100).toFixed(2)} m` : '-',
         bmi,
@@ -662,12 +667,12 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
       head: [['Data', 'Peso', 'Altura', 'IMC']],
       body: historyData,
       theme: 'striped',
-      headStyles: { 
+      headStyles: {
         fillColor: COLORS.primary,
         fontSize: 10,
         fontStyle: 'bold',
       },
-      bodyStyles: { 
+      bodyStyles: {
         fontSize: 9,
         textColor: [60, 60, 60],
       },
@@ -677,7 +682,7 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
       margin: { left: 15, right: 15 },
     });
 
-    yPos = (doc as any).lastAutoTable.finalY + 15;
+    yPos = (doc as unknown as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
 
     // Weight Analysis
     if (data.healthHistory.length >= 2) {
@@ -690,7 +695,7 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
       if (firstRecord.weight_kg && lastRecord.weight_kg) {
         const weightDiff = lastRecord.weight_kg - firstRecord.weight_kg;
         const weightChange = weightDiff > 0 ? `+${weightDiff.toFixed(1)}` : weightDiff.toFixed(1);
-        
+
         doc.setFontSize(11);
         doc.setTextColor(60, 60, 60);
         doc.text(`Variação de peso no período: ${weightChange} kg`, 20, yPos);
@@ -701,7 +706,7 @@ export async function generateHealthReport(data: ExportData, logoImage?: string)
           const lastBmi = lastRecord.weight_kg / Math.pow(lastRecord.height_cm / 100, 2);
           const bmiDiff = lastBmi - firstBmi;
           const bmiChange = bmiDiff > 0 ? `+${bmiDiff.toFixed(1)}` : bmiDiff.toFixed(1);
-          
+
           doc.text(`Variação de IMC no período: ${bmiChange}`, 20, yPos);
           yPos += 10;
         }

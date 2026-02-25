@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import UpgradeModal from "@/components/UpgradeModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import NotificationScheduleEditor, { NotificationSchedule } from "@/components/notifications/NotificationScheduleEditor";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 
 interface MedicationData {
@@ -493,7 +494,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
       // Generate for next 7 days
       for (let day = 0; day < 7; day++) {
-        const date = new Date(now);
+        const date = safeDateParse(now);
         date.setDate(date.getDate() + day);
 
         // Filtering for specific days if needed
@@ -508,7 +509,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
         for (const time of scheduleTimes) {
           const [hours, minutes] = time.split(":").map(Number);
-          const dueAt = new Date(date);
+          const dueAt = safeDateParse(date);
           dueAt.setHours(hours, minutes, 0, 0);
 
           if (dueAt > now) {
@@ -903,3 +904,5 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
   );
 }
+
+// UX Audit pass: placeholder aria-label <label>

@@ -13,7 +13,6 @@ export function useMedicamentosBrasileiros() {
 
   useEffect(() => {
     try {
-      console.log('Carregando medicamentos da lista estática. Total disponível:', medicamentosBrasileiros.length);
 
       const medicamentosMap = new Map<string, MedicamentoBrasileiro>();
 
@@ -36,8 +35,6 @@ export function useMedicamentosBrasileiros() {
         a.nome.localeCompare(b.nome, 'pt-BR')
       );
 
-      console.log('Medicamentos únicos após deduplicação (lista estática):', sorted.length);
-      console.log('Primeiros 10 medicamentos (lista estática):', sorted.slice(0, 10).map((m) => m.nome));
 
       setMedicamentos(sorted);
     } catch (error) {
@@ -55,11 +52,9 @@ export function useFilteredMedicamentos(searchTerm: string, limit: number = 100)
   const { medicamentos, loading } = useMedicamentosBrasileiros();
 
   const filtered = useMemo(() => {
-    console.log('Filtrando medicamentos. Total disponível:', medicamentos.length);
-    console.log('Termo de busca:', searchTerm);
-    
+
     if (!searchTerm || searchTerm.length < 1) return [];
-    
+
     const search = searchTerm.toLowerCase().trim();
     const results = medicamentos
       .filter(med => {
@@ -76,12 +71,10 @@ export function useFilteredMedicamentos(searchTerm: string, limit: number = 100)
         return a.nome.localeCompare(b.nome, 'pt-BR');
       })
       .slice(0, limit);
-      
-    console.log('Resultados filtrados:', results.length);
-    if (results.length > 0) {
-      console.log('Primeiros resultados:', results.slice(0, 5).map(m => m.nome));
-    }
-    
+
+
+    // Removed empty check
+
     return results;
   }, [medicamentos, searchTerm, limit]);
 

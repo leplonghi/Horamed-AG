@@ -13,7 +13,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import MedicationWizard from "@/components/medication-wizard/MedicationWizard";
-import { getRecommendations } from "@/lib/affiliateEngine";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useStockProjection } from "@/hooks/useStockProjection";
@@ -35,6 +34,38 @@ import { StockTab } from "@/components/medications/StockTab";
 import { HistoryTab } from "@/components/medications/HistoryTab";
 import { MedicationItem } from "@/components/medications/MedicationItemCard";
 
+interface HubDoseDoc {
+  id: string;
+  itemId: string;
+  dueAt: string;
+  status: string;
+  itemName?: string;
+  doseText?: string;
+}
+
+interface HubMedDoc {
+  id: string;
+  name: string;
+  category: string;
+  isActive: boolean;
+  doseText?: string;
+  profileId?: string;
+}
+
+interface HubScheduleDoc {
+  id: string;
+  itemId: string;
+  times: string[];
+  freqType: string;
+}
+
+interface HubStockDoc {
+  id: string;
+  itemId: string;
+  currentQty: number;
+  unitLabel?: string;
+}
+
 export default function MedicamentosHub() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -48,10 +79,6 @@ export default function MedicamentosHub() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const { hasFeature } = useSubscription();
-  const [affiliateProduct, setAffiliateProduct] = useState<any>(null);
-  const [showAffiliateCard, setShowAffiliateCard] = useState(false);
-
   // Stock state
   const { isEnabled } = useFeatureFlags();
   const { activeProfile } = useUserProfiles();
@@ -60,7 +87,7 @@ export default function MedicamentosHub() {
   const [itemToDelete, setItemToDelete] = useState<{ id: string, name: string } | null>(null);
 
   // History state
-  const [historyDoses, setHistoryDoses] = useState<any[]>([]);
+  const [historyDoses, setHistoryDoses] = useState<Array<HubDoseDoc & { items: { name: string; doseText: string } }>>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // Logic to determine active tab based on URL path priority
@@ -83,22 +110,6 @@ export default function MedicamentosHub() {
     }
   };
 
-  useEffect(() => {
-    const hasSupplements = items.some(item =>
-      item.category === 'vitamina' || item.category === 'suplemento'
-    );
-
-    if (hasSupplements) {
-      const product = getRecommendations({
-        type: "MEDICATION_LIST",
-        hasSupplements: true
-      });
-      if (product) {
-        setAffiliateProduct(product);
-        setShowAffiliateCard(true);
-      }
-    }
-  }, [items]);
 
   useEffect(() => {
     fetchItems();
@@ -123,7 +134,7 @@ export default function MedicamentosHub() {
         ? `users/${userId}/profiles/${profileId}/doses`
         : `users/${userId}/doses`;
 
-      const { data: dosesData } = await fetchCollection<any>(
+      const { data: dosesData } = await fetchCollection<HubDoseDoc>(
         dosesPath,
         [orderBy('dueAt', 'desc'), limit(30)]
       );
@@ -153,18 +164,18 @@ export default function MedicamentosHub() {
 
       // Batch query optimization: fetch all data in parallel
       const [medicationsResult, schedulesResult, stockResult] = await Promise.all([
-        fetchCollection<any>(
+        fetchCollection<HubMedDoc>(
           `users/${user.uid}/medications`,
           [where('isActive', '==', true)]
         ),
-        fetchCollection<any>(`users/${user.uid}/schedules`, []),
-        fetchCollection<any>(`users/${user.uid}/stock`, [])
+        fetchCollection<HubScheduleDoc>(`users/${user.uid}/schedules`, []),
+        fetchCollection<HubStockDoc>(`users/${user.uid}/stock`, [])
       ]);
 
       if (medicationsResult.error) throw medicationsResult.error;
 
       // Client-side sort to avoid composite index requirement
-      const medications = (medicationsResult.data || []).sort((a: any, b: any) => {
+      const medications = (medicationsResult.data || []).sort((a, b) => {
         const catCompare = (a.category || '').localeCompare(b.category || '');
         if (catCompare !== 0) return catCompare;
         return (a.name || '').localeCompare(b.name || '');
@@ -173,17 +184,17 @@ export default function MedicamentosHub() {
       const allStock = stockResult.data || [];
 
       // Create lookup maps for O(1) access
-      const schedulesMap = new Map<string, any[]>();
-      const stockMap = new Map<string, any[]>();
+      const schedulesMap = new Map<string, HubScheduleDoc[]>();
+      const stockMap = new Map<string, HubStockDoc[]>();
 
-      allSchedules.forEach((schedule: any) => {
+      allSchedules.forEach((schedule) => {
         if (!schedulesMap.has(schedule.itemId)) {
           schedulesMap.set(schedule.itemId, []);
         }
         schedulesMap.get(schedule.itemId)!.push(schedule);
       });
 
-      allStock.forEach((stockItem: any) => {
+      allStock.forEach((stockItem) => {
         if (!stockMap.has(stockItem.itemId)) {
           stockMap.set(stockItem.itemId, []);
         }
@@ -277,24 +288,7 @@ export default function MedicamentosHub() {
     }
   };
 
-  const handleRestock = async (itemId: string, itemName: string) => {
-    try {
-      const affiliateClick = httpsCallable(functions, 'affiliateClick'); // changed to camelCase name
-      const result = await affiliateClick({
-        medicationId: itemId,
-        medicationName: itemName
-      });
 
-      const data = result.data as any;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast.success(t('generic.openedNewTab'));
-      }
-    } catch (error) {
-      console.error('Error handling restock:', error);
-      toast.error(t('generic.openLinkError'));
-    }
-  };
 
   if (loading) {
     return (
@@ -362,7 +356,7 @@ export default function MedicamentosHub() {
                 value="historico"
                 className="rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center sm:flex-col justify-center gap-1.5 sm:gap-1 transition-all"
               >
-                <History className="h-4 w-4 text-purple-600" />
+                <History className="h-4 w-4 text-teal-600" />
                 <span className="text-[11px] sm:text-xs font-medium">{t('meds.history')}</span>
               </TabsTrigger>
             </TabsList>
@@ -376,9 +370,6 @@ export default function MedicamentosHub() {
                 setActiveTab={setActiveTab}
                 onEdit={(id) => navigate(`/adicionar?edit=${id}`)}
                 onDelete={openDeleteConfirm}
-                showAffiliateCard={showAffiliateCard}
-                setShowAffiliateCard={setShowAffiliateCard}
-                affiliateProduct={affiliateProduct}
                 onAdd={() => setWizardOpen(true)}
               />
             </TabsContent>
@@ -387,10 +378,8 @@ export default function MedicamentosHub() {
               <StockTab
                 stockProjections={stockProjections}
                 isLoading={stockLoading}
-                onRestock={handleRestock}
                 onUpdateStock={updateStock}
                 onNavigateToRoutine={() => setActiveSection("rotina")}
-                affiliateEnabled={!!isEnabled('affiliate')}
               />
             </TabsContent>
 

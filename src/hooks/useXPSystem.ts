@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { auth, fetchCollection, where, query } from "@/integrations/firebase";
 import { startOfWeek, startOfMonth, subDays } from "date-fns";
+import { safeDateParse } from "@/lib/safeDateUtils";
+
+interface DoseDoc {
+  id: string;
+  status: string;
+  dueAt: string;
+  takenAt?: string;
+  delayMinutes?: number;
+}
 
 interface XPData {
   currentXP: number;
@@ -31,7 +40,7 @@ export function useXPSystem() {
       const dosesPath = `users/${userId}/doses`;
 
       // Get all taken doses
-      const { data: doses } = await fetchCollection<any>(dosesPath, [
+      const { data: doses } = await fetchCollection<DoseDoc>(dosesPath, [
         where("status", "==", "taken")
       ]);
 
@@ -49,7 +58,7 @@ export function useXPSystem() {
       const monthStart = startOfMonth(new Date());
 
       doses.forEach((dose) => {
-        const doseDate = new Date(dose.takenAt || dose.dueAt);
+        const doseDate = safeDateParse(dose.takenAt || dose.dueAt);
         let xpEarned = 10; // Base XP for taking medication
 
         // Bonus for on-time doses (within 30 minutes of scheduled time)
@@ -72,13 +81,14 @@ export function useXPSystem() {
       const dayMap = new Map<string, { total: number; taken: number }>();
       const thirtyDaysAgo = subDays(new Date(), 30);
 
-      const { data: recentDoses } = await fetchCollection<any>(dosesPath, [
+      const { data: recentDoses } = await fetchCollection<DoseDoc>(dosesPath, [
         where("dueAt", ">=", thirtyDaysAgo.toISOString())
       ]);
 
       if (recentDoses) {
         recentDoses.forEach((dose) => {
-          const day = new Date(dose.dueAt).toDateString();
+          const doseDate = safeDateParse(dose.dueAt);
+          const day = doseDate.toDateString();
           const current = dayMap.get(day) || { total: 0, taken: 0 };
           current.total++;
           if (dose.status === "taken") current.taken++;
@@ -88,7 +98,7 @@ export function useXPSystem() {
         // Add bonus XP for perfect days
         dayMap.forEach(({ total, taken }, dayStr) => {
           if (total === taken && total > 0) {
-            const day = new Date(dayStr);
+            const day = safeDateParse(dayStr);
             totalXP += 50;
             if (day >= weekStart) weeklyXP += 50;
             if (day >= monthStart) monthlyXP += 50;

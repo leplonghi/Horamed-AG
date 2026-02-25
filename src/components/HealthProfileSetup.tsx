@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Scale, Calendar, Ruler } from "lucide-react";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 interface HealthProfileSetupProps {
   open: boolean;
   onComplete: () => void;
@@ -45,7 +46,7 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
     }
 
     // Validate age (must be at least 1 year old)
-    const birthDate = new Date(formData.birth_date);
+    const birthDate = safeDateParse(formData.birth_date);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
     if (age < 1 || age > 150) {

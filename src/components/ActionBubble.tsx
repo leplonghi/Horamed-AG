@@ -13,8 +13,8 @@ interface ActionBubbleProps {
 
 const colorConfig = {
   primary: {
-    bg: "bg-gradient-to-br from-violet-500 to-purple-600",
-    shadow: "shadow-violet-500/30",
+    bg: "bg-gradient-to-br from-emerald-500 to-teal-600",
+    shadow: "shadow-emerald-500/30",
   },
   success: {
     bg: "bg-gradient-to-br from-emerald-400 to-green-500",

@@ -1,16 +1,17 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
 import { useAuth } from '@/integrations/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 import { eventBus, EVENTS } from '@/lib/eventBus';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export interface Subscription {
   id: string;
   userId: string;
   planType: 'free' | 'premium' | 'premium_individual' | 'premium_family';
-  status: 'active' | 'cancelled' | 'expired' | 'trial';
+  status: 'active' | 'cancelled' | 'expired' | 'trial' | 'trialing';
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   startedAt: string;
@@ -19,8 +20,16 @@ export interface Subscription {
   trialUsed: boolean;
   priceVariant: 'A' | 'B' | 'C';
   canceledAt: string | null;
+
   createdAt: string;
   updatedAt: string;
+  // New pricing fields
+  interval?: 'month' | 'year';
+  amount?: number;
+  currency?: string;
+  discountApplied?: boolean;
+  discountPercent?: number;
+  discountType?: string;
 }
 
 interface SubscriptionContextType {
@@ -94,7 +103,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  const syncWithStripe = async () => {
+  const syncWithStripe = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -103,7 +112,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       // Call Firebase Cloud Function
       const syncSubscription = httpsCallable(functions, 'syncSubscription');
       const result = await syncSubscription();
-      const data = result.data as any;
+      const data = result.data as { synced?: boolean; subscribed?: boolean };
 
       if (data?.synced) {
         // onSnapshot will update the state automatically, no need to manually reload
@@ -112,7 +121,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           description: data.subscribed ? 'Sua assinatura Premium está ativa!' : 'Nenhuma assinatura ativa encontrada',
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sync error:', error);
       toast({
         title: 'Erro ao sincronizar',
@@ -121,16 +130,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       });
       setLoading(false);
     }
-  };
+  }, [user, toast]);
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     // Force sync when requested manually
     await syncWithStripe();
-  };
+  }, [syncWithStripe]);
 
   // Check if on trial - either explicit trial status OR trialEndsAt in the future
-  const isOnTrial = (subscription?.trialEndsAt && new Date(subscription.trialEndsAt) > new Date()) ||
-    (subscription?.status === 'trial');
+  const isOnTrial = (subscription?.trialEndsAt && safeDateParse(subscription.trialEndsAt) > new Date()) ||
+    (subscription?.status === 'trial') || (subscription?.status === 'trialing');
 
   // Premium status - includes trial period (trial users get FULL premium features)
   const isPremium = (
@@ -138,16 +147,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     subscription?.planType === 'premium_individual' ||
     subscription?.planType === 'premium_family' ||
     isOnTrial // Trial users are treated as premium
-  ) && (subscription?.status === 'active' || subscription?.status === 'trial' || isOnTrial);
+  ) && (subscription?.status === 'active' || subscription?.status === 'trial' || subscription?.status === 'trialing' || isOnTrial);
 
   const isFree = subscription?.planType === 'free' && !isOnTrial;
 
   const trialDaysLeft = subscription?.trialEndsAt && isOnTrial
-    ? Math.max(0, Math.ceil((new Date(subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((safeDateParse(subscription.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
   const daysLeft = subscription?.expiresAt
-    ? Math.max(0, Math.ceil((new Date(subscription.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    ? Math.max(0, Math.ceil((safeDateParse(subscription.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
 
   const isExpired = subscription?.status === 'expired' || (daysLeft !== null && daysLeft <= 0 && !isOnTrial);

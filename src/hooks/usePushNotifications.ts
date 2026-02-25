@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { PushNotifications, ActionPerformed } from "@capacitor/push-notifications";
-import { LocalNotifications } from "@capacitor/local-notifications";
+import { LocalNotifications, LocalNotificationSchema, ScheduleEvery } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import {
@@ -16,6 +16,7 @@ import {
   where,
   orderBy
 } from "@/integrations/firebase";
+import { safeDateParse } from "@/lib/safeDateUtils";
 import { useNavigate } from "react-router-dom";
 import { addMinutes, addHours } from "date-fns";
 import { useNotificationTypes } from "./useNotificationTypes";
@@ -37,6 +38,33 @@ interface OfflineAction {
   synced: boolean;
 }
 
+interface NotifMedicationDoc {
+  id: string;
+  name: string;
+  doseText?: string;
+  dose_text?: string;
+  category?: string;
+  notes?: string;
+  notificationType?: string;
+  isActive?: boolean;
+}
+
+interface NotifDoseDoc {
+  id: string;
+  itemId: string;
+  status: string;
+  dueAt: string;
+}
+
+interface DoseWithItem extends NotifDoseDoc {
+  item: NotifMedicationDoc;
+}
+
+interface DoseActionResponse {
+  message?: string;
+  streak?: number;
+}
+
 // Notification channel ID for Android
 const CHANNEL_ID = "horamed-medicamentos";
 
@@ -49,65 +77,13 @@ export const usePushNotifications = () => {
     endTime: "06:00"
   });
 
-  useEffect(() => {
-    const initializeNotifications = async () => {
-      console.log("[Notifications] Starting initialization...");
-      console.log("[Notifications] Platform:", isNativePlatform ? "Native" : "Web");
 
-      // Only initialize scheduling for authenticated users
-      const user = auth.currentUser;
-      if (!user) {
-        console.log("[Notifications] Skipping initialization (no session)");
-        return;
-      }
-
-      // Setup channels first (for Android)
-      await setupNotificationChannels();
-
-      // Initialize push notifications (this will request permissions)
-      await initializePushNotifications();
-
-      // Sync any offline actions
-      await syncOfflineActions();
-
-      // Schedule all notifications for the next 48 hours IMMEDIATELY
-      console.log("[Notifications] Scheduling all dose notifications...");
-      await scheduleNext48Hours();
-
-      // Backend notifications are handled by PubSub schedule (every 15 min) or individual triggers
-      /* 
-       * Note: scheduleDoseNotifications is a PubSub function, not httpsCallable.
-       * The backend automatically runs this check.
-       */
-
-      console.log("[Notifications] ✓ Initialization complete");
-    };
-
-    initializeNotifications();
-
-    // Reschedule every 30 minutes
-    const scheduleInterval = setInterval(() => {
-      console.log("[Notifications] Rescheduling notifications...");
-      scheduleNext48Hours();
-    }, 30 * 60 * 1000);
-
-    // Sync offline actions every 2 minutes
-    const syncInterval = setInterval(() => {
-      syncOfflineActions();
-    }, 2 * 60 * 1000);
-
-    return () => {
-      clearInterval(scheduleInterval);
-      clearInterval(syncInterval);
-    };
-  }, []);
 
 
   // Setup Android notification channels and iOS action categories
   const setupNotificationChannels = async () => {
     // Skip on web - channels are only for native
     if (!isNativePlatform) {
-      console.log("ℹ️ Skipping native notification channels on web");
       return;
     }
 
@@ -162,7 +138,6 @@ export const usePushNotifications = () => {
         ],
       });
 
-      console.log("✓ Notification channels and action types configured");
     } catch (error) {
       console.error("Error setting up notification channels:", error);
     }
@@ -218,18 +193,16 @@ export const usePushNotifications = () => {
   const subscribeToWebPush = async (): Promise<boolean> => {
     try {
       if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        console.log("[Web Push] Service Worker or PushManager not supported");
         return false;
       }
 
       const user = auth.currentUser;
       if (!user) {
-        console.log("[Web Push] No user found");
         return false;
       }
 
       // Get VAPID key from backend
-      const getVapidKey = httpsCallable<any, { publicKey: string }>(functions, 'getVapidKey');
+      const getVapidKey = httpsCallable<Record<string, never>, { publicKey: string }>(functions, 'getVapidKey');
       const { data: vapidData } = await getVapidKey();
 
       if (!vapidData?.publicKey) {
@@ -237,7 +210,6 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      console.log("[Web Push] Got VAPID key");
 
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
@@ -248,14 +220,13 @@ export const usePushNotifications = () => {
       if (!subscription) {
         // Create new subscription with proper ArrayBuffer
         const applicationServerKey = getApplicationServerKey(vapidData.publicKey);
+
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: applicationServerKey as BufferSource,
         });
-        console.log("[Web Push] Created new subscription");
-      } else {
-        console.log("[Web Push] Found existing subscription");
       }
+
 
       // Extract subscription details
       const subscriptionJson = subscription.toJSON();
@@ -295,7 +266,6 @@ export const usePushNotifications = () => {
         updatedAt: new Date().toISOString(),
       });
 
-      console.log("[Web Push] ✓ Subscription saved successfully");
       return true;
     } catch (error) {
       console.error("[Web Push] Error subscribing:", error);
@@ -307,25 +277,20 @@ export const usePushNotifications = () => {
   const initializeWebPushNotifications = async () => {
     try {
       if (!('Notification' in window)) {
-        console.log("ℹ️ Browser doesn't support notifications");
         return;
       }
 
       // Check current permission status
       const currentPermission = Notification.permission;
-      console.log("[Web Push] Current permission:", currentPermission);
 
       if (currentPermission === 'granted') {
         // Already have permission, subscribe to push and schedule
-        console.log('✓ Web notifications already granted');
         await subscribeToWebPush();
         scheduleWebNotifications();
       } else if (currentPermission === 'denied') {
-        console.log('⚠️ Web notifications were previously denied');
         // Don't prompt - user already denied
       } else {
         // Permission is 'default' - wait for user action
-        console.log('ℹ️ Web notifications need permission - waiting for user action');
         window.dispatchEvent(new CustomEvent('notification-permission-needed'));
       }
     } catch (error) {
@@ -334,33 +299,55 @@ export const usePushNotifications = () => {
   };
 
   // Public method to request permission (must be called from user interaction)
-  const requestNotificationPermission = async (): Promise<boolean> => {
-    try {
-      if (!('Notification' in window)) {
-        toast.error("Seu navegador não suporta notificações");
+  const requestNotificationPermission = async () => {
+    // Web Platform
+    if (!isNativePlatform) {
+      // Check if browser supports notifications
+      if (!("Notification" in window)) {
+        toast.error("Este navegador não suporta notificações.");
         return false;
       }
 
-      const permission = await Notification.requestPermission();
+      try {
+        const permission = await Notification.requestPermission();
 
-      if (permission === 'granted') {
-        console.log('✓ Web notifications permission granted');
-        toast.success("✓ Notificações ativadas!", { duration: 2000 });
+        if (permission === 'granted') {
+          toast.success("Notificações ativadas!");
 
-        // Subscribe to web push
-        const subscribed = await subscribeToWebPush();
-        if (subscribed) {
-          console.log('✓ Web push subscription saved');
+          // Register for Push if Service Worker is ready
+          if ('serviceWorker' in navigator) {
+            const registration = await navigator.serviceWorker.ready;
+            // Here you could subscribe to push manager if you have a VAPID key
+            // const subscription = await registration.pushManager.subscribe(...)
+            console.log('[Web] Service Worker ready for notifications:', registration);
+          }
+
+          return true;
+        } else {
+          toast.error("Permissão de notificação negada.");
+          return false;
         }
+      } catch (error) {
+        console.error("Error requesting web permissions:", error);
+        toast.error("Erro ao solicitar permissões.");
+        return false;
+      }
+    }
 
-        scheduleWebNotifications();
+    // Native Platform (Android/iOS)
+    try {
+      const result = await PushNotifications.requestPermissions();
+      if (result.receive === "granted") {
+        await PushNotifications.register();
+        await setupNotificationChannels();
         return true;
       } else {
-        console.log('⚠️ Web notifications denied by user');
+        toast.error("Permissão de notificação necessária");
         return false;
       }
     } catch (error) {
-      console.error("Error requesting notification permission:", error);
+      console.error("Error requesting native permissions:", error);
+      toast.error("Erro ao ativar notificações");
       return false;
     }
   };
@@ -371,7 +358,7 @@ export const usePushNotifications = () => {
     if (!user) return [];
 
     // 1. Fetch active items
-    const { data: items } = await fetchCollection<any>(
+    const { data: items } = await fetchCollection<NotifMedicationDoc>(
       `users/${user.uid}/medications`,
       [where('isActive', '==', true)]
     );
@@ -379,7 +366,7 @@ export const usePushNotifications = () => {
     const itemsMap = new Map(items?.map(i => [i.id, i]));
 
     // 2. Fetch doses
-    const { data: doses } = await fetchCollection<any>(
+    const { data: doses } = await fetchCollection<NotifDoseDoc>(
       `users/${user.uid}/doses`,
       [
         where('status', '==', 'scheduled'),
@@ -390,10 +377,10 @@ export const usePushNotifications = () => {
     );
 
     // 3. Join
-    return doses?.map(dose => ({
+    return (doses?.map(dose => ({
       ...dose,
       item: itemsMap.get(dose.itemId)
-    })).filter(d => d.item) || [];
+    })).filter((d): d is DoseWithItem => !!d.item) || []) as DoseWithItem[];
   };
 
   // Schedule web notifications using the browser API with time-based types
@@ -415,9 +402,9 @@ export const usePushNotifications = () => {
       if (!doses || doses.length === 0) return;
 
       // Schedule notifications using setTimeout (simple approach for web)
-      doses.forEach((dose: any) => {
+      doses.forEach((dose: DoseWithItem) => {
         const itemData = dose.item;
-        const dueDate = new Date(dose.dueAt);
+        const dueDate = safeDateParse(dose.dueAt);
         const timeUntilDue = dueDate.getTime() - now.getTime();
 
         // Only schedule if in the future and not in quiet hours
@@ -463,7 +450,6 @@ export const usePushNotifications = () => {
         }
       });
 
-      console.log(`✓ Scheduled ${doses.length} web notifications for next 24h`);
     } catch (error) {
       console.error("Error scheduling web notifications:", error);
     }
@@ -479,7 +465,7 @@ export const usePushNotifications = () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const { data: dose } = await fetchDocument<any>(`users/${user.uid}/doses`, doseId);
+      const { data: dose } = await fetchDocument<NotifDoseDoc>(`users/${user.uid}/doses`, doseId);
 
       if (dose?.status === 'scheduled') {
         // Dose still not taken, repeat notification
@@ -518,7 +504,6 @@ export const usePushNotifications = () => {
     }
 
     try {
-      console.log("[Push] Initializing native push notifications...");
 
       // Check current permission status first
       let currentPushStatus;
@@ -527,7 +512,6 @@ export const usePushNotifications = () => {
       try {
         currentPushStatus = await PushNotifications.checkPermissions();
         currentLocalStatus = await LocalNotifications.checkPermissions();
-        console.log("[Push] Current permissions - Push:", currentPushStatus.receive, "Local:", currentLocalStatus.display);
       } catch (checkError) {
         console.error("[Push] Error checking permissions:", checkError);
         // Assume we need to request permissions
@@ -541,7 +525,6 @@ export const usePushNotifications = () => {
           const pushPermStatus = await PushNotifications.requestPermissions();
 
           if (pushPermStatus.receive === "granted") {
-            console.log("[Push] ✓ Permission granted!");
             await PushNotifications.register();
             toast.success("✓ Notificações push ativadas!", { duration: 2000 });
           } else if (pushPermStatus.receive === "denied") {
@@ -571,7 +554,6 @@ export const usePushNotifications = () => {
 
       // Handle registration success
       await PushNotifications.addListener("registration", async (token) => {
-        console.log("[Push] ✓ Registration success! Token:", token.value.substring(0, 20) + "...");
         await savePushToken(token.value);
         await scheduleNext48Hours();
       });
@@ -584,7 +566,6 @@ export const usePushNotifications = () => {
       await PushNotifications.addListener(
         "pushNotificationReceived",
         (notification) => {
-          console.log("[Push] Received (foreground):", notification);
           if (!isInQuietHours(new Date())) {
             toast.info(notification.title || "💊 Lembrete de Medicamento", {
               description: notification.body,
@@ -598,7 +579,6 @@ export const usePushNotifications = () => {
       await PushNotifications.addListener(
         "pushNotificationActionPerformed",
         async (action: ActionPerformed) => {
-          console.log("[Push] Action performed:", action);
           handleNotificationAction(action);
         }
       );
@@ -607,8 +587,16 @@ export const usePushNotifications = () => {
       await LocalNotifications.addListener(
         "localNotificationActionPerformed",
         async (action) => {
-          console.log("[Local] Notification action:", action);
-          handleNotificationAction(action as any);
+          // Adapt local notification action to push ActionPerformed shape
+          const adapted: ActionPerformed = {
+            actionId: action.actionId,
+            inputValue: action.inputValue,
+            notification: {
+              id: String(action.notification.id),
+              data: action.notification.extra || {},
+            },
+          };
+          handleNotificationAction(adapted);
         }
       );
 
@@ -643,7 +631,7 @@ export const usePushNotifications = () => {
         return;
       }
 
-      const handleDoseActionFn = httpsCallable<any, any>(functions, 'handleDoseAction');
+      const handleDoseActionFn = httpsCallable<{ doseId: string; action: string }, DoseActionResponse>(functions, 'handleDoseAction');
       const { data } = await handleDoseActionFn({
         doseId,
         action
@@ -693,7 +681,6 @@ export const usePushNotifications = () => {
 
     if (unsyncedActions.length === 0) return;
 
-    console.log(`Syncing ${unsyncedActions.length} offline actions...`);
 
     for (const action of unsyncedActions) {
       try {
@@ -718,7 +705,7 @@ export const usePushNotifications = () => {
     // Clean up old synced actions
     const cleanedActions = actions.filter(a => {
       if (a.synced) {
-        const actionDate = new Date(a.timestamp);
+        const actionDate = safeDateParse(a.timestamp);
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         return actionDate > weekAgo;
@@ -754,8 +741,8 @@ export const usePushNotifications = () => {
       }
 
       // Schedule new notifications with time-based types
-      const notifications = doses.map((dose: any, index: number) => {
-        const dueDate = new Date(dose.dueAt);
+      const notifications = doses.map((dose: DoseWithItem, index: number) => {
+        const dueDate = safeDateParse(dose.dueAt);
         const itemData = dose.item;
 
         // Skip if in quiet hours or no item data
@@ -801,8 +788,7 @@ export const usePushNotifications = () => {
       }).filter(Boolean);
 
       if (notifications.length > 0) {
-        await LocalNotifications.schedule({ notifications: notifications as any[] });
-        console.log(`✓ Scheduled ${notifications.length} notifications for next 48h`);
+        await LocalNotifications.schedule({ notifications: notifications as LocalNotificationSchema[] });
       }
     } catch (error) {
       console.error("Error scheduling notifications:", error);
@@ -814,10 +800,10 @@ export const usePushNotifications = () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const { data: dose } = await fetchDocument<any>(`users/${user.uid}/doses`, doseId);
+      const { data: dose } = await fetchDocument<NotifDoseDoc>(`users/${user.uid}/doses`, doseId);
       if (!dose) return;
 
-      const { data: itemData } = await fetchDocument<any>(`users/${user.uid}/medications`, dose.itemId);
+      const { data: itemData } = await fetchDocument<NotifMedicationDoc>(`users/${user.uid}/medications`, dose.itemId);
 
       const snoozeTime = addMinutes(new Date(), minutes);
 
@@ -864,7 +850,6 @@ export const usePushNotifications = () => {
         }]
       });
 
-      console.log(`✓ Snoozed notification for ${minutes} minutes`);
     } catch (error) {
       console.error("Error scheduling snooze notification:", error);
     }
@@ -881,7 +866,6 @@ export const usePushNotifications = () => {
         return;
       }
 
-      console.log(`[PushToken] Saving token for user ${user.uid}...`);
 
       // 1. Save to preferences (Detailed)
       await setDocument(`users/${user.uid}/notificationPreferences`, 'current', {
@@ -897,7 +881,6 @@ export const usePushNotifications = () => {
         updatedAt: new Date().toISOString()
       });
 
-      console.log("[PushToken] ✓ Token saved successfully to root and preferences");
 
     } catch (error) {
       console.error("[PushToken] Exception:", error);
@@ -926,7 +909,7 @@ export const usePushNotifications = () => {
   const scheduleDailySummary = async () => {
     try {
       const today = new Date();
-      const summaryTime = new Date(today);
+      const summaryTime = safeDateParse(today);
       summaryTime.setHours(20, 0, 0, 0);
 
       if (summaryTime < today) {
@@ -940,7 +923,7 @@ export const usePushNotifications = () => {
           body: "Veja seu progresso e doses pendentes",
           largeBody: "Confira como foi seu dia com os medicamentos e veja se há doses pendentes.",
           summaryText: "HoraMed",
-          schedule: { at: summaryTime, repeats: true, every: "day" as any },
+          schedule: { at: summaryTime, repeats: true, every: "day" as ScheduleEvery },
           channelId: CHANNEL_ID,
           actionTypeId: "DAILY_SUMMARY",
           extra: { type: "daily_summary" },
@@ -951,7 +934,6 @@ export const usePushNotifications = () => {
         }]
       });
 
-      console.log("✓ Daily summary scheduled for 8 PM");
     } catch (error) {
       console.error("Error scheduling daily summary:", error);
     }
@@ -962,6 +944,45 @@ export const usePushNotifications = () => {
     localStorage.setItem('quiet_hours', JSON.stringify(newQuietHours));
     scheduleNext48Hours();
   };
+
+  useEffect(() => {
+    const initializeNotifications = async () => {
+      // Only initialize scheduling for authenticated users
+      const user = auth.currentUser;
+      if (!user) {
+        return;
+      }
+
+      // Setup channels first (for Android)
+      await setupNotificationChannels();
+
+      // Initialize push notifications (this will request permissions)
+      await initializePushNotifications();
+
+      // Sync any offline actions
+      await syncOfflineActions();
+
+      // Schedule all notifications for the next 48 hours IMMEDIATELY
+      await scheduleNext48Hours();
+    };
+
+    initializeNotifications();
+
+    // Reschedule every 30 minutes
+    const scheduleInterval = setInterval(() => {
+      scheduleNext48Hours();
+    }, 30 * 60 * 1000);
+
+    // Sync offline actions every 2 minutes
+    const syncInterval = setInterval(() => {
+      syncOfflineActions();
+    }, 2 * 60 * 1000);
+
+    return () => {
+      clearInterval(scheduleInterval);
+      clearInterval(syncInterval);
+    };
+  }, []);
 
   return {
     checkPermissions,

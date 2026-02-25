@@ -6,6 +6,7 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { cn } from "@/lib/utils";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 interface DoseItem {
   id: string;
   due_at: string;
@@ -29,22 +30,22 @@ interface SwipeableDoseCardProps {
 
 const SWIPE_THRESHOLD = 100;
 
-export default function SwipeableDoseCard({ 
-  dose, 
-  onTake, 
-  onSkip, 
-  isOverdue, 
-  isTaking, 
-  delay = 0 
+export default function SwipeableDoseCard({
+  dose,
+  onTake,
+  onSkip,
+  isOverdue,
+  isTaking,
+  delay = 0
 }: SwipeableDoseCardProps) {
   const { t } = useTranslation();
-  const time = format(new Date(dose.due_at), "HH:mm");
+  const time = format(safeDateParse(dose.due_at), "HH:mm");
   const { triggerSuccess, triggerWarning, triggerLight } = useHapticFeedback();
   const [isExiting, setIsExiting] = useState(false);
   const [exitDirection, setExitDirection] = useState<"left" | "right" | null>(null);
-  
+
   const x = useMotionValue(0);
-  
+
   // Transform x motion into background colors and opacity
   const rightBackground = useTransform(x, [0, SWIPE_THRESHOLD], ["rgba(34, 197, 94, 0)", "rgba(34, 197, 94, 0.15)"]);
   const leftBackground = useTransform(x, [-SWIPE_THRESHOLD, 0], ["rgba(239, 68, 68, 0.15)", "rgba(239, 68, 68, 0)"]);
@@ -55,7 +56,7 @@ export default function SwipeableDoseCard({
 
   const handleDragEnd = (_: any, info: PanInfo) => {
     const offsetX = info.offset.x;
-    
+
     if (offsetX > SWIPE_THRESHOLD) {
       // Swipe right - Take
       triggerSuccess();
@@ -77,12 +78,12 @@ export default function SwipeableDoseCard({
       triggerLight();
     }
   };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
-      animate={{ 
-        opacity: isExiting ? 0 : 1, 
+      animate={{
+        opacity: isExiting ? 0 : 1,
         y: isExiting ? 0 : 0,
         x: isExiting ? (exitDirection === "right" ? 300 : -300) : 0,
         scale: isExiting ? 0.8 : 1
@@ -95,11 +96,11 @@ export default function SwipeableDoseCard({
       {/* Background indicators */}
       <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
         {/* Right swipe (Take) indicator */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 flex items-center pl-4"
           style={{ backgroundColor: rightBackground }}
         >
-          <motion.div 
+          <motion.div
             style={{ opacity: rightIconOpacity, scale: rightIconScale }}
             className="flex items-center gap-2 text-success"
           >
@@ -109,13 +110,13 @@ export default function SwipeableDoseCard({
             <span className="font-medium text-sm">Tomar</span>
           </motion.div>
         </motion.div>
-        
+
         {/* Left swipe (Skip) indicator */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 flex items-center justify-end pr-4"
           style={{ backgroundColor: leftBackground }}
         >
-          <motion.div 
+          <motion.div
             style={{ opacity: leftIconOpacity, scale: leftIconScale }}
             className="flex items-center gap-2 text-destructive"
           >
@@ -139,8 +140,8 @@ export default function SwipeableDoseCard({
         className={cn(
           "relative rounded-2xl p-4 backdrop-blur-sm transition-colors duration-300",
           "shadow-[var(--shadow-sm)] touch-pan-y select-none",
-          isOverdue 
-            ? "bg-destructive/5 ring-1 ring-destructive/20" 
+          isOverdue
+            ? "bg-destructive/5 ring-1 ring-destructive/20"
             : "bg-card"
         )}
       >
@@ -158,12 +159,12 @@ export default function SwipeableDoseCard({
 
           {/* Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-base truncate">{dose.items.name}</h3>
+            <h3 className="font-medium text-base truncate">{dose.items?.name || "Medicamento"}</h3>
             <div className="flex items-center gap-2 mt-0.5">
-              {dose.items.dose_text && (
-                <span className="text-sm text-muted-foreground">{dose.items.dose_text}</span>
+              {dose.items?.dose_text && (
+                <span className="text-sm text-muted-foreground">{dose.items?.dose_text}</span>
               )}
-              {dose.items.with_food && (
+              {dose.items?.with_food && (
                 <span className="pill-warning text-xs py-0.5">
                   <Utensils className="w-3 h-3" />
                   Com alimento
@@ -182,7 +183,7 @@ export default function SwipeableDoseCard({
             >
               <X className="w-5 h-5" />
             </motion.button>
-            
+
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.95 }}

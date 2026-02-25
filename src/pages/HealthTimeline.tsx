@@ -26,6 +26,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 interface TimelineEvent {
   id: string;
   type: 'consulta' | 'exame' | 'medicamento' | 'documento' | 'vacina' | 'dose';
@@ -188,7 +189,7 @@ export default function HealthTimeline() {
       setStats({ consultas, exames, medicamentos, documentos, vacinas, dosesTomadas });
 
       // Ordenar por data decrescente
-      allEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      allEvents.sort((a, b) => safeGetTime(b.date) - safeGetTime(a.date));
 
       setEvents(allEvents);
     } catch (error) {
@@ -221,10 +222,10 @@ export default function HealthTimeline() {
         dot: 'bg-blue-500'
       };
       case 'exame': return {
-        bg: 'bg-purple-500/10',
-        border: 'border-purple-500/20',
-        text: 'text-purple-600',
-        dot: 'bg-purple-500'
+        bg: 'bg-teal-500/10',
+        border: 'border-teal-500/20',
+        text: 'text-teal-600',
+        dot: 'bg-teal-500'
       };
       case 'medicamento': return {
         bg: 'bg-emerald-500/10',
@@ -277,7 +278,7 @@ export default function HealthTimeline() {
 
   // Agrupar eventos por mês
   const groupedEvents = filteredEvents.reduce((groups, event) => {
-    const monthKey = format(new Date(event.date), 'MMMM yyyy', { locale: ptBR });
+    const monthKey = format(safeDateParse(event.date), 'MMMM yyyy', { locale: ptBR });
     if (!groups[monthKey]) {
       groups[monthKey] = [];
     }
@@ -286,7 +287,7 @@ export default function HealthTimeline() {
   }, {} as Record<string, TimelineEvent[]>);
 
   const formatEventDate = (date: string) => {
-    const eventDate = new Date(date);
+    const eventDate = safeDateParse(date);
     if (isToday(eventDate)) {
       return format(eventDate, "HH:mm");
     }
@@ -297,7 +298,7 @@ export default function HealthTimeline() {
   };
 
   const getRelativeTime = (date: string) => {
-    const days = differenceInDays(new Date(), new Date(date));
+    const days = differenceInDays(new Date(), safeDateParse(date));
     if (days === 0) return 'Hoje';
     if (days === 1) return 'Ontem';
     if (days < 7) return `${days} dias atrás`;
@@ -358,10 +359,10 @@ export default function HealthTimeline() {
               <p className="text-[10px] text-muted-foreground">Consultas</p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
+          <Card className="bg-gradient-to-br from-teal-500/10 to-teal-500/5 border-teal-500/20">
             <CardContent className="p-3 text-center">
-              <FlaskConical className="h-5 w-5 text-purple-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-purple-600">{stats.exames}</p>
+              <FlaskConical className="h-5 w-5 text-teal-500 mx-auto mb-1" />
+              <p className="text-2xl font-bold text-teal-600">{stats.exames}</p>
               <p className="text-[10px] text-muted-foreground">Exames</p>
             </CardContent>
           </Card>

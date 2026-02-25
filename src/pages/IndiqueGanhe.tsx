@@ -10,13 +10,27 @@ import { getReferralDiscountForUser, getFreeExtraSlotsForUser, generateReferralC
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface ProfileDoc {
+  referralCode?: string;
+  userId: string;
+}
+
+interface ReferralDoc {
+  id: string;
+  status: 'active' | 'pending' | 'expired';
+  planType?: string;
+  createdAt: string;
+}
+
 export default function IndiqueGanhe() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isPremium } = useSubscription();
   const [referralCode, setReferralCode] = useState<string>("");
-  const [referrals, setReferrals] = useState<any[]>([]);
+  const [referrals, setReferrals] = useState<ReferralDoc[]>([]);
   const [discount, setDiscount] = useState(0);
   const [extraSlots, setExtraSlots] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -35,7 +49,7 @@ export default function IndiqueGanhe() {
 
     try {
       // Get user's referral code from profile subcollection
-      const { data: profile } = await fetchDocument<any>(
+      const { data: profile } = await fetchDocument<ProfileDoc>(
         `users/${user.uid}/profile`,
         'me'
       );
@@ -58,7 +72,7 @@ export default function IndiqueGanhe() {
       }
 
       // Get referrals from subcollection
-      const { data: referralsData } = await fetchCollection<any>(
+      const { data: referralsData } = await fetchCollection<ReferralDoc>(
         `users/${user.uid}/referrals`,
         [orderBy('createdAt', 'desc')]
       );
@@ -107,9 +121,8 @@ export default function IndiqueGanhe() {
       try {
         await navigator.share(shareData);
         toast.success(t("toast.referral.sharedSuccess"));
-      } catch (error: any) {
-        // User cancelled or error occurred
-        if (error.name !== 'AbortError') {
+      } catch (error: unknown) {
+        if (error instanceof Error && error.name !== 'AbortError') {
           copyReferralCode();
         }
       }
@@ -141,7 +154,7 @@ export default function IndiqueGanhe() {
         <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <div className="text-center space-y-4">
             <div className="flex items-center justify-center relative">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full">
+              <div className="p-3 bg-gradient-to-br from-teal-500 to-pink-500 rounded-full">
                 <Gift className="h-8 w-8 text-white" />
               </div>
               <Sparkles className="h-5 w-5 text-primary absolute -top-1 -right-1 animate-pulse" />
@@ -264,7 +277,7 @@ export default function IndiqueGanhe() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {referral.createdAt ? new Date(referral.createdAt).toLocaleDateString('pt-BR') : 'Data desconhecida'}
+                      {referral.createdAt ? safeDateParse(referral.createdAt).toLocaleDateString('pt-BR') : 'Data desconhecida'}
                     </p>
                   </div>
 
@@ -284,7 +297,7 @@ export default function IndiqueGanhe() {
         </Card>
 
         {/* Info Card */}
-        <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+        <Card className="p-4 bg-gradient-to-r from-teal-50 to-pink-50 dark:from-teal-950/20 dark:to-pink-950/20">
           <p className="text-sm text-center">
             💡 <strong>Dica:</strong> Compartilhe seu código nas redes sociais, grupos de família ou amigos. Quanto mais pessoas usarem, mas benefícios você ganha!
           </p>

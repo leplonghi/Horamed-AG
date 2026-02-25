@@ -44,10 +44,10 @@ if ("serviceWorker" in navigator) {
         registerSW({
           immediate: true,
           onNeedRefresh() {
-            console.log("New content available");
+            // New content available - handled by UI prompt
           },
           onOfflineReady() {
-            console.log("App ready offline");
+            // App ready for offline use
           },
         });
       })

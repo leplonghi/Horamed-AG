@@ -6,6 +6,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface MedicationSummaryCardProps {
   medication: {
@@ -29,8 +30,8 @@ export default function MedicationSummaryCard({ medication, className }: Medicat
   const progress = totalCount > 0 ? (takenCount / totalCount) * 100 : 0;
 
   const nextDose = medication.doses
-    .filter(d => d.status === 'scheduled' && new Date(d.dueAt) > new Date())
-    .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())[0];
+    .filter(d => d.status === 'scheduled' && safeDateParse(d.dueAt) > new Date())
+    .sort((a, b) => safeGetTime(a.dueAt) - safeGetTime(b.dueAt))[0];
 
   return (
     <Link to={`/medicamentos/${medication.id}/historico`}>
@@ -67,7 +68,7 @@ export default function MedicationSummaryCard({ medication, className }: Medicat
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t">
                 <Clock className="h-4 w-4" />
                 <span>
-                  {t('medSummary.next')}: {format(new Date(nextDose.dueAt), "HH:mm", { locale: dateLocale })}
+                  {t('medSummary.next')}: {format(safeDateParse(nextDose.dueAt), "HH:mm", { locale: dateLocale })}
                 </span>
               </div>
             )}

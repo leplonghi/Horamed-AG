@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
 import ExamDeficiencyBadges from "@/components/fitness/ExamDeficiencyBadges";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -96,7 +97,7 @@ export default function CofreDocumento() {
       case "exame":
         return { icon: TestTube2, color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-950", label: t('cofreDoc.exam') };
       case "vacinacao":
-        return { icon: Syringe, color: "text-purple-600 dark:text-purple-400", bg: "bg-purple-50 dark:bg-purple-950", label: t('cofreDoc.vaccineCard') };
+        return { icon: Syringe, color: "text-teal-600 dark:text-teal-400", bg: "bg-teal-50 dark:bg-teal-950", label: t('cofreDoc.vaccineCard') };
       case "consulta":
         return { icon: Stethoscope, color: "text-orange-600 dark:text-orange-400", bg: "bg-orange-50 dark:bg-orange-950", label: t('cofreDoc.consultation') };
       default:
@@ -374,7 +375,7 @@ export default function CofreDocumento() {
                   <div>
                     <p className="text-muted-foreground">📅 {t('cofreDoc.issueDate')}</p>
                     <p className="font-medium">
-                      {format(new Date(documento.issued_at), "dd/MM/yyyy", { locale: dateLocale })}
+                      {format(safeDateParse(documento.issued_at), "dd/MM/yyyy", { locale: dateLocale })}
                     </p>
                   </div>
                 )}
@@ -382,7 +383,7 @@ export default function CofreDocumento() {
                   <div>
                     <p className="text-muted-foreground">⏰ {t('cofreDoc.validity')}</p>
                     <p className="font-medium">
-                      {format(new Date(documento.expires_at), "dd/MM/yyyy", { locale: dateLocale })}
+                      {format(safeDateParse(documento.expires_at), "dd/MM/yyyy", { locale: dateLocale })}
                     </p>
                   </div>
                 )}
@@ -402,7 +403,7 @@ export default function CofreDocumento() {
                   <div className="col-span-2">
                     <p className="text-muted-foreground">📅 {t('cofreDoc.followupDate')}</p>
                     <p className="font-medium">
-                      {format(new Date(meta.followup_date), "dd/MM/yyyy", { locale: dateLocale })}
+                      {format(safeDateParse(meta.followup_date), "dd/MM/yyyy", { locale: dateLocale })}
                     </p>
                   </div>
                 )}
@@ -711,14 +712,14 @@ export default function CofreDocumento() {
           <Card className="mb-4">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <Syringe className="w-5 h-5 text-purple-600" />
+                <Syringe className="w-5 h-5 text-teal-600" />
                 <CardTitle className="text-lg">{t('cofreDoc.vaccineInfo')}</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="p-3 bg-purple-50 dark:bg-purple-950 rounded-lg">
-                <p className="font-semibold text-purple-900 dark:text-purple-100">{meta.vaccine_name}</p>
-                {meta.dose_number && <p className="text-sm text-purple-700 dark:text-purple-300">{t('cofreDoc.dose')}: {meta.dose_number}</p>}
+              <div className="p-3 bg-teal-50 dark:bg-teal-950 rounded-lg">
+                <p className="font-semibold text-teal-900 dark:text-teal-100">{meta.vaccine_name}</p>
+                {meta.dose_number && <p className="text-sm text-teal-700 dark:text-teal-300">{t('cofreDoc.dose')}: {meta.dose_number}</p>}
               </div>
             </CardContent>
           </Card>

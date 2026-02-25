@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { startOfDay, subDays, differenceInHours } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface SmartInsight {
   id: string;
@@ -67,11 +68,11 @@ export default function SmartInsightsCard() {
 
       // Pattern 2: Weekend adherence drop
       const weekendDoses = doses.filter((d) => {
-        const day = new Date(d.due_at).getDay();
+        const day = safeDateParse(d.due_at).getDay();
         return day === 0 || day === 6;
       });
       const weekdayDoses = doses.filter((d) => {
-        const day = new Date(d.due_at).getDay();
+        const day = safeDateParse(d.due_at).getDay();
         return day > 0 && day < 6;
       });
 
@@ -92,7 +93,7 @@ export default function SmartInsightsCard() {
 
       // Pattern 3: Specific time slot issues
       const morningDoses = doses.filter((d) => {
-        const hour = new Date(d.due_at).getHours();
+        const hour = safeDateParse(d.due_at).getHours();
         return hour >= 6 && hour < 12;
       });
 
@@ -122,7 +123,7 @@ export default function SmartInsightsCard() {
         const lowStock = stockData.filter((s) => {
           if (!s.projected_end_at) return false;
           const daysLeft = Math.ceil(
-            (new Date(s.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            (safeDateParse(s.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
           );
           return daysLeft <= 7 && daysLeft > 0;
         });
@@ -140,7 +141,7 @@ export default function SmartInsightsCard() {
 
       // Pattern 5: Positive reinforcement
       const recentDoses = doses.filter((d) => {
-        const hoursSince = differenceInHours(new Date(), new Date(d.due_at));
+        const hoursSince = differenceInHours(new Date(), safeDateParse(d.due_at));
         return hoursSince <= 168; // Last 7 days
       });
       const recentAdherence = (recentDoses.filter((d) => d.status === "taken").length / recentDoses.length) * 100;

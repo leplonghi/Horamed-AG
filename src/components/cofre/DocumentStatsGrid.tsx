@@ -14,6 +14,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HealthDocument } from "@/hooks/useCofre";
 import { differenceInDays, addDays, isAfter, isBefore } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DocumentStatsGridProps {
   documents: HealthDocument[];
@@ -29,8 +30,8 @@ export default function DocumentStatsGrid({ documents, onStatClick }: DocumentSt
 
     const expiringSoon = documents.filter(doc =>
       doc.expiresAt &&
-      isAfter(new Date(doc.expiresAt), now) &&
-      isBefore(new Date(doc.expiresAt), in30Days)
+      isAfter(safeDateParse(doc.expiresAt), now) &&
+      isBefore(safeDateParse(doc.expiresAt), in30Days)
     ).length;
 
     const needsReview = documents.filter(doc => doc.extractionStatus === "pending_review").length;
@@ -109,7 +110,7 @@ export default function DocumentStatsGrid({ documents, onStatClick }: DocumentSt
       icon: <Syringe className="h-4 w-4" />,
       label: language === 'pt' ? 'Vacinas' : 'Vaccines',
       value: stats.byCategory.vacinacao,
-      color: "bg-purple-500/10 text-purple-500 border-purple-500/30"
+      color: "bg-teal-500/10 text-teal-500 border-teal-500/30"
     },
     {
       id: "consulta",

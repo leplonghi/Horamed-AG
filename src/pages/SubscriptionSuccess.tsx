@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,16 +15,19 @@ const SubscriptionSuccess = () => {
   const [showConfetti, setShowConfetti] = useState(true);
   const [syncing, setSyncing] = useState(true);
   const sessionId = searchParams.get('session_id');
-  const { syncWithStripe, refresh, isPremium } = useSubscription();
+  const { syncWithStripe } = useSubscription();
+  const hasSynced = useRef(false);
 
   useEffect(() => {
     // Sync subscription with Stripe after successful checkout
     const syncSubscription = async () => {
+      if (hasSynced.current) return;
+      hasSynced.current = true;
+
       setSyncing(true);
       try {
         await syncWithStripe();
-        // Also refresh local state
-        await refresh();
+        // refresh is redundant as syncWithStripe does the same thing
       } catch (error) {
         console.error('Error syncing subscription:', error);
       } finally {
@@ -32,12 +35,17 @@ const SubscriptionSuccess = () => {
       }
     };
 
-    syncSubscription();
+    if (sessionId) {
+      syncSubscription();
+    } else {
+      // If no session ID, maybe just a refresh?
+      setSyncing(false);
+    }
 
     // Hide confetti after 5 seconds
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
-  }, [syncWithStripe, refresh]);
+  }, [sessionId, syncWithStripe]); // Run when session ID changes or sync function changes
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-background flex items-center justify-center p-4">

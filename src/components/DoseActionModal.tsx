@@ -4,36 +4,40 @@ import { Clock, CheckCircle2, XCircle, SkipForward, Calendar } from "lucide-reac
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DoseActionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dose: {
     id: string;
-    due_at: string;
+    due_at?: string;
+    dueAt?: string;
     items: {
       name: string;
-      dose_text: string | null;
+      dose_text?: string | null;
+      doseText?: string | null;
     };
     stock?: {
-      units_left: number;
+      units_left?: number;
+      currentQty?: number;
     }[];
   } | null;
   onAction: (action: 'taken' | 'missed' | 'skipped' | 'custom-time') => void;
 }
 
-export default function DoseActionModal({ 
-  open, 
-  onOpenChange, 
-  dose, 
-  onAction 
+export default function DoseActionModal({
+  open,
+  onOpenChange,
+  dose,
+  onAction
 }: DoseActionModalProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  
+
   if (!dose) return null;
 
-  const dueTime = new Date(dose.due_at);
+  const dueTime = safeDateParse(dose.due_at || dose.dueAt || '');
   const now = new Date();
   const minutesLate = Math.round((now.getTime() - dueTime.getTime()) / (1000 * 60));
 
@@ -46,7 +50,7 @@ export default function DoseActionModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">{dose.items.name}</DialogTitle>
+          <DialogTitle className="text-2xl">{dose.items?.name || "Medicamento"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -69,9 +73,9 @@ export default function DoseActionModal({
           </div>
 
           {/* Dose Info */}
-          {dose.items.dose_text && (
+          {(dose.items?.dose_text || dose.items?.doseText) && (
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">💊 {dose.items.dose_text}</p>
+              <p className="text-sm text-muted-foreground">💊 {dose.items?.dose_text || dose.items?.doseText}</p>
             </div>
           )}
 
@@ -79,7 +83,7 @@ export default function DoseActionModal({
           {dose.stock && dose.stock.length > 0 && (
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                📦 {t('dose.stock')}: {dose.stock[0].units_left} {t('dose.unitsShort')}
+                📦 {t('dose.stock')}: {dose.stock[0].units_left ?? dose.stock[0].currentQty} {t('dose.unitsShort')}
               </p>
             </div>
           )}

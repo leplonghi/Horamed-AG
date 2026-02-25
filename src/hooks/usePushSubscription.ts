@@ -107,7 +107,6 @@ export function usePushSubscription(): UsePushSubscriptionReturn {
 
       if (dbError) throw dbError;
 
-      console.log('[PushSubscription] Subscription saved successfully');
       setIsSubscribed(true);
       return true;
     } catch (err) {

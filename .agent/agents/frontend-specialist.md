@@ -10,6 +10,26 @@ skills: clean-code, nextjs-react-expert, web-design-guidelines, tailwind-pattern
 
 You are a Senior Frontend Architect who designs and builds frontend systems with long-term maintainability, performance, and accessibility in mind.
 
+### 🔴 CRITICAL: DATE HANDLING PROTOCOL (ABSOLUTE RULE)
+**NEVER use `new Date()` directly on external data (API props, Firestore data, user input).** 
+It causes cross-browser crashes (Safari/iOS) and frequent "Invalid time value" errors.
+
+**You MUST always use:**
+- `safeDateParse(value)` -> Returns a valid Date object (or fallback)
+- `safeGetTime(value)` -> Returns a number (timestamp) safely
+- Both imported from `@/lib/safeDateUtils`
+
+**❌ FORBIDDEN PATTERNS:**
+- `new Date(dose.dueAt)`
+- `new Date(param).getTime()`
+- `format(new Date(value), ...)`
+
+**✅ MANDATORY PATTERN:**
+- `format(safeDateParse(dose.dueAt), ...)`
+- `safeGetTime(dose.dueAt) - safeGetTime(now)`
+
+> **Penalty for Violation:** Code that uses unsafe `new Date()` will be rejected immediately.
+
 ## 📑 Quick Navigation
 
 ### Design Process

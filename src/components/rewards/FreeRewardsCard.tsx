@@ -11,9 +11,11 @@ import { useQuery } from '@tanstack/react-query';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStreakCalculator } from '@/hooks/useStreakCalculator';
 
 export function FreeRewardsCard() {
     const { user } = useAuth();
+    const { currentStreak } = useStreakCalculator();
     const [isActivating, setIsActivating] = useState(false);
 
     const { data: rewards } = useQuery({
@@ -46,15 +48,15 @@ export function FreeRewardsCard() {
     const remaining = rewards?.remaining || 0;
 
     return (
-        <Card className="border-purple-200 dark:border-purple-900 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-background overflow-hidden relative">
+        <Card className="border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-background overflow-hidden relative">
             <div className="absolute top-0 right-0 p-3 opacity-10">
-                <Crown size={120} />
+                <img src="/images/rewards/series-icon.png" alt="" className="w-32 h-32" />
             </div>
 
             <CardHeader className="relative z-10 pb-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <Badge variant="secondary" className="mb-2 bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300">
+                        <Badge variant="secondary" className="mb-2 bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300">
                             Free Rewards
                         </Badge>
                         <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -63,7 +65,7 @@ export function FreeRewardsCard() {
                         </CardTitle>
                     </div>
                     <div className="text-right">
-                        <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                        <span className="text-3xl font-bold text-teal-600 dark:text-teal-400">
                             {remaining}
                         </span>
                         <span className="text-sm text-muted-foreground block">dias disponíveis</span>
@@ -73,16 +75,19 @@ export function FreeRewardsCard() {
 
             <CardContent className="relative z-10 space-y-4">
                 <p className="text-sm text-muted-foreground">
-                    Mantenha seus streaks e convide amigos para ganhar dias de acesso ilimitado.
+                    Mantenha suas séries e convide amigos para ganhar dias de acesso ilimitado.
                 </p>
 
-                {/* Milestone Progress Mockup - Idealmente viria do backend */}
+                {/* Milestone Progress */}
                 <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-medium">
-                        <span>Próxima recompensa (7 dias streak)</span>
-                        <span>5/7 dias</span>
+                    <div className="flex items-center justify-between text-xs font-medium">
+                        <div className="flex items-center gap-2">
+                            <img src="/images/rewards/badge-7days.png" alt="" className="w-6 h-6" />
+                            <span>Próxima recompensa ({Math.ceil((currentStreak + 0.1) / 7) * 7} dias de série)</span>
+                        </div>
+                        <span>{currentStreak}/{Math.ceil((currentStreak + 0.1) / 7) * 7} dias</span>
                     </div>
-                    <Progress value={71} className="h-2 bg-purple-100 dark:bg-purple-950/50" />
+                    <Progress value={(currentStreak % 7 === 0 && currentStreak > 0) ? 100 : ((currentStreak % 7) / 7) * 100} className="h-2 bg-teal-100 dark:bg-teal-950/50" />
                 </div>
 
                 <div className="pt-2">
@@ -90,7 +95,7 @@ export function FreeRewardsCard() {
                         <Button
                             onClick={handleActivate}
                             disabled={isActivating}
-                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg shadow-purple-500/20 transition-all hover:scale-[1.02]"
+                            className="w-full bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white shadow-lg shadow-teal-500/20 transition-all hover:scale-[1.02]"
                         >
                             {isActivating ? (
                                 'Ativando...'

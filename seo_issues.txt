@@ -1,0 +1,6 @@
+src\pages\Achievements.tsx has empty alt in img 0
+src\pages\Achievements.tsx has empty alt in img 1
+src\pages\CaregiverAccept.tsx has 3 H1 tags
+src\pages\ConsultationCardView.tsx has 2 H1 tags
+src\pages\DrugInteractions.tsx has 2 H1 tags
+src\pages\HealthVitals.tsx has 2 H1 tags

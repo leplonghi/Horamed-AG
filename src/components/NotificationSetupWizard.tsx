@@ -9,6 +9,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
 import { auth, fetchCollection, updateDocument, where, orderBy, serverTimestamp } from "@/integrations/firebase";
 import { cn } from "@/lib/utils";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface NotificationSetupWizardProps {
   open: boolean;
@@ -78,7 +79,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       if (isNative) {
         // Request Push Notification permissions
         const pushPermStatus = await PushNotifications.requestPermissions();
-        console.log("[Setup] Push permission result:", pushPermStatus.receive);
 
         if (pushPermStatus.receive !== 'granted') {
           updateStepStatus('permission', 'error',
@@ -91,7 +91,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
         // Request Local Notification permissions
         const localPermStatus = await LocalNotifications.requestPermissions();
-        console.log("[Setup] Local permission result:", localPermStatus.display);
 
         if (localPermStatus.display !== 'granted') {
           updateStepStatus('permission', 'error', 'Permissão de notificações locais negada');
@@ -145,7 +144,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
           PushNotifications.addListener('registration', (token) => {
             clearTimeout(timeout);
-            console.log("[Setup] Got token:", token.value.substring(0, 20) + "...");
             resolve(token.value);
           });
 
@@ -176,7 +174,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           return false;
         }
 
-        console.log("[Setup] Token saved successfully!");
 
         // Create notification channel for Android
         if (platform === 'android') {
@@ -239,7 +236,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
       if (!doses || doses.length === 0) {
         updateStepStatus('schedule', 'success');
-        console.log("[Setup] No doses to schedule");
         return true;
       }
 
@@ -252,7 +248,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
         // Schedule local notifications for each dose
         const notifications = doses.map((dose, index) => {
-          const dueDate = new Date(dose.dueAt);
+          const dueDate = safeDateParse(dose.dueAt);
 
           return {
             id: index + 1,
@@ -270,7 +266,6 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
         if (notifications.length > 0) {
           await LocalNotifications.schedule({ notifications });
-          console.log(`[Setup] Scheduled ${notifications.length} local notifications`);
         }
       }
 

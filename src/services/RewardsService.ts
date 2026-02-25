@@ -66,7 +66,6 @@ export async function addPremiumDays(
         updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    console.log(`✅ Adicionados ${days} dias Premium para usuário ${userId}`);
 }
 
 /**
@@ -123,7 +122,6 @@ export async function activatePremiumDays(
         history: arrayUnion(transaction),
     });
 
-    console.log(`✅ Premium ativado para usuário ${userId} até ${expiresAt.toISOString()}`);
 
     return { success: true, expiresAt };
 }
@@ -172,7 +170,6 @@ export async function addCredits(
         updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    console.log(`✅ Adicionados R$ ${amount.toFixed(2)} em créditos para usuário ${userId}`);
 }
 
 /**
@@ -212,7 +209,6 @@ export async function useCredits(
         updatedAt: serverTimestamp(),
     });
 
-    console.log(`✅ Usados R$ ${amount.toFixed(2)} em créditos do usuário ${userId}`);
 }
 
 /**
@@ -253,7 +249,6 @@ export async function addProtections(
         updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    console.log(`✅ Adicionadas ${amount} proteções para usuário ${userId}`);
 }
 
 /**
@@ -313,7 +308,6 @@ export async function useProtection(
         updatedAt: serverTimestamp(),
     });
 
-    console.log(`✅ Proteção usada para salvar streak de ${streakSaved} dias`);
 
     return {
         success: true,
@@ -348,7 +342,6 @@ export async function handleStreakMilestone(
     const reward = calculateStreakReward(days, isPremium);
 
     if (!reward) {
-        console.log(`Nenhuma recompensa para ${days} dias de streak`);
         return;
     }
 
@@ -368,7 +361,6 @@ export async function handleStreakMilestone(
         );
     }
 
-    console.log(`✅ Recompensa de streak processada: ${days} dias, ${reward.type}, ${reward.amount}`);
 }
 
 // ============================================
@@ -425,7 +417,6 @@ export async function handleReferralSignup(
         updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    console.log(`✅ Indicação processada: ${referrerId} → ${referredEmail}`);
 }
 
 /**
@@ -454,5 +445,4 @@ export async function handleReferralPremiumConversion(
         updatedAt: serverTimestamp(),
     });
 
-    console.log(`✅ Conversão Premium processada: ${referrerId} ganhou recompensa`);
 }

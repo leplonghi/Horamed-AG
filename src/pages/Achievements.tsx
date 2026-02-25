@@ -84,12 +84,12 @@ export default function Achievements() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-6">
+          <Card className="p-6 bg-gradient-to-br from-teal-50 to-pink-50 dark:from-teal-950/30 dark:to-pink-950/30 border-teal-200 dark:border-teal-900">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Flame className="h-5 w-5 text-orange-500" />
-                  <h3 className="text-lg font-semibold">{t('achievements.currentStreak')}</h3>
+                  <img src="/images/rewards/series-icon.png" alt="Série Atual Icon" className="h-8 w-8" />
+                  <h3 className="text-lg font-semibold">Série Atual</h3>
                 </div>
                 <p className="text-3xl font-bold text-primary">
                   {currentStreak} {t('achievements.days')}
@@ -98,7 +98,9 @@ export default function Achievements() {
                   {t('achievements.record')}: {longestStreak} {t('achievements.days')}
                 </p>
               </div>
-              <StreakAnimation streak={currentStreak} />
+              <div className="flex items-center justify-center">
+                <img src="/images/rewards/badge-7days.png" alt="Badge 7 Days" className="w-20 h-20" />
+              </div>
             </div>
           </Card>
         </motion.div>
@@ -117,7 +119,7 @@ export default function Achievements() {
           </Card>
 
           <Card className="p-4 text-center">
-            <Star className="h-6 w-6 mx-auto mb-2 text-purple-500" />
+            <Star className="h-6 w-6 mx-auto mb-2 text-teal-500" />
             <p className="text-2xl font-bold">{xpSystem.level}</p>
             <p className="text-xs text-muted-foreground">{t('achievements.level')}</p>
           </Card>

@@ -1,3 +1,4 @@
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 // Stock prediction handler
 
 export interface StockContext {
@@ -11,7 +12,7 @@ export interface StockContext {
 export function buildStockPrompt(context: StockContext): string {
   const stockInfo = context.stockData.map(s => {
     const daysLeft = s.projected_end_at 
-      ? Math.ceil((new Date(s.projected_end_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.ceil((safeDateParse(s.projected_end_at).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
       : null;
     
     return `• ${s.item_name}: ${s.units_left} unidades${daysLeft ? ` (aprox. ${daysLeft} dias)` : ''}`;

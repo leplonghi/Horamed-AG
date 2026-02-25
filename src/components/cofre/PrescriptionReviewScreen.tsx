@@ -13,6 +13,7 @@ import { auth, addDocument, updateDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface Medication {
   drug_name: string;
@@ -206,7 +207,7 @@ export default function PrescriptionReviewScreen({ documentId, extractedData, on
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">📅</span>
                 <span className="text-sm">
-                  {format(new Date(extractedData.issued_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {format(safeDateParse(extractedData.issued_at), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
                 </span>
               </div>
             )}

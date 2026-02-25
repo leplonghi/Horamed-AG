@@ -73,7 +73,7 @@ export function useNotificationMetrics(days: number = 7) {
 
 export async function trackNotificationEvent(
   eventName: string,
-  eventData: Record<string, any> = {}
+  eventData: Record<string, unknown> = {}
 ) {
   const user = auth.currentUser;
   if (!user) return;

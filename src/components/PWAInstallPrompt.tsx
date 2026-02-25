@@ -118,7 +118,7 @@ export default function PWAInstallPrompt() {
                 {/* App Icon */}
                 <div className="mx-auto w-24 h-24 bg-gradient-to-br from-primary via-primary to-primary/80 rounded-[28px] flex items-center justify-center mb-5 shadow-xl shadow-primary/30 ring-4 ring-primary/20">
                   <img
-                    src="/favicon.png?v=7"
+                    src="/favicon.png?v=9"
                     alt="HoraMed"
                     className="w-14 h-14"
                   />

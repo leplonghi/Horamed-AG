@@ -3,6 +3,34 @@ import { auth, fetchCollection, where, updateDocument } from "@/integrations/fir
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+interface MedicationDoc {
+    id: string;
+    name: string;
+    doseText?: string | null;
+    instructions?: string;
+    category?: string;
+    withFood?: boolean;
+    isActive: boolean;
+    createdAt: string;
+    profileId: string;
+}
+
+interface StockDoc {
+    id: string;
+    itemId: string;
+    unitsLeft?: number;
+    currentQty?: number;
+    unitLabel?: string;
+}
+
+interface ScheduleDoc {
+    id: string;
+    itemId: string;
+    times?: string[];
+    freqType?: string;
+    frequencyType?: string;
+}
+
 export interface Schedule {
     id: string;
     itemId: string;
@@ -45,15 +73,15 @@ export function useMedications(profileId?: string) {
                 medConstraints.push(where("profileId", "==", profileId));
             }
 
-            const { data: medications, error: medError } = await fetchCollection<any>(
+            const { data: medications, error: medError } = await fetchCollection<MedicationDoc>(
                 `users/${user.uid}/medications`,
                 medConstraints
             );
             if (medError) throw medError;
             if (!medications || medications.length === 0) return [];
 
-            const { data: allStocks } = await fetchCollection<any>(`users/${user.uid}/stock`);
-            const { data: allSchedules } = await fetchCollection<any>(`users/${user.uid}/schedules`);
+            const { data: allStocks } = await fetchCollection<StockDoc>(`users/${user.uid}/stock`);
+            const { data: allSchedules } = await fetchCollection<ScheduleDoc>(`users/${user.uid}/schedules`);
 
             const joinedData: Medication[] = medications.map(med => {
                 const medStock = allStocks?.filter(s => s.itemId === med.id).map(s => ({

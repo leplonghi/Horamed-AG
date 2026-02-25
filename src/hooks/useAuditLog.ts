@@ -4,7 +4,7 @@ interface AuditLogParams {
   action: string;
   resource: string;
   resource_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const useAuditLog = () => {

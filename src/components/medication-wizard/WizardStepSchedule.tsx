@@ -56,7 +56,7 @@ export function WizardStepSchedule({ data, updateData }: WizardStepScheduleProps
   const QUICK_TIMES = [
     { label: t('wizard.morning'), time: "08:00", icon: Sunrise, color: "text-orange-500" },
     { label: t('wizard.lunch'), time: "12:00", icon: Sun, color: "text-yellow-500" },
-    { label: t('wizard.afternoon'), time: "18:00", icon: Sunset, color: "text-purple-500" },
+    { label: t('wizard.afternoon'), time: "18:00", icon: Sunset, color: "text-teal-500" },
     { label: t('wizard.night'), time: "22:00", icon: Moon, color: "text-blue-500" },
   ];
 

@@ -8,56 +8,67 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 20% 98%;
-    --foreground: 220 15% 10%;
+    /* Soft Medical Blue Theme */
+    --background: 210 50% 98%; /* Very light blue tint */
+    --foreground: 222 47% 25%; /* Dark blue-grey for text - Softer than black */
+    
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 10%;
+    --card-foreground: 222 47% 25%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 10%;
-    --primary: 200 90% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 200 90% 45%;
-    --secondary: 220 15% 96%;
-    --secondary-foreground: 220 15% 10%;
-    --muted: 220 15% 96%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 180 90% 97%;
-    /* Fixed for accessibility (AA Compliance) - was 45% */
-    --accent-foreground: 180 100% 22%;
+    --popover-foreground: 222 47% 25%;
+    
+    /* Vibrant Soft Blue */
+    --primary: 221 83% 53%; 
+    --primary-foreground: 210 40% 98%;
+    --primary-hover: 221 83% 48%;
+    
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
 
-    /* PRO-MAX: Disruptor Color - Luminous Lime */
+    /* PRO-MAX: Disruptor Color - Luminous Lime (Kept for specific highlights) */
     --accent-highlight: 77 90% 55%;
     --accent-highlight-foreground: 0 0% 10%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
+    
     --success: 152 70% 42%;
-    --success-foreground: 0 0% 100%;
-    --border: 200 20% 90%;
-    --input: 200 20% 90%;
-    --ring: 200 90% 50%;
-    --radius: 1rem;
+    --success-foreground: 210 40% 98%;
+    
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 221 83% 53%;
+    
+    --radius: 1.25rem; /* Rounded aesthetic */
 
-    /* Fluid Gradient Colors - Ocean Theme */
-    --gradient-start: 210 100% 50%;
-    --gradient-mid: 195 100% 50%;
-    --gradient-end: 175 100% 45%;
-    --gradient-accent: 190 100% 55%;
+    /* Fluid Gradient Colors - Soft Blue Theme */
+    --gradient-start: 221 83% 53%;
+    --gradient-mid: 210 100% 65%;
+    --gradient-end: 190 90% 60%;
+    --gradient-accent: 230 85% 65%;
 
-    /* Modern shadows with depth */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.03);
-    --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
-    --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.1), 0 8px 20px rgba(0, 0, 0, 0.05);
-    --shadow-glow: 0 0 40px hsl(220 90% 56% / 0.15);
-    --shadow-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+    /* Modern shadows with depth - Softer blue-tinted shadows */
+    --shadow-xs: 0 1px 2px rgba(35, 55, 80, 0.05);
+    --shadow-sm: 0 2px 8px rgba(35, 55, 80, 0.06), 0 1px 2px rgba(35, 55, 80, 0.04);
+    --shadow-md: 0 4px 20px rgba(35, 55, 80, 0.08), 0 2px 8px rgba(35, 55, 80, 0.04);
+    --shadow-lg: 0 8px 30px rgba(35, 55, 80, 0.12), 0 4px 12px rgba(35, 55, 80, 0.08);
+    --shadow-xl: 0 16px 50px rgba(35, 55, 80, 0.15), 0 8px 20px rgba(35, 55, 80, 0.10);
+    --shadow-glow: 0 0 40px hsl(221 83% 53% / 0.15);
+    --shadow-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.02);
 
     /* Glass effect shadows - UPDATED: Pro-Max Definition */
-    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-glass-hover: 0 16px 48px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.05);
+    --shadow-glass: 0 8px 32px rgba(35, 55, 80, 0.08), 0 1px 2px rgba(255, 255, 255, 0.5);
+    --shadow-glass-hover: 0 16px 48px rgba(35, 55, 80, 0.12), 0 8px 16px rgba(35, 55, 80, 0.05);
 
     /* Transitions */
     --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -70,10 +81,10 @@ All colors MUST be HSL.
     --header-height: 4rem;
 
     /* Document Type Colors */
-    --doc-prescription: 217 91% 60%;
-    --doc-prescription-fg: 217 91% 20%;
-    --doc-prescription-bg: 217 91% 97%;
-    --doc-prescription-border: 217 91% 60%;
+    --doc-prescription: 221 83% 60%;
+    --doc-prescription-fg: 221 83% 20%;
+    --doc-prescription-bg: 221 83% 97%;
+    --doc-prescription-border: 221 83% 60%;
 
     --doc-exam: 152 70% 42%;
     --doc-exam-fg: 152 70% 22%;
@@ -191,6 +202,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
+    /* Native App Feel */
+    -webkit-touch-callout: none; /* Disable callout on long press on iOS */
+    -webkit-user-select: none; /* Disable text selection on iOS/Android */
+    user-select: none; /* Standard syntax for disabling text selection */
+    -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
+    overscroll-behavior-y: none; /* Prevent pull-to-refresh bounce effect on Android/Chrome */
+  }
+
+  /* Allow text selection only on specific elements where users might want to copy */
+  input, textarea, [contenteditable="true"], .selectable-text {
+    -webkit-user-select: auto;
+    user-select: auto;
   }
 
   html {

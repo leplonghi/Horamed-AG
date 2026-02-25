@@ -1,6 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where, orderBy, fetchDocument } from "@/integrations/firebase";
 import { differenceInDays, subDays } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface MedicationDoc {
+  id: string;
+  name: string;
+  profileId?: string;
+  isActive: boolean;
+}
+
+interface StockDoc {
+  id: string;
+  itemId: string;
+  currentQty: number;
+  unitsTotal: number;
+  projectedEndAt: string | null;
+  createdFromPrescriptionId: string | null;
+  lastRefillAt: string | null;
+  consumptionHistory?: ConsumptionEntry[];
+  unitLabel?: string;
+}
+
+interface DoseDoc {
+  id: string;
+  itemId: string;
+  dueAt: string;
+  status: string;
+  takenAt?: string;
+}
+
+interface HealthDoc {
+  id: string;
+  title?: string;
+}
 
 export interface StockProjection {
   id: string;
@@ -39,7 +72,7 @@ export function useStockProjection(profileId?: string) {
       if (!user) throw new Error("Not authenticated");
 
       // Fetch all active medications for user
-      const { data: medications } = await fetchCollection<any>(
+      const { data: medications } = await fetchCollection<MedicationDoc>(
         `users/${user.uid}/medications`,
         [where('isActive', '==', true)]
       );
@@ -56,7 +89,7 @@ export function useStockProjection(profileId?: string) {
       const itemIds = filteredMeds.map(m => m.id);
 
       // Fetch stock for these items
-      const { data: stockRecords } = await fetchCollection<any>(
+      const { data: stockRecords } = await fetchCollection<StockDoc>(
         `users/${user.uid}/stock`,
         [where('itemId', 'in', itemIds)]
       );
@@ -65,7 +98,7 @@ export function useStockProjection(profileId?: string) {
 
       // Fetch doses for adherence calculations
       const sevenDaysAgo = subDays(new Date(), 7);
-      const { data: doses } = await fetchCollection<any>(
+      const { data: doses } = await fetchCollection<DoseDoc>(
         `users/${user.uid}/doses`,
         [
           where('dueAt', '>=', sevenDaysAgo.toISOString()),
@@ -74,7 +107,7 @@ export function useStockProjection(profileId?: string) {
       );
 
       // Process and project
-      const projections: StockProjection[] = await Promise.all(stockRecords.map(async (s: any) => {
+      const projections: StockProjection[] = await Promise.all(stockRecords.map(async (s) => {
         const item = filteredMeds.find(m => m.id === s.itemId);
         if (!item) return null;
 
@@ -91,10 +124,10 @@ export function useStockProjection(profileId?: string) {
 
         // Calculate consumption trend
         const firstHalf = takenDoses.filter(d =>
-          new Date(d.takenAt || d.dueAt) <= subDays(new Date(), 3.5)
+          safeDateParse(d.takenAt || d.dueAt) <= subDays(new Date(), 3.5)
         ).length;
         const secondHalf = takenDoses.filter(d =>
-          new Date(d.takenAt || d.dueAt) > subDays(new Date(), 3.5)
+          safeDateParse(d.takenAt || d.dueAt) > subDays(new Date(), 3.5)
         ).length;
 
         let trend: 'increasing' | 'stable' | 'decreasing' = 'stable';
@@ -102,7 +135,7 @@ export function useStockProjection(profileId?: string) {
         if (secondHalf < firstHalf * 0.8) trend = 'decreasing';
 
         const daysRemaining = s.projectedEndAt
-          ? differenceInDays(new Date(s.projectedEndAt), new Date())
+          ? differenceInDays(safeDateParse(s.projectedEndAt), new Date())
           : dailyConsumptionAvg > 0
             ? Math.round(s.currentQty / dailyConsumptionAvg)
             : null;
@@ -110,7 +143,7 @@ export function useStockProjection(profileId?: string) {
         // Optionally fetch prescription title if we have an ID
         let prescriptionTitle = null;
         if (s.createdFromPrescriptionId) {
-          const { data: healthDoc } = await fetchDocument<any>(
+          const { data: healthDoc } = await fetchDocument<HealthDoc>(
             `users/${user.uid}/healthDocuments`,
             s.createdFromPrescriptionId
           );

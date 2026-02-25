@@ -27,17 +27,28 @@ const features = [{
 }, {
   icon: Shield,
   text: "Seguro",
-  color: "from-violet-500 to-purple-400"
+  color: "from-emerald-500 to-teal-400"
 }];
 export default function Auth() {
   const navigate = useNavigate();
   const {
-    user
+    user,
+    error: authError
   } = useAuth();
   const {
     t
   } = useLanguage();
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (authError) {
+      console.error('Auth error detected in Auth page:', authError);
+      if (authError.message?.includes('missing-initial-state') || authError.message?.includes('internal-error')) {
+        toast.error("Erro de sessão: Seu navegador pode estar bloqueando cookies de terceiros. Tente usar o login por e-mail ou desativar o bloqueio de rastreamento.");
+      }
+    }
+  }, [authError]);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -72,7 +83,9 @@ export default function Auth() {
   const handleGoogleLogin = useCallback(async () => {
     try {
       setLoading(true);
-      const { user: firebaseUser, error } = await signInWithGoogle();
+      const { user: firebaseUser, error } = await signInWithGoogle({
+        prompt: 'select_account'
+      });
       if (error) throw error;
 
       if (firebaseUser && referralCode) {
@@ -192,7 +205,7 @@ export default function Auth() {
 
       <Link to="/" className="relative z-10 inline-flex items-center gap-2 text-white/70 hover:text-white transition-colors mb-8 group w-fit">
         <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-        <span className="text-sm font-medium">Voltar</span>
+        <span className="text-sm font-medium">{t('common.back')}</span>
       </Link>
 
       <div className="relative z-10 flex flex-col items-center text-center justify-center flex-1">

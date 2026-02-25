@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Crown, Sparkles, Check, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -5,11 +6,13 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import ManageSubscriptionModal from "@/components/profile/ManageSubscriptionModal";
 
 export default function PlanOverviewCard() {
     const { isPremium, daysLeft } = useSubscription();
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const [showManageModal, setShowManageModal] = useState(false);
 
     return (
         <motion.div
@@ -62,7 +65,7 @@ export default function PlanOverviewCard() {
                 </div>
 
                 <Button
-                    onClick={() => navigate('/planos')}
+                    onClick={() => isPremium ? setShowManageModal(true) : navigate('/planos')}
                     size="sm"
                     variant={isPremium ? "secondary" : "default"}
                     className={cn(
@@ -94,6 +97,11 @@ export default function PlanOverviewCard() {
                     </div>
                 </div>
             )}
+
+            <ManageSubscriptionModal
+                open={showManageModal}
+                onOpenChange={setShowManageModal}
+            />
         </motion.div>
     );
 }

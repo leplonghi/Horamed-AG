@@ -4,6 +4,7 @@ import { storage, functions } from "@/integrations/firebase/client";
 import { ref, uploadBytes, deleteObject } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export interface HealthCategory {
   id: string;
@@ -25,7 +26,7 @@ export interface HealthDocument {
   provider?: string;
   notes?: string;
   ocrText?: string;
-  meta?: any;
+  meta?: Record<string, unknown>;
   confidenceScore?: number;
   extractionStatus?: string;
   createdAt: string;
@@ -81,7 +82,7 @@ export function useDocumentos(filters: ListDocumentsFilters = {}) {
       // Category handling (might need to fetch category ID first if filtering by slug)
       // For now assuming we filter by categoryId or handle in memory if simple
 
-      const { data: documents } = await fetchCollection<any>(
+      const { data: documents } = await fetchCollection<HealthDocument>(
         `users/${user.uid}/healthDocuments`,
         constraints
       );
@@ -104,11 +105,11 @@ export function useDocumentos(filters: ListDocumentsFilters = {}) {
 
       if (filters.exp === "30") {
         const today = new Date();
-        const in30Days = new Date(today);
+        const in30Days = safeDateParse(today);
         in30Days.setDate(today.getDate() + 30);
         result = result.filter(d => {
           if (!d.expiresAt) return false;
-          const exp = new Date(d.expiresAt);
+          const exp = safeDateParse(d.expiresAt);
           return exp >= today && exp <= in30Days;
         });
       }
@@ -123,7 +124,7 @@ export function useDocumentos(filters: ListDocumentsFilters = {}) {
       }
 
       // Sort
-      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      result.sort((a, b) => safeDateParse(b.createdAt).getTime() - safeDateParse(a.createdAt).getTime());
 
       return result as HealthDocument[];
     }

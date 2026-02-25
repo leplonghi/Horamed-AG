@@ -20,28 +20,13 @@ import { cn } from "@/lib/utils";
 
 export default function Plans() {
   const navigate = useNavigate();
-  const { t, language } = useLanguage();
+  const { t, language, country } = useLanguage();
+  const countryCode = country.code;
+  const { isPremium, subscription, isOnTrial, trialDaysLeft } = useSubscription();
+
   const [loading, setLoading] = useState(false);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
   const [referralDiscount, setReferralDiscount] = useState(0);
-  const [countryCode, setCountryCode] = useState<string>('BR');
-  const { isPremium, subscription, isOnTrial, trialDaysLeft } = useSubscription();
-
-  useEffect(() => {
-    const detectCountry = async () => {
-      try {
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (timezone.includes('Sao_Paulo') || timezone.includes('Brasilia')) {
-          setCountryCode('BR');
-        } else {
-          setCountryCode(language === 'pt' ? 'BR' : 'US');
-        }
-      } catch {
-        setCountryCode(language === 'pt' ? 'BR' : 'US');
-      }
-    };
-    detectCountry();
-  }, [language]);
 
   const isBrazil = countryCode === 'BR';
   const pricing = isBrazil ? PRICING.brl : PRICING.usd;
@@ -71,20 +56,23 @@ export default function Plans() {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const planType = billingCycle === 'annual' ? 'annual' : billingCycle === 'monthly' ? 'monthly' : 'lifetime';
+      const planType = billingCycle;
 
       const createCheckoutSession = httpsCallable(functions, 'createCheckoutSession');
-      const { data }: any = await createCheckoutSession({
+      const result = await createCheckoutSession({
         planType,
-        countryCode
+        countryCode,
+        redirectUrl: window.location.origin
       });
+      const data = result.data as { url?: string };
 
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error(t('plans.checkoutError'));
+    } catch (error: unknown) {
+      console.error('Checkout error detail:', error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`${t('plans.checkoutError')}: ${message}`);
     } finally {
       setLoading(false);
     }
@@ -148,47 +136,10 @@ export default function Plans() {
         animate="show"
         className="max-w-4xl mx-auto px-4 py-8 space-y-8"
       >
-        {/* Founder Offer Banner */}
-        <motion.div variants={itemVariants} className="w-full">
-          <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="space-y-2 text-center md:text-left">
-                <Badge className="bg-white/20 text-white border-0 hover:bg-white/30 backdrop-blur-sm">
-                  ⭐ {t('plans.founderOffer') || "Oferta Fundador"}
-                </Badge>
-                <h2 className="text-2xl md:text-3xl font-bold">
-                  {t('plans.lifetimeAccess') || "Acesso Vitalício"}
-                </h2>
-                <p className="text-white/90 max-w-md">
-                  {t('plans.payOnce') || "Pague uma única vez e tenha acesso Premium para sempre. Sem mensalidades."}
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-2 min-w-[200px]">
-                <div className="text-3xl font-bold">
-                  {isBrazil ? 'R$ 97,00' : '$29.99'}
-                </div>
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="w-full font-bold shadow-lg text-orange-600 hover:text-orange-700"
-                  onClick={() => {
-                    setBillingCycle("lifetime" as any); // Hack to trigger handleUpgrade logic
-                    setTimeout(handleUpgrade, 100);
-                  }}
-                >
-                  {t('plans.getLifetime') || "Quero Vitalício"}
-                </Button>
-                <span className="text-xs text-white/70">
-                  {t('plans.limitedSlots') || "Vagas limitadas"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+
         {/* Hero Section */}
         <motion.div variants={itemVariants} className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-full">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary/20 to-teal-500/20 rounded-full">
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">{t('plans.freeTrialBadge')}</span>
           </div>
@@ -231,8 +182,111 @@ export default function Plans() {
           </div>
         </motion.div>
 
+
+
         {/* Plans Grid */}
         <motion.div variants={itemVariants} className="grid md:grid-cols-2 gap-6">
+          {/* Premium Plan */}
+          <div className={cn(
+            "rounded-3xl p-6 relative overflow-hidden",
+            "bg-gradient-to-br from-primary/10 via-teal-500/5 to-primary/10",
+            "border-2 border-primary/30",
+            "shadow-[0_0_60px_-15px_hsl(var(--primary)/0.3)]"
+          )}>
+            {/* Glow effect */}
+            <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-teal-500/20 rounded-full blur-3xl" />
+
+            {/* Popular badge */}
+            <div className="absolute top-4 right-4">
+              <Badge className="bg-gradient-to-r from-primary to-teal-500 text-primary-foreground border-0 shadow-lg">
+                {t('plans.mostPopular')}
+              </Badge>
+            </div>
+
+            <div className="relative space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center shadow-lg">
+                  <Crown className="h-6 w-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg">{t('plans.premiumPlan')}</h3>
+                  <p className="text-sm text-muted-foreground">{t('plans.fullAccess')}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                {billingCycle === "annual" && (
+                  <p className="text-sm text-muted-foreground line-through">
+                    {formatPrice(monthlyPrice)}/{t('plans.mo')}
+                  </p>
+                )}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
+                    {formatPrice(billingCycle === "annual" ? annualMonthly : monthlyPrice)}
+                  </span>
+                  <span className="text-muted-foreground">/{t('plans.mo')}</span>
+                </div>
+                {billingCycle === "annual" && (
+                  <p className="text-sm text-muted-foreground">
+                    {formatPrice(annualPrice)} {t('plans.billedAnnually')}
+                  </p>
+                )}
+              </div>
+
+              {/* Referral Discount */}
+              {referralDiscount > 0 && (
+                <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                  <Gift className="h-4 w-4 text-green-600" />
+                  <span className="text-sm font-medium text-green-600">
+                    {t('plans.referralDiscountApplied', { percent: referralDiscount.toString() })}
+                  </span>
+                </div>
+              )}
+
+              {/* CTA Button */}
+              {isPremium ? (
+                <div className="flex items-center gap-2 p-4 bg-primary/10 rounded-xl border border-primary/20">
+                  <Check className="h-5 w-5 text-primary" />
+                  <span className="font-medium text-primary">
+                    {isOnTrial
+                      ? `${t('plans.youArePremium')} (${trialDaysLeft} ${t('profile.daysRemaining')})`
+                      : t('plans.youArePremium')
+                    }
+                  </span>
+                </div>
+              ) : (
+                <Button
+                  size="lg"
+                  className={cn(
+                    "w-full h-14 text-lg font-semibold rounded-xl",
+                    "bg-gradient-to-r from-primary to-teal-500 hover:from-primary/90 hover:to-teal-500/90",
+                    "shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.5)]",
+                    "transition-all duration-300 hover:shadow-[0_12px_40px_-10px_hsl(var(--primary)/0.6)]"
+                  )}
+                  onClick={handleUpgrade}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                      {t('plans.loading')}
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-5 w-5 mr-2" />
+                      {t('plans.startFreeTrial')}
+                    </>
+                  )}
+                </Button>
+              )}
+
+              <p className="text-xs text-center text-muted-foreground">
+                {t('plans.cancelAnytime')}
+              </p>
+            </div>
+          </div>
+
           {/* Free Plan */}
           <div className={cn(
             "rounded-3xl p-6 relative overflow-hidden",
@@ -275,114 +329,15 @@ export default function Plans() {
                 ))}
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full h-12 rounded-xl"
-                onClick={() => navigate('/hoje')}
-              >
-                {t('plans.continueWithFree')}
-              </Button>
-            </div>
-          </div>
-
-          {/* Premium Plan */}
-          <div className={cn(
-            "rounded-3xl p-6 relative overflow-hidden",
-            "bg-gradient-to-br from-primary/10 via-purple-500/5 to-primary/10",
-            "border-2 border-primary/30",
-            "shadow-[0_0_60px_-15px_hsl(var(--primary)/0.3)]"
-          )}>
-            {/* Glow effect */}
-            <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl" />
-
-            {/* Popular badge */}
-            <div className="absolute top-4 right-4">
-              <Badge className="bg-gradient-to-r from-primary to-purple-500 text-primary-foreground border-0 shadow-lg">
-                {t('plans.mostPopular')}
-              </Badge>
-            </div>
-
-            <div className="relative space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg">
-                  <Crown className="h-6 w-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">{t('plans.premiumPlan')}</h3>
-                  <p className="text-sm text-muted-foreground">{t('plans.fullAccess')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                {billingCycle === "annual" && (
-                  <p className="text-sm text-muted-foreground line-through">
-                    {formatPrice(monthlyPrice)}/{t('plans.mo')}
-                  </p>
-                )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
-                    {formatPrice(billingCycle === "annual" ? annualMonthly : monthlyPrice)}
-                  </span>
-                  <span className="text-muted-foreground">/{t('plans.mo')}</span>
-                </div>
-                {billingCycle === "annual" && (
-                  <p className="text-sm text-muted-foreground">
-                    {formatPrice(annualPrice)} {t('plans.billedAnnually')}
-                  </p>
-                )}
-              </div>
-
-              {/* Referral Discount */}
-              {referralDiscount > 0 && (
-                <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
-                  <Gift className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">
-                    {t('plans.referralDiscountApplied', { percent: referralDiscount.toString() })}
-                  </span>
-                </div>
-              )}
-
-              {/* CTA Button */}
-              {isPremium ? (
-                <div className="flex items-center gap-2 p-4 bg-primary/10 rounded-xl border border-primary/20">
-                  <Check className="h-5 w-5 text-primary" />
-                  <span className="font-medium text-primary">
-                    {isOnTrial
-                      ? `${t('plans.youArePremium')} (${trialDaysLeft} ${t('profile.daysRemaining')})`
-                      : t('plans.youArePremium')
-                    }
-                  </span>
-                </div>
-              ) : (
+              {!isPremium && (
                 <Button
-                  size="lg"
-                  className={cn(
-                    "w-full h-14 text-lg font-semibold rounded-xl",
-                    "bg-gradient-to-r from-primary to-purple-500 hover:from-primary/90 hover:to-purple-500/90",
-                    "shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.5)]",
-                    "transition-all duration-300 hover:shadow-[0_12px_40px_-10px_hsl(var(--primary)/0.6)]"
-                  )}
-                  onClick={handleUpgrade}
-                  disabled={loading}
+                  variant="outline"
+                  className="w-full h-12 rounded-xl"
+                  onClick={() => navigate('/hoje')}
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                      {t('plans.loading')}
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-5 w-5 mr-2" />
-                      {t('plans.startFreeTrial')}
-                    </>
-                  )}
+                  {t('plans.continueWithFree')}
                 </Button>
               )}
-
-              <p className="text-xs text-center text-muted-foreground">
-                {t('plans.cancelAnytime')}
-              </p>
             </div>
           </div>
         </motion.div>

@@ -53,15 +53,15 @@ function MonthlyReportWidget() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Card className="bg-gradient-to-br from-purple-500/10 to-indigo-500/5 border-purple-500/20 mb-4">
+      <Card className="bg-gradient-to-br from-teal-500/10 to-indigo-500/5 border-teal-500/20 mb-4">
         <CardContent className="p-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-500/20">
-              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 rounded-lg bg-teal-500/20">
+              <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+              <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">
                 {language === 'pt'
                   ? `📊 Relatório de ${monthName}`
                   : `📊 ${monthName} Report`}
@@ -77,7 +77,7 @@ function MonthlyReportWidget() {
               variant="ghost"
               size="sm"
               onClick={() => navigate('/relatorios')}
-              className="shrink-0 text-xs h-8 px-2 text-purple-600 hover:text-purple-700 hover:bg-purple-500/10"
+              className="shrink-0 text-xs h-8 px-2 text-teal-600 hover:text-teal-700 hover:bg-teal-500/10"
             >
               {language === 'pt' ? 'Ver' : 'View'}
               <ChevronRight className="h-3.5 w-3.5 ml-0.5" />

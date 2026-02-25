@@ -53,6 +53,7 @@ const HealthTimeline = lazy(() => import("./pages/HealthTimeline"));
 const HealthAnalysis = lazy(() => import("./pages/HealthAnalysis"));
 const ProfileCreate = lazy(() => import("./pages/ProfileCreate"));
 const ProfileEdit = lazy(() => import("./pages/ProfileEdit"));
+const ProfileManage = lazy(() => import("./pages/ProfileManage"));
 const IndiqueGanhe = lazy(() => import("./pages/IndiqueGanhe"));
 const Recompensas = lazy(() => import("./pages/Recompensas"));
 const HealthVitals = lazy(() => import("./pages/HealthVitals"));
@@ -89,7 +90,8 @@ const ConsultationCardView = lazy(() => import("./pages/ConsultationCardView"));
 const DrugInteractions = lazy(() => import("./pages/DrugInteractions"));
 // Admin route removed - feature flags managed via Supabase Dashboard only
 const NotFound = lazy(() => import("./pages/NotFound"));
-const IntegrationsHub = lazy(() => import("./pages/IntegrationsHub"));
+// const IntegrationsHub = lazy(() => import("./pages/IntegrationsHub"));
+const CampaignGenerator = lazy(() => import("./pages/internal/CampaignGenerator"));
 
 // Critical floating components - always rendered, no lazy loading needed
 import HealthAIButton from "./components/HealthAIButton";
@@ -116,7 +118,6 @@ function AppContent() {
 
     // Listen for local alarms triggers (foreground)
     const handleAlarm = (event: CustomEvent) => {
-      console.log('Alarm trigger received:', event.detail);
       const doseId = event.detail.doseId;
       // Show persistent toast
       toast("⏰ Hora do Medicamento", {
@@ -202,13 +203,14 @@ function AppContent() {
           {/* Perfil subroutes */}
           <Route path="/perfil/criar" element={<ProtectedRoute><ProfileCreate /></ProtectedRoute>} />
           <Route path="/perfis/novo" element={<ProtectedRoute><ProfileCreate /></ProtectedRoute>} />
+          <Route path="/perfis/gerenciar" element={<ProtectedRoute><ProfileManage /></ProtectedRoute>} />
           <Route path="/perfil/editar/:id" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/profile/edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
           <Route path="/perfil/indique-e-ganhe" element={<ProtectedRoute><IndiqueGanhe /></ProtectedRoute>} />
           <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
           <Route path="/recompensas" element={<ProtectedRoute><Recompensas /></ProtectedRoute>} />
-          <Route path="/integracoes" element={<ProtectedRoute><IntegrationsHub /></ProtectedRoute>} />
-          <Route path="/conectar-dispositivos" element={<Navigate to="/integracoes" replace />} />
+          {/* <Route path="/integracoes" element={<ProtectedRoute><IntegrationsHub /></ProtectedRoute>} /> */}
+          {/* <Route path="/conectar-dispositivos" element={<Navigate to="/integracoes" replace />} /> */}
           <Route path="/peso" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
           <Route path="/peso/historico" element={<Navigate to="/sinais-vitais?tab=weight" replace />} />
           <Route path="/sinais-vitais" element={<ProtectedRoute><HealthVitals /></ProtectedRoute>} />
@@ -265,6 +267,10 @@ function AppContent() {
           <Route path="/cuidador/aceitar/:token" element={<CaregiverAccept />} />
           <Route path="/consulta/:token" element={<ConsultationCardView />} />
 
+
+          {/* Internal Tools */}
+          <Route path="/internal/campaign-generator" element={<ProtectedRoute><CampaignGenerator /></ProtectedRoute>} />
+
           {/* Catch all */}
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -293,7 +299,7 @@ function AppContent() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 10 * 60 * 1000, // 10 minutes - reduce refetches significantly
+      staleTime: 30 * 1000, // 30 seconds - Balance between freshness and performance
       gcTime: 60 * 60 * 1000, // 60 minutes cache retention
       refetchOnWindowFocus: false, // Prevent ghost refetches
       refetchOnReconnect: false,
@@ -309,12 +315,6 @@ const queryClient = new QueryClient({
 
 const App = () => {
   const [showSplash, setShowSplash] = useState(false);
-
-  console.log('App initializing', {
-    hasSupabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
-    hasSupabaseKey: !!import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-    mode: import.meta.env.MODE
-  });
 
   // Only show splash on app domain, never on landing domain
   useEffect(() => {

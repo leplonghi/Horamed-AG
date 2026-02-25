@@ -4,13 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+
 import {
   CheckCircle2, Crown, Calendar, CreditCard,
   ArrowLeft, AlertCircle, Sparkles, XCircle,
-  AlertTriangle, Heart, TrendingDown, Shield
+  AlertTriangle, Heart, TrendingDown, Shield, Gift
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
+import { PRICING } from "@/lib/stripeConfig";
+import { Loader2 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -25,12 +28,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { PaymentMethodModal } from "@/components/PaymentMethodModal";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export default function SubscriptionManagement() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { subscription, isPremium, isFree, isExpired, daysLeft, loading, refresh } = useSubscription();
+  const { subscription, isPremium, isFree, isExpired, daysLeft, loading, refresh, isOnTrial } = useSubscription();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelStep, setCancelStep] = useState<'confirm' | 'fomo' | 'final'>('confirm');
@@ -38,7 +42,7 @@ export default function SubscriptionManagement() {
 
   // Calculate if within 7-day free cancellation window
   const daysSubscribed = subscription?.startedAt
-    ? differenceInDays(new Date(), new Date(subscription.startedAt))
+    ? differenceInDays(new Date(), safeDateParse(subscription.startedAt))
     : 0;
   const isWithinFreeCancellation = daysSubscribed <= 7;
 
@@ -76,7 +80,7 @@ export default function SubscriptionManagement() {
 
       const cancelSubscription = httpsCallable(functions, 'cancelSubscription');
       const result = await cancelSubscription({ immediate: isWithinFreeCancellation });
-      const data = result.data as any;
+      const data = result.data as { success?: boolean; error?: string };
 
       if (data?.success) {
         if (isWithinFreeCancellation) {
@@ -90,9 +94,28 @@ export default function SubscriptionManagement() {
       } else {
         throw new Error(data?.error || "Erro ao cancelar");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Cancel error:', error);
       toast.error(t("toast.subscription.cancelError"));
+    } finally {
+      setCancelingSubscription(false);
+    }
+  };
+
+  const handleApplyOffer = async () => {
+    setCancelingSubscription(true);
+    try {
+      const { functions } = await import("@/integrations/firebase/client");
+      const { httpsCallable } = await import("firebase/functions");
+
+      const applyRetentionOffer = httpsCallable(functions, 'applyRetentionOffer');
+      await applyRetentionOffer();
+      toast.success("Desconto aplicado com sucesso!");
+      setShowCancelDialog(false);
+      refresh();
+    } catch (error: unknown) {
+      console.error('Offer error:', error);
+      toast.error("Erro ao aplicar desconto.");
     } finally {
       setCancelingSubscription(false);
     }
@@ -148,7 +171,7 @@ export default function SubscriptionManagement() {
                     {subscription?.status === 'active' ? 'Ativo' :
                       subscription?.status === 'cancelled' ? 'Cancelado' :
                         subscription?.status === 'expired' ? 'Expirado' :
-                          subscription?.status === 'trial' ? 'Trial' : 'Inativo'}
+                          (subscription?.status === 'trialing' || isOnTrial) ? 'Teste Gratuito' : 'Inativo'}
                   </Badge>
                 </div>
               </div>
@@ -163,7 +186,7 @@ export default function SubscriptionManagement() {
                     Início
                   </span>
                   <span className="font-medium">
-                    {format(new Date(subscription.startedAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                    {format(safeDateParse(subscription.startedAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                   </span>
                 </div>
               )}
@@ -175,7 +198,7 @@ export default function SubscriptionManagement() {
                     Expira em
                   </span>
                   <span className="font-medium">
-                    {format(new Date(subscription.expiresAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
+                    {format(safeDateParse(subscription.expiresAt), "dd 'de' MMMM, yyyy", { locale: ptBR })}
                     {daysLeft !== null && daysLeft > 0 && (
                       <span className="text-muted-foreground ml-2">
                         ({daysLeft} dias)
@@ -185,13 +208,95 @@ export default function SubscriptionManagement() {
                 </div>
               )}
 
+
               {isPremium && (
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col gap-2 border-t pt-2 mt-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      {isOnTrial ? 'Fim do Teste' : 'Próxima Cobrança'}
+                    </span>
+                    <span className="font-medium flex items-center gap-1">
+                      {subscription?.expiresAt
+                        ? format(safeDateParse(subscription.expiresAt), "dd 'de' MMMM, yyyy", { locale: ptBR })
+                        : 'Recorrente'}
+                      {daysLeft !== null && daysLeft > 0 && daysLeft <= 30 && (
+                        <span className={`text-xs ml-1 ${daysLeft <= 3 ? 'text-destructive font-bold' : 'text-muted-foreground'}`}>
+                          ({daysLeft} dias)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  {isOnTrial && (
+                    <div className="text-xs text-muted-foreground bg-primary/10 p-2 rounded text-center">
+                      Você não será cobrado se cancelar antes desta data.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Discount Display */}
+              {subscription?.discountApplied && (
+                <div className="flex items-center justify-between text-sm bg-green-500/10 p-2 rounded-lg border border-green-500/20">
+                  <span className="text-muted-foreground flex items-center gap-2 text-green-700">
+                    <Gift className="h-4 w-4" />
+                    Desconto Ativo
+                  </span>
+                  <span className="font-bold text-green-700">
+                    {subscription.discountPercent}% OFF
+                  </span>
+                </div>
+              )}
+
+              {/* Explicit Renewal Price */}
+              {/* Explicit Renewal Price */}
+              {(subscription?.amount || isPremium) && (
+                <div className="flex items-center justify-between text-sm border-t pt-2 mt-1">
                   <span className="text-muted-foreground flex items-center gap-2">
                     <CreditCard className="h-4 w-4" />
-                    Renovação
+                    Valor
                   </span>
-                  <span className="font-medium">Automática</span>
+
+                  {(() => {
+                    // Determine base amount (use subscription amount or fallback defaults)
+                    const isYearly = subscription?.interval === 'year';
+                    const isBrl = subscription?.currency !== 'usd'; // Default to BRL
+                    const currencySymbol = isBrl ? 'R$' : '$';
+
+                    // Fallback prices from index.ts
+                    const defaultAmount = isBrl
+                      ? (isYearly ? 19990 : 1990)
+                      : (isYearly ? 3999 : 399);
+
+                    const baseAmount = subscription?.amount || defaultAmount;
+                    const discountPercent = subscription?.discountPercent || 0;
+                    const finalAmount = baseAmount * (1 - discountPercent / 100);
+
+                    return (
+                      <div className="text-right">
+                        {discountPercent > 0 ? (
+                          <div className="flex flex-col items-end">
+                            <span className="text-xs text-muted-foreground line-through">
+                              {currencySymbol} {(baseAmount / 100).toFixed(2).replace('.', ',')}
+                            </span>
+                            <span className="font-bold text-green-600">
+                              {currencySymbol} {(finalAmount / 100).toFixed(2).replace('.', ',')}
+                              <span className="text-xs text-muted-foreground font-normal ml-1 text-green-600/80">
+                                /{isYearly ? 'ano' : 'mês'}
+                              </span>
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="font-medium">
+                            {currencySymbol} {(baseAmount / 100).toFixed(2).replace('.', ',')}
+                            <span className="text-muted-foreground font-normal ml-1">
+                              /{isYearly ? 'ano' : 'mês'}
+                            </span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
@@ -315,7 +420,7 @@ export default function SubscriptionManagement() {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogCancel>{t('common.back')}</AlertDialogCancel>
                 <Button variant="destructive" onClick={handleCancelProceed}>
                   Continuar cancelamento
                 </Button>
@@ -324,73 +429,68 @@ export default function SubscriptionManagement() {
           )}
 
           {cancelStep === 'fomo' && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-center text-xl">
-                  😢 Vamos sentir sua falta!
-                </AlertDialogTitle>
-              </AlertDialogHeader>
-
-              <div className="space-y-4 py-4">
-                <Card className="p-4 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
-                  <div className="flex items-start gap-3">
-                    <Heart className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Sua saúde é importante</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Usuários Premium têm 73% mais adesão ao tratamento do que usuários gratuitos.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-4 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
-                  <div className="flex items-start gap-3">
-                    <TrendingDown className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Você perderá acesso a:</p>
-                      <ul className="text-xs text-muted-foreground mt-1 space-y-1">
-                        <li>• Medicamentos ilimitados</li>
-                        <li>• Clara IA + controle por voz</li>
-                        <li>• OCR de receitas médicas</li>
-                        <li>• Desafios semanais e sistema de XP</li>
-                        <li>• Comparação de preços de farmácias</li>
-                        <li>• Relatórios para consultas</li>
-                      </ul>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-4 bg-primary/10 border-primary/30">
-                  <div className="flex items-start gap-3">
-                    <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Oferta especial para você!</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Que tal pausar por 1 mês ao invés de cancelar? Você mantém seu histórico e dados.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
+            <div className="space-y-6 pt-4 text-center">
+              <div className="relative inline-block">
+                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full" />
+                <Gift className="h-16 w-16 text-primary relative z-10 mx-auto" />
               </div>
 
-              <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-teal-600 bg-clip-text text-transparent">
+                  Espere um pouco!
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Valorizamos muito você como membro Premium. Que tal continuar conosco com um desconto especial de retenção?
+                </p>
+
+                {(() => {
+                  const isAnnual = subscription?.interval === 'year';
+                  const isUSD = subscription?.currency === 'usd';
+                  const config = isUSD ? PRICING.usd : PRICING.brl;
+                  const originalPrice = isAnnual ? config.annual : config.monthly;
+                  const period = isAnnual ? (isUSD ? 'year' : 'ano') : (isUSD ? 'mo' : 'mês');
+                  const symbol = config.symbol;
+                  const discountedPrice = originalPrice * 0.85;
+
+                  return (
+                    <div className="py-4 bg-primary/5 rounded-xl border border-primary/10 mb-4">
+                      <div className="text-sm text-muted-foreground mb-1">
+                        O valor da sua assinatura cairá para:
+                      </div>
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="text-muted-foreground line-through text-lg decoration-red-500/50">
+                          {symbol} {originalPrice.toFixed(2).replace('.', ',')}
+                        </div>
+                        <div className="text-3xl font-bold text-primary">
+                          {symbol} {discountedPrice.toFixed(2).replace('.', ',')}
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground uppercase tracking-wide mt-1">
+                        /{period} • Válido por 12 meses
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <Button
-                  className="w-full"
-                  onClick={() => setShowCancelDialog(false)}
+                  className="w-full bg-gradient-to-r from-primary to-teal-600 hover:opacity-90 transition-opacity h-12 text-lg"
+                  onClick={handleApplyOffer}
+                  disabled={cancelingSubscription}
                 >
-                  <Crown className="h-4 w-4 mr-2" />
-                  Manter meu Premium
+                  {cancelingSubscription ? <Loader2 className="animate-spin" /> : "Resgatar 15% de Desconto"}
                 </Button>
                 <Button
                   variant="ghost"
-                  className="w-full text-muted-foreground"
+                  className="text-muted-foreground hover:text-destructive text-xs"
                   onClick={handleCancelProceed}
+                  disabled={cancelingSubscription}
                 >
-                  Continuar com cancelamento
+                  Não quero desconto, cancelar
                 </Button>
-              </AlertDialogFooter>
-            </>
+              </div>
+            </div>
           )}
 
           {cancelStep === 'final' && (
@@ -409,7 +509,7 @@ export default function SubscriptionManagement() {
                     <p>
                       Sua assinatura permanecerá ativa até <strong>
                         {subscription?.expiresAt
-                          ? format(new Date(subscription.expiresAt), "dd 'de' MMMM", { locale: ptBR })
+                          ? format(safeDateParse(subscription.expiresAt), "dd 'de' MMMM", { locale: ptBR })
                           : 'o final do período'}
                       </strong>. Após essa data, você será rebaixado para o plano gratuito.
                     </p>

@@ -3,7 +3,7 @@ import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
 import {
   Bell, Shield, HelpCircle, LogOut, FileDown,
-  Crown, FileText, Smartphone, Activity, BookOpen, Plane, Gift, Watch
+  Crown, FileText, Smartphone, Activity, BookOpen, Plane, Gift
 } from "lucide-react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
@@ -62,7 +62,7 @@ export default function Profile() {
       localStorage.removeItem("biometric_expiry");
       localStorage.removeItem("biometric_enabled");
       toast.success(t('profile.logoutSuccess'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error logging out:", error);
       toast.error(t('profile.logoutError'));
     }
@@ -111,15 +111,22 @@ export default function Profile() {
           <motion.div variants={itemVariants} className="space-y-2">
             <div className="flex items-center justify-between px-1">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('profile.profiles')}</h3>
-              {isPremium && (
-                <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => navigate('/perfil/criar')}>
-                  + {t('common.add')}
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {profiles.length > 0 && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => navigate('/perfis/gerenciar')}>
+                    {t('common.manage')}
+                  </Button>
+                )}
+                {isPremium && profiles.length < 5 && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs text-primary" onClick={() => navigate('/perfil/criar')}>
+                    + {t('common.add')}
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-3 overflow-x-auto pb-2 px-1 snap-x scrollbar-hide">
-              {profiles.map((p) => {
+              {profiles.slice(0, 5).map((p) => {
                 const isActive = activeProfile?.id === p.id;
                 return (
                   <div
@@ -169,13 +176,7 @@ export default function Profile() {
         {/* 6. SETTINGS GROUP - Consolidate Account, Prefs, Support */}
         <motion.div variants={itemVariants} className="space-y-4">
           <ProfileMenuSection title={t('common.settings')}>
-            <ProfileMenuItem
-              icon={Watch}
-              label={t('profile.devices')}
-              onClick={() => navigate('/integracoes')}
-              color="text-indigo-500"
-              bgColor="bg-indigo-500/10"
-            />
+
 
             <Dialog>
               <DialogTrigger asChild>
@@ -183,8 +184,8 @@ export default function Profile() {
                   <ProfileMenuItem
                     icon={Shield}
                     label={t('profile.caregivers')}
-                    color="text-purple-500"
-                    bgColor="bg-purple-500/10"
+                    color="text-teal-500"
+                    bgColor="bg-teal-500/10"
                   />
                 </div>
               </DialogTrigger>

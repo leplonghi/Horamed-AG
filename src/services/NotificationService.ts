@@ -19,6 +19,27 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import { auth, fetchCollection, fetchDocument, setDocument, where, orderBy, limit } from "@/integrations/firebase";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/integrations/firebase/client";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface NotifPrefsDoc {
+  id: string;
+  pushEnabled?: boolean;
+  pushToken?: string;
+  alertMinutes?: number[];
+}
+
+interface PendingDoseDoc {
+  id: string;
+  itemId: string;
+  status: string;
+  dueAt: string;
+}
+
+interface MedicationDoc {
+  id: string;
+  name: string;
+  doseText?: string;
+}
 
 // Constants
 export const ALARM_CHANNEL_ID = "horamed_alarm";
@@ -58,7 +79,10 @@ class NotificationService {
   private isInitialized = false;
   private scheduledAlarms = new Set<string>();
 
-  private constructor() { }
+
+  private constructor() {
+    // Singleton
+  }
 
   static getInstance(): NotificationService {
     if (!NotificationService.instance) {
@@ -92,7 +116,6 @@ class NotificationService {
             lights: true,
             lightColor: "#10B981",
           });
-          console.log("[NotificationService] ✓ Canal Android criado");
         }
 
         // Setup listeners for notifications
@@ -117,17 +140,16 @@ class NotificationService {
       try {
         // Local notifications
         const localResult = await LocalNotifications.requestPermissions();
-        console.log("[NotificationService] Permissões locais:", localResult.display);
 
         // Push notifications (non-blocking)
         try {
           const pushResult = await PushNotifications.requestPermissions();
           if (pushResult.receive === "granted") {
             await PushNotifications.register();
-            console.log("[NotificationService] ✓ Push registrado");
           }
+
         } catch (e) {
-          console.log("[NotificationService] Push não disponível");
+          // Ignore
         }
 
         return localResult.display === "granted";
@@ -161,13 +183,14 @@ class NotificationService {
   }
 
   /**
-   * Generate unique notification ID from dose ID
+   * Generate unique notification ID from dose ID and offset
    */
-  generateNotificationId(doseId: string): number {
-    // Use hash of dose ID to generate consistent numeric ID
+  generateNotificationId(doseId: string, offsetMinutes: number = 0): number {
+    // Use hash of dose ID + offset to generate consistent numeric ID
+    const uniqueKey = `${doseId}_${offsetMinutes}`;
     let hash = 0;
-    for (let i = 0; i < doseId.length; i++) {
-      const char = doseId.charCodeAt(i);
+    for (let i = 0; i < uniqueKey.length; i++) {
+      const char = uniqueKey.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; // Convert to 32bit integer
     }
@@ -177,13 +200,12 @@ class NotificationService {
   /**
    * Schedule alarm for a dose (PRIMARY method)
    */
-  async scheduleDoseAlarm(dose: DoseNotification): Promise<NotificationResult> {
-    const notificationId = this.generateNotificationId(dose.doseId);
+  async scheduleDoseAlarm(dose: DoseNotification, offsetMinutes: number = 0): Promise<NotificationResult> {
+    const notificationId = this.generateNotificationId(dose.doseId, offsetMinutes);
     const alarmKey = `${dose.doseId}-${dose.scheduledAt.getTime()}`;
 
     // Prevent duplicate scheduling
     if (this.scheduledAlarms.has(alarmKey)) {
-      console.log("[NotificationService] Alarme já agendado:", alarmKey);
       return { success: true, method: "local", notificationId };
     }
 
@@ -246,10 +268,6 @@ class NotificationService {
           notificationId,
         });
 
-        console.log("[NotificationService] ✓ Alarme local agendado:", {
-          id: notificationId,
-          time: dose.scheduledAt,
-        });
 
         // 2. Also schedule PUSH as backup (non-blocking)
         this.schedulePushBackup(dose, notificationId).catch(console.error);
@@ -314,9 +332,9 @@ class NotificationService {
       if (!user) return false;
 
       // Check if push is enabled (stored in user settings/preferences)
-      const { data: prefs } = await fetchDocument<any>(
-        `users/${user.uid}/preferences`,
-        "notifications"
+      const { data: prefs } = await fetchDocument<NotifPrefsDoc>(
+        `users/${user.uid}/notificationPreferences`,
+        "current"
       );
 
       if (!prefs?.pushEnabled || !prefs.pushToken) {
@@ -333,7 +351,6 @@ class NotificationService {
         scheduledAt: dose.scheduledAt.toISOString(),
       });
 
-      console.log("[NotificationService] ✓ Push backup agendado");
       return true;
     } catch (error) {
       console.error("[NotificationService] Erro no push backup:", error);
@@ -353,7 +370,7 @@ class NotificationService {
       const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
       // In Firebase: users/{uid}/doses
-      const { data: doses, error } = await fetchCollection<any>(
+      const { data: doses, error } = await fetchCollection<PendingDoseDoc>(
         `users/${user.uid}/doses`,
         [
           where("status", "==", "scheduled"),
@@ -368,28 +385,47 @@ class NotificationService {
         return 0;
       }
 
+      // Fetch user preferences for alerts
+      const { data: prefs } = await fetchDocument<NotifPrefsDoc>(
+        `users/${user.uid}/notificationPreferences`,
+        "current"
+      );
+      const alertMinutes = (prefs?.alertMinutes as number[]) || [0];
+
       let scheduled = 0;
       for (const dose of doses) {
         // Fetch medication details manually if not denormalized
-        const { data: medication } = await fetchDocument<any>(
+        const { data: medication } = await fetchDocument<MedicationDoc>(
           `users/${user.uid}/medications`,
           dose.itemId
         );
 
         if (!medication) continue;
 
-        const result = await this.scheduleDoseAlarm({
-          doseId: dose.id,
-          itemId: dose.itemId,
-          itemName: medication.name,
-          doseText: medication.doseText || undefined,
-          scheduledAt: new Date(dose.dueAt),
-        });
+        const dueAt = safeDateParse(dose.dueAt);
 
-        if (result.success) scheduled++;
+        // Schedule for each alert time (e.g. 15 min before, 0 min before)
+        for (const minutesBefore of alertMinutes) {
+          const alertTime = new Date(dueAt.getTime() - minutesBefore * 60 * 1000);
+
+          // Skip if time is in the past
+          if (alertTime.getTime() < Date.now()) continue;
+
+          const result = await this.scheduleDoseAlarm({
+            doseId: dose.id, // ID base
+            itemId: dose.itemId,
+            itemName: medication.name,
+            doseText: minutesBefore > 0
+              ? `Em ${minutesBefore} minutos: ${medication.doseText || 'Hora de tomar'}`
+              : (medication.doseText || "Hora de tomar seu medicamento"),
+            scheduledAt: alertTime,
+            // Pass metadata to distinguish offsets if needed in future
+          }, minutesBefore); // Overload scheduleDoseAlarm to accept offset
+
+          if (result.success) scheduled++;
+        }
       }
 
-      console.log(`[NotificationService] Agendados ${scheduled}/${doses.length} doses`);
       return scheduled;
     } catch (error) {
       console.error("[NotificationService] Erro ao agendar doses:", error);
@@ -405,8 +441,10 @@ class NotificationService {
 
     if (Capacitor.isNativePlatform()) {
       try {
-        await LocalNotifications.cancel({ notifications: [{ id: notificationId }] });
-        console.log("[NotificationService] Alarme cancelado:", notificationId);
+        // Cancel potential offsets (0 to 60 min)
+        const offsets = [0, 5, 10, 15, 30, 45, 60];
+        const idsToCancel = offsets.map(min => ({ id: this.generateNotificationId(doseId, min) }));
+        await LocalNotifications.cancel({ notifications: idsToCancel });
       } catch (error) {
         console.error("[NotificationService] Erro ao cancelar:", error);
       }
@@ -442,7 +480,6 @@ class NotificationService {
   private async setupListeners(): Promise<void> {
     // When notification is received (foreground)
     await LocalNotifications.addListener("localNotificationReceived", (notification) => {
-      console.log("[NotificationService] Notificação recebida:", notification);
 
       this.logNotification({
         doseId: notification.extra?.doseId || "unknown",
@@ -466,7 +503,6 @@ class NotificationService {
 
     // When user taps on notification
     await LocalNotifications.addListener("localNotificationActionPerformed", (action) => {
-      console.log("[NotificationService] Ação:", action);
 
       const doseId = action.notification.extra?.doseId;
       if (doseId && !doseId.startsWith("test-")) {
@@ -482,9 +518,12 @@ class NotificationService {
 
     // Push notification received
     try {
+
       await PushNotifications.addListener("pushNotificationReceived", (notification) => {
-        console.log("[NotificationService] Push recebido:", notification);
+        // Log locally or handle foreground push
+        console.log("Push received", notification);
       });
+
     } catch (e) {
       // Push not available
     }
@@ -539,7 +578,7 @@ class NotificationService {
         id: n.id,
         title: n.title,
         body: n.body,
-        scheduledAt: n.schedule?.at ? new Date(n.schedule.at) : new Date(),
+        scheduledAt: n.schedule?.at ? safeDateParse(n.schedule.at) : new Date(),
       }));
     } catch (error) {
       console.error("[NotificationService] Erro ao buscar pendentes:", error);

@@ -37,7 +37,7 @@ export default function CaregiverAccept() {
           {status === 'loading' && (
             <>
               <UserPlus className="h-12 w-12 mx-auto text-primary animate-pulse" />
-              <h1 className="text-2xl font-bold">Aceitando convite...</h1>
+              <h2 className="text-2xl font-bold">Aceitando convite...</h2>
               <p className="text-muted-foreground">Aguarde um momento</p>
             </>
           )}
@@ -45,7 +45,7 @@ export default function CaregiverAccept() {
           {status === 'success' && (
             <>
               <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
-              <h1 className="text-2xl font-bold">Convite aceito!</h1>
+              <h2 className="text-2xl font-bold">Convite aceito!</h2>
               <p className="text-muted-foreground">
                 Você agora é um cuidador autorizado. Redirecionando...
               </p>
@@ -55,7 +55,7 @@ export default function CaregiverAccept() {
           {status === 'error' && (
             <>
               <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
-              <h1 className="text-2xl font-bold">Erro ao aceitar convite</h1>
+              <h2 className="text-2xl font-bold">Erro ao aceitar convite</h2>
               <p className="text-muted-foreground">
                 O link pode estar expirado ou já foi usado.
               </p>

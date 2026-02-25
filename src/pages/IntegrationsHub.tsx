@@ -127,7 +127,7 @@ const IntegrationsHub: React.FC = () => {
                 <div className="max-w-4xl mx-auto space-y-8">
 
                     {/* Hero Section */}
-                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-6 text-white shadow-lg">
+                    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-teal-500 to-pink-500 p-6 text-white shadow-lg">
                         <div className="relative z-10">
                             <h2 className="text-2xl font-bold mb-2">Centralize sua Saúde</h2>
                             <p className="opacity-90 max-w-md mb-6 text-sm leading-relaxed">
@@ -148,7 +148,7 @@ const IntegrationsHub: React.FC = () => {
                         </div>
                         {/* Decorative background elements */}
                         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white/10 rounded-full blur-3xl"></div>
-                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-purple-900/20 rounded-full blur-2xl"></div>
+                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-teal-900/20 rounded-full blur-2xl"></div>
                     </div>
 
                     {/* Providers Grid */}

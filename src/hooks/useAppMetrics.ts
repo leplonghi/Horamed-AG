@@ -50,7 +50,6 @@ export const trackMetric = async (eventName: MetricEvent, eventData?: MetricData
       );
     }
 
-    console.log(`[Metric] ${eventName}`, eventData);
   } catch (error) {
     console.error('[Metric Error]', eventName, error);
   }

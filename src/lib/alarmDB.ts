@@ -23,7 +23,7 @@ export interface Alarm {
   createdAt: string;
   lastTriggered?: string;
   category?: 'medication' | 'appointment' | 'reminder' | 'custom';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 class AlarmDB {
@@ -32,7 +32,7 @@ class AlarmDB {
 
   async open(): Promise<IDBDatabase> {
     if (this.db) return this.db;
-    
+
     if (this.dbPromise) return this.dbPromise;
 
     this.dbPromise = new Promise((resolve, reject) => {
@@ -50,7 +50,7 @@ class AlarmDB {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
+
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('scheduledAt', 'scheduledAt', { unique: false });
@@ -66,7 +66,7 @@ class AlarmDB {
 
   async getAll(): Promise<Alarm[]> {
     const db = await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readonly');
       const store = transaction.objectStore(STORE_NAME);
@@ -79,7 +79,7 @@ class AlarmDB {
 
   async getById(id: string): Promise<Alarm | undefined> {
     const db = await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readonly');
       const store = transaction.objectStore(STORE_NAME);
@@ -102,7 +102,7 @@ class AlarmDB {
 
   async save(alarm: Alarm): Promise<string> {
     const db = await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
@@ -115,7 +115,7 @@ class AlarmDB {
 
   async delete(id: string): Promise<void> {
     const db = await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
@@ -137,7 +137,7 @@ class AlarmDB {
 
   async deleteAll(): Promise<void> {
     const db = await this.open();
-    
+
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);

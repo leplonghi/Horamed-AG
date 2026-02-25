@@ -9,6 +9,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import VitalsRegistrationModal from "./VitalsRegistrationModal";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface WeightTrackingCardProps {
   userId: string;
@@ -59,7 +60,7 @@ export default function WeightTrackingCard({ userId, profileId }: WeightTracking
               <p className="text-sm text-muted-foreground">{language === 'pt' ? 'Última medição' : 'Last measurement'}</p>
               {latestLog ? (
                 <p className="text-sm font-medium">
-                  {format(new Date(latestLog.recordedAt), language === 'pt' ? "dd/MM/yyyy" : "MM/dd/yyyy", { locale: dateLocale })}
+                  {format(safeDateParse(latestLog.recordedAt), language === 'pt' ? "dd/MM/yyyy" : "MM/dd/yyyy", { locale: dateLocale })}
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground italic">-</p>

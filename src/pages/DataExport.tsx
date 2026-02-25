@@ -17,6 +17,7 @@ import { ptBR, enUS } from 'date-fns/locale';
 import { addHeader, addFooter, addSectionHeader, checkPageBreak } from '@/lib/pdfReportTypes';
 import logoImage from '@/assets/logo_HoraMed.png';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export default function DataExport() {
   const navigate = useNavigate();
@@ -100,7 +101,7 @@ export default function DataExport() {
 
         const profileData = [
           [language === 'pt' ? 'Nome' : 'Name', data.profile.fullName || '-'],
-          [language === 'pt' ? 'Data de Nascimento' : 'Birth Date', data.profile.birthDate ? format(new Date(data.profile.birthDate), 'dd/MM/yyyy', { locale: dateLocale }) : '-'],
+          [language === 'pt' ? 'Data de Nascimento' : 'Birth Date', data.profile.birthDate ? format(safeDateParse(data.profile.birthDate), 'dd/MM/yyyy', { locale: dateLocale }) : '-'],
           [language === 'pt' ? 'Altura' : 'Height', data.profile.heightCm ? `${data.profile.heightCm} cm` : '-'],
           [language === 'pt' ? 'Peso' : 'Weight', data.profile.weightKg ? `${data.profile.weightKg} kg` : '-'],
         ];
@@ -142,7 +143,7 @@ export default function DataExport() {
         const profilesData = data.userProfiles.map((p: any) => [
           p.name || '-',
           p.relationship || (language === 'pt' ? 'Principal' : 'Primary'),
-          p.birthDate ? format(new Date(p.birthDate), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
+          p.birthDate ? format(safeDateParse(p.birthDate), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
         ]);
         autoTable(doc, {
           startY: yPos,
@@ -165,7 +166,7 @@ export default function DataExport() {
       }
 
       // Medications section
-      if (selectedSections.medications && data.items && data.items.length > 0) {
+      if (selectedSections.medications && data.items && data.items?.length > 0) {
         yPos = checkPageBreak(doc, yPos, 60);
 
         doc.setFillColor(82, 109, 255);
@@ -175,7 +176,7 @@ export default function DataExport() {
         doc.text(language === 'pt' ? 'Medicamentos' : 'Medications', 18, yPos + 4);
         yPos += 10;
 
-        const medsData = data.items.map((item: any) => [
+        const medsData = data.items?.map((item: any) => [
           item.name || '-',
           item.category || '-',
           item.doseText || '-',
@@ -263,7 +264,7 @@ export default function DataExport() {
         const docsData = data.documents.slice(0, 20).map((document: any) => [
           document.title || (language === 'pt' ? 'Sem título' : 'No title'),
           document.categoryId || '-',
-          document.issuedAt ? format(new Date(document.issuedAt), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
+          document.issuedAt ? format(safeDateParse(document.issuedAt), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
         ]);
         autoTable(doc, {
           startY: yPos,

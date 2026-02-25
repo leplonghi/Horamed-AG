@@ -32,6 +32,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { BatteryInstructionsContent } from "@/components/BatteryOptimizationPrompt";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import {
   Dialog,
   DialogContent,
@@ -311,7 +312,7 @@ export default function AlarmDiagnostics() {
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span className="text-sm">
                   {language === "pt" ? "Último alarme:" : "Last alarm:"}{" "}
-                  {new Date(diagnostics.lastAlarmTime).toLocaleString()}
+                  {safeDateParse(diagnostics.lastAlarmTime).toLocaleString()}
                 </span>
               </div>
             )}
@@ -424,7 +425,7 @@ export default function AlarmDiagnostics() {
                         {log.type}
                       </Badge>
                       <span className="text-muted-foreground">
-                        {new Date(log.timestamp).toLocaleTimeString()}
+                        {safeDateParse(log.timestamp).toLocaleTimeString()}
                       </span>
                     </div>
                     {log.details && (

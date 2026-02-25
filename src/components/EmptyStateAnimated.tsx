@@ -142,7 +142,7 @@ export default function EmptyStateAnimated({
 
       {/* Decorative elements */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-500/5 rounded-full blur-3xl -z-10" />
     </motion.div>
   );
 }

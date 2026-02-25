@@ -62,7 +62,7 @@ export default function DocumentTimeline({ documents, maxItems = 10 }: DocumentT
       case "exame":
         return { Icon: FlaskConical, color: "text-green-500", bg: "bg-green-500/10" };
       case "vacinacao":
-        return { Icon: Syringe, color: "text-purple-500", bg: "bg-purple-500/10" };
+        return { Icon: Syringe, color: "text-teal-500", bg: "bg-teal-500/10" };
       case "consulta":
         return { Icon: Stethoscope, color: "text-orange-500", bg: "bg-orange-500/10" };
       default:

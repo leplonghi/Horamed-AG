@@ -28,7 +28,7 @@ const NOTIFICATION_CONFIGS: Record<NotificationType, NotificationConfig> = {
     title: '💊 Hora do remédio',
     icon: 'pill',
     sound: 'default',
-    color: '#7C3AED',
+    color: '#059669',
     priority: 'high',
     vibrationPattern: [0, 300, 100, 300],
   },

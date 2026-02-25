@@ -11,6 +11,7 @@ import { auth, updateDocument } from "@/integrations/firebase";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DocumentReviewScreenProps {
   documentId: string;
@@ -95,7 +96,7 @@ export default function DocumentReviewScreen({ documentId, extractedData, onComp
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">📅</span>
                   <span className="text-sm">
-                    {format(new Date(extractedData.issued_at), dateFormat, { locale: dateLocale })}
+                    {format(safeDateParse(extractedData.issued_at), dateFormat, { locale: dateLocale })}
                   </span>
                 </div>
               )}

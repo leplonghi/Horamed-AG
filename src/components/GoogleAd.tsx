@@ -17,7 +17,7 @@ const loadAdsScript = (): Promise<void> => {
       resolve();
       return;
     }
-    
+
     if (adsScriptLoading) {
       // Wait for existing load
       const checkLoaded = setInterval(() => {
@@ -47,9 +47,9 @@ const loadAdsScript = (): Promise<void> => {
   });
 };
 
-export default function GoogleAd({ 
-  slot, 
-  format = 'auto', 
+export default function GoogleAd({
+  slot,
+  format = 'auto',
   responsive = true,
   className = ''
 }: GoogleAdProps) {
@@ -58,11 +58,11 @@ export default function GoogleAd({
   const [isVisible, setIsVisible] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
 
-  // Don't show ads for premium users
-  if (hasFeature('no_ads')) return null;
 
   // Intersection Observer for lazy loading
   useEffect(() => {
+    if (hasFeature('no_ads')) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
@@ -78,18 +78,18 @@ export default function GoogleAd({
     }
 
     return () => observer.disconnect();
-  }, []);
+  }, [hasFeature]);
 
   // Load ads when visible
   useEffect(() => {
-    if (!isVisible || adLoaded) return;
+    if (hasFeature('no_ads') || !isVisible || adLoaded) return;
 
     const loadAd = async () => {
       try {
         await loadAdsScript();
-        // @ts-ignore
+        // @ts-expect-error - Adsense global
         if (window.adsbygoogle) {
-          // @ts-ignore
+          // @ts-expect-error - Adsense global
           (window.adsbygoogle = window.adsbygoogle || []).push({});
           setAdLoaded(true);
         }
@@ -99,16 +99,22 @@ export default function GoogleAd({
     };
 
     // Delay ad loading to not block main thread
-    const timer = requestIdleCallback ? 
-      requestIdleCallback(() => loadAd()) : 
+    const timer = requestIdleCallback ?
+      requestIdleCallback(() => loadAd()) :
       setTimeout(loadAd, 1000);
 
     return () => {
       if (typeof timer === 'number') {
-        cancelIdleCallback ? cancelIdleCallback(timer) : clearTimeout(timer);
+        if (cancelIdleCallback) {
+          cancelIdleCallback(timer);
+        } else {
+          clearTimeout(timer);
+        }
       }
     };
-  }, [isVisible, adLoaded]);
+  }, [isVisible, adLoaded, hasFeature]);
+
+  if (hasFeature('no_ads')) return null;
 
   return (
     <div ref={adRef} className={`google-ad-container ${className}`}>

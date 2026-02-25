@@ -37,10 +37,10 @@ export default function ProfileGamification() {
             label: "Pontos",
             value: "1,250",
             icon: Trophy,
-            color: "text-purple-500",
-            bg: "bg-purple-500/10",
-            borderColor: "border-purple-500/20",
-            gradient: "from-purple-500/20 to-indigo-500/5",
+            color: "text-teal-500",
+            bg: "bg-teal-500/10",
+            borderColor: "border-teal-500/20",
+            gradient: "from-teal-500/20 to-indigo-500/5",
             path: "/recompensas"
         }
     ];
@@ -87,7 +87,7 @@ export default function ProfileGamification() {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => navigate('/recompensas')}
-                className="col-span-3 mt-1 relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border border-pink-500/20 p-3 flex items-center justify-between group"
+                className="col-span-3 mt-1 relative overflow-hidden rounded-xl bg-gradient-to-r from-pink-500/10 via-teal-500/10 to-indigo-500/10 border border-pink-500/20 p-3 flex items-center justify-between group"
             >
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-pink-500/20 rounded-lg text-pink-500 group-hover:scale-110 transition-transform duration-300">

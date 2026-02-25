@@ -41,12 +41,12 @@ export default function MilestoneReward({
         };
       case 30:
         return {
-          icon: <Trophy className="h-16 w-16 text-purple-500" />,
+          icon: <Trophy className="h-16 w-16 text-teal-500" />,
           title: "Mês Incrível! 🎉",
           subtitle: "30 dias de dedicação",
           reward: "Você desbloqueou o badge 'Mês Dedicado' + Perfil Premium por 7 dias!",
-          color: "from-purple-500/20 to-pink-500/20",
-          borderColor: "border-purple-500/30",
+          color: "from-teal-500/20 to-pink-500/20",
+          borderColor: "border-teal-500/30",
         };
       case 90:
         return {
@@ -112,7 +112,7 @@ export default function MilestoneReward({
                     delay: 1.5,
                   }}
                 >
-                  <Sparkles className="h-6 w-6 text-purple-500" />
+                  <Sparkles className="h-6 w-6 text-teal-500" />
                 </motion.div>
 
                 <div className="flex flex-col items-center space-y-6 text-center">

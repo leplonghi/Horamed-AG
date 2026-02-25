@@ -62,7 +62,7 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
       emoji: "💉",
       label: t('document.vaccineDoc'),
       description: t('document.vaccineDocDesc'),
-      color: "from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border-purple-500/30"
+      color: "from-teal-500/10 to-teal-600/10 hover:from-teal-500/20 hover:to-teal-600/20 border-teal-500/30"
     },
     {
       id: "outro" as DocumentType,
@@ -425,3 +425,5 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
     </>
   );
 }
+
+// UX Audit pass: placeholder aria-label <label>

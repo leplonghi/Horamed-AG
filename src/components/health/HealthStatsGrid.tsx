@@ -40,8 +40,8 @@ export default function HealthStatsGrid({
       id: "vaccines",
       label: language === 'pt' ? 'Vacinas' : 'Vaccines',
       value: vaccinesCount,
-      icon: <Syringe className="h-4 w-4 text-purple-500" />,
-      color: "bg-purple-500/10 text-purple-500",
+      icon: <Syringe className="h-4 w-4 text-teal-500" />,
+      color: "bg-teal-500/10 text-teal-500",
       onClick: () => onStatClick?.("vaccines")
     },
     {

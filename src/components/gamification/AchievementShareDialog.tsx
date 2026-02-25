@@ -53,61 +53,85 @@ export default function AchievementShareDialog({
     window.open(url, "_blank", "width=550,height=420");
   };
 
-  const handleDownloadBadge = () => {
+  const handleDownloadBadge = async () => {
+    // Map achievement levels to badge images
+    const badgeImages: Record<string, string> = {
+      bronze: "/images/rewards/badge-7days.png",
+      silver: "/images/rewards/badge-30days.png",
+      gold: "/images/rewards/premium-crown.png",
+      platinum: "/images/rewards/protection-shield.png",
+    };
+
+    const badgeImage = badgeImages[achievement.level.toLowerCase()] || "/images/rewards/badge-7days.png";
+
     // Create a canvas to generate badge image
     const canvas = document.createElement("canvas");
-    canvas.width = 800;
-    canvas.height = 800;
+    canvas.width = 1080;
+    canvas.height = 1080;
     const ctx = canvas.getContext("2d");
-    
+
     if (!ctx) return;
 
     // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 800, 800);
-    gradient.addColorStop(0, "#6366f1");
-    gradient.addColorStop(1, "#8b5cf6");
+    const gradient = ctx.createLinearGradient(0, 0, 1080, 1080);
+    gradient.addColorStop(0, "#059669");
+    gradient.addColorStop(0.5, "#6366f1");
+    gradient.addColorStop(1, "#ec4899");
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 800, 800);
+    ctx.fillRect(0, 0, 1080, 1080);
 
-    // Badge circle
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(400, 300, 150, 0, Math.PI * 2);
-    ctx.fill();
+    // Load and draw badge image
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = badgeImage;
 
-    // Icon
-    ctx.font = "120px Arial";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(achievement.icon, 400, 300);
+    img.onload = () => {
+      // Draw badge image
+      ctx.drawImage(img, 340, 200, 400, 400);
 
-    // Title
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 48px Arial";
-    ctx.fillText(achievement.title, 400, 520);
+      // Title background
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.roundRect(80, 650, 920, 120, 20);
+      ctx.fill();
 
-    // Description
-    ctx.font = "32px Arial";
-    ctx.fillText(achievement.description, 400, 580);
+      // Title
+      ctx.fillStyle = "#1f2937";
+      ctx.font = "bold 56px Inter, Arial";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(achievement.title, 540, 710);
 
-    // Level badge
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(300, 650, 200, 60);
-    ctx.fillStyle = "#6366f1";
-    ctx.font = "bold 28px Arial";
-    ctx.fillText(achievement.level.toUpperCase(), 400, 685);
+      // Description background
+      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+      ctx.roundRect(80, 800, 920, 80, 20);
+      ctx.fill();
 
-    // Download
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `horamed-conquista-${achievement.id}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Badge baixado!");
-    });
+      // Description
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "36px Inter, Arial";
+      ctx.fillText(achievement.description, 540, 840);
+
+      // HoraMed branding
+      ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+      ctx.font = "bold 32px Inter, Arial";
+      ctx.fillText("HoraMed", 540, 980);
+
+      // Download
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `horamed-conquista-${achievement.id}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success("Badge baixado!");
+      });
+    };
+
+    img.onerror = () => {
+      toast.error("Erro ao carregar imagem");
+    };
   };
 
   return (
@@ -132,7 +156,7 @@ export default function AchievementShareDialog({
           {/* Badge preview */}
           <div className="relative">
             <motion.div
-              className="text-8xl"
+              className="w-32 h-32 flex items-center justify-center"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [-5, 5, -5],
@@ -143,7 +167,13 @@ export default function AchievementShareDialog({
                 ease: "easeInOut",
               }}
             >
-              {achievement.icon}
+              {achievement.level.toLowerCase() === 'bronze' && <img src="/images/rewards/badge-7days.png" alt="" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'silver' && <img src="/images/rewards/badge-30days.png" alt="" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'gold' && <img src="/images/rewards/premium-crown.png" alt="" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'platinum' && <img src="/images/rewards/protection-shield.png" alt="" className="w-full h-full" />}
+              {!['bronze', 'silver', 'gold', 'platinum'].includes(achievement.level.toLowerCase()) && (
+                <span className="text-8xl">{achievement.icon}</span>
+              )}
             </motion.div>
             <motion.div
               className="absolute -top-2 -right-2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold"

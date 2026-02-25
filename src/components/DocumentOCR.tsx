@@ -101,7 +101,6 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
     try {
       // Se for PDF, processar múltiplas páginas
       if (isPDF(currentFile)) {
-        console.log('Processando PDF multipágina...');
         
         const pages = await convertPDFToImages(currentFile, 5);
         setTotalPages(pages.length);

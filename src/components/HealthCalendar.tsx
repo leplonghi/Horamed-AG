@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { ScrollArea } from "./ui/scroll-area";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface CalendarEvent {
   id: string;
@@ -139,7 +140,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
       blue: 'bg-blue-500/10 text-blue-700 border-blue-200',
       green: 'bg-green-500/10 text-green-700 border-green-200',
       orange: 'bg-orange-500/10 text-orange-700 border-orange-200',
-      purple: 'bg-purple-500/10 text-purple-700 border-purple-200',
+      teal: 'bg-teal-500/10 text-teal-700 border-teal-200',
     };
     return colors[color] || 'bg-gray-500/10 text-gray-700 border-gray-200';
   };
@@ -149,10 +150,10 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
     : events.filter(e => e.type === filterType);
 
   const selectedDateEvents = filteredEvents.filter(event =>
-    format(new Date(event.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+    format(safeDateParse(event.date), 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
   );
 
-  const eventDates = filteredEvents.map(e => new Date(e.date));
+  const eventDates = filteredEvents.map(e => safeDateParse(e.date));
 
   const handlePreviousMonth = () => {
     setCurrentMonth(subMonths(currentMonth, 1));
@@ -179,7 +180,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
 
   const getEventsForDay = (day: Date) => {
     return filteredEvents.filter(event =>
-      isSameDay(new Date(event.date), day)
+      isSameDay(safeDateParse(event.date), day)
     );
   };
 
@@ -336,7 +337,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                           className={`border-l-4 ${event.color === 'blue' ? 'border-l-blue-500' :
                             event.color === 'green' ? 'border-l-green-500' :
                               event.color === 'orange' ? 'border-l-orange-500' :
-                                'border-l-purple-500'
+                                'border-l-teal-500'
                             } hover:shadow-md transition-shadow cursor-pointer`}
                         >
                           <CardContent className="p-4">
@@ -365,7 +366,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                                 )}
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-xs">
-                                    {format(new Date(event.date), "HH:mm", { locale: dateLocale })}
+                                    {format(safeDateParse(event.date), "HH:mm", { locale: dateLocale })}
                                   </Badge>
                                 </div>
                               </div>
@@ -431,7 +432,7 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
                                   <p className="font-medium">{event.title}</p>
                                   <p className="text-sm text-muted-foreground">{event.description}</p>
                                   <Badge variant="outline" className="text-xs mt-2">
-                                    {format(new Date(event.date), "HH:mm", { locale: dateLocale })}
+                                    {format(safeDateParse(event.date), "HH:mm", { locale: dateLocale })}
                                   </Badge>
                                 </div>
                               </div>

@@ -11,6 +11,7 @@ import { useFeedbackToast } from '@/hooks/useFeedbackToast';
 import { useOverdueDoses } from '@/hooks/useOverdueDoses';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface NextDose {
   id: string;
@@ -190,7 +191,7 @@ export default function QuickDoseWidget({
     );
   }
 
-  const dueTime = new Date(nextDose.dueAt);
+  const dueTime = safeDateParse(nextDose.dueAt);
   const minutesUntil = Math.round((dueTime.getTime() - new Date().getTime()) / 60000);
   const isNow = minutesUntil <= 5 && minutesUntil >= -5;
 

@@ -29,6 +29,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { ClinicalBriefGenerator } from "@/components/symptoms/ClinicalBriefGenerator";
 interface Consulta {
   id: string;
   specialty: string;
@@ -134,7 +136,7 @@ export default function MedicalAppointments() {
       return <Badge variant="destructive">Cancelada</Badge>;
     }
 
-    const date = new Date(consulta.date);
+    const date = safeDateParse(consulta.date);
     if (isToday(date)) {
       return <Badge className="bg-yellow-500">Hoje</Badge>;
     }
@@ -145,11 +147,11 @@ export default function MedicalAppointments() {
   };
 
   const consultasPendentes = consultas.filter(c =>
-    c.status === 'agendada' && isFuture(new Date(c.date))
+    c.status === 'agendada' && isFuture(safeDateParse(c.date))
   );
   const consultasPassadas = consultas.filter(c =>
     c.status === 'realizada' || c.status === 'cancelada' ||
-    (c.status === 'agendada' && isPast(new Date(c.date)))
+    (c.status === 'agendada' && isPast(safeDateParse(c.date)))
   );
 
   return (
@@ -261,6 +263,9 @@ export default function MedicalAppointments() {
             </div>
           ) : (
             <>
+              {/* Clinical Brief Generator Widget */}
+              <ClinicalBriefGenerator />
+
               {/* Próximas Consultas */}
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -295,7 +300,7 @@ export default function MedicalAppointments() {
                           <div className="space-y-2 text-sm">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <Calendar className="h-4 w-4" />
-                              {format(new Date(consulta.date), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                              {format(safeDateParse(consulta.date), "EEEE, dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                             </div>
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
@@ -350,7 +355,7 @@ export default function MedicalAppointments() {
                           <div>
                             <h3 className="font-semibold">{consulta.specialty}</h3>
                             <p className="text-sm text-muted-foreground">
-                              {format(new Date(consulta.date), "dd/MM/yyyy", { locale: ptBR })} - {consulta.doctorName}
+                              {format(safeDateParse(consulta.date), "dd/MM/yyyy", { locale: ptBR })} - {consulta.doctorName}
                             </p>
                           </div>
                           {getStatusBadge(consulta)}

@@ -61,7 +61,7 @@ export function usePWAInstall() {
   // Detect iOS
   const detectIOS = useCallback(() => {
     const ua = navigator.userAgent;
-    return /iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream;
+    return /iPad|iPhone|iPod/.test(ua) && !('MSStream' in window);
   }, []);
 
   // Detect Android
@@ -80,7 +80,7 @@ export function usePWAInstall() {
       return true;
     }
     // Check iOS standalone mode
-    if ((navigator as any).standalone === true) {
+    if ('standalone' in navigator && (navigator as { standalone?: boolean }).standalone === true) {
       return true;
     }
     // Check if opened from home screen (URL has source=pwa)
@@ -199,12 +199,11 @@ export function usePWAInstall() {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', installedHandler);
     };
-  }, []);
+  }, [trackEvent]);
 
   // Trigger install prompt
   const triggerInstall = useCallback(async () => {
     if (!deferredPrompt) {
-      console.log('No deferred prompt available');
       return false;
     }
 

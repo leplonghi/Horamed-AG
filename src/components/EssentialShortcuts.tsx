@@ -25,7 +25,7 @@ export default function EssentialShortcuts() {
     label: t('shortcuts.generateReport'),
     description: t('shortcuts.reportDesc'),
     onClick: () => navigate("/exportar"),
-    color: "from-purple-500 to-pink-500"
+    color: "from-teal-500 to-pink-500"
   }];
   
   return (

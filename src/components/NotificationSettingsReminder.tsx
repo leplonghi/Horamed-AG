@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from "@/integrations/supabase/client";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 const REMINDER_INTERVAL_DAYS = 7; // Show reminder every 7 days
 const STORAGE_KEY = 'notification_settings_reminder';
@@ -76,7 +77,7 @@ export function NotificationSettingsReminder() {
           localStorage.setItem('app_first_use', new Date().toISOString());
           return;
         }
-        const daysSinceFirst = (Date.now() - new Date(firstUse).getTime()) / (1000 * 60 * 60 * 24);
+        const daysSinceFirst = (Date.now() - safeDateParse(firstUse).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceFirst >= 1) {
           setShow(true);
         }
@@ -88,7 +89,7 @@ export function NotificationSettingsReminder() {
 
       // Check if enough time has passed since last dismissal (local check)
       if (localState.lastDismissed) {
-        const daysSinceDismissed = (Date.now() - new Date(localState.lastDismissed).getTime()) / (1000 * 60 * 60 * 24);
+        const daysSinceDismissed = (Date.now() - safeDateParse(localState.lastDismissed).getTime()) / (1000 * 60 * 60 * 24);
         if (daysSinceDismissed >= REMINDER_INTERVAL_DAYS) {
           setShow(true);
         }

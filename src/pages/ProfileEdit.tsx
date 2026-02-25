@@ -11,13 +11,22 @@ import AvatarUpload from "@/components/AvatarUpload";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useTranslation } from "@/contexts/LanguageContext";
 
+interface ProfileFormData {
+  full_name: string;
+  nickname: string;
+  weight_kg: string;
+  height_cm: string;
+  birth_date: string;
+  avatar_url: string | null;
+}
+
 export default function ProfileEdit() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const { activeProfile, updateProfile, refresh } = useUserProfiles();
-  const [profileData, setProfileData] = useState<any>({
+  const [profileData, setProfileData] = useState<ProfileFormData>({
     full_name: "",
     nickname: "",
     weight_kg: "",
@@ -80,7 +89,7 @@ export default function ProfileEdit() {
       await refresh();
       toast.success(t('profile.saveSuccess'));
       navigate("/perfil");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
       toast.error(t('profile.saveError'));
     } finally {

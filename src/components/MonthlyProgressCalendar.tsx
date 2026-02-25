@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DayProgress {
   date: Date;
@@ -55,9 +56,9 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
       const dayMap = new Map<string, DayProgress>();
       
       data?.forEach((dose) => {
-        const dayKey = format(new Date(dose.due_at), "yyyy-MM-dd");
+        const dayKey = format(safeDateParse(dose.due_at), "yyyy-MM-dd");
         const existing = dayMap.get(dayKey) || {
-          date: new Date(dose.due_at),
+          date: safeDateParse(dose.due_at),
           total: 0,
           taken: 0,
           rate: 0,

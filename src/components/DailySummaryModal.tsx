@@ -11,6 +11,7 @@ import { Button } from "./ui/button";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface PendingDose {
   id: string;
@@ -46,7 +47,7 @@ export default function DailySummaryModal() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const tomorrow = new Date(today);
+      const tomorrow = safeDateParse(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data: doses, error: dosesError } = await supabase

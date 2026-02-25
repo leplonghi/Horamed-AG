@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface Challenge {
   id: string;
@@ -63,7 +64,7 @@ export function DailyChallenges() {
       // Get today's doses
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
+      const tomorrow = safeDateParse(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       const { data: doses } = await supabase
@@ -112,7 +113,7 @@ export function DailyChallenges() {
           id: "perfect_day",
           title: t.perfectDay,
           description: t.perfectDayDesc,
-          icon: <Sparkles className="h-5 w-5 text-purple-500" />,
+          icon: <Sparkles className="h-5 w-5 text-teal-500" />,
           current: takenDoses.length,
           target: Math.max(totalDoses, 1),
           xpReward: 100,

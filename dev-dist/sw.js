@@ -83,15 +83,15 @@ define(['./workbox-137dedbd'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "/index.html",
-    "revision": "0.5rabpkepct"
+    "revision": "0.arltdo37988"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
     allowlist: [/^\/$/],
-    denylist: [/^\/api/, /^\/auth/, /^\/supabase/]
+    denylist: [/^\/api/, /^\/auth/]
   }));
-  workbox.registerRoute(/^https:\/\/zmsuqdwleyqpdthaqvbi\.supabase\.co\/.*/i, new workbox.NetworkFirst({
-    "cacheName": "supabase-api-cache",
+  workbox.registerRoute(/^https:\/\/firestore\.googleapis\.com\/.*/i, new workbox.NetworkFirst({
+    "cacheName": "firebase-api-cache",
     "networkTimeoutSeconds": 10,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 200,

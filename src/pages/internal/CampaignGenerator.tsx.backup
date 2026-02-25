@@ -1,0 +1,585 @@
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Copy, Rocket, Zap, TrendingUp, MessageCircle, Instagram, Share2, CheckCircle2, Users, Target, BarChart3 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { toast } from "sonner";
+import { CampaignService, CampaignRule, CampaignStrategy, CAMPAIGN_TEMPLATES } from "@/services/CampaignService";
+import { motion } from "framer-motion";
+import { collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
+import { db } from "@/integrations/firebase";
+
+// --- TYPES ---
+
+type ToneType = "urgent_fomo" | "emotional_founder" | "educational_authority" | "funny_relatable" | "premium_aspirational";
+type WhatsAppCampaignType = "embaixador" | "whatsapp";
+type SocialCampaignType = "flash" | "keyword";
+type PlatformType = "whatsapp" | "instagram" | "facebook" | "tiktok";
+
+interface CampaignConfig {
+    category: "whatsapp" | "social";
+    strategy: CampaignStrategy;
+    platform: PlatformType;
+    tone: ToneType;
+    groupType?: string;
+    postStyle: string;
+}
+
+interface GeneratedCampaign {
+    rule: CampaignRule;
+    link: string;
+    copy: string;
+    imagePrompt: string;
+    videoPrompts: {
+        frame1: string;
+        frame2: string;
+        veoScript: string;
+    };
+    hashtags: string[];
+    strategyTips: string[];
+}
+
+interface CampaignMetrics {
+    totalCampaigns: number;
+    totalRedemptions: number;
+    activeUsers: number;
+    conversionRate: number;
+    topPerformer: string;
+}
+
+// --- CONFIGURATION (Based on MARKETING_BRAIN.md) ---
+
+const WHATSAPP_STRATEGIES = {
+    embaixador: {
+        name: "Embaixador VIP",
+        icon: "💎",
+        color: "from-cyan-500 to-blue-600",
+        vagas: 30,
+        dias: 90,
+        roi: "80-90% retenção",
+        description: "Alta retenção + feedback qualitativo"
+    },
+    whatsapp: {
+        name: "Grupos WhatsApp",
+        icon: "📱",
+        color: "from-green-500 to-emerald-600",
+        vagas: 200,
+        dias: 30,
+        roi: "60-80% conversão",
+        description: "Penetração em comunidades segmentadas"
+    }
+};
+
+const SOCIAL_STRATEGIES = {
+    flash: {
+        name: "Flash Semanal",
+        icon: "⚡",
+        color: "from-orange-500 to-red-600",
+        vagas: 50,
+        dias: 14,
+        roi: "40-60% conversão",
+        platforms: ["instagram", "facebook", "tiktok"] as PlatformType[]
+    },
+    keyword: {
+        name: "Keyword DM",
+        icon: "💬",
+        color: "from-purple-500 to-pink-600",
+        vagas: 100,
+        dias: 30,
+        roi: "60-80% clique",
+        platform: "instagram" as PlatformType
+    }
+};
+
+const TONES: Record<ToneType, { label: string; emoji: string }> = {
+    urgent_fomo: { label: "Urgência / FOMO", emoji: "🔥" },
+    emotional_founder: { label: "Emocional / História", emoji: "💙" },
+    educational_authority: { label: "Educativo / Autoridade", emoji: "🎓" },
+    funny_relatable: { label: "Humor / Relatable", emoji: "😄" },
+    premium_aspirational: { label: "Premium / Aspiracional", emoji: "💎" }
+};
+
+const WHATSAPP_GROUPS = {
+    vip_circle: { label: "Círculo VIP (Família/Amigos)", emoji: "👨‍👩‍👧‍👦" },
+    health_professionals: { label: "Profissionais de Saúde", emoji: "⚕️" },
+    institutional: { label: "Institucionais / Corporativos", emoji: "🏢" },
+    personal: { label: "Individuais / Pessoais", emoji: "👤" }
+};
+
+const POST_STYLES = {
+    marketing_promo: { label: "Marketing (Promoção)", emoji: "🎯" },
+    educational_tips: { label: "Educativo (Dicas)", emoji: "💡" },
+    informative_news: { label: "Informativo (Novidades)", emoji: "📰" },
+    curiosities_facts: { label: "Curiosidades (Fatos)", emoji: "🤔" }
+};
+
+const PLATFORMS: Record<PlatformType, { label: string; icon: any; color: string }> = {
+    whatsapp: { label: "WhatsApp", icon: MessageCircle, color: "text-green-600" },
+    instagram: { label: "Instagram", icon: Instagram, color: "text-pink-600" },
+    facebook: { label: "Facebook", icon: Share2, color: "text-blue-600" },
+    tiktok: { label: "TikTok", icon: Zap, color: "text-slate-900" }
+};
+
+// --- CONTENT GENERATION (Simplified for now) ---
+
+const generateContent = (config: CampaignConfig, link: string): Omit<GeneratedCampaign, 'rule' | 'link'> => {
+    const appName = "HoraMarket";
+
+    let copy = `Campanha ${config.strategy} gerada!\n\nLink: ${link}`;
+    let imagePrompt = `Professional ${appName} campaign image with ocean blue branding`;
+    let frame1 = "Opening scene";
+    let frame2 = "Closing scene";
+    let veoScript = "Transition script";
+    let hashtags: string[] = [`#${appName}`, "#Saude"];
+    let strategyTips: string[] = ["Dica 1", "Dica 2", "Dica 3"];
+
+    return {
+        copy,
+        imagePrompt,
+        videoPrompts: { frame1, frame2, veoScript },
+        hashtags,
+        strategyTips
+    };
+};
+
+// --- MAIN COMPONENT ---
+
+export default function CampaignGenerator() {
+    const [activeCampaigns, setActiveCampaigns] = useState<CampaignRule[]>([]);
+    const [metrics, setMetrics] = useState<CampaignMetrics>({
+        totalCampaigns: 0,
+        totalRedemptions: 0,
+        activeUsers: 0,
+        conversionRate: 0,
+        topPerformer: "-"
+    });
+    const [generated, setGenerated] = useState<GeneratedCampaign | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [activeTab, setActiveTab] = useState("config");
+
+    const [config, setConfig] = useState<CampaignConfig>({
+        category: 'whatsapp',
+        strategy: 'embaixador',
+        platform: 'whatsapp',
+        tone: 'urgent_fomo',
+        postStyle: 'marketing_promo',
+        groupType: 'vip_circle'
+    });
+
+    useEffect(() => {
+        loadActiveCampaigns();
+        loadMetrics();
+    }, []);
+
+    useEffect(() => {
+        // Auto-set platform and strategy based on category
+        if (config.category === 'whatsapp') {
+            setConfig(prev => ({ ...prev, platform: 'whatsapp', strategy: prev.strategy === 'flash' || prev.strategy === 'keyword' ? 'embaixador' : prev.strategy }));
+        } else {
+            setConfig(prev => ({ ...prev, strategy: prev.strategy === 'embaixador' || prev.strategy === 'whatsapp' ? 'flash' : prev.strategy }));
+        }
+    }, [config.category]);
+
+    const loadActiveCampaigns = async () => {
+        const campaigns = await CampaignService.listActiveCampaigns();
+        setActiveCampaigns(campaigns);
+    };
+
+    const loadMetrics = async () => {
+        try {
+            // Get all campaigns
+            const campaignsRef = collection(db, "campaigns");
+            const q = query(campaignsRef, where("isActive", "==", true));
+            const snapshot = await getDocs(q);
+
+            const campaigns = snapshot.docs.map(doc => doc.data() as CampaignRule);
+
+            const totalRedemptions = campaigns.reduce((sum, c) => sum + c.currentRedemptions, 0);
+            const totalMax = campaigns.reduce((sum, c) => sum + c.maxRedemptions, 0);
+
+            // Get recent users count (simplified)
+            const usersRef = collection(db, "users");
+            const recentUsersQuery = query(usersRef, orderBy("createdAt", "desc"), limit(100));
+            const usersSnapshot = await getDocs(recentUsersQuery);
+
+            // Find top performer
+            const topCampaign = campaigns.sort((a, b) => b.currentRedemptions - a.currentRedemptions)[0];
+
+            setMetrics({
+                totalCampaigns: campaigns.length,
+                totalRedemptions,
+                activeUsers: usersSnapshot.size,
+                conversionRate: totalMax > 0 ? (totalRedemptions / totalMax) * 100 : 0,
+                topPerformer: topCampaign?.code || "-"
+            });
+        } catch (error) {
+            console.error("Error loading metrics:", error);
+        }
+    };
+
+    const handleLaunch = async () => {
+        setIsGenerating(true);
+        try {
+            const template = CAMPAIGN_TEMPLATES[config.strategy];
+            const code = CampaignService.generateCode(config.strategy);
+
+            const newCampaign: CampaignRule = {
+                ...template,
+                code,
+                createdAt: new Date().toISOString(),
+                metadata: {
+                    platform: config.platform,
+                    tone: config.tone,
+                    postStyle: config.postStyle,
+                    groupType: config.groupType
+                }
+            };
+
+            await CampaignService.createCampaign(newCampaign);
+
+            const productionUrl = "https://app.horamed.net/auth";
+            const link = `${productionUrl}?campaign=${code}`;
+
+            const content = generateContent(config, link);
+
+            setGenerated({
+                rule: newCampaign,
+                link,
+                ...content
+            });
+
+            await loadActiveCampaigns();
+            await loadMetrics();
+            setActiveTab("creative");
+
+            toast.success("Campanha criada! 🎉");
+
+        } catch (error) {
+            toast.error("Erro ao criar campanha");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(`${label} copiado!`);
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-fluid-subtle p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* Header */}
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center space-y-4"
+                >
+                    <h1 className="text-4xl md:text-5xl font-bold gradient-text-fluid flex items-center justify-center gap-3">
+                        <Rocket className="w-10 h-10" />
+                        HoraMarket Brain
+                    </h1>
+                    <p className="text-muted-foreground">Sistema Completo de Aquisição de Usuários</p>
+
+                    {/* Metrics Overview */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Target className="w-4 h-4 text-primary" />
+                                <span className="text-xs text-muted-foreground">Campanhas Ativas</span>
+                            </div>
+                            <div className="text-2xl font-bold text-primary">{metrics.totalCampaigns}</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-4 h-4 text-green-600" />
+                                <span className="text-xs text-muted-foreground">Total Resgates</span>
+                            </div>
+                            <div className="text-2xl font-bold text-green-600">{metrics.totalRedemptions}</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <TrendingUp className="w-4 h-4 text-orange-600" />
+                                <span className="text-xs text-muted-foreground">Taxa Conversão</span>
+                            </div>
+                            <div className="text-2xl font-bold text-orange-600">{metrics.conversionRate.toFixed(1)}%</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <BarChart3 className="w-4 h-4 text-purple-600" />
+                                <span className="text-xs text-muted-foreground">Top Performer</span>
+                            </div>
+                            <div className="text-sm font-bold text-purple-600 truncate">{metrics.topPerformer}</div>
+                        </Card>
+                    </div>
+                </motion.div>
+
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-card/50 backdrop-blur-sm">
+                        <TabsTrigger value="config" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            ⚙️ Configurar
+                        </TabsTrigger>
+                        <TabsTrigger value="creative" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            ✨ Criativos
+                        </TabsTrigger>
+                        <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            📊 Monitor
+                        </TabsTrigger>
+                    </TabsList>
+
+                    {/* CONFIG TAB */}
+                    <TabsContent value="config" className="space-y-6 mt-6">
+                        <Card className="glass-card p-8">
+                            <div className="space-y-8">
+
+                                {/* Category Selection */}
+                                <div className="space-y-4">
+                                    <Label className="text-lg font-semibold">Canal de Distribuição</Label>
+                                    <RadioGroup value={config.category} onValueChange={(v: "whatsapp" | "social") => setConfig({ ...config, category: v })}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                <div className={`flex items-center space-x-3 border-2 rounded-xl p-6 cursor-pointer transition-all ${config.category === "whatsapp"
+                                                        ? 'border-green-500 bg-green-500/5 shadow-lg'
+                                                        : 'border-border hover:border-green-500/50 hover:bg-card'
+                                                    }`}>
+                                                    <RadioGroupItem value="whatsapp" id="whatsapp-cat" />
+                                                    <Label htmlFor="whatsapp-cat" className="flex-1 cursor-pointer">
+                                                        <div className="flex items-center gap-3">
+                                                            <MessageCircle className="w-8 h-8 text-green-600" />
+                                                            <div>
+                                                                <div className="font-semibold text-lg">WhatsApp</div>
+                                                                <div className="text-xs text-muted-foreground">Grupos VIP + Comunidades</div>
+                                                            </div>
+                                                        </div>
+                                                    </Label>
+                                                </div>
+                                            </motion.div>
+
+                                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                <div className={`flex items-center space-x-3 border-2 rounded-xl p-6 cursor-pointer transition-all ${config.category === "social"
+                                                        ? 'border-pink-500 bg-pink-500/5 shadow-lg'
+                                                        : 'border-border hover:border-pink-500/50 hover:bg-card'
+                                                    }`}>
+                                                    <RadioGroupItem value="social" id="social-cat" />
+                                                    <Label htmlFor="social-cat" className="flex-1 cursor-pointer">
+                                                        <div className="flex items-center gap-3">
+                                                            <Instagram className="w-8 h-8 text-pink-600" />
+                                                            <div>
+                                                                <div className="font-semibold text-lg">Redes Sociais</div>
+                                                                <div className="text-xs text-muted-foreground">Instagram + Facebook + TikTok</div>
+                                                            </div>
+                                                        </div>
+                                                    </Label>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+
+                                {/* Strategy Selection */}
+                                <div className="space-y-4">
+                                    <Label className="text-lg font-semibold">Estratégia</Label>
+                                    <RadioGroup value={config.strategy} onValueChange={(v: CampaignStrategy) => setConfig({ ...config, strategy: v })}>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {config.category === 'whatsapp' ? (
+                                                Object.entries(WHATSAPP_STRATEGIES).map(([key, strategy]) => (
+                                                    <motion.div key={key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                        <div className={`flex items-center space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${config.strategy === key
+                                                                ? 'border-primary bg-primary/5 shadow-lg'
+                                                                : 'border-border hover:border-primary/50 hover:bg-card'
+                                                            }`}>
+                                                            <RadioGroupItem value={key} id={key} />
+                                                            <Label htmlFor={key} className="flex-1 cursor-pointer">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-2xl">{strategy.icon}</span>
+                                                                    <div>
+                                                                        <div className="font-semibold">{strategy.name}</div>
+                                                                        <div className="text-xs text-muted-foreground">{strategy.vagas} vagas • {strategy.dias} dias</div>
+                                                                        <div className="text-xs text-green-600 mt-1">ROI: {strategy.roi}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Label>
+                                                        </div>
+                                                    </motion.div>
+                                                ))
+                                            ) : (
+                                                Object.entries(SOCIAL_STRATEGIES).map(([key, strategy]) => (
+                                                    <motion.div key={key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                        <div className={`flex items-center space-x-3 border-2 rounded-xl p-4 cursor-pointer transition-all ${config.strategy === key
+                                                                ? 'border-primary bg-primary/5 shadow-lg'
+                                                                : 'border-border hover:border-primary/50 hover:bg-card'
+                                                            }`}>
+                                                            <RadioGroupItem value={key} id={key} />
+                                                            <Label htmlFor={key} className="flex-1 cursor-pointer">
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-2xl">{strategy.icon}</span>
+                                                                    <div>
+                                                                        <div className="font-semibold">{strategy.name}</div>
+                                                                        <div className="text-xs text-muted-foreground">{strategy.vagas} vagas • {strategy.dias} dias</div>
+                                                                        <div className="text-xs text-green-600 mt-1">ROI: {strategy.roi}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Label>
+                                                        </div>
+                                                    </motion.div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </RadioGroup>
+                                </div>
+
+                                {/* Platform (for Social only) */}
+                                {config.category === 'social' && config.strategy === 'flash' && (
+                                    <div className="space-y-4">
+                                        <Label className="text-lg font-semibold">Plataforma</Label>
+                                        <Select value={config.platform} onValueChange={(v: PlatformType) => setConfig({ ...config, platform: v })}>
+                                            <SelectTrigger className="h-12">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {SOCIAL_STRATEGIES.flash.platforms.map((platform) => {
+                                                    const p = PLATFORMS[platform];
+                                                    const Icon = p.icon;
+                                                    return (
+                                                        <SelectItem key={platform} value={platform}>
+                                                            <div className="flex items-center gap-2">
+                                                                <Icon className={`w-4 h-4 ${p.color}`} />
+                                                                {p.label}
+                                                            </div>
+                                                        </SelectItem>
+                                                    );
+                                                })}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                {/* WhatsApp Group Type */}
+                                {config.category === 'whatsapp' && (
+                                    <div className="space-y-4">
+                                        <Label className="text-lg font-semibold">Tipo de Grupo</Label>
+                                        <Select value={config.groupType} onValueChange={(v) => setConfig({ ...config, groupType: v })}>
+                                            <SelectTrigger className="h-12">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(WHATSAPP_GROUPS).map(([key, val]) => (
+                                                    <SelectItem key={key} value={key}>
+                                                        {val.emoji} {val.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                <Button
+                                    onClick={handleLaunch}
+                                    disabled={isGenerating}
+                                    className="w-full h-14 text-lg btn-fluid"
+                                    size="lg"
+                                >
+                                    <Rocket className="w-5 h-5 mr-2" />
+                                    {isGenerating ? "Gerando..." : "Gerar Campanha Completa"}
+                                </Button>
+                            </div>
+                        </Card>
+                    </TabsContent>
+
+                    {/* CREATIVE TAB */}
+                    <TabsContent value="creative" className="space-y-6 mt-6">
+                        {!generated ? (
+                            <Card className="glass-card p-12 text-center">
+                                <Zap className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+                                <p className="text-muted-foreground">Configure e lance uma campanha para gerar os criativos</p>
+                            </Card>
+                        ) : (
+                            <Card className="glass-card p-6">
+                                <h3 className="text-xl font-bold mb-4">📝 Conteúdo Gerado</h3>
+                                <pre className="whitespace-pre-wrap bg-background/50 p-6 rounded-lg border">
+                                    {generated.copy}
+                                </pre>
+                                <Button onClick={() => copyToClipboard(generated.copy, "Texto")} className="mt-4 btn-fluid">
+                                    <Copy className="w-4 h-4 mr-2" />
+                                    Copiar
+                                </Button>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    {/* DASHBOARD TAB */}
+                    <TabsContent value="dashboard" className="space-y-6 mt-6">
+                        <Card className="glass-card p-6">
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-primary" />
+                                Campanhas Ativas
+                            </h3>
+
+                            {activeCampaigns.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Rocket className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p>Nenhuma campanha ativa. Crie sua primeira!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {activeCampaigns.map((campaign) => {
+                                        const percentage = (campaign.currentRedemptions / campaign.maxRedemptions) * 100;
+                                        const remaining = campaign.maxRedemptions - campaign.currentRedemptions;
+
+                                        return (
+                                            <motion.div
+                                                key={campaign.code}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                className="border rounded-xl p-5 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all"
+                                            >
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge className={remaining > 10 ? "bg-gradient-fluid" : "bg-destructive"}>
+                                                            {campaign.code}
+                                                        </Badge>
+                                                        <span className="text-sm text-muted-foreground">{campaign.description}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-mono font-bold text-xl text-primary">
+                                                            {campaign.currentRedemptions}/{campaign.maxRedemptions}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {remaining} restantes
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Progress value={percentage} className="h-2 mb-3" />
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="w-full"
+                                                    onClick={() => copyToClipboard(
+                                                        `https://app.horamed.net/auth?campaign=${campaign.code}`,
+                                                        "Link"
+                                                    )}
+                                                >
+                                                    <Copy className="w-3 h-3 mr-2" />
+                                                    Copiar Link de Produção
+                                                </Button>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </div>
+    );
+}

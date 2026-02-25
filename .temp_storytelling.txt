@@ -1,0 +1,66 @@
+// STORYTELLING ADDITIONS FOR EMOTIONAL TONE
+
+// Add this after line 102 in the emotional_founder section:
+
+if (tone === "emotional_founder") {
+    copy = `Olá, pessoal! 👋\n\n`;
+    
+    if (purpose === "marketing_promo") {
+        if (isVIP) {
+            copy += `Vocês sabem que sempre fui apaixonado por tecnologia e saúde. Depois de ver minha avó lutando para lembrar de tomar 7 medicamentos diferentes por dia, decidi criar algo que pudesse ajudar.\n\n`;
+            copy += `Assim nasceu o HoraMed - um app que organiza medicamentos, envia lembretes e cuida da saúde de quem a gente ama.\n\n`;
+            copy += `Como vocês fazem parte do meu círculo mais próximo, quero que sejam os primeiros a testar:\n\n`;
+            copy += `🎁 Benefícios VIP:\n✅ 90 dias de Premium GRÁTIS\n✅ Todas as funcionalidades\n✅ Suporte direto comigo\n✅ Sua opinião molda o produto\n\n`;
+            copy += `⚡ APENAS 30 VAGAS (círculo íntimo)\n\n`;
+        } else if (isProfessional) {
+            copy += `Como profissional de saúde, você sabe o desafio da adesão medicamentosa. Criei o HoraMed pensando exatamente nisso.\n\n`;
+            copy += `É uma ferramenta que seus pacientes podem usar para:\n`;
+            copy += `📊 Registrar horários e doses com precisão\n`;
+            copy += `⚠️ Receber alertas de interações\n`;
+            copy += `📋 Gerar relatórios para consultas\n`;
+            copy += `📈 Acompanhar adesão ao tratamento\n\n`;
+            copy += `🎁 200 licenças profissionais (30 dias)\n\n`;
+        } else if (isInstitutional) {
+            copy += `Sabemos que a saúde dos colaboradores impacta diretamente a produtividade. O HoraMed é nossa solução para gestão de saúde corporativa.\n\n`;
+            copy += `🏢 Benefícios comprovados:\n`;
+            copy += `✅ Redução de 40% no absenteísmo\n`;
+            copy += `✅ Maior adesão a tratamentos\n`;
+            copy += `✅ Relatórios para RH\n`;
+            copy += `✅ Compliance com protocolos\n\n`;
+            copy += `🎁 200 acessos corporativos (30 dias trial)\n\n`;
+        } else {
+            copy += `Sabe aquela sensação de esquecer se já tomou o remédio? Ou perder uma consulta importante?\n\n`;
+            copy += `Criei o HoraMed para resolver exatamente isso. É como ter um assistente pessoal de saúde no bolso.\n\n`;
+            copy += `💊 O que ele faz:\n`;
+            copy += `✅ Lembra você de tomar remédios\n`;
+            copy += `✅ Organiza consultas e exames\n`;
+            copy += `✅ Controla estoque de medicamentos\n`;
+            copy += `✅ Alerta quando algo vai vencer\n\n`;
+            copy += `🎁 Teste grátis por 30 dias\n\n`;
+        }
+    } else if (purpose === "educational_tips") {
+        copy += `Vocês sabiam que 50% das pessoas esquecem de tomar medicamentos regularmente? Isso pode comprometer seriamente o tratamento.\n\n`;
+        copy += `Foi pensando nisso que desenvolvi o HoraMed. Ele usa inteligência para:\n`;
+        copy += `💡 Enviar lembretes no momento certo\n`;
+        copy += `💡 Mostrar visualmente o que falta\n`;
+        copy += `💡 Registrar tudo automaticamente\n\n`;
+        copy += `Teste grátis:\n\n`;
+    } else if (purpose === "informative_news") {
+        copy += `Tenho uma novidade emocionante para compartilhar!\n\n`;
+        copy += `Depois de meses de desenvolvimento, o HoraMed está pronto. É uma plataforma completa para cuidar da sua saúde.\n\n`;
+        copy += `📰 Principais recursos:\n`;
+        copy += `✅ Interface super intuitiva\n`;
+        copy += `✅ Lembretes via WhatsApp\n`;
+        copy += `✅ Compartilhamento com família\n`;
+        copy += `✅ Relatórios médicos completos\n\n`;
+        copy += `Acesso antecipado:\n\n`;
+    } else {
+        copy += `Curiosidade que me motivou a criar o HoraMed:\n\n`;
+        copy += `Pessoas acima de 60 anos tomam em média 5-7 medicamentos diferentes. Imagina gerenciar tudo isso sem ajuda?\n\n`;
+        copy += `Por isso construí uma solução simples e eficaz.\n\n`;
+        copy += `Experimente:\n\n`;
+    }
+    
+    copy += `🔗 Link exclusivo:\n${link}\n\n`;
+    copy += `Conto com vocês para validar e me dar feedback honesto! 💙`;
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { subDays, startOfDay } from "date-fns";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export interface Achievement {
   id: string;
@@ -44,12 +45,13 @@ export function useAchievements() {
       // Calculate streak for achievements
       const last30Days = startOfDay(subDays(new Date(), 30));
       const recentDoses = allDoses.filter(
-        (d) => new Date(d.due_at) >= last30Days
+        (d) => safeDateParse(d.due_at) >= last30Days
       );
 
       const dayMap = new Map<string, { total: number; taken: number }>();
       recentDoses.forEach((dose) => {
-        const day = startOfDay(new Date(dose.due_at)).toISOString();
+        const doseDate = safeDateParse(dose.due_at);
+        const day = startOfDay(doseDate).toISOString();
         const current = dayMap.get(day) || { total: 0, taken: 0 };
         current.total++;
         if (dose.status === "taken") current.taken++;

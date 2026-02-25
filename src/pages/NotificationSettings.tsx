@@ -3,10 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Bell, Smartphone, Watch, ChevronRight, Settings2, Bug } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Bell, Smartphone, Watch, ChevronRight, Settings2, Bug, Edit3, Plus, X } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchDocument, setDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
@@ -18,8 +19,37 @@ import { NotificationDiagnostics } from "@/components/NotificationDiagnostics";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import AlarmManager from "@/components/AlarmManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import NotificationScheduleEditor, { NotificationSchedule } from "@/components/notifications/NotificationScheduleEditor";
+import { AndroidPermissionsCard } from "@/components/AndroidPermissionsCard";
+import { IOSPermissionsCard } from "@/components/IOSPermissionsCard";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+
+// Helper to convert minutes to schedule format
+const minutesToSchedule = (minutes: number[]): NotificationSchedule[] => {
+  return minutes.map((min, index) => ({
+    id: `alert-${min}`,
+    time: min === 0 ? "00:00" : `-${min}min`,
+    type: "push" as const,
+    vibrate: true,
+    sound: "default",
+    enabled: true,
+    label: min === 0 ? "Na hora exata" : `${min} minutos antes`,
+  }));
+};
+
+// Helper to convert schedule to minutes
+const scheduleToMinutes = (schedules: NotificationSchedule[]): number[] => {
+  return schedules
+    .filter(s => s.enabled)
+    .map(s => {
+      if (s.time === "00:00") return 0;
+      const match = s.time.match(/-(\d+)min/);
+      return match ? parseInt(match[1]) : 0;
+    })
+    .sort((a, b) => b - a); // Sort descending
+};
+
 export default function NotificationSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -34,6 +64,10 @@ export default function NotificationSettings() {
   });
   const [loading, setLoading] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showScheduleEditor, setShowScheduleEditor] = useState(false);
+  const [alertSchedules, setAlertSchedules] = useState<NotificationSchedule[]>(
+    minutesToSchedule([15, 5, 0])
+  );
 
   useEffect(() => {
     loadSettings();
@@ -42,24 +76,25 @@ export default function NotificationSettings() {
 
   const loadSettings = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data } = await supabase
-        .from("notification_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      const { data } = await fetchDocument<any>(
+        `users/${user.uid}/notificationPreferences`,
+        "current"
+      );
 
       if (data) {
+        const alertMinutes = data.alertMinutes || [15, 5, 0];
         setSettings({
-          pushEnabled: data.push_enabled ?? true,
+          pushEnabled: data.pushEnabled ?? true,
           localEnabled: true,
           wearableSync: true,
           sound: "beep",
           vibration: true,
-          alertMinutes: [15, 5, 0],
+          alertMinutes,
         });
+        setAlertSchedules(minutesToSchedule(alertMinutes));
       }
     } catch (error) {
       console.error("Error loading settings:", error);
@@ -111,18 +146,26 @@ export default function NotificationSettings() {
   const handleSaveSettings = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { error } = await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          push_enabled: settings.pushEnabled,
-          email_enabled: false,
-        });
+      await setDocument(
+        `users/${user.uid}/notificationPreferences`,
+        "current",
+        {
+          pushEnabled: settings.pushEnabled,
+          alertMinutes: settings.alertMinutes,
+          updatedAt: new Date().toISOString(),
+        }
+      );
 
-      if (error) throw error;
+      // Sync with localStorage for useMedicationAlarm hook
+      localStorage.setItem("alarmSettings", JSON.stringify({
+        enabled: true, // Master switch implied
+        sound: settings.sound,
+        duration: 30, // Default or add to settings UI later
+        alertMinutes: settings.alertMinutes[0] || 5, // Use first alert as primary for the hook
+      }));
 
       // Schedule notifications for next 24 hours
       await scheduleNotificationsForNextDay();
@@ -134,6 +177,12 @@ export default function NotificationSettings() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaveAlertSchedules = (schedules: NotificationSchedule[]) => {
+    const newAlertMinutes = scheduleToMinutes(schedules);
+    setSettings({ ...settings, alertMinutes: newAlertMinutes });
+    setAlertSchedules(schedules);
   };
 
   return (
@@ -203,6 +252,13 @@ export default function NotificationSettings() {
                 </AlertDescription>
               </Alert>
             )}
+
+            {/* Android Permissions Card */}
+            <AndroidPermissionsCard />
+
+            {/* iOS Permissions Card */}
+            <IOSPermissionsCard />
+
             <Card className="border-2 hover:shadow-lg transition-all duration-200">
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-3">
@@ -296,43 +352,54 @@ export default function NotificationSettings() {
 
             <Card className="border-2 hover:shadow-lg transition-all duration-200">
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent rounded-lg">
-                    <Bell className="h-5 w-5 text-accent-foreground" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent rounded-lg">
+                      <Bell className="h-5 w-5 text-accent-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Horários de Alerta</CardTitle>
+                      <CardDescription className="text-xs">
+                        Configure os momentos de notificação
+                      </CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">Horários de Alerta</CardTitle>
-                    <CardDescription className="text-xs">
-                      Configure os momentos de notificação
-                    </CardDescription>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowScheduleEditor(true)}
+                    className="gap-2"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Editar
+                  </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-5">
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold">Você será alertado nos seguintes momentos:</Label>
                   <div className="space-y-3 p-4 bg-accent/30 rounded-lg border border-border">
-                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                        <span className="text-sm font-medium">15 minutos antes</span>
+                    {settings.alertMinutes.length === 0 ? (
+                      <div className="text-center py-4 text-muted-foreground text-sm">
+                        Nenhum horário configurado. Clique em "Editar" para adicionar.
                       </div>
-                      <Switch defaultChecked disabled />
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-warning rounded-full animate-pulse" />
-                        <span className="text-sm font-medium">5 minutos antes</span>
-                      </div>
-                      <Switch defaultChecked disabled />
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                        <span className="text-sm font-medium">Na hora exata</span>
-                      </div>
-                      <Switch defaultChecked disabled />
-                    </div>
+                    ) : (
+                      settings.alertMinutes.map((minutes, index) => {
+                        const colors = ['bg-primary', 'bg-warning', 'bg-destructive', 'bg-success'];
+                        const color = colors[index % colors.length];
+                        const label = minutes === 0 ? 'Na hora exata' : `${minutes} minutos antes`;
+
+                        return (
+                          <div key={minutes} className="flex items-center justify-between p-3 bg-card rounded-lg shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-2 h-2 ${color} rounded-full animate-pulse`} />
+                              <span className="text-sm font-medium">{label}</span>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">Ativo</Badge>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
@@ -430,6 +497,15 @@ export default function NotificationSettings() {
         </Tabs>
       </div>
       <Navigation />
+
+      {/* Editor de Horários Avançado */}
+      <NotificationScheduleEditor
+        open={showScheduleEditor}
+        onOpenChange={setShowScheduleEditor}
+        schedules={alertSchedules}
+        onSave={handleSaveAlertSchedules}
+        medicationName="Configurações Globais"
+      />
     </div>
   );
 }

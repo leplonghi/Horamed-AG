@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { startOfWeek, endOfWeek, differenceInDays } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface WeeklyChallenge {
   id: string;
@@ -83,14 +84,14 @@ export default function WeeklyChallenges() {
         d.delay_minutes !== null && Math.abs(d.delay_minutes) <= 5
       ).length;
       const earlyDoses = takenDoses.filter(d => {
-        const hour = new Date(d.taken_at).getHours();
+        const hour = safeDateParse(d.taken_at).getHours();
         return hour < 8;
       }).length;
 
       // Calculate streak days this week
       const daysWithDoses = new Set<string>();
       takenDoses.forEach(d => {
-        const date = new Date(d.taken_at).toISOString().split('T')[0];
+        const date = safeDateParse(d.taken_at).toISOString().split('T')[0];
         daysWithDoses.add(date);
       });
       const streakDays = daysWithDoses.size;
@@ -139,7 +140,7 @@ export default function WeeklyChallenges() {
           id: "perfect_timing",
           title: t.perfectTiming,
           description: t.perfectTimingDesc,
-          icon: <Target className="h-5 w-5 text-purple-500" />,
+          icon: <Target className="h-5 w-5 text-teal-500" />,
           current: onTimeDoses,
           target: 10,
           xpReward: 400,

@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface MedicalReportData {
   profile: {
@@ -92,7 +93,7 @@ export async function generateMedicalReport(
 
   const patientInfo = [
     [language === 'pt' ? 'Nome' : 'Name', data.profile.full_name || '-'],
-    [language === 'pt' ? 'Data de Nascimento' : 'Birth Date', data.profile.birth_date ? format(new Date(data.profile.birth_date), 'dd/MM/yyyy') : '-'],
+    [language === 'pt' ? 'Data de Nascimento' : 'Birth Date', data.profile.birth_date ? format(safeDateParse(data.profile.birth_date), 'dd/MM/yyyy') : '-'],
     [language === 'pt' ? 'Peso' : 'Weight', data.profile.weight_kg ? `${data.profile.weight_kg} kg` : '-'],
     [language === 'pt' ? 'Altura' : 'Height', data.profile.height_cm ? `${data.profile.height_cm} cm` : '-'],
   ];
@@ -192,7 +193,7 @@ export async function generateMedicalReport(
         language === 'pt' ? 'Peso' : 'Weight'
       ]],
       body: data.vitals.slice(0, 7).map(vital => [
-        format(new Date(vital.date), 'dd/MM'),
+        format(safeDateParse(vital.date), 'dd/MM'),
         vital.pressao_sistolica && vital.pressao_diastolica
           ? `${vital.pressao_sistolica}/${vital.pressao_diastolica}`
           : '-',
@@ -257,7 +258,7 @@ export async function generateMedicalReport(
         language === 'pt' ? 'Notas' : 'Notes'
       ]],
       body: data.sideEffects.slice(0, 10).map(se => [
-        format(new Date(se.date), 'dd/MM'),
+        format(safeDateParse(se.date), 'dd/MM'),
         se.medication,
         se.tags.join(', '),
         se.notes || '-'
@@ -370,7 +371,7 @@ async function fetchReportData(): Promise<MedicalReportData> {
   });
 
   // Calculate overall adherence
-  const allCurrentDoses = (doses || []).filter(d => new Date(d.dueAt) >= thirtyDaysAgo);
+  const allCurrentDoses = (doses || []).filter(d => safeDateParse(d.dueAt) >= thirtyDaysAgo);
 
   // Need to fetch older doses for trend
   const { data: oldDoses } = await fetchCollection<any>(

@@ -3,6 +3,12 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface ConsultationCardResponse {
+  token: string;
+  url: string;
+  expiresAt: string;
+}
+
 export function useConsultationCard() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -16,7 +22,7 @@ export function useConsultationCard() {
         profileId, // camelCase
         hours
       });
-      const data = result.data as any;
+      const data = result.data as ConsultationCardResponse;
 
       toast({
         title: 'Cartão de consulta criado',
@@ -24,11 +30,11 @@ export function useConsultationCard() {
       });
 
       return data;
-    } catch (error: any) {
-      console.error('Error creating consultation card:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao criar cartão',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       throw error;
@@ -46,11 +52,11 @@ export function useConsultationCard() {
         token
       });
       return result.data;
-    } catch (error: any) {
-      console.error('Error viewing consultation card:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao visualizar cartão',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       throw error;
@@ -72,11 +78,11 @@ export function useConsultationCard() {
         title: 'Cartão revogado',
         description: 'O link não está mais acessível'
       });
-    } catch (error: any) {
-      console.error('Error revoking consultation card:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao revogar cartão',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       throw error;

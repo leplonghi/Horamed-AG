@@ -7,16 +7,14 @@
 
 // International prices (USD) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_USD = {
-  monthly: 'price_1SturuAY2hnWxlHuHVLxgKae', // $3.99/month
-  annual: 'price_1SieJtAY2hnWxlHuAOa6m5nu',  // $39.90/year
-  lifetime: 'price_LIFETIME_USD_PLACEHOLDER', // $29.99 (Founder)
+  monthly: 'price_1SvxqlHh4P8HSV4YpZKzGawy', // $3.99/month
+  annual: 'price_1SvxrIHh4P8HSV4YCGnYC8Mn',  // $39.99/year
 } as const;
 
 // Brazilian prices (BRL) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_BRL = {
-  monthly: 'price_1Stun3AY2hnWxlHuDEEMRVTs', // R$ 19,90/mês
-  annual: 'price_1SuWEwAY2hnWxlHuG2WrgNhx',  // R$ 199,90/ano
-  lifetime: 'price_LIFETIME_BRL_PLACEHOLDER', // R$ 97,00 (Fundador)
+  monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y', // R$ 19,90/mês
+  annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',  // R$ 199,90/ano
 } as const;
 
 // Legacy export for backward compatibility
@@ -24,14 +22,14 @@ export const STRIPE_PRICES = STRIPE_PRICES_BRL;
 
 export const STRIPE_PRODUCTS = {
   // BRL Products
-  premiumMonthlyBRL: 'prod_Tre5v8Yqw6dowr',
-  premiumAnnualBRL: 'prod_Tre8O5YZRrC8D7',
+  premiumMonthlyBRL: 'prod_TtBQvShFDZtpfU',
+  premiumAnnualBRL: 'prod_TtBQUlvlE0CONT',
   // USD Products
-  premiumMonthlyUSD: 'prod_TreAx6jZCXru0w',
-  premiumAnnualUSD: 'prod_TreA9Kp7N8DteW',
+  premiumMonthlyUSD: 'prod_TtlNaSxV3G8r5t',
+  premiumAnnualUSD: 'prod_TtlOLvkdCLQrRN',
   // Legacy exports
-  premiumMonthly: 'prod_Tre5v8Yqw6dowr',
-  premiumAnnual: 'prod_Tre8O5YZRrC8D7',
+  premiumMonthly: 'prod_TtBQvShFDZtpfU',
+  premiumAnnual: 'prod_TtBQUlvlE0CONT',
 } as const;
 
 export const PRICING = {
@@ -40,20 +38,18 @@ export const PRICING = {
     annual: 199.90,
     currency: 'BRL',
     symbol: 'R$',
-    lifetime: 97.00
   },
   usd: {
     monthly: 3.99,
     annual: 39.99,
     currency: 'USD',
     symbol: '$',
-    lifetime: 29.99
   },
   trial_days: 7,
 } as const;
 
 // Lusophone countries that should see Portuguese and BRL pricing (only Brazil)
-export const PORTUGUESE_COUNTRIES = ['BR', 'PT', 'AO', 'MZ', 'CV', 'GW', 'ST', 'TL'];
+export const PORTUGUESE_COUNTRIES = ['BR', 'PT', 'MO', 'AO', 'MZ'];
 export const BRL_COUNTRIES = ['BR']; // Only Brazil uses BRL
 
 // Helper to get price config based on country

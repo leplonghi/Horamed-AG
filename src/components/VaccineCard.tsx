@@ -6,6 +6,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import { Calendar, MapPin, Syringe, FileText, Trash2, Edit } from "lucide-react";
 import { VaccinationRecord } from "@/hooks/useVaccinationRecords";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface VaccineCardProps {
   record: VaccinationRecord;
@@ -47,13 +48,13 @@ export default function VaccineCard({ record, onEdit, onDelete }: VaccineCardPro
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{t('vaccines.appliedOn')}: {format(new Date(record.application_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
+            <span>{t('vaccines.appliedOn')}: {format(safeDateParse(record.application_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
           </div>
 
           {record.next_dose_date && (
             <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
               <Calendar className="h-4 w-4" />
-              <span>{t('vaccines.nextDose')}: {format(new Date(record.next_dose_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
+              <span>{t('vaccines.nextDose')}: {format(safeDateParse(record.next_dose_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
             </div>
           )}
 

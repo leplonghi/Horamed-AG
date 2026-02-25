@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 import { useResilientReminders } from "./useResilientReminders";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DoseInstance {
   id: string;
@@ -155,7 +156,7 @@ export const useMedicationAlarm = () => {
 
             // Only notify if we haven't notified about this dose yet
             if (!notifiedDoses.current.has(doseKey)) {
-              const dueTime = new Date(dose.scheduledTime);
+              const dueTime = safeDateParse(dose.scheduledTime);
               const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / 60000);
 
               // Trigger alarm based on settings
@@ -256,7 +257,6 @@ export const useMedicationAlarm = () => {
       const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
       await scheduleDoseNotifications();
 
-      console.log('Scheduled notifications for next 24 hours');
     } catch (error) {
       console.error('Error scheduling notifications:', error);
     }

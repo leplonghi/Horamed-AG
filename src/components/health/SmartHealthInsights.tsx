@@ -3,6 +3,7 @@ import { Calendar, Stethoscope, FileText, Syringe, Clock } from "lucide-react";
 import SmartInsightsBase, { Insight } from "@/components/shared/SmartInsightsBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format, differenceInDays, addMonths } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface HealthData {
   appointmentsCount?: number;
@@ -29,7 +30,7 @@ export default function SmartHealthInsights({
 
     // Next appointment reminder
     if (data.nextAppointmentDate) {
-      const appointmentDate = new Date(data.nextAppointmentDate);
+      const appointmentDate = safeDateParse(data.nextAppointmentDate);
       const daysUntil = differenceInDays(appointmentDate, now);
       
       if (daysUntil >= 0 && daysUntil <= 7) {
@@ -51,7 +52,7 @@ export default function SmartHealthInsights({
 
     // Checkup reminder
     if (data.lastCheckupDate) {
-      const lastCheckup = new Date(data.lastCheckupDate);
+      const lastCheckup = safeDateParse(data.lastCheckupDate);
       const sixMonthsAgo = addMonths(now, -6);
       
       if (lastCheckup < sixMonthsAgo) {

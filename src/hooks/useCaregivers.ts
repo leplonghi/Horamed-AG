@@ -3,6 +3,15 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface CaregiverListResponse {
+  caregivers: Caregiver[];
+}
+
+interface CaregiverInviteResponse {
+  token?: string;
+  inviteUrl?: string;
+}
+
 interface Caregiver {
   id: string;
   emailOrPhone: string; // email_or_phone
@@ -21,14 +30,14 @@ export function useCaregivers() {
     try {
       const caregiverInviteFn = httpsCallable(functions, 'caregiverInvite');
       const result = await caregiverInviteFn({ action: 'list' });
-      const data = result.data as any;
+      const data = result.data as CaregiverListResponse;
 
       setCaregivers(data.caregivers || []);
-    } catch (error: any) {
-      console.error('Error loading caregivers:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao carregar cuidadores',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
     } finally {
@@ -48,7 +57,7 @@ export function useCaregivers() {
         emailOrPhone, // camelCase format for backend
         role
       });
-      const data = result.data as any;
+      const data = result.data as CaregiverInviteResponse;
 
       toast({
         title: 'Convite enviado',
@@ -57,11 +66,11 @@ export function useCaregivers() {
 
       await loadCaregivers();
       return data;
-    } catch (error: any) {
-      console.error('Error inviting caregiver:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao convidar cuidador',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       throw error;
@@ -82,11 +91,11 @@ export function useCaregivers() {
       });
 
       await loadCaregivers();
-    } catch (error: any) {
-      console.error('Error revoking caregiver:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao remover cuidador',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       throw error;
@@ -107,11 +116,11 @@ export function useCaregivers() {
       });
 
       return true;
-    } catch (error: any) {
-      console.error('Error accepting invite:', error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: 'Erro ao aceitar convite',
-        description: error.message,
+        description: msg,
         variant: 'destructive'
       });
       return false;

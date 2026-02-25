@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface ImprovedCalendarProps {
   selectedDate: Date;
@@ -160,8 +161,8 @@ export default function ImprovedCalendar({
         if (!doses) return [];
 
         return doses.map((dose: any) => ({
-          time: format(new Date(dose.due_at), "HH:mm"),
-          medication: dose.items.name,
+          time: format(safeDateParse(dose.due_at), "HH:mm"),
+          medication: dose.items?.name || "Medicamento",
           status: dose.status
         })) as DosePreview[];
       },

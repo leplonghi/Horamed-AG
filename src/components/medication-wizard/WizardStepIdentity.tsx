@@ -35,7 +35,7 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
 
   const supplementCategories = [
     { value: "energy", label: t('wizard.energy'), icon: Zap, color: "text-amber-500", bgColor: "bg-amber-50 dark:bg-amber-950/30", description: t('wizard.energyDesc') },
-    { value: "sleep", label: t('wizard.sleep'), icon: Moon, color: "text-purple-500", bgColor: "bg-purple-50 dark:bg-purple-950/30", description: t('wizard.sleepDesc') },
+    { value: "sleep", label: t('wizard.sleep'), icon: Moon, color: "text-teal-500", bgColor: "bg-teal-50 dark:bg-teal-950/30", description: t('wizard.sleepDesc') },
     { value: "immunity", label: t('wizard.immunity'), icon: Shield, color: "text-green-500", bgColor: "bg-green-50 dark:bg-green-950/30", description: t('wizard.immunityDesc') },
     { value: "performance", label: t('wizard.performance'), icon: Dumbbell, color: "text-orange-500", bgColor: "bg-orange-50 dark:bg-orange-950/30", description: t('wizard.performanceDesc') },
     { value: "hydration", label: t('wizard.hydration'), icon: Droplets, color: "text-blue-500", bgColor: "bg-blue-50 dark:bg-blue-950/30", description: t('wizard.hydrationDesc') },
@@ -64,9 +64,9 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
       value: "suplemento",
       label: t('wizard.supplement'),
       icon: Heart,
-      color: "text-purple-500",
-      bgColor: "bg-purple-50 dark:bg-purple-950/30",
-      borderColor: "border-purple-200 dark:border-purple-800",
+      color: "text-teal-500",
+      bgColor: "bg-teal-50 dark:bg-teal-950/30",
+      borderColor: "border-teal-200 dark:border-teal-800",
       description: t('wizard.supplementDesc')
     },
     {

@@ -37,8 +37,8 @@ const typeConfig: Record<HintType, {
     icon: AlertTriangle,
   },
   feature: {
-    gradient: "from-violet-400 via-purple-400 to-purple-500",
-    iconBg: "bg-violet-500",
+    gradient: "from-emerald-400 via-teal-400 to-teal-500",
+    iconBg: "bg-emerald-500",
     icon: Sparkles,
   },
 };

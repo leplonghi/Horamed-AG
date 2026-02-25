@@ -9,13 +9,30 @@ import { functions } from "@/integrations/firebase";
 import { httpsCallable } from "firebase/functions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface SharedDocument {
+  title?: string;
+  issuedAt?: string;
+  provider?: string;
+  mimeType?: string;
+}
+
+interface ShareLinkData {
+  success?: boolean;
+  error?: string;
+  document?: SharedDocument;
+  expiresAt?: string;
+  allowDownload?: boolean;
+  signedUrl?: string;
+}
 
 export default function CompartilharDocumento() {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [documento, setDocumento] = useState<any>(null);
-  const [compartilhamento, setCompartilhamento] = useState<any>(null);
+  const [documento, setDocumento] = useState<SharedDocument | null>(null);
+  const [compartilhamento, setCompartilhamento] = useState<{ expiresAt?: string; allowDownload?: boolean } | null>(null);
   const [signedUrl, setSignedUrl] = useState<string>("");
 
   useEffect(() => {
@@ -29,7 +46,7 @@ export default function CompartilharDocumento() {
         // Call secure Edge Function to validate token
         const validateShareLink = httpsCallable(functions, 'validateShareLink');
         const result = await validateShareLink({ token });
-        const data = result.data as any;
+        const data = result.data as ShareLinkData;
 
         if (!data?.success) {
           setError(data?.error || "Link de compartilhamento não encontrado");
@@ -43,7 +60,7 @@ export default function CompartilharDocumento() {
           allowDownload: data.allowDownload,
         });
         setSignedUrl(data.signedUrl || "");
-      } catch (err: any) {
+      } catch (err: unknown) {
         setError("Erro ao carregar documento");
         console.error(err);
       } finally {
@@ -92,10 +109,10 @@ export default function CompartilharDocumento() {
           <CardHeader>
             <CardTitle>{documento?.title || "Documento sem título"}</CardTitle>
             <div className="flex gap-2 mt-2">
-              {compartilhamento.expiresAt && (
+              {compartilhamento?.expiresAt && (
                 <Badge variant="outline">
                   Válido até{" "}
-                  {format(new Date(compartilhamento.expiresAt), "dd/MM/yyyy", { locale: ptBR })}
+                  {format(safeDateParse(compartilhamento.expiresAt), "dd/MM/yyyy", { locale: ptBR })}
                 </Badge>
               )}
             </div>
@@ -106,7 +123,7 @@ export default function CompartilharDocumento() {
                 <div>
                   <p className="text-sm text-muted-foreground">Data de Emissão</p>
                   <p className="font-medium">
-                    {format(new Date(documento.issuedAt), "dd/MM/yyyy", { locale: ptBR })}
+                    {format(safeDateParse(documento.issuedAt), "dd/MM/yyyy", { locale: ptBR })}
                   </p>
                 </div>
               )}
@@ -118,7 +135,7 @@ export default function CompartilharDocumento() {
                 </div>
               )}
 
-              {compartilhamento.allowDownload && signedUrl && (
+              {compartilhamento?.allowDownload && signedUrl && (
                 <Button asChild className="w-full">
                   <a href={signedUrl} download target="_blank" rel="noopener noreferrer">
                     <Download className="w-4 h-4 mr-2" />

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface MiniWeekCalendarProps {
   selectedDate: Date;
@@ -61,7 +62,7 @@ export default function MiniWeekCalendar({
 
         const counts: Record<string, { total: number; completed: number }> = {};
         (doses || []).forEach((dose: { due_at: string; status: string }) => {
-          const key = format(new Date(dose.due_at), "yyyy-MM-dd");
+          const key = format(safeDateParse(dose.due_at), "yyyy-MM-dd");
           if (!counts[key]) counts[key] = { total: 0, completed: 0 };
           counts[key].total++;
           if (dose.status === "taken") counts[key].completed++;

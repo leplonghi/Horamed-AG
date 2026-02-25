@@ -63,13 +63,13 @@ export default function ProgressDashboard({
           </Card>
         </motion.div>
 
-        {/* Weekly Comparison - Blue/Purple Gradient */}
+        {/* Weekly Comparison - Blue/teal Gradient */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-5 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 border-0 text-white shadow-lg shadow-blue-500/20">
+          <Card className="p-5 bg-gradient-to-br from-blue-500 via-indigo-500 to-teal-600 border-0 text-white shadow-lg shadow-blue-500/20">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

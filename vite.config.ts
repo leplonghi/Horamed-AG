@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
           name: "HoraMed - Gestão Completa da Sua Saúde",
           short_name: "HoraMed",
           description: "Gerencie medicamentos, exames e consultas. Receba lembretes inteligentes direto no celular.",
-          theme_color: "#7c3aed",
+          theme_color: "#4A90D9",
           background_color: "#ffffff",
           display: "standalone",
           orientation: "portrait-primary",
@@ -89,18 +89,19 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}"],
           navigateFallback: "/index.html",
-          navigateFallbackDenylist: [/^\/api/, /^\/auth/, /^\/supabase/],
+          navigateFallbackDenylist: [/^\/api/, /^\/auth/],
           skipWaiting: true,
           clientsClaim: true,
           cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
-              urlPattern: new RegExp(`^${env.VITE_SUPABASE_URL?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') || ''}/.*`, 'i'),
+              urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
               handler: "NetworkFirst",
               options: {
-                cacheName: "supabase-api-cache",
+                cacheName: "firebase-api-cache",
                 networkTimeoutSeconds: 10,
                 expiration: {
                   maxEntries: 200,
@@ -185,7 +186,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       // Increase chunk size warning limit
-      chunkSizeWarningLimit: 2000,
+      chunkSizeWarningLimit: 5000,
       // Enable source maps for production debugging (optional, remove if not needed)
       sourcemap: false,
     },

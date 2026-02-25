@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStreakCalculator } from "./useStreakCalculator";
 
 export type MilestoneType = 7 | 30 | 90;
@@ -23,19 +23,19 @@ export function useMilestoneDetector() {
 
   const checkForNewMilestone = () => {
     const lastMilestone = parseInt(localStorage.getItem(MILESTONE_KEY) || "0");
-    
+
     // Check for 90-day milestone
     if (currentStreak >= 90 && lastMilestone < 90) {
       setMilestoneState({ milestone: 90, isNew: true });
       return;
     }
-    
+
     // Check for 30-day milestone
     if (currentStreak >= 30 && lastMilestone < 30) {
       setMilestoneState({ milestone: 30, isNew: true });
       return;
     }
-    
+
     // Check for 7-day milestone
     if (currentStreak >= 7 && lastMilestone < 7) {
       setMilestoneState({ milestone: 7, isNew: true });
@@ -43,16 +43,16 @@ export function useMilestoneDetector() {
     }
   };
 
-  const markMilestoneAsSeen = () => {
+  const markMilestoneAsSeen = useCallback(() => {
     if (milestoneState.milestone) {
       localStorage.setItem(MILESTONE_KEY, milestoneState.milestone.toString());
       setMilestoneState({ milestone: null, isNew: false });
     }
-  };
+  }, [milestoneState.milestone]);
 
-  const resetMilestone = () => {
+  const resetMilestone = useCallback(() => {
     setMilestoneState({ milestone: null, isNew: false });
-  };
+  }, []);
 
   return {
     milestone: milestoneState.milestone,

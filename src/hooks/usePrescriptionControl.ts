@@ -2,6 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 import { auth, db } from "@/integrations/firebase/client";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { differenceInDays, parseISO, isAfter, isBefore } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface PrescriptionMedication {
+  name: string;
+  dosage?: string;
+  frequency?: string;
+}
+
+interface PrescriptionDoc {
+  id: string;
+  title?: string;
+  category?: string;
+  profileId?: string;
+  createdAt?: string;
+  issuedAt?: string;
+  issued_at?: string;
+  expiresAt?: string;
+  expires_at?: string;
+  isPurchased?: boolean;
+  medications?: PrescriptionMedication[];
+  meta?: {
+    medications?: PrescriptionMedication[];
+    isPurchased?: boolean;
+    is_purchased?: boolean;
+  };
+}
 
 export interface PrescriptionStatus {
   id: string;
@@ -10,7 +36,7 @@ export interface PrescriptionStatus {
   expiresAt: string | null;
   status: 'valid' | 'expiring_soon' | 'expired';
   daysUntilExpiry: number;
-  medications: any[];
+  medications: PrescriptionMedication[];
   isDuplicate: boolean;
   duplicateOf?: string;
   isPurchased: boolean;
@@ -40,22 +66,21 @@ export function usePrescriptionControl(profileId?: string) {
       }
 
       const snap = await getDocs(q);
-      const prescriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const prescriptions: PrescriptionDoc[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as PrescriptionDoc));
 
       // Sort manually by createdAt DESC
-      prescriptions.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      prescriptions.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       const statusList: PrescriptionStatus[] = [];
       const medicationMap = new Map<string, string[]>(); // medication name -> prescription IDs
 
       for (const prescription of prescriptions) {
         // Adapt fields from Supabase (issued_at) to Firebase (issuedAt) or keep flexible
-        const issuedAt = (prescription as any).issuedAt || (prescription as any).issued_at;
-        const expiresAt = (prescription as any).expiresAt || (prescription as any).expires_at;
-        // meta might be flattened or kept as map
-        const meta = (prescription as any).meta || {};
-        const medications = meta.medications || (prescription as any).medications || [];
-        const isPurchased = meta.isPurchased === true || (prescription as any).isPurchased === true;
+        const issuedAt = prescription.issuedAt || prescription.issued_at;
+        const expiresAt = prescription.expiresAt || prescription.expires_at;
+        const meta = prescription.meta || {};
+        const medications = meta.medications || prescription.medications || [];
+        const isPurchased = meta.isPurchased === true || prescription.isPurchased === true;
 
         let status: 'valid' | 'expiring_soon' | 'expired' = 'valid';
         let daysUntilExpiry = Infinity;
@@ -126,10 +151,10 @@ export function useExpiredPrescriptions(profileId?: string) {
       }
 
       const snap = await getDocs(q);
-      const prescriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const prescriptions: PrescriptionDoc[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as PrescriptionDoc));
 
       // Filter locally
-      const expired = prescriptions.filter((p: any) => {
+      const expired = prescriptions.filter((p) => {
         const expiresAt = p.expiresAt || p.expires_at;
         if (!expiresAt) return false;
 
@@ -139,7 +164,7 @@ export function useExpiredPrescriptions(profileId?: string) {
       });
 
       // Sort by expiresAt ASC
-      expired.sort((a, b) => new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime());
+      expired.sort((a, b) => safeDateParse(a.expiresAt).getTime() - safeDateParse(b.expiresAt).getTime());
 
       return expired.map(p => ({
         id: p.id,

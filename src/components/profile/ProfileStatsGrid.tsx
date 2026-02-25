@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface StatItem {
   label: string;
@@ -77,7 +78,7 @@ export default function ProfileStatsGrid() {
 
       let streak = 0;
       const today = new Date();
-      const currentDate = new Date(today);
+      const currentDate = safeDateParse(today);
 
       for (let i = 0; i < 30; i++) {
         const dateStr = currentDate.toISOString().split('T')[0];

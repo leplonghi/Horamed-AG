@@ -52,7 +52,7 @@ export default function DocumentQuickActions({
       icon: <Upload className="h-6 w-6" />,
       label: language === 'pt' ? "Upload" : "Upload",
       description: language === 'pt' ? "PDF ou imagem" : "PDF or image",
-      color: "from-purple-500 to-purple-600",
+      color: "from-teal-500 to-teal-600",
       onClick: onUploadFile
     },
     {

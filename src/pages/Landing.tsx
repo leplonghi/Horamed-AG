@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import logo from "@/assets/logo_HoraMed.png";
 import heroImage from "@/assets/landing-hero-family.jpg";
 import happySeniorImage from "@/assets/landing-happy-senior.jpg";
-import { 
-  Bell, 
-  FileText, 
-  Users, 
-  Shield, 
+import {
+  Bell,
+  FileText,
+  Users,
+  Shield,
   Heart,
   Star,
   Check,
@@ -37,7 +37,7 @@ import { PRICING, BRL_COUNTRIES } from "@/lib/stripeConfig";
 const Landing = () => {
   const authUrl = getAuthRedirectUrl();
   const { t, language, country } = useLanguage();
-  
+
   // Determine pricing based on country
   const isBrazil = BRL_COUNTRIES.includes(country.code);
   const pricing = isBrazil ? PRICING.brl : PRICING.usd;
@@ -122,6 +122,8 @@ const Landing = () => {
     t('landing.feature2'),
     t('landing.feature3'),
     t('landing.feature4'),
+    language === 'pt' ? '1 perfil familiar' : '1 family profile',
+    language === 'pt' ? 'Lembretes básicos' : 'Basic reminders',
   ];
 
   const premiumFeatures = [
@@ -130,6 +132,14 @@ const Landing = () => {
     t('landing.featurePremium3'),
     t('landing.featurePremium4'),
     t('landing.featurePremium5'),
+    language === 'pt' ? 'Até 5 perfis familiares' : 'Up to 5 family profiles',
+    language === 'pt' ? 'Autenticação biométrica' : 'Biometric authentication',
+    language === 'pt' ? 'Verificação de interações' : 'Drug interactions check',
+    language === 'pt' ? 'Dashboard de saúde completo' : 'Complete health dashboard',
+    language === 'pt' ? 'Gamificação e conquistas' : 'Gamification & achievements',
+    language === 'pt' ? 'Integrações avançadas' : 'Advanced integrations',
+    language === 'pt' ? 'Modo viagem' : 'Travel mode',
+    language === 'pt' ? 'Suporte prioritário' : 'Priority support',
   ];
 
   const steps = [
@@ -168,6 +178,16 @@ const Landing = () => {
       icon: Trophy,
       title: t('landing.newFeature7Title'),
       description: t('landing.newFeature7Desc')
+    },
+    {
+      icon: HeartPulse,
+      title: t('landing.newFeature8Title'),
+      description: t('landing.newFeature8Desc')
+    },
+    {
+      icon: FileText,
+      title: t('landing.newFeature9Title'),
+      description: t('landing.newFeature9Desc')
     }
   ];
 
@@ -200,9 +220,9 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEOHead 
-        title={language === 'pt' ? "HoraMed - Cuidar de quem você ama ficou mais simples" : "HoraMed - Caring for your loved ones made simple"} 
-        description={language === 'pt' 
+      <SEOHead
+        title={language === 'pt' ? "HoraMed - Cuidar de quem você ama ficou mais simples" : "HoraMed - Caring for your loved ones made simple"}
+        description={language === 'pt'
           ? "Lembretes de medicamentos para você e sua família. Organize a saúde de quem você ama com tranquilidade e confiança."
           : "Medication reminders for you and your family. Organize the health of your loved ones with peace and confidence."
         }
@@ -233,7 +253,7 @@ const Landing = () => {
         <div className="absolute -bottom-1/4 -left-1/4 w-[60%] h-[60%] rounded-full bg-gradient-blob-2 opacity-15 blur-3xl animate-blob-slow" />
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div 
+            <motion.div
               className="space-y-6"
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -246,14 +266,14 @@ const Landing = () => {
                   <>Never forget to <span className="text-primary">take your medication again</span></>
                 )}
               </h1>
-              
+
               <p className="text-xl text-muted-foreground leading-relaxed">
                 {t('landing.heroSubtitle')}
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   onClick={() => window.location.href = authUrl}
                   className="h-14 px-8 text-lg font-medium"
                 >
@@ -272,16 +292,16 @@ const Landing = () => {
               </div>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               className="relative"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <div className="rounded-2xl overflow-hidden shadow-2xl">
-                <img 
-                  src={heroImage} 
-                  alt={language === 'pt' ? "Filha cuidando da mãe idosa" : "Daughter caring for elderly mother"} 
+                <img
+                  src={heroImage}
+                  alt={language === 'pt' ? "Filha cuidando da mãe idosa" : "Daughter caring for elderly mother"}
                   className="w-full h-auto object-cover"
                 />
               </div>
@@ -393,7 +413,7 @@ const Landing = () => {
             </div>
             <div className="w-px h-10 bg-border/50 hidden sm:block" />
             <div className="flex items-center gap-1">
-              {[1,2,3,4,5].map(i => <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />)}
+              {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />)}
               <span className="ml-2 font-semibold text-foreground">4.9</span>
             </div>
           </div>
@@ -521,9 +541,9 @@ const Landing = () => {
               transition={{ duration: 0.5 }}
               viewport={{ once: true }}
             >
-              <img 
-                src={happySeniorImage} 
-                alt={language === 'pt' ? "Idoso feliz usando smartphone" : "Happy senior using smartphone"} 
+              <img
+                src={happySeniorImage}
+                alt={language === 'pt' ? "Idoso feliz usando smartphone" : "Happy senior using smartphone"}
                 className="rounded-2xl shadow-lg w-full"
               />
             </motion.div>
@@ -636,8 +656,8 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground mb-8 max-w-xl mx-auto">
               {t('landing.finalCtaDesc')}
             </p>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               onClick={() => window.location.href = authUrl}
               className="h-14 px-10 text-lg font-medium"
             >

@@ -1,0 +1,26 @@
+
+============================================================
+[SCHEMA VALIDATOR] Database Schema Validation
+============================================================
+Project: C:\Antigravity\horamed\horamed
+Time: 2026-02-24 12:39:47
+------------------------------------------------------------
+Found 2 schema files
+
+Validating: json-schema.d.ts (drizzle)
+
+Validating: Schema.d.ts (drizzle)
+
+============================================================
+SCHEMA ISSUES
+============================================================
+No schema issues found!
+
+{
+  "script": "schema_validator",
+  "project": "C:\\Antigravity\\horamed\\horamed",
+  "schemas_checked": 2,
+  "issues_found": 0,
+  "passed": true,
+  "issues": []
+}

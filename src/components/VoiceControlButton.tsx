@@ -30,7 +30,6 @@ export default function VoiceControlButton({
 
   // Handle Intelligent Results (from Gemini Backend)
   const handleSmartCommand = async (data: any) => {
-    console.log('🧠 AI Smart Command:', data);
     setIntelligentMode(true);
 
     const intent = data.intent;
@@ -72,10 +71,8 @@ export default function VoiceControlButton({
       return;
     }
 
-    console.log('Voice transcription:', text);
 
     const result = processVoiceCommand(text);
-    console.log('Processed command (Regex):', result);
 
     setFeedbackText(result.spokenResponse);
     setShowFeedback(true);

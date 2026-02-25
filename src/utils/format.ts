@@ -1,3 +1,4 @@
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 /**
  * Utilitários de formatação
  */
@@ -11,6 +12,6 @@ export const formatCurrency = (value: number): string => {
 
 export const formatDate = (date: Date | string): string => {
     if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
+    const d = typeof date === 'string' ? safeDateParse(date) : date;
     return new Intl.DateTimeFormat('pt-BR').format(d);
 };

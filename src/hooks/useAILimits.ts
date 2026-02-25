@@ -42,7 +42,7 @@ export function useAILimits() {
         return;
       }
 
-      const planType = subscription?.plan_type || 'free';
+      const planType = subscription?.planType || 'free';
       const status = subscription?.status || 'active';
       const isPremium = planType === 'premium' && status === 'active';
 
@@ -93,7 +93,7 @@ export function useAILimits() {
    * Record an AI usage event
    * Should be called AFTER the AI request is made successfully
    */
-  const recordAIUsage = async (metadata?: Record<string, any>) => {
+  const recordAIUsage = async (metadata?: Record<string, unknown>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

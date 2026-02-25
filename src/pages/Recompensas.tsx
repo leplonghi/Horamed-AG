@@ -14,18 +14,13 @@ export default function Recompensas() {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-6 h-6" />
           </Button>
-          <h1 className="text-xl font-bold">Recompensas & Streaks</h1>
+          <h1 className="text-xl font-bold">Recompensas & Séries</h1>
         </div>
       </header>
 
       {/* Content */}
       <main className="container max-w-md mx-auto p-4 space-y-6">
         <RewardsDashboard />
-
-        {/* Espaço para mais seções: Histórico, Ranking, etc */}
-        <div className="text-center text-sm text-muted-foreground pt-8 pb-4">
-          <p>Mantenha seus streaks para ganhar mais!</p>
-        </div>
       </main>
     </div>
   );

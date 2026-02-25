@@ -16,6 +16,7 @@ import StockChart from "@/components/StockChart";
 import InfoDialog from "@/components/InfoDialog";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface TimeSlotStats {
   label: string;
@@ -156,7 +157,7 @@ export default function Charts() {
 
         const dailyStats = daysInPeriod.map(day => {
           const dayDoses = doses.filter(d => {
-            const doseDate = new Date(d.dueAt); // camelCase
+            const doseDate = safeDateParse(d.dueAt); // camelCase
             return doseDate.toDateString() === day.toDateString();
           });
           return {
@@ -168,7 +169,7 @@ export default function Charts() {
         setWeeklyData(dailyStats);
 
         // Calculate time slot stats
-        const getHour = (dateStr: string) => new Date(dateStr).getHours();
+        const getHour = (dateStr: string) => safeDateParse(dateStr).getHours();
 
         const morningDoses = doses.filter(d => {
           const hour = getHour(d.dueAt);
@@ -216,7 +217,7 @@ export default function Charts() {
 
         notTakenDoses.forEach(dose => {
           const itemName = medMap.get(dose.itemId) || 'Unknown'; // Look up name
-          const hour = format(new Date(dose.dueAt), "HH:mm");
+          const hour = format(safeDateParse(dose.dueAt), "HH:mm");
           if (!itemCounts[itemName]) {
             itemCounts[itemName] = { count: 0, time: hour };
           }
@@ -235,7 +236,7 @@ export default function Charts() {
 
           for (let i = 0; i < 30; i++) {
             const checkDate = format(subDays(today, i), 'yyyy-MM-dd');
-            const dayDoses = doses.filter(d => format(new Date(d.dueAt), 'yyyy-MM-dd') === checkDate);
+            const dayDoses = doses.filter(d => format(safeDateParse(d.dueAt), 'yyyy-MM-dd') === checkDate);
 
             if (dayDoses.length === 0) continue;
 

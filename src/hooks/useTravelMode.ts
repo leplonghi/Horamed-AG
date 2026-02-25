@@ -4,6 +4,34 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 
+interface TravelMedicationDoc {
+  id: string;
+  name: string;
+  doseText?: string;
+  dose_text?: string;
+  category?: string;
+  isActive?: boolean;
+}
+
+interface TravelScheduleDoc {
+  id: string;
+  medicationId?: string;
+  itemId?: string;
+  times?: string[];
+  freqType?: string;
+  freq_type?: string;
+  daysOfWeek?: string[];
+  days_of_week?: string[];
+  isActive?: boolean;
+}
+
+interface TravelStockDoc {
+  id: string;
+  itemId: string;
+  unitsLeft?: number;
+  units_left?: number;
+}
+
 interface TravelCalculation {
   medication: {
     id: string;
@@ -33,7 +61,7 @@ export function useTravelMode() {
     setIsLoading(true);
     try {
       // Fetch active medications: users/{uid}/medications
-      const { data: items } = await fetchCollection<any>(
+      const { data: items } = await fetchCollection<TravelMedicationDoc>(
         `users/${user.uid}/medications`,
         // where('isActive', '==', true) // Assuming field is isActive (camelCase)
       );
@@ -41,12 +69,12 @@ export function useTravelMode() {
       const activeItems = (items || []).filter(i => i.isActive !== false);
 
       // Fetch active schedules: users/{uid}/schedules
-      const { data: allSchedules } = await fetchCollection<any>(
+      const { data: allSchedules } = await fetchCollection<TravelScheduleDoc>(
         `users/${user.uid}/schedules`
       );
 
       // Fetch stock: users/${user.uid}/stock
-      const { data: allStock } = await fetchCollection<any>(
+      const { data: allStock } = await fetchCollection<TravelStockDoc>(
         `users/${user.uid}/stock`
       );
 
@@ -126,7 +154,7 @@ export function useTravelMode() {
       // Fetch all active medications with schedules
       // Join manually again
       // Or just fetch schedules directly since we iterate over them
-      const { data: schedules } = await fetchCollection<any>(
+      const { data: schedules } = await fetchCollection<TravelScheduleDoc>(
         `users/${user.uid}/schedules`
       );
 

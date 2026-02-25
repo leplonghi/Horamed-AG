@@ -33,8 +33,8 @@ const typeConfig: Record<TooltipType, {
     icon: AlertCircle,
   },
   feature: {
-    gradient: "from-violet-400/20 to-purple-400/20",
-    iconBg: "bg-violet-500",
+    gradient: "from-emerald-400/20 to-teal-400/20",
+    iconBg: "bg-emerald-500",
     icon: Sparkles,
   },
 };

@@ -33,7 +33,7 @@ export default function HealthHistoryLinks() {
       description: t('healthHistory.agendaDesc'),
       icon: Stethoscope,
       path: "/agenda",
-      color: "text-purple-500"
+      color: "text-teal-500"
     }
   ];
 

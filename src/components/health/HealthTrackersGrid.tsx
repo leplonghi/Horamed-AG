@@ -42,7 +42,7 @@ interface HealthData {
 }
 
 export default function HealthTrackersGrid() {
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [healthData, setHealthData] = useState<HealthData>({
     glucose: { value: null, lastUpdated: null },
@@ -192,11 +192,11 @@ export default function HealthTrackersGrid() {
       // If weight, also check if we need to update profile (redundant if using updateDocument properly elsewhere but good for safety)
       // Actually let's just stick to vitalSigns for tracking.
 
-      toast.success(language === 'pt' ? 'Medição registrada!' : 'Measurement recorded!');
+      toast.success(language === 'pt' ? t('health.measurementRecorded') : 'Measurement recorded!');
       loadHealthData();
     } catch (error) {
       console.error("Error saving measurement:", error);
-      toast.error(language === 'pt' ? 'Erro ao salvar' : 'Error saving');
+      toast.error(language === 'pt' ? t('health.errorSaving') : 'Error saving');
     }
   };
 
@@ -211,19 +211,19 @@ export default function HealthTrackersGrid() {
   const trackers = [
     {
       id: "glucose",
-      title: language === 'pt' ? 'Glicemia' : 'Blood Glucose',
+      title: language === 'pt' ? t('health.glucose') : 'Blood Glucose',
       icon: <Droplets className="h-5 w-5 text-white" />,
       unit: "mg/dL",
       value: healthData.glucose.value,
       lastUpdated: healthData.glucose.lastUpdated,
       trend: healthData.glucose.trend,
-      color: "bg-gradient-to-br from-purple-500 to-purple-600",
+      color: "bg-gradient-to-br from-teal-500 to-teal-600",
       normalRange: { min: 70, max: 100 },
       placeholder: "mg/dL"
     },
     {
       id: "bloodPressure",
-      title: language === 'pt' ? 'Pressão Arterial' : 'Blood Pressure',
+      title: language === 'pt' ? t('health.bloodPressure') : 'Blood Pressure',
       icon: <Activity className="h-5 w-5 text-white" />,
       unit: "mmHg",
       value: healthData.bloodPressure.systolic,
@@ -232,12 +232,12 @@ export default function HealthTrackersGrid() {
       lastUpdated: healthData.bloodPressure.lastUpdated,
       color: "bg-gradient-to-br from-red-500 to-red-600",
       normalRange: { min: 90, max: 120 },
-      placeholder: language === 'pt' ? "Sistólica" : "Systolic",
-      secondaryPlaceholder: language === 'pt' ? "Diastólica" : "Diastolic"
+      placeholder: language === 'pt' ? t('health.systolic') : "Systolic",
+      secondaryPlaceholder: language === 'pt' ? t('health.diastolic') : "Diastolic"
     },
     {
       id: "heartRate",
-      title: language === 'pt' ? 'Frequência Cardíaca' : 'Heart Rate',
+      title: language === 'pt' ? t('health.heartRate') : 'Heart Rate',
       icon: <Heart className="h-5 w-5 text-white" />,
       unit: "bpm",
       value: healthData.heartRate.value,
@@ -249,7 +249,7 @@ export default function HealthTrackersGrid() {
     },
     {
       id: "spO2",
-      title: language === 'pt' ? 'Saturação O₂' : 'SpO₂',
+      title: language === 'pt' ? t('health.spO2') : 'SpO₂',
       icon: <Wind className="h-5 w-5 text-white" />,
       unit: "%",
       value: healthData.spO2.value,
@@ -260,7 +260,7 @@ export default function HealthTrackersGrid() {
     },
     {
       id: "weight",
-      title: language === 'pt' ? 'Peso' : 'Weight',
+      title: language === 'pt' ? t('health.weight') : 'Weight',
       icon: <Scale className="h-5 w-5 text-white" />,
       unit: "kg",
       value: healthData.weight.value,
@@ -271,7 +271,7 @@ export default function HealthTrackersGrid() {
     },
     {
       id: "temperature",
-      title: language === 'pt' ? 'Temperatura' : 'Temperature',
+      title: language === 'pt' ? t('health.temperature') : 'Temperature',
       icon: <Thermometer className="h-5 w-5 text-white" />,
       unit: "°C",
       value: healthData.temperature.value,
@@ -282,7 +282,7 @@ export default function HealthTrackersGrid() {
     },
     {
       id: "mood",
-      title: language === 'pt' ? 'Humor' : 'Mood',
+      title: language === 'pt' ? t('health.mood') : 'Mood',
       icon: <Smile className="h-5 w-5 text-white" />,
       unit: "/10",
       value: healthData.mood.value,
@@ -292,14 +292,14 @@ export default function HealthTrackersGrid() {
     },
     {
       id: "sleep",
-      title: language === 'pt' ? 'Sono' : 'Sleep',
+      title: language === 'pt' ? t('health.sleep') : 'Sleep',
       icon: <Moon className="h-5 w-5 text-white" />,
       unit: "h",
       value: healthData.sleep.value,
       lastUpdated: healthData.sleep.lastUpdated,
       color: "bg-gradient-to-br from-indigo-500 to-indigo-600",
       normalRange: { min: 7, max: 9 },
-      placeholder: language === 'pt' ? "Horas" : "Hours"
+      placeholder: language === 'pt' ? t('health.hours') : "Hours"
     }
   ];
 

@@ -4,8 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, XCircle, SkipForward, AlertCircle, Info, Utensils } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { safeDateParse } from "@/lib/safeDateUtils";
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { safeParseDoseDate } from "@/types";
 import DoseActionButton from "./DoseActionButton";
 import MedicationInfoSheet from "./MedicationInfoSheet";
 import { useMedicationInfo } from "@/hooks/useMedicationInfo";
@@ -41,19 +43,20 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
-  const dueTime = new Date(dose.dueAt);
+  // Safe date parsing - prevents crashes from invalid dates
+  const dueTime = safeParseDoseDate(dose as any) || new Date();
   const now = new Date();
   const isPast = dueTime < now;
   const isCurrent = Math.abs(dueTime.getTime() - now.getTime()) < 30 * 60 * 1000; // 30min window
   const isFuture = dueTime > now && !isCurrent;
 
   // Get unique colors per medication
-  const categoryConfig = getUniqueItemColors(dose.items.name, dose.items.category);
+  const categoryConfig = getUniqueItemColors(dose.items?.name || "Medicamento", dose.items?.category);
   const CategoryIcon = categoryConfig.icon;
 
   const handleShowInfo = () => {
     setShowInfo(true);
-    fetchInfo(dose.items.name);
+    fetchInfo(dose.items?.name || "");
   };
 
   const handleCloseInfo = (open: boolean) => {
@@ -149,7 +152,7 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h4 className="font-semibold text-foreground truncate">
-                    {dose.items.name}
+                    {dose.items?.name || "Medicamento"}
                   </h4>
                   <Button
                     variant="ghost"
@@ -161,10 +164,10 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </div>
-                {dose.items.doseText && (
+                {dose.items?.doseText && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    {dose.items.doseText}
-                    {dose.items.withFood && (
+                    {dose.items?.doseText}
+                    {dose.items?.withFood && (
                       <>
                         <span className="mx-1">•</span>
                         <Utensils className="h-3 w-3" />
@@ -192,11 +195,14 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
                   {isFuture && `🕒 ${formatDistanceToNow(dueTime, { locale: dateLocale, addSuffix: true })}`}
                 </span>
               )}
-              {dose.takenAt && (
-                <span className="text-success text-xs">
-                  ✓ {language === 'pt' ? 'às' : 'at'} {format(new Date(dose.takenAt), "HH:mm", { locale: dateLocale })}
-                </span>
-              )}
+              {dose.takenAt && (() => {
+                const takenTime = safeDateParse(dose.takenAt);
+                return !isNaN(takenTime.getTime()) ? (
+                  <span className="text-success text-xs">
+                    ✓ {language === 'pt' ? 'às' : 'at'} {format(takenTime, "HH:mm", { locale: dateLocale })}
+                  </span>
+                ) : null;
+              })()}
             </div>
 
             {dose.stock && dose.stock.length > 0 && (
@@ -226,7 +232,7 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
       <MedicationInfoSheet
         open={showInfo}
         onOpenChange={handleCloseInfo}
-        medicationName={dose.items.name}
+        medicationName={dose.items?.name || "Medicamento"}
         info={info}
         isLoading={isLoading}
         error={error}

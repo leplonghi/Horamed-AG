@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { QRCodeSVG } from 'qrcode.react';
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 export default function ConsultationCardGenerator() {
   const { t } = useTranslation();
   const { profiles } = useUserProfiles();
@@ -135,7 +136,7 @@ export default function ConsultationCardGenerator() {
 
             <div className="text-center text-sm text-muted-foreground">
               Válido até{' '}
-              {cardData && new Date(cardData.expiresAt).toLocaleString('pt-BR')}
+              {cardData && safeDateParse(cardData.expiresAt).toLocaleString('pt-BR')}
             </div>
 
             <div className="flex gap-2">

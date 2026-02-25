@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ConditionalWizardStep } from "./ConditionalWizardStep";
 import { AnimatePresence } from "framer-motion";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface WizardData {
   frequency: "daily" | "specific_days" | "weekly";
@@ -71,7 +72,7 @@ export function WizardStepScheduleConditional({ data, updateData, onOpenAdvanced
   const QUICK_TIMES = [
     { label: t('wizard.morning'), time: "08:00", icon: Sunrise, color: "text-orange-500" },
     { label: t('wizard.lunch'), time: "12:00", icon: Sun, color: "text-yellow-500" },
-    { label: t('wizard.afternoon'), time: "18:00", icon: Sunset, color: "text-purple-500" },
+    { label: t('wizard.afternoon'), time: "18:00", icon: Sunset, color: "text-teal-500" },
     { label: t('wizard.night'), time: "22:00", icon: Moon, color: "text-blue-500" },
   ];
 
@@ -100,7 +101,7 @@ export function WizardStepScheduleConditional({ data, updateData, onOpenAdvanced
   const step1Summary = data.continuousUse
     ? t('wizard.continuousUse')
     : data.startDate && data.endDate
-      ? `${new Date(data.startDate).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })} → ${new Date(data.endDate).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })}`
+      ? `${safeDateParse(data.startDate).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })} → ${safeDateParse(data.endDate).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US', { day: '2-digit', month: 'short' })}`
       : '';
 
   const step2Summary = FREQUENCY_OPTIONS.find(f => f.value === data.frequency)?.label || '';

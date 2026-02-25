@@ -3,9 +3,21 @@ import { toast } from 'sonner';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 
+interface VoiceIntent {
+  action?: string;
+  spokenResponse?: string;
+  parameters?: Record<string, unknown>;
+}
+
+interface VoiceToTextResponse {
+  text?: string;
+  intent?: VoiceIntent;
+  error?: string;
+}
+
 interface UseVoiceInputAIOptions {
   onTranscription?: (text: string) => void;
-  onCommandResult?: (result: any) => void; // Support for intelligent result
+  onCommandResult?: (result: VoiceToTextResponse) => void;
   onError?: (error: string) => void;
   language?: string;
 }
@@ -27,7 +39,6 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
 
   const startRecording = useCallback(async () => {
     try {
-      console.log('Requesting microphone permission for AI transcription...');
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -39,7 +50,6 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
 
       streamRef.current = mediaStream;
       setStream(mediaStream);
-      console.log('Microphone permission granted');
 
       // Reset state
       audioChunksRef.current = [];
@@ -57,7 +67,6 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
         }
       }
 
-      console.log('Using MIME type:', mimeType || 'default');
 
       const mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : undefined);
       mediaRecorderRef.current = mediaRecorder;
@@ -69,7 +78,6 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
       };
 
       mediaRecorder.onstop = async () => {
-        console.log('MediaRecorder stopped, processing audio...');
         setIsRecording(false);
         setIsProcessing(true);
 
@@ -97,7 +105,7 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
                 mimeType: audioBlob.type,
                 mode: 'intelligent' // Hint for backend to use smart mode
               });
-              const data = result.data as any;
+              const data = result.data as VoiceToTextResponse;
 
               if (data?.text || data?.intent) {
                 // Handle simple text or structured intelligent response
@@ -160,7 +168,6 @@ export function useVoiceInputAI(options: UseVoiceInputAIOptions = {}) {
   }, [options]);
 
   const stopRecording = useCallback(() => {
-    console.log('Stopping AI recording...');
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();

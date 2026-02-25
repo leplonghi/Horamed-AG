@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth, fetchCollection, setDocument, updateDocument, deleteDocument, where, orderBy, fetchDocument } from '@/integrations/firebase';
+import type { QueryConstraint } from 'firebase/firestore';
 
 export interface SideEffectLog {
   id: string;
@@ -64,7 +65,7 @@ export function useSideEffectsLog() {
 
     setIsLoading(true);
     try {
-      const constraints: any[] = [orderBy('recordedAt', 'desc')]; // Using any to avoid complicated union type matching issues quickly
+      const constraints: QueryConstraint[] = [orderBy('recordedAt', 'desc')];
 
 
       if (itemId) {
@@ -79,7 +80,7 @@ export function useSideEffectsLog() {
         constraints.push(where('recordedAt', '<=', endDate.toISOString()));
       }
 
-      const { data: logsData, error } = await fetchCollection<any>(
+      const { data: logsData, error } = await fetchCollection<SideEffectLog>(
         `users/${user.uid}/sideEffects`,
         constraints
       );
@@ -89,7 +90,7 @@ export function useSideEffectsLog() {
       // Need to fetch item details manually since we don't have joins
       // Optimization: Fetch unique items
       const uniqueItemIds = [...new Set((logsData || []).map(l => l.itemId).filter(Boolean))];
-      const itemsMap: Record<string, any> = {};
+      const itemsMap: Record<string, Record<string, unknown>> = {};
 
       await Promise.all(uniqueItemIds.map(async (id) => {
         const { data } = await fetchDocument(`users/${user.uid}/medications`, id);
@@ -112,14 +113,14 @@ export function useSideEffectsLog() {
         notes: log.notes,
         createdAt: log.createdAt,
         items: log.itemId && itemsMap[log.itemId] ? {
-          name: itemsMap[log.itemId].name,
-          doseText: itemsMap[log.itemId].doseText || null
+          name: String(itemsMap[log.itemId].name ?? ''),
+          doseText: (itemsMap[log.itemId].doseText as string) || null
         } : undefined
       }));
 
       setLogs(enrichedLogs);
-    } catch (error) {
-      console.error('Error fetching side effects logs:', error);
+    } catch {
+      // Fetch failed silently
     } finally {
       setIsLoading(false);
     }
@@ -162,7 +163,7 @@ export function useSideEffectsLog() {
     if (!user) throw new Error('User not authenticated');
 
     // Convert input camelCase to match Firestore
-    const firestoreUpdates: any = { ...updates };
+    const firestoreUpdates: Partial<SideEffectInput> = { ...updates };
     // Mapped fields already match if input is typed correctly
 
     const { error } = await updateDocument(
@@ -192,7 +193,7 @@ export function useSideEffectsLog() {
     // Map metric name if necessary (it matches interface so logic is fine)
     // metric passed is camelCase
 
-    const { data, error } = await fetchCollection<any>(
+    const { data } = await fetchCollection<SideEffectLog>(
       `users/${user.uid}/sideEffects`,
       [
         where('itemId', '==', itemId),
@@ -205,7 +206,7 @@ export function useSideEffectsLog() {
     // If just checking not-null, sometimes standard queries work but safest is simple fetch and filter in memory if volume is low.
 
     // Fallback: simple query by itemId and filter in memory
-    const { data: allLogs } = await fetchCollection<any>(
+    const { data: allLogs } = await fetchCollection<SideEffectLog>(
       `users/${user.uid}/sideEffects`,
       [
         where('itemId', '==', itemId),

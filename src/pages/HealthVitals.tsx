@@ -21,6 +21,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -176,7 +177,7 @@ export default function HealthVitals() {
     const getChartData = (logs: any[]) => {
         if (!logs) return [];
         return [...logs].reverse().map(log => ({
-            date: format(new Date(log.recordedAt), "dd/MM", { locale: dateLocale }),
+            date: format(safeDateParse(log.recordedAt), "dd/MM", { locale: dateLocale }),
             value: activeMetric === 'weight' ? log.weightKg : (activeMetric === 'glucose' ? log.value : 0),
             systolic: activeMetric === 'pressure' ? log.systolic : 0,
             diastolic: activeMetric === 'pressure' ? log.diastolic : 0,
@@ -209,7 +210,7 @@ export default function HealthVitals() {
                                     <p className="font-semibold text-lg">{language === 'pt' ? 'Peso' : 'Weight'}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {latestWeight
-                                            ? format(new Date(latestWeight.recordedAt), "d MMM", { locale: dateLocale })
+                                            ? format(safeDateParse(latestWeight.recordedAt), "d MMM", { locale: dateLocale })
                                             : (language === 'pt' ? 'Sem dados' : 'No data')}
                                     </p>
                                 </div>
@@ -236,7 +237,7 @@ export default function HealthVitals() {
                                     <p className="font-semibold text-lg">{language === 'pt' ? 'Pressão' : 'Blood Pressure'}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {latestPressure
-                                            ? format(new Date(latestPressure.recordedAt), "d MMM", { locale: dateLocale })
+                                            ? format(safeDateParse(latestPressure.recordedAt), "d MMM", { locale: dateLocale })
                                             : (language === 'pt' ? 'Sem dados' : 'No data')}
                                     </p>
                                 </div>
@@ -266,7 +267,7 @@ export default function HealthVitals() {
                                     <p className="font-semibold text-lg">{language === 'pt' ? 'Glicose' : 'Glucose'}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {latestGlucose
-                                            ? format(new Date(latestGlucose.recordedAt), "d MMM", { locale: dateLocale })
+                                            ? format(safeDateParse(latestGlucose.recordedAt), "d MMM", { locale: dateLocale })
                                             : (language === 'pt' ? 'Sem dados' : 'No data')}
                                     </p>
                                 </div>
@@ -305,11 +306,11 @@ export default function HealthVitals() {
                         <Button variant="ghost" size="icon" onClick={() => setSearchParams({})} className="rounded-full h-10 w-10 -ml-2">
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
-                        <h1 className="text-2xl font-bold tracking-tight capitalize">
+                        <h2 className="text-2xl font-bold tracking-tight capitalize">
                             {activeMetric === 'weight' ? (language === 'pt' ? 'Peso' : 'Weight') :
                                 activeMetric === 'pressure' ? (language === 'pt' ? 'Pressão' : 'BP') :
                                     (language === 'pt' ? 'Glicose' : 'Glucose')}
-                        </h1>
+                        </h2>
                     </div>
                     <Button size="icon" className={cn("rounded-full", themeBg)} onClick={() => handleOpenModal()}>
                         <Plus className="h-6 w-6 text-white" />
@@ -401,7 +402,7 @@ export default function HealthVitals() {
                                     <div className="flex items-center gap-2 mt-1">
                                         <CalendarIcon className="h-3 w-3 text-muted-foreground" />
                                         <span className="text-xs text-muted-foreground capitalize">
-                                            {format(new Date(log.recordedAt), "PPP, p", { locale: dateLocale })}
+                                            {format(safeDateParse(log.recordedAt), "PPP, p", { locale: dateLocale })}
                                         </span>
                                     </div>
                                 </div>

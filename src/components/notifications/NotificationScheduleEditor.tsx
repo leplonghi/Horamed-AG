@@ -50,7 +50,7 @@ export default function NotificationScheduleEditor({
     const QUICK_TIMES = [
         { label: t('time.morning'), time: "08:00", icon: Sunrise, color: "text-orange-500" },
         { label: t('time.lunch'), time: "12:00", icon: Sun, color: "text-yellow-500" },
-        { label: t('time.afternoon'), time: "18:00", icon: Sunset, color: "text-purple-500" },
+        { label: t('time.afternoon'), time: "18:00", icon: Sunset, color: "text-teal-500" },
         { label: t('time.night'), time: "22:00", icon: Moon, color: "text-blue-500" },
     ];
 

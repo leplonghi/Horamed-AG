@@ -14,6 +14,24 @@ import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar as CalendarIcon, TrendingUp, History, Pill } from "lucide-react";
+import { safeParseDoseDate } from "@/types";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import type { Dose } from "@/types";
+
+interface DoseDoc {
+  id: string;
+  itemId: string;
+  dueAt: string;
+  status: 'scheduled' | 'taken' | 'missed' | 'skipped';
+  takenAt?: string | null;
+}
+
+interface MedDoc {
+  id: string;
+  name: string;
+  doseText?: string | null;
+  unitsLeft?: number;
+}
 
 interface DoseInstance {
   id: string;
@@ -40,6 +58,16 @@ export default function MyDoses() {
   const [streak, setStreak] = useState<number>(0);
   const { showFeedback } = useFeedbackToast();
 
+  // Helper to convert DoseInstance to Dose for safeParseDoseDate
+  const toDose = (d: DoseInstance): Dose => ({
+    id: d.id,
+    item_id: d.itemId,
+    profile_id: '',
+    dueAt: d.dueAt,
+    status: d.status,
+    items: { name: d.items.name, dose_text: d.items.doseText },
+  });
+
   useEffect(() => {
     loadDoses();
     loadStreak();
@@ -64,13 +92,13 @@ export default function MyDoses() {
           endDate = endOfWeek(new Date(), { locale: ptBR });
           break;
         case 'history':
-          startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+          startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Safe internal calc
           endDate = new Date();
           break;
       }
 
       // 1. Fetch Doses
-      const { data: dosesData } = await fetchCollection<any>(
+      const { data: dosesData } = await fetchCollection<DoseDoc>(
         `users/${user.uid}/doses`,
         [
           where("dueAt", ">=", startDate.toISOString()),
@@ -86,7 +114,7 @@ export default function MyDoses() {
 
       // 2. Fetch all medications for the user (to join)
       // Optimization: Fetch only distinct itemIds if list is small, but fetch all is often simpler/cheaper if < 100 docs
-      const { data: medsData } = await fetchCollection<any>(`users/${user.uid}/medications`);
+      const { data: medsData } = await fetchCollection<MedDoc>(`users/${user.uid}/medications`);
       const medsMap = new Map((medsData || []).map(m => [m.id, m]));
 
       // 3. Join Doses with Meds
@@ -146,8 +174,12 @@ export default function MyDoses() {
 
       // Check if period is complete (Period Feedback)
       const periodDoses = doses.filter(d => {
-        const hour = new Date(d.dueAt).getHours();
-        const doseHour = new Date(dose.dueAt).getHours();
+        const dDate = safeParseDoseDate(toDose(d));
+        const doseDate = safeParseDoseDate(toDose(dose));
+        if (!dDate || !doseDate) return false;
+
+        const hour = dDate.getHours();
+        const doseHour = doseDate.getHours();
         return Math.floor(hour / 6) === Math.floor(doseHour / 6);
       });
       const allTaken = periodDoses.every(d =>
@@ -155,12 +187,13 @@ export default function MyDoses() {
       );
 
       if (allTaken) {
-        const hour = new Date(dose.dueAt).getHours();
+        const doseDate = safeParseDoseDate(toDose(dose));
+        const hour = doseDate ? doseDate.getHours() : 12;
         const periodName = hour < 12 ? 'manhã' : hour < 18 ? 'tarde' : 'noite';
         showFeedback('period-complete', { periodName });
       } else {
         showFeedback('dose-taken', {
-          medicationName: dose.items.name,
+          medicationName: dose.items?.name || "Medicamento",
           takenTime: format(takenTime, "HH:mm"),
         });
       }
@@ -186,13 +219,13 @@ export default function MyDoses() {
           takenAt: customTakenAt
         });
 
-        showFeedback('dose-taken', { medicationName: selectedDose.items.name });
+        showFeedback('dose-taken', { medicationName: selectedDose.items?.name || 'Medicamento' });
         loadDoses();
         loadStreak();
         return;
       }
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status: action,
         ...(action === 'taken' && { takenAt: new Date().toISOString() }),
       };
@@ -209,7 +242,7 @@ export default function MyDoses() {
 
       // Show appropriate feedback
       if (action === 'taken') {
-        showFeedback('dose-taken', { medicationName: selectedDose.items.name });
+        showFeedback('dose-taken', { medicationName: selectedDose.items?.name || 'Medicamento' });
       } else if (action === 'missed') {
         showFeedback('dose-missed');
       } else if (action === 'skipped') {
@@ -236,14 +269,14 @@ export default function MyDoses() {
   };
 
   const progress = calculateProgress();
-  const nextDose = doses.find(d => d.status === 'scheduled' && new Date(d.dueAt) > new Date());
+  const nextDose = doses.find(d => d.status === 'scheduled' && safeDateParse(d.dueAt) > new Date());
 
   // Group medications for summary cards
   const medicationGroups = doses.reduce((acc, dose) => {
     if (!acc[dose.itemId]) {
       acc[dose.itemId] = {
         id: dose.itemId,
-        name: dose.items.name,
+        name: dose.items?.name || "Medicamento",
         doses: [],
       };
     }
@@ -315,7 +348,7 @@ export default function MyDoses() {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="today" className="gap-2">
               <CalendarIcon className="h-4 w-4" />

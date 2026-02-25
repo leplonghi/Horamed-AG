@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { differenceInDays, subDays, format } from "date-fns";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 // GLP-1 and weight-related medications
 const GLP1_MEDICATIONS = [
@@ -135,16 +136,16 @@ export function useWeightInsights(profileId?: string) {
       // Calculate total change
       const totalChange = latestWeight.weight_kg - firstWeight.weight_kg;
       const daysSinceFirst = differenceInDays(
-        new Date(latestWeight.recorded_at),
-        new Date(firstWeight.recorded_at)
+        safeDateParse(latestWeight.recorded_at),
+        safeDateParse(firstWeight.recorded_at)
       );
 
-      const lastLogDate = new Date(latestWeight.recorded_at);
+      const lastLogDate = safeDateParse(latestWeight.recorded_at);
       const daysSinceLastLog = differenceInDays(new Date(), lastLogDate);
 
       // NEUTRAL 7-day trend observation
       const sevenDaysAgo = subDays(new Date(), 7);
-      const recentWeights = weights.filter(w => new Date(w.recorded_at) >= sevenDaysAgo);
+      const recentWeights = weights.filter(w => safeDateParse(w.recorded_at) >= sevenDaysAgo);
       
       if (recentWeights.length >= 2) {
         const weekChange = recentWeights[recentWeights.length - 1].weight_kg - recentWeights[0].weight_kg;
@@ -176,9 +177,9 @@ export function useWeightInsights(profileId?: string) {
 
       // NEUTRAL medication correlation (if applicable)
       if (hasGLP1 && weightRelatedMeds[0]) {
-        const medStartDate = new Date(weightRelatedMeds[0].treatment_start_date || weightRelatedMeds[0].created_at);
+        const medStartDate = safeDateParse(weightRelatedMeds[0].treatment_start_date || weightRelatedMeds[0].created_at);
         const weightsAfterMed = weights.filter(w => 
-          new Date(w.recorded_at) >= medStartDate
+          safeDateParse(w.recorded_at) >= medStartDate
         );
 
         if (weightsAfterMed.length >= 2) {

@@ -7,8 +7,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { MedicationItemCard, MedicationItem } from "./MedicationItemCard";
 import UsageLimitWarning from "@/components/fomo/UsageLimitWarning";
 import PremiumTeaser from "@/components/fomo/PremiumTeaser";
-import { AffiliateCard } from "@/components/fitness/AffiliateCard";
-import { dismissRecommendation, AffiliateProduct } from "@/lib/affiliateEngine";
+
 
 interface RoutineTabProps {
     items: MedicationItem[];
@@ -18,9 +17,6 @@ interface RoutineTabProps {
     setActiveTab: (tab: string) => void;
     onEdit: (id: string) => void;
     onDelete: (id: string, name: string) => void;
-    showAffiliateCard: boolean;
-    setShowAffiliateCard: (show: boolean) => void;
-    affiliateProduct: AffiliateProduct | null;
     onAdd?: () => void;
 }
 
@@ -32,9 +28,6 @@ export function RoutineTab({
     setActiveTab,
     onEdit,
     onDelete,
-    showAffiliateCard,
-    setShowAffiliateCard,
-    affiliateProduct,
     onAdd
 }: RoutineTabProps) {
     const { t } = useTranslation();
@@ -209,21 +202,7 @@ export function RoutineTab({
                 className="mt-4"
             />
 
-            {showAffiliateCard && affiliateProduct && (
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                >
-                    <AffiliateCard
-                        product={affiliateProduct}
-                        context="MEDICATION_LIST"
-                        onDismiss={() => {
-                            dismissRecommendation("MEDICATION_LIST");
-                            setShowAffiliateCard(false);
-                        }}
-                    />
-                </motion.div>
-            )}
+            {/* FOMO: Premium teaser for reports */}
 
             {/* FOMO: Premium teaser for reports */}
             <PremiumTeaser feature="reports" compact className="mt-4" />

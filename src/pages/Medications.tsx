@@ -22,6 +22,30 @@ import MedicationQuickActions from "@/components/medications/MedicationQuickActi
 import SmartMedicationInsights from "@/components/medications/SmartMedicationInsights";
 import MedicationStatsGrid from "@/components/medications/MedicationStatsGrid";
 import OceanBackground from "@/components/ui/OceanBackground";
+import type { LucideIcon } from "lucide-react";
+
+interface MedDoc {
+  id: string;
+  name: string;
+  doseText: string | null;
+  category: string;
+  isActive: boolean;
+  profileId?: string;
+}
+
+interface ScheduleDoc {
+  id: string;
+  times: string[];
+  freqType: string;
+  itemId: string;
+}
+
+interface StockDoc {
+  id: string;
+  currentQty: number;
+  unitLabel: string;
+  itemId: string;
+}
 
 interface Item {
   id: string;
@@ -31,7 +55,7 @@ interface Item {
   isActive: boolean;
   schedules: Array<{
     id: string;
-    times: any;
+    times: string[];
     freqType: string;
   }>;
   stock?: Array<{
@@ -95,7 +119,7 @@ export default function Medications() {
         constraints.push(where("profileId", "==", activeProfile.id));
       }
 
-      const { data: medsData, error: medsError } = await fetchCollection<any>(medsPath, constraints);
+      const { data: medsData, error: medsError } = await fetchCollection<MedDoc>(medsPath, constraints);
 
       if (medsError) throw medsError;
 
@@ -103,12 +127,12 @@ export default function Medications() {
       // or assume they are stored within the medication document or sub-level
       const formattedData = await Promise.all((medsData || []).map(async (med) => {
         // Fetch schedules for this medication
-        const { data: schedules } = await fetchCollection<any>(`users/${userId}/schedules`, [
+        const { data: schedules } = await fetchCollection<ScheduleDoc>(`users/${userId}/schedules`, [
           where("itemId", "==", med.id)
         ]);
 
         // Fetch stock for this medication
-        const { data: stock } = await fetchCollection<any>(`users/${userId}/stock`, [
+        const { data: stock } = await fetchCollection<StockDoc>(`users/${userId}/stock`, [
           where("itemId", "==", med.id)
         ]);
 
@@ -171,7 +195,7 @@ export default function Medications() {
     }
   };
 
-  const getScheduleSummary = (schedules: any[]) => {
+  const getScheduleSummary = (schedules: Array<{ times: string[]; freqType: string }>) => {
     if (!schedules || schedules.length === 0) return null;
     const totalTimes = schedules.reduce((acc, schedule) => {
       const times = Array.isArray(schedule.times) ? schedule.times.length : 0;
@@ -313,7 +337,7 @@ export default function Medications() {
     accentColor
   }: {
     title: string;
-    icon: any;
+    icon: LucideIcon;
     items: Item[];
     emptyMessage: string;
     accentColor: string;

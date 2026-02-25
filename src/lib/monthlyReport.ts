@@ -1,6 +1,48 @@
 import { fetchCollection, fetchDocument, where } from "@/integrations/firebase";
 import jsPDF from 'jspdf';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import 'jspdf-autotable';
+
+interface ProfileDoc {
+  fullName?: string;
+  full_name?: string;
+}
+
+interface DoseDoc {
+  id: string;
+  status: string;
+  dueAt: string;
+  delayMinutes?: number;
+}
+
+interface MedicationDoc {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface StockDoc {
+  id: string;
+  itemId: string;
+  currentQty: number;
+  projectedEndAt?: string | null;
+}
+
+interface HealthDocument {
+  id: string;
+  title?: string;
+  createdAt: string;
+}
+
+interface MedicationWithStock extends MedicationDoc {
+  stock: StockDoc[];
+}
+
+interface StockPrediction {
+  name: string;
+  unitsLeft: number;
+  projectedEnd: string | null;
+}
 
 interface MonthlyReportData {
   userId: string;
@@ -11,9 +53,9 @@ interface MonthlyReportData {
   missedDoses: number;
   punctualityRate: number;
   adherenceRate: number;
-  medications: any[];
-  stockPredictions: any[];
-  documents: any[];
+  medications: MedicationWithStock[];
+  stockPredictions: StockPrediction[];
+  documents: HealthDocument[];
   insights: string[];
 }
 
@@ -27,13 +69,13 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
   const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
 
   // Get user profile
-  const { data: profile } = await fetchDocument<any>(
+  const { data: profile } = await fetchDocument<ProfileDoc>(
     `users/${userId}/profile`,
     'info' // Assuming 'info' doc contains the profile or similar
   );
 
   // Get doses for the month
-  const { data: doses } = await fetchCollection<any>(
+  const { data: doses } = await fetchCollection<DoseDoc>(
     `users/${userId}/doses`,
     [
       where('dueAt', '>=', monthStart.toISOString()),
@@ -53,13 +95,13 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
   const punctualityRate = takenDoses > 0 ? (punctualDoses / takenDoses) * 100 : 0;
 
   // Get medications and join with stock
-  const { data: medications } = await fetchCollection<any>(
+  const { data: medications } = await fetchCollection<MedicationDoc>(
     `users/${userId}/medications`,
     [where('isActive', '==', true)]
   );
 
-  const medsWithStock = await Promise.all((medications || []).map(async (med) => {
-    const { data: stockData } = await fetchCollection<any>(
+  const medsWithStock: MedicationWithStock[] = await Promise.all((medications || []).map(async (med) => {
+    const { data: stockData } = await fetchCollection<StockDoc>(
       `users/${userId}/stock`,
       [where('itemId', '==', med.id)]
     );
@@ -77,7 +119,7 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
   }));
 
   // Get health documents count (assuming they are in users/{userId}/healthDocuments)
-  const { data: healthDocs } = await fetchCollection<any>(
+  const { data: healthDocs } = await fetchCollection<HealthDocument>(
     `users/${userId}/healthDocuments`,
     [
       where('createdAt', '>=', monthStart.toISOString()),
@@ -134,7 +176,7 @@ function createReportPDF(data: MonthlyReportData): Blob {
 
   // Header
   doc.setFontSize(20);
-  doc.setTextColor(139, 92, 246); // Purple
+  doc.setTextColor(5, 150, 105); // Emerald
   doc.text('HoraMed', 105, 20, { align: 'center' });
 
   doc.setFontSize(16);
@@ -185,7 +227,7 @@ function createReportPDF(data: MonthlyReportData): Blob {
     doc.setFontSize(10);
     data.stockPredictions.slice(0, 5).forEach((stock) => {
       if (stock.projectedEnd) {
-        const daysLeft = Math.ceil((new Date(stock.projectedEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        const daysLeft = Math.ceil((safeDateParse(stock.projectedEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
         doc.text(`• ${stock.name}: ${daysLeft} dias restantes`, 20, yPosition);
         yPosition += 6;
       }

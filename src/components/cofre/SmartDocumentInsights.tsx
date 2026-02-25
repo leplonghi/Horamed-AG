@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { HealthDocument } from "@/hooks/useCofre";
 import { differenceInDays, format, isAfter, isBefore, addDays } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface SmartDocumentInsightsProps {
   documents: HealthDocument[];
@@ -47,8 +48,8 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     // 1. Documentos expirando em 7 dias (URGENTE)
     const expiringIn7Days = documents.filter(doc =>
       doc.expiresAt &&
-      isAfter(new Date(doc.expiresAt), now) &&
-      isBefore(new Date(doc.expiresAt), in7Days)
+      isAfter(safeDateParse(doc.expiresAt), now) &&
+      isBefore(safeDateParse(doc.expiresAt), in7Days)
     );
 
     if (expiringIn7Days.length > 0) {
@@ -135,8 +136,8 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     // 5. Documentos expirando em 30 dias
     const expiringIn30Days = documents.filter(doc =>
       doc.expiresAt &&
-      isAfter(new Date(doc.expiresAt), in7Days) &&
-      isBefore(new Date(doc.expiresAt), in30Days)
+      isAfter(safeDateParse(doc.expiresAt), in7Days) &&
+      isBefore(safeDateParse(doc.expiresAt), in30Days)
     );
 
     if (expiringIn30Days.length > 0) {

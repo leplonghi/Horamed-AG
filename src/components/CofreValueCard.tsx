@@ -17,7 +17,7 @@ export default function CofreValueCard({ onAddDocument }: CofreValueCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
     >
-      <Card className="p-5 bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
+      <Card className="p-5 bg-gradient-to-br from-primary/5 to-teal-500/5 border-primary/20">
         <div className="flex items-start gap-4">
           <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Heart className="h-7 w-7 text-primary" />

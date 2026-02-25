@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield, Trash2, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/integrations/firebase/client";
+import { deleteDocuments, where } from "@/integrations/firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,35 +33,37 @@ export default function Privacy() {
   const handleDeleteAccount = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       await logAction({
         action: "delete_account",
         resource: "user",
-        resource_id: user.id,
+        resource_id: user.uid,
         metadata: { email: user.email }
       });
 
-      await supabase.from("dose_instances").delete().match({ item_id: user.id });
-      await supabase.from("schedules").delete().match({ item_id: user.id });
-      await supabase.from("stock").delete().match({ item_id: user.id });
-      
-      await supabase.from("compartilhamentos_doc").delete().eq("user_id", user.id);
-      await supabase.from("eventos_saude").delete().eq("user_id", user.id);
-      await supabase.from("documentos_saude").delete().eq("user_id", user.id);
-      
-      await supabase.from("user_profiles").delete().eq("user_id", user.id);
-      await supabase.from("health_history").delete().eq("user_id", user.id);
-      await supabase.from("health_insights").delete().eq("user_id", user.id);
-      
-      await supabase.from("items").delete().eq("user_id", user.id);
-      await supabase.from("medical_exams").delete().eq("user_id", user.id);
-      await supabase.from("notification_preferences").delete().eq("user_id", user.id);
-      await supabase.from("subscriptions").delete().eq("user_id", user.id);
-      await supabase.from("consents").delete().eq("user_id", user.id);
-      await supabase.from("profiles").delete().eq("user_id", user.id);
-      
+      // Migration from Supabase match/eq strategy to Firestore where
+      await deleteDocuments("dose_instances", [where("userId", "==", user.uid)]);
+      await deleteDocuments("schedules", [where("userId", "==", user.uid)]);
+      await deleteDocuments("stock", [where("userId", "==", user.uid)]);
+
+      await deleteDocuments("compartilhamentos_doc", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("eventos_saude", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("documentos_saude", [where("user_id", "==", user.uid)]);
+
+      await deleteDocuments("user_profiles", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("health_history", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("health_insights", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("symptom_logs", [where("userId", "==", user.uid)]);
+
+      await deleteDocuments("items", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("medical_exams", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("notification_preferences", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("subscriptions", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("consents", [where("user_id", "==", user.uid)]);
+      await deleteDocuments("profiles", [where("user_id", "==", user.uid)]);
+
       await signOut();
       localStorage.removeItem("biometric_refresh_token");
       localStorage.removeItem("biometric_expiry");
@@ -116,7 +119,7 @@ export default function Privacy() {
                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside ml-2">
                   <li><strong>{t('privacy.registration')}:</strong> {t('privacy.registrationData')}</li>
                   <li><strong>{t('privacy.familyProfiles')}:</strong> {t('privacy.familyProfilesData')}</li>
-                  <li><strong>{t('privacy.healthSensitive')}:</strong> {t('privacy.healthData')}</li>
+                  <li><strong>{t('privacy.healthSensitive')}:</strong> {t('privacy.healthData')} e registros diários de sintomas</li>
                   <li><strong>{t('privacy.usage')}:</strong> {t('privacy.usageData')}</li>
                   <li><strong>{t('privacy.subscription')}:</strong> {t('privacy.subscriptionData')}</li>
                 </ul>
@@ -138,9 +141,9 @@ export default function Privacy() {
                 <p className="text-xs text-muted-foreground mb-3">
                   {t('privacy.legalDocumentDesc')}
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="w-full"
                   onClick={() => navigate("/termos")}
                 >
@@ -158,7 +161,7 @@ export default function Privacy() {
               <p className="text-sm text-muted-foreground mb-4">
                 {t('privacy.manageDataDesc')}
               </p>
-              
+
               <CardContent className="p-4">
                 <Button
                   variant="outline"
@@ -181,7 +184,7 @@ export default function Privacy() {
               <p className="text-sm text-muted-foreground mb-4">
                 {t('privacy.dangerZoneDesc')}
               </p>
-              
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button

@@ -32,10 +32,8 @@ export default function Terms() {
           <Card className="p-6 bg-primary/5 border-primary/20">
             <div className="space-y-2 text-sm">
               <p><strong>Aplicativo:</strong> HoraMed</p>
-              <p><strong>Responsável:</strong> Luis Eduardo Paim Longhi</p>
-              <p><strong>Última atualização:</strong> 25/11/2025</p>
+              <p><strong>Última atualização:</strong> 02/02/2026</p>
               <p><strong>Contato:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
-              <p><strong>Localização:</strong> São Luís - MA</p>
             </div>
           </Card>
 
@@ -73,11 +71,31 @@ export default function Terms() {
                   <p className="text-muted-foreground mb-2">O HoraMed oferece:</p>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
                     <li>Registro de medicamentos, doses, horários e rotinas</li>
-                    <li>Lembretes de tomada de medicamentos</li>
-                    <li>Gestão de estoque de medicamentos</li>
-                    <li>Carteira de Saúde digital (receitas, exames, vacinas)</li>
+                    <li>Lembretes inteligentes de tomada de medicamentos</li>
+                    <li>Gestão de estoque de medicamentos com alertas de reposição</li>
+                    <li>Carteira de Saúde digital (receitas, exames, vacinas, documentos médicos)</li>
+                    <li>Scan e digitalização de documentos com OCR</li>
+                    <li>Perfis familiares múltiplos (até 5 para Premium, 1 para Free)</li>
                     <li>Geração de relatórios periódicos para consultas médicas</li>
-                    <li>Recursos de IA para organizar dados de saúde</li>
+                    <li>Recursos de IA para organizar e analisar dados de saúde</li>
+                    <li>Verificação de interações medicamentosas</li>
+                    <li>Diário de efeitos colaterais</li>
+                    <li>Modo viagem com ajuste de fuso horário</li>
+                    <li>Agenda de consultas médicas</li>
+                    <li>Registro de sinais vitais (peso, pressão, glicemia, temperatura)</li>
+                    <li>Dashboard de saúde com métricas e análises</li>
+                    <li>Linha do tempo de eventos médicos</li>
+                    <li>Sistema de gamificação com conquistas e recompensas</li>
+                    <li>Programa "Indique e Ganhe" com benefícios</li>
+                    <li>Integrações com dispositivos (Google Health Connect, Apple Health)</li>
+                    <li>Autenticação biométrica (Face ID, Touch ID, impressão digital)</li>
+                    <li>Notificações push e alertas críticos personalizados</li>
+                    <li>Informações de emergência e contatos de emergência</li>
+                    <li>Exportação de dados (PDF, CSV)</li>
+                    <li>Compartilhamento seguro de documentos médicos</li>
+                    <li>Rastreador de Sintomas Diários (observacional, não-diagnóstico)</li>
+                    <li>Resumo Clínico Inteligente para suporte ao médico</li>
+                    <li>Backup automático em nuvem (Firebase)</li>
                   </ul>
                   <p className="text-warning font-semibold mt-2">
                     ⚠️ O HoraMed não é serviço médico, não realiza diagnóstico, não prescreve ou altera tratamentos e não substitui consulta com profissionais de saúde.
@@ -150,13 +168,13 @@ export default function Terms() {
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
                     <li>Dados inseridos pelo próprio Usuário</li>
                     <li>Documentos enviados (receitas, exames, vacinas)</li>
-                    <li>Regras de negócio do sistema</li>
+                    <li>Regras de negócio do sistema e banco de bulas publicamente disponíveis</li>
                   </ul>
-                  <p className="text-muted-foreground mt-2 font-semibold">O HoraMed NÃO:</p>
+                  <p className="text-muted-foreground mt-2 font-semibold">O HoraMed, incluindo o Rastreador de Sintomas e Correlação IA, NÃO:</p>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground ml-2">
                     <li>Garante interpretação médica exata</li>
-                    <li>Fornece diagnóstico</li>
-                    <li>Recomenda ajustes de posologia</li>
+                    <li>Fornece diagnóstico ou sugere paralisação de medicamentos</li>
+                    <li>Substitui a opinião do seu médico prescritor</li>
                   </ul>
                 </div>
 
@@ -242,10 +260,9 @@ export default function Terms() {
               </AccordionTrigger>
               <AccordionContent className="space-y-4 text-sm pt-4">
                 <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
-                  <h4 className="font-semibold mb-2">Controlador de Dados</h4>
+                  <h4 className="font-semibold mb-2">Legislação Aplicável</h4>
                   <p className="text-muted-foreground">
-                    <strong>Luis Eduardo Paim Longhi</strong>, pessoa física responsável pelo HoraMed.<br />
-                    Legislação: LGPD (Lei nº 13.709/2018)
+                    LGPD (Lei nº 13.709/2018)
                   </p>
                 </div>
 
@@ -477,9 +494,8 @@ export default function Terms() {
 
           {/* Contact Card */}
           <Card className="p-6 bg-primary/5 border-primary/20">
-            <h3 className="font-semibold mb-3">Dados do Responsável</h3>
             <div className="space-y-2 text-sm">
-              <p><strong>E-mail:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
+              <p><strong>Contato:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
             </div>
           </Card>
 

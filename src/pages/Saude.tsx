@@ -93,7 +93,7 @@ export default function Saude() {
       description: t('saude.healthAgendaDesc'),
       icon: Calendar,
       path: "/saude/agenda",
-      color: "from-purple-500 to-purple-600",
+      color: "from-teal-500 to-teal-600",
     },
     {
       title: t('saude.medicalAppointments'),
@@ -114,7 +114,7 @@ export default function Saude() {
       description: t('saude.healthDashboardDesc'),
       icon: TrendingUp,
       path: "/dashboard-saude",
-      color: "from-purple-500 to-purple-600",
+      color: "from-teal-500 to-teal-600",
     },
     {
       title: t('saude.timeline'),

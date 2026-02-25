@@ -1,13 +1,23 @@
 import { useState, useCallback, useRef } from 'react';
 import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+/** Generic Firestore document shape. */
+type FirestoreDoc = Record<string, unknown>;
+
+/** Minimal profile shape needed for prefetching. */
+interface MinimalProfile {
+  id: string;
+  [key: string]: unknown;
+}
 
 interface ProfileCache {
-  medications: any[];
-  todayDoses: any[];
-  documents: any[];
-  vitalSigns: any[];
-  consultations: any[];
-  healthEvents: any[];
+  medications: FirestoreDoc[];
+  todayDoses: FirestoreDoc[];
+  documents: FirestoreDoc[];
+  vitalSigns: FirestoreDoc[];
+  consultations: FirestoreDoc[];
+  healthEvents: FirestoreDoc[];
   lastUpdated: number;
 }
 
@@ -62,7 +72,7 @@ export function useProfileCache() {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(today);
+      const endOfDay = safeDateParse(today);
       endOfDay.setHours(23, 59, 59, 999);
 
       // Fetch all data in parallel
@@ -156,14 +166,14 @@ export function useProfileCache() {
         }
         return newCache;
       });
-    } catch (error) {
-      console.error('Error prefetching profile data:', error);
+    } catch {
+      // Silent fail — cache is optional, app works without it
     } finally {
       isFetchingRef.current.delete(profileId);
     }
   }, []); // Remove cache dependency - use ref instead
 
-  const prefetchAllProfiles = useCallback(async (profiles: any[], userId: string) => {
+  const prefetchAllProfiles = useCallback(async (profiles: MinimalProfile[], userId: string) => {
     // Only prefetch active profile first for speed, others in background
     if (profiles.length === 0) return;
 

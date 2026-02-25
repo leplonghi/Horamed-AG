@@ -1,0 +1,1 @@
+C:\Users\eduar\AppData\Local\Programs\Python\Python310\python.exe: can't open file 'C:\\Antigravity\\horamed\\horamed\\.agent\\skills\\vulnerability-scanner\\scripts\\dependency_analyzer.py': [Errno 2] No such file or directory

@@ -44,7 +44,6 @@ export const useSmartRedirect = () => {
 
         // If there's a pending dose, redirect to /hoje
         if (doses && doses.length > 0) {
-          console.log('Pending dose found, redirecting to /hoje');
           navigate('/hoje', { replace: true });
         }
       } catch (error) {

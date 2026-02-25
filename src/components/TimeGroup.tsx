@@ -54,8 +54,8 @@ export default function TimeGroup({
       icon: Sunset,
       label: "Noite",
       subLabel: "18h - 22h",
-      color: "from-purple-500/20 to-indigo-500/20",
-      iconColor: "text-purple-500",
+      color: "from-teal-500/20 to-indigo-500/20",
+      iconColor: "text-teal-500",
     },
     night: {
       icon: Moon,

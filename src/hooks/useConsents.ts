@@ -26,11 +26,11 @@ export const useConsents = () => {
 
       const { data } = await fetchCollection<Consent>(`users/${user.uid}/consents`);
       setConsents(data || []);
-    } catch (error: any) {
-      console.error("Error loading consents:", error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao carregar consentimentos",
-        description: error.message,
+        description: msg,
         variant: "destructive",
       });
     } finally {
@@ -73,11 +73,11 @@ export const useConsents = () => {
         title: "Consentimento concedido",
         description: "Suas preferências foram atualizadas",
       });
-    } catch (error: any) {
-      console.error("Error granting consent:", error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao conceder consentimento",
-        description: error.message,
+        description: msg,
         variant: "destructive",
       });
     }
@@ -104,11 +104,11 @@ export const useConsents = () => {
         title: "Consentimento revogado",
         description: "Suas preferências foram atualizadas",
       });
-    } catch (error: any) {
-      console.error("Error revoking consent:", error);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro desconhecido';
       toast({
         title: "Erro ao revogar consentimento",
-        description: error.message,
+        description: msg,
         variant: "destructive",
       });
     }

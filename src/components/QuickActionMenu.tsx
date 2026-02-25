@@ -63,7 +63,7 @@ export default function QuickActionMenu({ open, onOpenChange, onOpenClara }: Qui
       icon: FlaskConical,
       label: t('quickAction.exam'),
       description: t('quickAction.examResult'),
-      color: "bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20",
+      color: "bg-teal-500/10 text-teal-600 hover:bg-teal-500/20 border-teal-500/20",
       onClick: () => {
         onOpenChange(false);
         navigate("/exames");

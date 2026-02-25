@@ -1,24 +1,27 @@
 import TimeGroup from "./TimeGroup";
 import DoseCard from "./DoseCard";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+type DoseEntry = {
+  id: string;
+  itemId: string;
+  dueAt: string;
+  status: 'scheduled' | 'taken' | 'missed' | 'skipped';
+  takenAt: string | null;
+  items: {
+    name: string;
+    doseText: string | null;
+  };
+  stock?: {
+    currentQty: number;
+  }[];
+};
 
 interface DoseTimelineProps {
-  doses: Array<{
-    id: string;
-    itemId: string;
-    dueAt: string;
-    status: 'scheduled' | 'taken' | 'missed' | 'skipped';
-    takenAt: string | null;
-    items: {
-      name: string;
-      doseText: string | null;
-    };
-    stock?: {
-      currentQty: number;
-    }[];
-  }>;
+  doses: DoseEntry[];
   period?: "today" | "week" | "month";
-  onTake?: (dose: any) => void;
-  onMore?: (dose: any) => void;
+  onTake?: (dose: DoseEntry) => void;
+  onMore?: (dose: DoseEntry) => void;
   groupByTime?: boolean;
 }
 
@@ -39,7 +42,7 @@ export default function DoseTimeline({
     };
 
     doses.forEach(dose => {
-      const hour = new Date(dose.dueAt).getHours();
+      const hour = safeDateParse(dose.dueAt).getHours();
       if (hour >= 6 && hour < 12) groups.morning.push(dose);
       else if (hour >= 12 && hour < 18) groups.afternoon.push(dose);
       else if (hour >= 18 && hour < 22) groups.evening.push(dose);

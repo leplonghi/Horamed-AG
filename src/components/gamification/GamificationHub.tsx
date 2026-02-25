@@ -70,8 +70,8 @@ export function GamificationHub() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="p-3 text-center bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20">
-            <Star className="h-6 w-6 mx-auto mb-1 text-purple-500" />
+          <Card className="p-3 text-center bg-gradient-to-br from-teal-500/10 to-pink-500/10 border-teal-500/20">
+            <Star className="h-6 w-6 mx-auto mb-1 text-teal-500" />
             <p className="text-2xl font-bold">{level}</p>
             <p className="text-xs text-muted-foreground">Nível</p>
           </Card>

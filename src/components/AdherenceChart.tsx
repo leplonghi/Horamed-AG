@@ -3,6 +3,7 @@ import { Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface ProgressChartProps {
   doses?: Array<{
@@ -37,7 +38,7 @@ export default function ProgressChart({ doses, weeklyData, period = "week" }: Pr
       // Group by hour
       const hourlyData: Record<string, { taken: number; total: number }> = {};
       doses.forEach(dose => {
-        const hour = format(new Date(dose.due_at), 'HH:00');
+        const hour = format(safeDateParse(dose.due_at), 'HH:00');
         if (!hourlyData[hour]) {
           hourlyData[hour] = { taken: 0, total: 0 };
         }
@@ -55,7 +56,7 @@ export default function ProgressChart({ doses, weeklyData, period = "week" }: Pr
       // Group by day of week
       const dayData: Record<string, { taken: number; total: number }> = {};
       doses.forEach(dose => {
-        const day = format(new Date(dose.due_at), 'EEE', { locale: ptBR });
+        const day = format(safeDateParse(dose.due_at), 'EEE', { locale: ptBR });
         if (!dayData[day]) {
           dayData[day] = { taken: 0, total: 0 };
         }
@@ -73,7 +74,7 @@ export default function ProgressChart({ doses, weeklyData, period = "week" }: Pr
       // Group by day of month
       const dayData: Record<string, { taken: number; total: number }> = {};
       doses.forEach(dose => {
-        const day = format(new Date(dose.due_at), 'dd/MM');
+        const day = format(safeDateParse(dose.due_at), 'dd/MM');
         if (!dayData[day]) {
           dayData[day] = { taken: 0, total: 0 };
         }

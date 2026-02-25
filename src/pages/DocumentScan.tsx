@@ -11,6 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 import { useTranslation } from "@/contexts/LanguageContext";
+
+interface ScanResult {
+  medications?: Array<{ name: string; dose?: string; frequency?: string }>;
+  [key: string]: unknown;
+}
+
 type ScanType = 'medication' | 'exam' | 'document';
 
 export default function DocumentScan() {
@@ -19,7 +25,7 @@ export default function DocumentScan() {
   const { user } = useAuth();
   const [scanning, setScanning] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [scanResult, setScanResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [activeTab, setActiveTab] = useState<ScanType>('medication');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +78,7 @@ export default function DocumentScan() {
 
       const scanFunc = httpsCallable(functions, functionName);
       const result = await scanFunc({ image: base64 });
-      const data = result.data as any;
+      const data = result.data as ScanResult;
 
       setScanResult(data);
       toast.success(t("toast.document.processedSuccess"));
@@ -87,9 +93,10 @@ export default function DocumentScan() {
         });
       }
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Scan error:', error);
-      toast.error('Erro ao processar documento: ' + (error.message || 'Erro desconhecido'));
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
+      toast.error('Erro ao processar documento: ' + message);
     } finally {
       setScanning(false);
     }

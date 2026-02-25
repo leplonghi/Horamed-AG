@@ -1,11 +1,9 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { format, parseISO, isBefore, isToday } from "date-fns";
+import { format, isToday } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { CheckCircle2, Clock, Calendar, Stethoscope, TestTube, Pill, Timer } from "lucide-react";
+import { Check, Calendar, Stethoscope, TestTube, Pill } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TimelineItem {
@@ -28,286 +26,175 @@ interface DayTimelineProps {
 export default function DayTimeline({
   date,
   items,
-  onDateChange
 }: DayTimelineProps) {
-  const { t, language } = useLanguage();
-  const now = new Date();
-  const isCurrentDay = isToday(date);
+  const { language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
-  // Agrupar por hora
-  const groupedItems = items.reduce((acc, item) => {
-    const hour = item.time.split(":")[0];
-    if (!acc[hour]) acc[hour] = [];
-    acc[hour].push(item);
-    return acc;
-  }, {} as Record<string, TimelineItem[]>);
+  // Flats list sorted by time
+  const sortedItems = [...items].sort((a, b) => {
+    return a.time.localeCompare(b.time);
+  });
 
-  const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0"));
-
-  const getTypeIcon = (type: string, isDone: boolean) => {
-    if (isDone) return <CheckCircle2 className="h-4 w-4" />;
+  const getTypeIcon = (type: string) => {
     switch (type) {
       case "medication":
-        return <Pill className="h-4 w-4" />;
+        return <Pill className="h-6 w-6" />;
       case "appointment":
-        return <Stethoscope className="h-4 w-4" />;
+        return <Stethoscope className="h-6 w-6" />;
       case "exam":
-        return <TestTube className="h-4 w-4" />;
+        return <TestTube className="h-6 w-6" />;
       default:
-        return <Calendar className="h-4 w-4" />;
+        return <Calendar className="h-6 w-6" />;
     }
   };
 
-  const getTypeStyles = (type: string, status: string, isPast: boolean, itemName?: string) => {
+  const getItemStyles = (type: string, status: string) => {
     const isDone = status === "done";
-    const isMissed = status === "missed";
+
+    // Base styles (Clean Blue Theme - Image Reference 1)
+    const base = {
+      card: "bg-white border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1",
+      iconBox: "bg-indigo-100 text-indigo-600",
+      title: "text-slate-800",
+      subtitle: "text-slate-500",
+      timeBadge: "bg-blue-50 text-blue-600 font-bold"
+    };
+
+    if (type === "medication") {
+      base.iconBox = "bg-blue-100 text-blue-600";
+    } else if (type === "appointment") {
+      base.iconBox = "bg-emerald-100 text-emerald-600";
+      base.timeBadge = "bg-emerald-50 text-emerald-600";
+    } else if (type === "exam") {
+      base.iconBox = "bg-teal-100 text-teal-600";
+      base.timeBadge = "bg-teal-50 text-teal-600";
+    }
 
     if (isDone) {
       return {
-        card: "bg-success/5 border-l-success/60",
-        iconBg: "bg-success/15 text-success",
-      };
-    }
-    if (isMissed) {
-      return {
-        card: "bg-destructive/5 border-l-destructive/60",
-        iconBg: "bg-destructive/15 text-destructive",
-      };
-    }
-    if (isPast) {
-      return {
-        card: "bg-warning/5 border-l-warning animate-pulse",
-        iconBg: "bg-warning/15 text-warning",
+        card: "bg-slate-50 border-0 opacity-60 shadow-none",
+        iconBox: "bg-slate-200 text-slate-400",
+        title: "text-slate-500 line-through",
+        subtitle: "text-slate-400",
+        timeBadge: "bg-slate-100 text-slate-400"
       };
     }
 
-    // Variações sutis de cores baseadas no nome do medicamento
-    const getMedicationColorVariant = (name?: string) => {
-      if (!name) return { class: "bg-blue-500/5 border-l-blue-500/70", icon: "bg-blue-500/12 text-blue-600" };
-      
-      const hash = name.toLowerCase().split('').reduce((a, b) => {
-        a = ((a << 5) - a) + b.charCodeAt(0);
-        return a & a;
-      }, 0);
-      
-      const variants = [
-        { class: "bg-blue-500/5 border-l-blue-500/70", icon: "bg-blue-500/12 text-blue-600" },
-        { class: "bg-indigo-500/5 border-l-indigo-500/70", icon: "bg-indigo-500/12 text-indigo-600" },
-        { class: "bg-violet-500/5 border-l-violet-500/70", icon: "bg-violet-500/12 text-violet-600" },
-        { class: "bg-purple-500/5 border-l-purple-500/70", icon: "bg-purple-500/12 text-purple-600" },
-        { class: "bg-sky-500/5 border-l-sky-500/70", icon: "bg-sky-500/12 text-sky-600" },
-        { class: "bg-cyan-500/5 border-l-cyan-500/70", icon: "bg-cyan-500/12 text-cyan-600" },
-        { class: "bg-teal-500/5 border-l-teal-500/70", icon: "bg-teal-500/12 text-teal-600" },
-      ];
-      
-      return variants[Math.abs(hash) % variants.length];
-    };
-
-    switch (type) {
-      case "medication": {
-        const variant = getMedicationColorVariant(itemName);
-        return {
-          card: variant.class,
-          iconBg: variant.icon,
-        };
+    if (status === "missed") {
+      return {
+        ...base,
+        card: "bg-red-50/50 border border-red-100",
+        iconBox: "bg-red-100 text-red-500",
+        timeBadge: "bg-red-50 text-red-500"
       }
-      case "appointment":
-        return {
-          card: "bg-emerald-500/5 border-l-emerald-500/70",
-          iconBg: "bg-emerald-500/12 text-emerald-600",
-        };
-      case "exam":
-        return {
-          card: "bg-amber-500/5 border-l-amber-500/70",
-          iconBg: "bg-amber-500/12 text-amber-600",
-        };
-      default:
-        return {
-          card: "bg-muted/30 border-l-muted-foreground/40",
-          iconBg: "bg-muted text-muted-foreground",
-        };
     }
-  };
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case "medication":
-        return t('today.medication');
-      case "appointment":
-        return t('today.appointment');
-      case "exam":
-        return t('today.exam');
-      default:
-        return "";
-    }
+    return base;
   };
-
-  // Check if all items are done
-  const allDone = items.length > 0 && items.every(item => item.status === "done");
-  const pendingCount = items.filter(item => item.status === "pending").length;
 
   return (
-    <div className="space-y-3 overflow-x-hidden w-full">
-      {/* Header do Dia */}
-      <div className="text-center py-2 mb-2">
-        <p className="text-xs text-muted-foreground capitalize">
-          {format(date, "EEEE", { locale: dateLocale })}
-        </p>
-        <p className="text-base font-bold text-foreground">
-          {format(date, language === 'pt' ? "dd 'de' MMMM 'de' yyyy" : "MMMM dd, yyyy", { locale: dateLocale })}
-        </p>
-        {pendingCount > 0 && (
-          <p className="text-xs text-muted-foreground mt-1">
-            {pendingCount} {pendingCount === 1 ? t('today.dosePending') : t('today.dosesPending')}
-          </p>
-        )}
+    <div className="w-full space-y-5 pb-20">
+      {/* Header Section */}
+      <div className="flex items-center justify-between px-1 pt-2">
+        <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+          {language === 'pt' ? 'PRÓXIMAS DOSES' : 'UPCOMING DOSES'}
+        </h3>
+        {/* We can put a 'See all' link here later if needed */}
       </div>
 
-      {/* Timeline do Dia */}
-      <div className="space-y-3 w-full overflow-x-hidden">
+      {/* List content */}
+      <div className="space-y-4">
         {items.length === 0 ? (
-          <Card className="border-dashed border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/5 backdrop-blur-lg shadow-[var(--shadow-glass)]">
-            <CardContent className="py-6 text-center">
-              <div className="inline-flex p-3 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/10 mb-3">
-                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <p className="font-semibold text-green-600 dark:text-green-400">{t('today.allGood')}</p>
-              <p className="text-muted-foreground text-sm mt-1">
-                {t('today.noMedsScheduled')}
-              </p>
-            </CardContent>
-          </Card>
-        ) : allDone ? (
-          <Card className="border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/5 backdrop-blur-lg shadow-[var(--shadow-glass)]">
-            <CardContent className="py-6 text-center">
-              <div className="inline-flex p-3 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/10 mb-3">
-                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-              <p className="font-semibold text-green-600 dark:text-green-400">{t('today.allTaken')}</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t('today.youTookAll')} {items.length} {t('today.medsToday')} 🎉
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center p-10 bg-white/60 rounded-3xl border-2 border-dashed border-slate-200 text-center"
+          >
+            <div className="h-16 w-16 bg-slate-100/50 rounded-full flex items-center justify-center mb-4 text-slate-400">
+              <Calendar className="h-8 w-8" />
+            </div>
+            <p className="text-slate-600 font-semibold mb-1 text-lg">
+              {language === 'pt' ? 'Tudo tranquilo!' : 'All clear!'}
+            </p>
+            <p className="text-slate-500">
+              {language === 'pt' ? 'Nenhum medicamento agendado.' : 'No medications scheduled.'}
+            </p>
+          </motion.div>
         ) : (
-          hours.map(hour => {
-            const hourItems = groupedItems[hour];
-            if (!hourItems || hourItems.length === 0) return null;
+          <AnimatePresence mode="popLayout">
+            {sortedItems.map((item, index) => {
+              const styles = getItemStyles(item.type, item.status);
+              const isDone = item.status === "done";
 
-            return (
-              <div key={hour} className="flex gap-3 w-full overflow-x-hidden">
-                {/* Hora com linha vertical */}
-                <div className="shrink-0 flex flex-col items-center">
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-lg">
-                    {hour}:00
-                  </span>
-                  <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/30 to-transparent mt-2" />
-                </div>
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 25,
+                    delay: index * 0.05
+                  }}
+                >
+                  <Card className={cn("rounded-[1.5rem] overflow-hidden relative", styles.card)}>
+                    <CardContent className="p-5 flex items-center gap-5">
+                      {/* Left Icon Squircle */}
+                      <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-colors", styles.iconBox)}>
+                        {getTypeIcon(item.type)}
+                      </div>
 
-                {/* Items */}
-                <div className="flex-1 space-y-2 min-w-0 pb-4">
-                  {hourItems.map((item, index) => {
-                    const isPast = isCurrentDay && isBefore(parseISO(`${format(date, "yyyy-MM-dd")}T${item.time}`), now);
-                    const isDone = item.status === "done";
-                    const isMissed = item.status === "missed";
-                    const styles = getTypeStyles(item.type, item.status, isPast && !isDone && !isMissed, item.title);
+                      {/* Middle Text Content */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-center">
+                        <h4 className={cn("text-lg font-bold truncate leading-tight mb-1", styles.title)}>
+                          {item.title}
+                        </h4>
+                        {item.subtitle && (
+                          <p className={cn("text-sm truncate font-medium", styles.subtitle)}>
+                            {item.subtitle}
+                          </p>
+                        )}
+                      </div>
 
-                    return (
-                      <motion.div
-                        key={item.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
-                        <Card
-                          className={cn(
-                            "border-l-4 transition-all duration-300 hover:shadow-lg overflow-hidden backdrop-blur-md",
-                            "shadow-[var(--shadow-glass)]",
-                            styles.card,
-                            isDone && "opacity-80"
-                          )}
-                        >
-                          <CardContent className="p-3">
-                            <div className="flex items-center gap-2.5">
-                              {/* Ícone compacto */}
-                              <div className={cn("p-2 rounded-lg shrink-0", styles.iconBg)}>
-                                {getTypeIcon(item.type, isDone)}
-                              </div>
+                      {/* Right Action / Time */}
+                      <div className="flex flex-col items-end gap-3 shrink-0">
+                        {/* Time Badge - Pill Shape */}
+                        <span className={cn("px-3 py-1 rounded-full text-xs tracking-wide font-extrabold shadow-sm", styles.timeBadge)}>
+                          {item.time}
+                        </span>
 
-                              {/* Conteúdo */}
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <h3 className={cn(
-                                    "font-medium text-sm text-foreground truncate",
-                                    isDone && "line-through text-muted-foreground"
-                                  )}>
-                                    {item.title}
-                                  </h3>
-                                  <span className="text-sm font-semibold text-primary shrink-0">
-                                    {item.time}
-                                  </span>
-                                </div>
-                                {item.subtitle && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {item.subtitle}
-                                  </p>
-                                )}
-                                
-                                {/* Status badges inline */}
-                                <div className="flex items-center gap-1.5 mt-1">
-                                  {isPast && !isDone && !isMissed && (
-                                    <Badge className="bg-warning/90 text-warning-foreground text-[10px] px-1.5 py-0 h-4">
-                                      {t('today.late')}
-                                    </Badge>
-                                  )}
-                                  {isDone && (
-                                    <Badge className="bg-success/90 text-success-foreground text-[10px] px-1.5 py-0 h-4">
-                                      ✓ {t('today.taken')}
-                                    </Badge>
-                                  )}
-                                  {isMissed && (
-                                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-4">
-                                      {t('today.missed')}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Ações - Botões claros e clicáveis */}
-                              {item.type === "medication" && !isDone && !isMissed && (
-                                <div className="flex gap-2 shrink-0">
-                                  <Button
-                                    size="sm"
-                                    onClick={item.onMarkDone}
-                                    className="h-10 px-4 text-sm font-bold bg-primary hover:bg-primary/90 shadow-sm"
-                                  >
-                                    <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                                    {language === 'pt' ? 'Tomei' : 'Took it'}
-                                  </Button>
-                                  {item.onSnooze && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={item.onSnooze}
-                                      className="h-10 px-3"
-                                      title={language === 'pt' ? 'Lembrar depois' : 'Remind later'}
-                                    >
-                                      <Timer className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })
+                        {/* Action Button (Radio/Checkbox Hybrid) */}
+                        {isDone ? (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center shadow-md shadow-blue-200"
+                          >
+                            <Check className="h-5 w-5 text-white stroke-[3]" />
+                          </motion.div>
+                        ) : (
+                          item.onMarkDone ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click
+                                item.onMarkDone?.();
+                              }}
+                              className="h-8 w-8 rounded-full border-[3px] border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                              aria-label="Mark as done"
+                            >
+                              <div className="h-4 w-4 rounded-full bg-slate-300 group-hover:bg-blue-400 transition-colors" />
+                            </button>
+                          ) : null
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         )}
       </div>
     </div>

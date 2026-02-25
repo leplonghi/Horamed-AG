@@ -1,6 +1,7 @@
+import { useCallback } from "react";
 import { toast } from "sonner";
 
-type FeedbackType = 
+type FeedbackType =
   | "dose-taken"
   | "dose-taken-perfect"
   | "dose-taken-streak"
@@ -22,11 +23,11 @@ interface FeedbackOptions {
 }
 
 export const useFeedbackToast = () => {
-  const showFeedback = (type: FeedbackType, options?: FeedbackOptions) => {
+  const showFeedback = useCallback((type: FeedbackType, options?: FeedbackOptions) => {
     const messages = {
       "dose-taken": {
         title: "✅ Ótimo!",
-        description: options?.medicationName 
+        description: options?.medicationName
           ? `${options.medicationName} tomado${options.takenTime ? ` às ${options.takenTime}` : ''}`
           : "Dose marcada como tomada!",
         duration: 3000,
@@ -45,7 +46,7 @@ export const useFeedbackToast = () => {
       },
       "period-complete": {
         title: "⭐ Todas as doses tomadas!",
-        description: options?.periodName 
+        description: options?.periodName
           ? `Parabéns! Você completou todas as doses da ${options.periodName}.`
           : "Você completou todas as doses deste período!",
         duration: 5000,
@@ -99,7 +100,7 @@ export const useFeedbackToast = () => {
         duration: message.duration,
       });
     }
-  };
+  }, []);
 
   return { showFeedback };
 };

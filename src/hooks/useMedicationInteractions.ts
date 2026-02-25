@@ -3,6 +3,11 @@ import { useAuth, fetchCollection, where, orderBy, updateDocument } from '@/inte
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 
+interface CheckInteractionsResponse {
+  interactions: MedicationInteraction[];
+  hasCritical: boolean;
+}
+
 export interface MedicationInteraction {
   id: string;
   drugA: string; // drug_a -> drugA
@@ -48,13 +53,13 @@ export function useMedicationInteractions(profileId?: string) {
         newMedication,
       });
 
-      const data = result.data as any;
+      const data = result.data as CheckInteractionsResponse;
 
       setInteractions(data.interactions || []);
       return data;
-    } catch (err: any) {
-      console.error('Error checking interactions:', err);
-      setError(err.message);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(msg);
       return { interactions: [], hasCritical: false };
     } finally {
       setLoading(false);
@@ -82,8 +87,8 @@ export function useMedicationInteractions(profileId?: string) {
 
       if (queryError) throw queryError;
       setAlerts((data || []) as InteractionAlert[]);
-    } catch (err: any) {
-      console.error('Error loading alerts:', err);
+    } catch {
+      // Alert loading failed silently
     }
   }, [user, profileId]);
 
@@ -100,8 +105,8 @@ export function useMedicationInteractions(profileId?: string) {
       if (updateError) throw updateError;
 
       setAlerts(prev => prev.filter(a => a.id !== alertId));
-    } catch (err: any) {
-      console.error('Error dismissing alert:', err);
+    } catch {
+      // Dismiss failed silently
     }
   }, [user]);
 
@@ -121,8 +126,8 @@ export function useMedicationInteractions(profileId?: string) {
       setAlerts(prev => prev.map(a =>
         a.id === alertId ? { ...a, acknowledgedAt: now } : a
       ));
-    } catch (err: any) {
-      console.error('Error acknowledging alert:', err);
+    } catch {
+      // Acknowledge failed silently
     }
   }, [user]);
 

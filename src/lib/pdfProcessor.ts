@@ -2,7 +2,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 // Configure worker using bundled worker file (Vite will serve this from the same origin)
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc as any;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc as string;
 
 export interface PDFPageData {
   pageNumber: number;
@@ -22,48 +22,48 @@ export async function convertPDFToImages(
   try {
     // Ler arquivo como ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
-    
+
     // Carregar PDF
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
-    
+
     const numPages = Math.min(pdf.numPages, maxPages);
     const pages: PDFPageData[] = [];
-    
+
     // Processar cada página
     for (let pageNum = 1; pageNum <= numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
-      
+
       // Configurar escala para boa qualidade mas não muito grande
       const scale = 2.0;
       const viewport = page.getViewport({ scale });
-      
+
       // Criar canvas
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d');
-      
+
       if (!context) {
         throw new Error('Não foi possível criar contexto do canvas');
       }
-      
+
       canvas.width = viewport.width;
       canvas.height = viewport.height;
-      
+
       // Renderizar página no canvas
       await page.render({
         canvasContext: context,
         viewport: viewport,
-      } as any).promise;
-      
+      } as Parameters<typeof page.render>[0]).promise;
+
       // Converter para base64
       const imageData = canvas.toDataURL('image/jpeg', 0.85);
-      
+
       pages.push({
         pageNumber: pageNum,
         imageData,
       });
     }
-    
+
     return pages;
   } catch (error) {
     console.error('Erro ao processar PDF:', error);

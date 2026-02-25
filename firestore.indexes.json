@@ -139,6 +139,20 @@
                     "order": "ASCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "profiles",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isPrimary",
+                    "order": "DESCENDING"
+                },
+                {
+                    "fieldPath": "name",
+                    "order": "ASCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

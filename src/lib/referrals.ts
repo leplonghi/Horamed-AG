@@ -8,6 +8,34 @@ import {
   serverTimestamp
 } from "@/integrations/firebase";
 
+interface ReferralDoc {
+  id: string;
+  referrerUserId: string;
+  referredUserId: string;
+  referralCodeUsed: string;
+  planType: string;
+  status: string;
+  activatedAt?: string;
+  createdAt?: string;
+}
+
+interface SubscriptionDoc {
+  id: string;
+  planType: string;
+  status: string;
+}
+
+interface ActiveItemDoc {
+  id: string;
+  isActive: boolean;
+}
+
+interface ReferrerProfileDoc {
+  id: string;
+  userId?: string;
+  referralCode?: string;
+}
+
 /**
  * Generate a unique referral code
  */
@@ -25,7 +53,7 @@ export function generateReferralCode(): string {
  * Get cumulative discount percentage from all active referrals for premium users
  */
 export async function getReferralDiscountForUser(userId: string): Promise<number> {
-  const { data: referrals, error } = await fetchCollection<any>(
+  const { data: referrals, error } = await fetchCollection<ReferralDoc>(
     `users/${userId}/referrals`,
     [where('status', '==', 'active')]
   );
@@ -53,7 +81,7 @@ export async function getFreeExtraSlotsForUser(userId: string, currentMonth: Dat
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
-  const { data: referrals, error } = await fetchCollection<any>(
+  const { data: referrals, error } = await fetchCollection<ReferralDoc>(
     `users/${userId}/referrals`,
     [
       where('status', '==', 'active'),
@@ -75,7 +103,7 @@ export async function getFreeExtraSlotsForUser(userId: string, currentMonth: Dat
  */
 export async function getUserEffectiveMaxActiveItems(userId: string): Promise<number> {
   // Get subscription from Firestore: users/{uid}/subscription/current
-  const { data: subscription } = await fetchDocument<any>(
+  const { data: subscription } = await fetchDocument<SubscriptionDoc>(
     `users/${userId}/subscription`,
     'current'
   );
@@ -106,7 +134,7 @@ export async function canUserActivateAnotherItem(userId: string): Promise<{
   isPremium: boolean;
 }> {
   // Get current active items count from users/{uid}/items
-  const { data: items } = await fetchCollection<any>(
+  const { data: items } = await fetchCollection<ActiveItemDoc>(
     `users/${userId}/items`,
     [where('isActive', '==', true)]
   );
@@ -128,7 +156,7 @@ export async function canUserActivateAnotherItem(userId: string): Promise<{
  */
 export async function processReferralOnSignup(referredUserId: string, referralCode: string): Promise<void> {
   // Find referrer by code in profile subcollection group
-  const { data: profiles } = await fetchCollectionGroup<any>(
+  const { data: profiles } = await fetchCollectionGroup<ReferrerProfileDoc>(
     'profile',
     [where('referralCode', '==', referralCode)]
   );
@@ -158,7 +186,7 @@ export async function processReferralOnSignup(referredUserId: string, referralCo
  */
 export async function activateReferralOnUpgrade(userId: string, planType: 'premium_monthly' | 'premium_annual'): Promise<void> {
   // Find pending referral for this user across all users' referrals subcollections
-  const { data: referrals } = await fetchCollectionGroup<any>(
+  const { data: referrals } = await fetchCollectionGroup<ReferralDoc>(
     'referrals',
     [
       where('referredUserId', '==', userId),

@@ -79,7 +79,7 @@ export interface CreditTransaction {
     source: CreditSource;
     type: 'earned' | 'spent' | 'refunded';
     description: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 
 export type CreditSource =

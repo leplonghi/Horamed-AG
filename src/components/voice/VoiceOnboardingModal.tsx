@@ -46,8 +46,8 @@ const steps = [
     titleEn: "Talk to Clara",
     descPt: "Pergunte qualquer coisa sobre seus medicamentos ou saúde. A Clara está sempre pronta para ajudar!",
     descEn: "Ask anything about your medications or health. Clara is always ready to help!",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
+    color: "text-teal-500",
+    bgColor: "bg-teal-500/10",
   },
 ];
 

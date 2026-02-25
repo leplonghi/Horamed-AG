@@ -2,6 +2,42 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth, fetchCollection, fetchDocument, updateDocument, setDocument, orderBy, where } from '@/integrations/firebase';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { generateReferralCode } from '@/lib/referrals';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface ProfileDoc {
+  referralCode?: string;
+  userId?: string;
+}
+
+interface ReferralDoc {
+  id: string;
+  status: string;
+  planType?: string;
+  createdAt: string;
+  activatedAt?: string;
+}
+
+interface ReferralGoalDoc {
+  id: string;
+  goalType: string;
+  currentCount: number;
+  targetCount: number;
+  completedAt?: string;
+}
+
+interface ReferralDiscountDoc {
+  id: string;
+  discountPercent: number;
+  maxCycles: number;
+  cyclesUsed: number;
+}
+
+interface ReferralRewardDoc {
+  id: string;
+  rewardType: string;
+  status: string;
+  expiresAt?: string;
+}
 
 
 
@@ -63,7 +99,7 @@ export function useReferralSystem() {
 
     try {
       // Load referral code from profile
-      const { data: profile } = await fetchDocument<any>(
+      const { data: profile } = await fetchDocument<ProfileDoc>(
         `users/${user.uid}/profile`,
         'me'
       );
@@ -87,26 +123,26 @@ export function useReferralSystem() {
       }
 
       // Load referrals: users/{uid}/referrals
-      const { data: referrals } = await fetchCollection<any>(
+      const { data: referrals } = await fetchCollection<ReferralDoc>(
         `users/${user.uid}/referrals`,
         [orderBy('createdAt', 'desc')]
       );
 
       // Load goals: users/{uid}/referralGoals
-      const { data: goals } = await fetchCollection<any>(
+      const { data: goals } = await fetchCollection<ReferralGoalDoc>(
         `users/${user.uid}/referralGoals`
       );
 
       // Load discount: users/{uid}/referralDiscount/current (or collection)
       // Assuming singleton or collection
-      const { data: discounts } = await fetchCollection<any>(
+      const { data: discounts } = await fetchCollection<ReferralDiscountDoc>(
         `users/${user.uid}/referralDiscount`
       );
       const discount = discounts && discounts.length > 0 ? discounts[0] : null;
 
       // Load available rewards: users/{uid}/referralRewards
       // We filter by status locally or via query if possible
-      const { data: rewards } = await fetchCollection<any>(
+      const { data: rewards } = await fetchCollection<ReferralRewardDoc>(
         `users/${user.uid}/referralRewards`,
         [where('status', 'in', ['pending', 'granted'])]
       );
@@ -153,14 +189,14 @@ export function useReferralSystem() {
 
       // Determine header state
       const hasNewReferral = (referrals || []).some(r => {
-        const createdAt = new Date(r.createdAt);
+        const createdAt = safeDateParse(r.createdAt);
         const now = new Date();
         return now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000; // Last 24h
       });
 
       const hasNewDiscount = (referrals || []).some(r => {
         if (!r.activatedAt) return false;
-        const activatedAt = new Date(r.activatedAt);
+        const activatedAt = safeDateParse(r.activatedAt);
         const now = new Date();
         return now.getTime() - activatedAt.getTime() < 24 * 60 * 60 * 1000;
       });

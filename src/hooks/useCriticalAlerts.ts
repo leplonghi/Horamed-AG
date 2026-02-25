@@ -2,6 +2,23 @@ import { useCallback, useRef } from "react";
 import { auth, db } from "@/integrations/firebase/client";
 import { collection, query, where, getDocs, getDoc, doc, Timestamp, orderBy, limit } from "firebase/firestore";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface MedicationItem {
+  id: string;
+  name: string;
+  category?: string;
+  isActive: boolean;
+  currentStock?: number;
+}
+
+interface DoseItem {
+  id: string;
+  medicationId: string;
+  status: string;
+  scheduledTime?: string;
+  takenAt?: string;
+}
 
 export type AlertSeverity = "critical" | "urgent" | "warning";
 
@@ -69,7 +86,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   const medsRef = collection(db, 'users', user.uid, 'medications');
   const medsQuery = query(medsRef, where('isActive', '==', true));
   const medsSnap = await getDocs(medsQuery);
-  const meds = medsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+  const meds = medsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as MedicationItem[];
 
   // 3. Fetch Missed Doses
   const dosesRef = collection(db, 'users', user.uid, 'doses');
@@ -82,7 +99,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
     where('scheduledTime', '>=', fourHoursAgoIso)
   );
   const missedDosesSnap = await getDocs(missedDosesQuery);
-  const missedDoses = missedDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+  const missedDoses = missedDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DoseItem[];
 
   // 4. Fetch Recent Taken Doses
   const recentDosesQuery = query(
@@ -91,7 +108,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
     where('takenAt', '>=', fourHoursAgoIso)
   );
   const recentDosesSnap = await getDocs(recentDosesQuery);
-  const recentDoses = recentDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+  const recentDoses = recentDosesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as DoseItem[];
 
 
   // --- Logic Processing ---
@@ -99,7 +116,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   // Calculate age
   let age: number | null = null;
   if (profile?.birthDate) {
-    const birthDate = new Date(profile.birthDate);
+    const birthDate = safeDateParse(profile.birthDate);
     const today = new Date();
     age = today.getFullYear() - birthDate.getFullYear() -
       (today.getMonth() < birthDate.getMonth() ||
@@ -111,7 +128,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   meds.forEach(m => itemsMap.set(m.id, m));
 
   // Check for zero stock
-  meds.forEach((item: any) => {
+  meds.forEach((item) => {
     // Assuming stock is stored in user/{uid}/stock/{itemId} or inside the medication doc?
     // In migrated schema, stock might be separate or embedded. 
     // Checking previous code: item.stock?.[0].units_left
@@ -131,11 +148,11 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   });
 
   // Check for missed critical doses
-  missedDoses.forEach((dose: any) => {
+  missedDoses.forEach((dose) => {
     const med = itemsMap.get(dose.medicationId); // Assuming medicationId links to medication
     if (med && med.category === "medicamento") {
       const hoursMissed = Math.floor(
-        (new Date().getTime() - new Date(dose.scheduledTime).getTime()) / (1000 * 60 * 60)
+        (new Date().getTime() - safeGetTime(dose.scheduledTime)) / (1000 * 60 * 60)
       );
 
       let severity: AlertSeverity = hoursMissed >= 2 ? "critical" : "urgent";
@@ -159,8 +176,8 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   });
 
   // Check for duplicate doses
-  const dosesByItem = new Map<string, any[]>();
-  recentDoses.forEach((dose: any) => {
+  const dosesByItem = new Map<string, DoseItem[]>();
+  recentDoses.forEach((dose) => {
     const medId = dose.medicationId;
     if (!dosesByItem.has(medId)) {
       dosesByItem.set(medId, []);
@@ -171,14 +188,14 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
   dosesByItem.forEach((doses, medId) => {
     if (doses.length >= 2) {
       // Sort by takenAt just in case
-      doses.sort((a, b) => new Date(a.takenAt).getTime() - new Date(b.takenAt).getTime());
+      doses.sort((a, b) => safeGetTime(a.takenAt) - safeGetTime(b.takenAt));
 
       const lastDose = doses[doses.length - 1];
       const secondLastDose = doses[doses.length - 2];
 
       const timeDiff = Math.abs(
-        new Date(lastDose.takenAt).getTime() -
-        new Date(secondLastDose.takenAt).getTime()
+        safeGetTime(lastDose.takenAt) -
+        safeGetTime(secondLastDose.takenAt)
       ) / (1000 * 60 * 60);
 
       const med = itemsMap.get(medId);
@@ -207,7 +224,7 @@ async function fetchCriticalAlerts(): Promise<CriticalAlert[]> {
 
     if (!pressureSnap.empty) {
       const lastPressure = pressureSnap.docs[0].data();
-      const pDate = new Date(lastPressure.recordedAt);
+      const pDate = safeDateParse(lastPressure.recordedAt);
       const hoursSince = (Date.now() - pDate.getTime()) / (1000 * 60 * 60);
 
       if (hoursSince < 24) {

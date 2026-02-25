@@ -25,7 +25,7 @@ export function RewardsHeaderButton() {
         return {
           icon: <TrendingUp className="h-4 w-4" />,
           text: "Falta pouco…",
-          className: "bg-gradient-to-r from-purple-500 to-pink-500 text-white",
+          className: "bg-gradient-to-r from-teal-500 to-pink-500 text-white",
         };
       default:
         return {

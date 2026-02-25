@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useFeatureFlags } from '@/hooks/useFeatureFlags';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface Insight {
   id: string;
@@ -267,7 +268,7 @@ export default function HealthInsights() {
                   <div className="flex flex-wrap items-center gap-2">
                     {getSeverityBadge(insight.severity)}
                     <span className="text-xs text-muted-foreground">
-                      {new Date(insight.createdAt).toLocaleDateString('pt-BR', {
+                      {safeDateParse(insight.createdAt).toLocaleDateString('pt-BR', {
                         day: '2-digit',
                         month: 'short',
                         hour: '2-digit',

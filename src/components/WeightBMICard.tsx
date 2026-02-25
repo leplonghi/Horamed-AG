@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { auth, fetchCollection, fetchDocument, orderBy, limit, where } from "@/integrations/firebase";
 
 import { useTranslation } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 interface WeightBMICardProps {
   userId: string;
   profileId?: string;
@@ -102,9 +103,9 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
 
       return logs.map((log: any) => ({
         weight: log.weightKg,
-        date: new Date(log.measuredAt),
-        dateLabel: format(new Date(log.measuredAt), "dd/MM/yy"),
-        fullDate: format(new Date(log.measuredAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
+        date: safeDateParse(log.measuredAt),
+        dateLabel: format(safeDateParse(log.measuredAt), "dd/MM/yy"),
+        fullDate: format(safeDateParse(log.measuredAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }),
       }));
     },
     enabled: !!userId

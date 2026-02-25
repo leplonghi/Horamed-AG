@@ -25,7 +25,6 @@ export function useDoseGeneration() {
     if (!force && lastGeneration) {
       const lastTime = parseInt(lastGeneration, 10);
       if (now - lastTime < GENERATION_INTERVAL) {
-        console.log('[DoseGeneration] Skipping - recently generated');
         return;
       }
     }
@@ -33,7 +32,6 @@ export function useDoseGeneration() {
     isGenerating.current = true;
 
     try {
-      console.log('[DoseGeneration] Checking if doses need to be generated...');
 
       // First, check if user has any active schedules
       // In Firebase: users/{uid}/schedules
@@ -43,7 +41,6 @@ export function useDoseGeneration() {
       );
 
       if (!schedules || schedules.length === 0) {
-        console.log('[DoseGeneration] No active schedules for user');
         localStorage.setItem(STORAGE_KEY, now.toString());
         return;
       }
@@ -62,17 +59,14 @@ export function useDoseGeneration() {
         ]
       );
 
-      console.log(`[DoseGeneration] Found ${futureDoses?.length || 0} scheduled doses in next 24h`);
 
       // If we have few or no doses, trigger generation
       if (!futureDoses || futureDoses.length < schedules.length) {
-        console.log('[DoseGeneration] Triggering dose generation...');
 
         const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
 
         try {
           const result = await generateDoseInstances({ days: 7 });
-          console.log('[DoseGeneration] Success:', result.data);
 
           // Also trigger notification scheduling
           const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
@@ -119,7 +113,6 @@ export function useDoseGeneration() {
     if (!user) return;
 
     const handler = () => {
-      console.log('[DoseGeneration] Medication updated event received. Regenerating doses...');
       generateDoses(true); // Force regeneration
     };
 

@@ -52,11 +52,11 @@ export default function AIAssistantInput({ onResponse, onUserMessage }: AIAssist
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-xl p-4 border-2 border-purple-200/50 dark:border-purple-800/50 shadow-sm"
+        className="bg-gradient-to-r from-teal-50 to-pink-50 dark:from-teal-950/20 dark:to-pink-950/20 rounded-xl p-4 border-2 border-teal-200/50 dark:border-teal-800/50 shadow-sm"
       >
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="flex items-start gap-2">
-            <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex-shrink-0">
+            <div className="p-2 bg-gradient-to-br from-teal-500 to-pink-500 rounded-lg flex-shrink-0">
               <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div className="flex-1 space-y-2">

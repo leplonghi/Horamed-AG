@@ -18,6 +18,7 @@ import StepStock from "@/components/medication-wizard/StepStock";
 import StepDetails from "@/components/medication-wizard/StepDetails";
 import Navigation from "@/components/Navigation";
 import logo from "@/assets/logo_HoraMed.png";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 type Category = "medicamento" | "vitamina" | "suplemento" | "outro";
 type FrequencyType = "daily" | "specific_days" | "weekly" | "every_x_days" | "as_needed";
@@ -164,7 +165,7 @@ export default function AddItemWizard() {
 
       // Calculate end date for temporary treatments
       const treatmentEndDate = !formData.isContinuous && formData.startDate && formData.treatmentDays
-        ? new Date(new Date(formData.startDate).getTime() + formData.treatmentDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        ? new Date(safeDateParse(formData.startDate).getTime() + formData.treatmentDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         : null;
 
       // Create item
@@ -213,7 +214,7 @@ export default function AddItemWizard() {
       const now = new Date();
 
       for (let day = 0; day < 7; day++) {
-        const date = new Date(now);
+        const date = safeDateParse(now);
         date.setDate(date.getDate() + day);
 
         // Check if this day matches the schedule
@@ -223,7 +224,7 @@ export default function AddItemWizard() {
 
         for (const time of formData.times) {
           const [hours, minutes] = time.split(":").map(Number);
-          const dueAt = new Date(date);
+          const dueAt = safeDateParse(date);
           dueAt.setHours(hours, minutes, 0, 0);
 
           if (dueAt > now) {
@@ -488,7 +489,7 @@ export default function AddItemWizard() {
                   </div>
                   {formData.doseText && (
                     <div className="flex justify-between py-2 border-b border-primary/10">
-                      <span className="text-muted-foreground">{language === 'pt' ? 'Dosagem' : 'Dosage'}</span>
+                      <span className="text-muted-foreground">{t('wizardStep.dosage')}</span>
                       <span className="font-medium">{formData.doseText}</span>
                     </div>
                   )}
@@ -503,7 +504,7 @@ export default function AddItemWizard() {
                     <span className="font-medium">
                       {formData.stock.enabled
                         ? `${formData.stock.unitsTotal} ${formData.stock.unitLabel}`
-                        : language === 'pt' ? 'Não controlado' : 'Not tracked'}
+                        : t('wizardStep.notTracked')}
                     </span>
                   </div>
                 </div>

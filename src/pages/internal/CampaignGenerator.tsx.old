@@ -1,0 +1,732 @@
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Copy, Rocket, ArrowRight, ArrowLeft, MessageCircle, Instagram, TrendingUp, Users, Target, BarChart3, Calendar, Trash2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+import { CampaignService, CampaignRule, CampaignStrategy, CAMPAIGN_TEMPLATES } from "@/services/CampaignService";
+import { motion, AnimatePresence } from "framer-motion";
+import { collection, query, where, getDocs, orderBy, limit, updateDoc, doc } from "firebase/firestore";
+import { db } from "@/integrations/firebase";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
+// TYPES
+type ChannelType = "whatsapp" | "social";
+type ToneType = "urgent_fomo" | "emotional_founder" | "educational_authority" | "funny_relatable" | "premium_aspirational";
+type PurposeType = "marketing_promo" | "educational_tips" | "informative_news" | "curiosities_facts";
+type PostType = "flash" | "keyword";
+type GroupType = "vip_circle" | "health_professionals" | "institutional" | "personal";
+
+interface WizardState {
+    step: number;
+    channel: ChannelType | null;
+    selectedGroups: GroupType[];
+    postType: PostType | null;
+    tone: ToneType | null;
+    purpose: PurposeType | null;
+}
+
+interface GeneratedCampaign {
+    code: string;
+    link: string;
+    copy: string;
+    metadata: {
+        channel: ChannelType;
+        groups?: GroupType[];
+        postType?: PostType;
+        tone: ToneType;
+        purpose: PurposeType;
+        createdAt: string;
+    };
+}
+
+interface CampaignMetrics {
+    totalCampaigns: number;
+    totalRedemptions: number;
+    conversionRate: number;
+    topPerformer: string;
+}
+
+// CONFIGURATION
+const TONES: Record<ToneType, { label: string; emoji: string; description: string }> = {
+    urgent_fomo: { label: "Urgência / FOMO", emoji: "🔥", description: "Cria senso de urgência e escassez" },
+    emotional_founder: { label: "Emocional / História", emoji: "💙", description: "Conexão pessoal e storytelling" },
+    educational_authority: { label: "Educativo / Autoridade", emoji: "🎓", description: "Informativo e profissional" },
+    funny_relatable: { label: "Humor / Relatable", emoji: "😄", description: "Descontraído e próximo" },
+    premium_aspirational: { label: "Premium / Aspiracional", emoji: "💎", description: "Exclusivo e sofisticado" }
+};
+
+const PURPOSES: Record<PurposeType, { label: string; emoji: string; description: string }> = {
+    marketing_promo: { label: "Promoção / Marketing", emoji: "🎯", description: "Foco em conversão e vendas" },
+    educational_tips: { label: "Dicas / Educação", emoji: "💡", description: "Ensinar e agregar valor" },
+    informative_news: { label: "Novidades / Informação", emoji: "📰", description: "Comunicar atualizações" },
+    curiosities_facts: { label: "Curiosidades / Fatos", emoji: "🤔", description: "Engajar com conteúdo interessante" }
+};
+
+const GROUPS: Record<GroupType, { label: string; emoji: string; description: string }> = {
+    vip_circle: { label: "Círculo VIP", emoji: "👨‍👩‍👧‍👦", description: "Família e amigos próximos" },
+    health_professionals: { label: "Profissionais de Saúde", emoji: "⚕️", description: "Médicos, enfermeiros, farmacêuticos" },
+    institutional: { label: "Institucional / Corporativo", emoji: "🏢", description: "Empresas e organizações" },
+    personal: { label: "Pessoal / Individual", emoji: "👤", description: "Contatos individuais" }
+};
+
+const POST_TYPES: Record<PostType, { label: string; emoji: string; description: string; vagas: number; dias: number }> = {
+    flash: { label: "Flash Semanal", emoji: "⚡", description: "Campanha rápida com urgência", vagas: 50, dias: 14 },
+    keyword: { label: "Keyword DM", emoji: "💬", description: "Engajamento via comentários", vagas: 100, dias: 30 }
+};
+
+// CONTENT GENERATION
+const generateCampaignCopy = (
+    channel: ChannelType,
+    groups: GroupType[],
+    postType: PostType | null,
+    tone: ToneType,
+    purpose: PurposeType,
+    link: string
+): string => {
+    const appName = "HoraMarket";
+    let copy = "";
+
+    if (channel === "whatsapp") {
+        const isVIP = groups.includes("vip_circle");
+        const isProfessional = groups.includes("health_professionals");
+        const isInstitutional = groups.includes("institutional");
+
+        if (tone === "urgent_fomo") copy = `🚨 ATENÇÃO! 🚨\n\n`;
+        else if (tone === "emotional_founder") copy = `Olá, pessoal! 👋\n\n`;
+        else if (tone === "educational_authority") copy = `Prezados,\n\n`;
+        else if (tone === "funny_relatable") copy = `E aí, galera! 😄\n\n`;
+        else copy = `Exclusivo para vocês! 💎\n\n`;
+
+        if (purpose === "marketing_promo") {
+            if (isVIP) {
+                copy += `Vocês fazem parte do meu círculo mais próximo, e por isso liberei um acesso VIP EXCLUSIVO para o ${appName}.\n\n`;
+                copy += `🎁 Benefícios especiais:\n✅ 90 dias de Premium GRÁTIS\n✅ Todas as funcionalidades desbloqueadas\n✅ Suporte direto comigo\n✅ Prioridade em novos recursos\n\n⚡ APENAS 30 VAGAS (círculo íntimo)\n\n`;
+            } else if (isProfessional) {
+                copy += `Compartilho uma ferramenta que pode revolucionar o cuidado com seus pacientes:\n\n${appName} - Plataforma de Adesão Medicamentosa\n\n📊 Funcionalidades clínicas:\n✅ Registro completo de horários e doses\n✅ Alertas de interação medicamentosa\n✅ Relatórios detalhados para consultas\n✅ Histórico exportável\n\n🎁 200 licenças profissionais (30 dias grátis)\n\n`;
+            } else if (isInstitutional) {
+                copy += `Apresento uma solução digital para gestão de saúde corporativa:\n\n${appName} - Plataforma de Organização de Saúde\n\n🏢 Benefícios institucionais:\n✅ Gestão centralizada de medicamentos\n✅ Relatórios exportáveis para RH\n✅ Redução de absenteísmo\n✅ Compliance com protocolos de saúde\n\n🎁 200 acessos corporativos (30 dias trial)\n\n`;
+            } else {
+                copy += `Descobri um app que pode te ajudar muito:\n\n${appName} - Seu assistente pessoal de saúde\n\n💊 Principais recursos:\n✅ Lembretes de medicamentos\n✅ Agenda de consultas e exames\n✅ Controle de estoque de remédios\n✅ Alertas de vencimento\n\n🎁 Acesso Premium (30 dias grátis)\n\n`;
+            }
+        } else if (purpose === "educational_tips") {
+            copy += `Quero compartilhar uma dica valiosa sobre organização de saúde:\n\nVocê sabia que 50% das pessoas esquecem de tomar medicamentos regularmente?\n\nO ${appName} resolve isso com:\n💡 Lembretes inteligentes personalizados\n💡 Controle visual de estoque\n💡 Histórico completo de adesão\n\nTeste grátis por 30 dias:\n\n`;
+        } else if (purpose === "informative_news") {
+            copy += `Novidade importante!\n\nAcabamos de lançar o ${appName}, uma plataforma completa para organização de saúde.\n\n📰 O que há de novo:\n✅ Interface renovada e intuitiva\n✅ Lembretes via WhatsApp\n✅ Compartilhamento familiar\n✅ Relatórios médicos\n\nAcesso antecipado disponível:\n\n`;
+        } else {
+            copy += `Curiosidade: você sabe quantos medicamentos diferentes uma pessoa toma em média após os 60 anos?\n\nA resposta é 5-7 medicamentos! 😮\n\nPor isso criamos o ${appName}, para facilitar essa gestão.\n\nExperimente gratuitamente:\n\n`;
+        }
+
+        copy += `🔗 Link exclusivo:\n${link}\n\n`;
+
+        if (tone === "emotional_founder") copy += `Conto com vocês para validar e me dar feedback honesto! 💙`;
+        else if (tone === "urgent_fomo") copy += `⏰ Vagas limitadas! Garanta a sua agora!`;
+        else copy += `Qualquer dúvida, estou à disposição! 😊`;
+    }
+    else if (channel === "social") {
+        if (postType === "flash") {
+            if (tone === "urgent_fomo") {
+                copy = `🚨 ÚLTIMA CHAMADA! 🚨\n\nLiberamos apenas 50 VAGAS para o trial de 14 dias do ${appName}.\n\n⏰ Já foram 23 em 2 horas!\n\n`;
+            } else if (tone === "premium_aspirational") {
+                copy = `✨ ACESSO EXCLUSIVO ✨\n\n50 vagas premium para o ${appName}.\n\n💎 Trial de 14 dias com todas as funcionalidades.\n\n`;
+            } else {
+                copy = `Ei! 👋\n\nLiberamos 50 vagas para testar o ${appName} por 14 dias.\n\n`;
+            }
+            copy += `✅ Organização completa de remédios\n✅ Lembretes inteligentes\n✅ Controle de estoque\n✅ Agenda de consultas\n\n🔗 Clica AGORA antes que acabe:\n${link}\n\n`;
+            copy += tone === "urgent_fomo" ? `Próxima rodada só semana que vem! ⚡` : `Aproveita! 🚀`;
+        } else if (postType === "keyword") {
+            copy = `Comenta "EU QUERO" aqui embaixo 👇\n\nQue eu mando o link EXCLUSIVO na DM! 💌\n\n🎁 O que você ganha:\n✅ 30 dias de Premium no ${appName}\n✅ Organização completa de medicamentos\n✅ Lembretes automáticos\n✅ Controle de estoque\n\n⚡ Apenas para as primeiras 100 pessoas!\n\nComenta agora: EU QUERO`;
+        }
+    }
+
+    return copy;
+};
+
+// MAIN COMPONENT
+export default function CampaignGenerator() {
+    const [activeTab, setActiveTab] = useState("config");
+    const [wizard, setWizard] = useState<WizardState>({
+        step: 1,
+        channel: null,
+        selectedGroups: [],
+        postType: null,
+        tone: null,
+        purpose: null
+    });
+    const [generated, setGenerated] = useState<GeneratedCampaign | null>(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [activeCampaigns, setActiveCampaigns] = useState<CampaignRule[]>([]);
+    const [metrics, setMetrics] = useState<CampaignMetrics>({
+        totalCampaigns: 0,
+        totalRedemptions: 0,
+        conversionRate: 0,
+        topPerformer: "-"
+    });
+
+    useEffect(() => {
+        loadActiveCampaigns();
+        loadMetrics();
+    }, []);
+
+    const loadActiveCampaigns = async () => {
+        const campaigns = await CampaignService.listActiveCampaigns();
+        setActiveCampaigns(campaigns);
+    };
+
+    const loadMetrics = async () => {
+        try {
+            const campaignsRef = collection(db, "campaigns");
+            const q = query(campaignsRef, where("isActive", "==", true));
+            const snapshot = await getDocs(q);
+
+            const campaigns = snapshot.docs.map(doc => doc.data() as CampaignRule);
+            const totalRedemptions = campaigns.reduce((sum, c) => sum + c.currentRedemptions, 0);
+            const totalMax = campaigns.reduce((sum, c) => sum + c.maxRedemptions, 0);
+            const topCampaign = campaigns.sort((a, b) => b.currentRedemptions - a.currentRedemptions)[0];
+
+            setMetrics({
+                totalCampaigns: campaigns.length,
+                totalRedemptions,
+                conversionRate: totalMax > 0 ? (totalRedemptions / totalMax) * 100 : 0,
+                topPerformer: topCampaign?.code || "-"
+            });
+        } catch (error) {
+            console.error("Error loading metrics:", error);
+        }
+    };
+
+    const resetWizard = () => {
+        setWizard({ step: 1, channel: null, selectedGroups: [], postType: null, tone: null, purpose: null });
+        setGenerated(null);
+    };
+
+    const canProceed = () => {
+        if (wizard.step === 1) return wizard.channel !== null;
+        if (wizard.step === 2) {
+            if (wizard.channel === "whatsapp") return wizard.selectedGroups.length > 0;
+            if (wizard.channel === "social") return wizard.postType !== null;
+        }
+        if (wizard.step === 3) return wizard.tone !== null;
+        if (wizard.step === 4) return wizard.purpose !== null;
+        return false;
+    };
+
+    const handleGenerate = async () => {
+        if (!wizard.channel || !wizard.tone || !wizard.purpose) {
+            toast.error("Preencha todos os campos");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            let strategy: CampaignStrategy;
+            if (wizard.channel === "whatsapp") {
+                strategy = wizard.selectedGroups.includes("vip_circle") ? "embaixador" : "whatsapp";
+            } else {
+                strategy = wizard.postType!;
+            }
+
+            const template = CAMPAIGN_TEMPLATES[strategy];
+            const code = CampaignService.generateCode(strategy);
+            const link = `https://app.horamed.net/auth?campaign=${code}`;
+
+            const copy = generateCampaignCopy(
+                wizard.channel,
+                wizard.selectedGroups,
+                wizard.postType,
+                wizard.tone,
+                wizard.purpose,
+                link
+            );
+
+            const metadata = {
+                channel: wizard.channel,
+                groups: wizard.channel === "whatsapp" ? wizard.selectedGroups : undefined,
+                postType: wizard.channel === "social" ? wizard.postType! : undefined,
+                tone: wizard.tone,
+                purpose: wizard.purpose,
+                createdAt: new Date().toISOString()
+            };
+
+            const newCampaign: CampaignRule = {
+                ...template,
+                code,
+                createdAt: metadata.createdAt,
+                metadata
+            };
+
+            await CampaignService.createCampaign(newCampaign);
+
+            setGenerated({ code, link, copy, metadata });
+
+            await loadActiveCampaigns();
+            await loadMetrics();
+
+            toast.success("Campanha criada e salva! 🎉");
+            setActiveTab("creative");
+
+        } catch (error) {
+            console.error("Error generating campaign:", error);
+            toast.error("Erro ao criar campanha");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleDeactivate = async (code: string) => {
+        try {
+            const campaignRef = doc(db, "campaigns", code);
+            await updateDoc(campaignRef, { isActive: false });
+            await loadActiveCampaigns();
+            await loadMetrics();
+            toast.success("Campanha desativada");
+        } catch (error) {
+            toast.error("Erro ao desativar");
+        }
+    };
+
+    const copyToClipboard = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(`${label} copiado!`);
+    };
+
+    const toggleGroup = (group: GroupType) => {
+        setWizard(prev => ({
+            ...prev,
+            selectedGroups: prev.selectedGroups.includes(group)
+                ? prev.selectedGroups.filter(g => g !== group)
+                : [...prev.selectedGroups, group]
+        }));
+    };
+
+    return (
+        <div className="min-h-screen bg-gradient-fluid-subtle p-4 md:p-8">
+            <div className="max-w-7xl mx-auto space-y-6">
+
+                <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="text-center space-y-4">
+                    <h1 className="text-4xl md:text-5xl font-bold gradient-text-fluid flex items-center justify-center gap-3">
+                        <Rocket className="w-10 h-10" />
+                        HoraMarket Brain
+                    </h1>
+                    <p className="text-muted-foreground">Sistema Completo de Aquisição de Usuários</p>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Target className="w-4 h-4 text-primary" />
+                                <span className="text-xs text-muted-foreground">Campanhas Ativas</span>
+                            </div>
+                            <div className="text-2xl font-bold text-primary">{metrics.totalCampaigns}</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-4 h-4 text-green-600" />
+                                <span className="text-xs text-muted-foreground">Total Resgates</span>
+                            </div>
+                            <div className="text-2xl font-bold text-green-600">{metrics.totalRedemptions}</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <TrendingUp className="w-4 h-4 text-orange-600" />
+                                <span className="text-xs text-muted-foreground">Taxa Conversão</span>
+                            </div>
+                            <div className="text-2xl font-bold text-orange-600">{metrics.conversionRate.toFixed(1)}%</div>
+                        </Card>
+
+                        <Card className="glass-card p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <BarChart3 className="w-4 h-4 text-purple-600" />
+                                <span className="text-xs text-muted-foreground">Top Performer</span>
+                            </div>
+                            <div className="text-sm font-bold text-purple-600 truncate">{metrics.topPerformer}</div>
+                        </Card>
+                    </div>
+                </motion.div>
+
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-card/50 backdrop-blur-sm">
+                        <TabsTrigger value="config" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            ⚙️ Configurar
+                        </TabsTrigger>
+                        <TabsTrigger value="creative" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            ✨ Resultado
+                        </TabsTrigger>
+                        <TabsTrigger value="dashboard" className="data-[state=active]:bg-gradient-fluid data-[state=active]:text-white">
+                            📊 Monitor
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="config" className="space-y-6 mt-6">
+                        <Card className="glass-card p-8">
+
+                            <div className="mb-8">
+                                <div className="flex items-center justify-between mb-2">
+                                    {[1, 2, 3, 4].map((step) => (
+                                        <div key={step} className="flex items-center">
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${wizard.step >= step ? 'bg-gradient-fluid text-white' : 'bg-muted text-muted-foreground'
+                                                }`}>
+                                                {step}
+                                            </div>
+                                            {step < 4 && <div className={`w-12 md:w-24 h-1 ${wizard.step > step ? 'bg-gradient-fluid' : 'bg-muted'}`} />}
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="text-center text-sm text-muted-foreground">
+                                    Passo {wizard.step} de 4
+                                </div>
+                            </div>
+
+                            <AnimatePresence mode="wait">
+                                {wizard.step === 1 && (
+                                    <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                        <div className="text-center mb-6">
+                                            <h2 className="text-2xl font-bold mb-2">Escolha o Canal</h2>
+                                            <p className="text-muted-foreground">Por onde você vai distribuir a campanha?</p>
+                                        </div>
+
+                                        <RadioGroup value={wizard.channel || ""} onValueChange={(v: ChannelType) => setWizard({ ...wizard, channel: v })}>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                    <div className={`flex items-center space-x-4 border-2 rounded-xl p-8 cursor-pointer transition-all ${wizard.channel === "whatsapp" ? 'border-green-500 bg-green-500/10 shadow-lg' : 'border-border hover:border-green-500/50'
+                                                        }`}>
+                                                        <RadioGroupItem value="whatsapp" id="whatsapp" />
+                                                        <Label htmlFor="whatsapp" className="flex-1 cursor-pointer">
+                                                            <div className="flex items-center gap-4">
+                                                                <MessageCircle className="w-12 h-12 text-green-600" />
+                                                                <div>
+                                                                    <div className="font-bold text-xl">WhatsApp</div>
+                                                                    <div className="text-sm text-muted-foreground">Grupos e contatos diretos</div>
+                                                                </div>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                </motion.div>
+
+                                                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                    <div className={`flex items-center space-x-4 border-2 rounded-xl p-8 cursor-pointer transition-all ${wizard.channel === "social" ? 'border-pink-500 bg-pink-500/10 shadow-lg' : 'border-border hover:border-pink-500/50'
+                                                        }`}>
+                                                        <RadioGroupItem value="social" id="social" />
+                                                        <Label htmlFor="social" className="flex-1 cursor-pointer">
+                                                            <div className="flex items-center gap-4">
+                                                                <Instagram className="w-12 h-12 text-pink-600" />
+                                                                <div>
+                                                                    <div className="font-bold text-xl">Redes Sociais</div>
+                                                                    <div className="text-sm text-muted-foreground">Instagram, Facebook, TikTok</div>
+                                                                </div>
+                                                            </div>
+                                                        </Label>
+                                                    </div>
+                                                </motion.div>
+                                            </div>
+                                        </RadioGroup>
+                                    </motion.div>
+                                )}
+
+                                {wizard.step === 2 && wizard.channel === "whatsapp" && (
+                                    <motion.div key="step2a" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                        <div className="text-center mb-6">
+                                            <h2 className="text-2xl font-bold mb-2">Quais Grupos?</h2>
+                                            <p className="text-muted-foreground">Selecione um ou mais tipos de grupo</p>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {Object.entries(GROUPS).map(([key, group]) => (
+                                                <motion.div key={key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                    <div className={`flex items-center space-x-4 border-2 rounded-xl p-6 cursor-pointer transition-all ${wizard.selectedGroups.includes(key as GroupType) ? 'border-primary bg-primary/10 shadow-lg' : 'border-border hover:border-primary/50'
+                                                        }`} onClick={() => toggleGroup(key as GroupType)}>
+                                                        <Checkbox checked={wizard.selectedGroups.includes(key as GroupType)} />
+                                                        <div className="flex-1">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <span className="text-2xl">{group.emoji}</span>
+                                                                <span className="font-semibold">{group.label}</span>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground">{group.description}</p>
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+                                )}
+
+                                {wizard.step === 2 && wizard.channel === "social" && (
+                                    <motion.div key="step2b" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                        <div className="text-center mb-6">
+                                            <h2 className="text-2xl font-bold mb-2">Tipo de Postagem</h2>
+                                            <p className="text-muted-foreground">Qual estratégia de redes sociais?</p>
+                                        </div>
+
+                                        <RadioGroup value={wizard.postType || ""} onValueChange={(v: PostType) => setWizard({ ...wizard, postType: v })}>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {Object.entries(POST_TYPES).map(([key, post]) => (
+                                                    <motion.div key={key} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                                                        <div className={`flex items-center space-x-4 border-2 rounded-xl p-6 cursor-pointer transition-all ${wizard.postType === key ? 'border-primary bg-primary/10 shadow-lg' : 'border-border hover:border-primary/50'
+                                                            }`}>
+                                                            <RadioGroupItem value={key} id={key} />
+                                                            <Label htmlFor={key} className="flex-1 cursor-pointer">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-3xl">{post.emoji}</span>
+                                                                    <div>
+                                                                        <div className="font-bold text-lg">{post.label}</div>
+                                                                        <div className="text-xs text-muted-foreground mb-1">{post.description}</div>
+                                                                        <div className="text-xs text-green-600">{post.vagas} vagas • {post.dias} dias</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Label>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </RadioGroup>
+                                    </motion.div>
+                                )}
+
+                                {wizard.step === 3 && (
+                                    <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                        <div className="text-center mb-6">
+                                            <h2 className="text-2xl font-bold mb-2">Tom da Mensagem</h2>
+                                            <p className="text-muted-foreground">Como você quer se comunicar?</p>
+                                        </div>
+
+                                        <RadioGroup value={wizard.tone || ""} onValueChange={(v: ToneType) => setWizard({ ...wizard, tone: v })}>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {Object.entries(TONES).map(([key, tone]) => (
+                                                    <motion.div key={key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                                                        <div className={`flex items-center space-x-4 border-2 rounded-xl p-5 cursor-pointer transition-all ${wizard.tone === key ? 'border-primary bg-primary/10 shadow-lg' : 'border-border hover:border-primary/50'
+                                                            }`}>
+                                                            <RadioGroupItem value={key} id={key} />
+                                                            <Label htmlFor={key} className="flex-1 cursor-pointer">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-2xl">{tone.emoji}</span>
+                                                                    <div>
+                                                                        <div className="font-semibold">{tone.label}</div>
+                                                                        <div className="text-xs text-muted-foreground">{tone.description}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Label>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </RadioGroup>
+                                    </motion.div>
+                                )}
+
+                                {wizard.step === 4 && (
+                                    <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                                        <div className="text-center mb-6">
+                                            <h2 className="text-2xl font-bold mb-2">Finalidade</h2>
+                                            <p className="text-muted-foreground">Qual o objetivo da campanha?</p>
+                                        </div>
+
+                                        <RadioGroup value={wizard.purpose || ""} onValueChange={(v: PurposeType) => setWizard({ ...wizard, purpose: v })}>
+                                            <div className="grid grid-cols-1 gap-4">
+                                                {Object.entries(PURPOSES).map(([key, purpose]) => (
+                                                    <motion.div key={key} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                                                        <div className={`flex items-center space-x-4 border-2 rounded-xl p-5 cursor-pointer transition-all ${wizard.purpose === key ? 'border-primary bg-primary/10 shadow-lg' : 'border-border hover:border-primary/50'
+                                                            }`}>
+                                                            <RadioGroupItem value={key} id={key} />
+                                                            <Label htmlFor={key} className="flex-1 cursor-pointer">
+                                                                <div className="flex items-center gap-3">
+                                                                    <span className="text-2xl">{purpose.emoji}</span>
+                                                                    <div>
+                                                                        <div className="font-semibold">{purpose.label}</div>
+                                                                        <div className="text-xs text-muted-foreground">{purpose.description}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </Label>
+                                                        </div>
+                                                    </motion.div>
+                                                ))}
+                                            </div>
+                                        </RadioGroup>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            <div className="flex gap-4 mt-8">
+                                {wizard.step > 1 && (
+                                    <Button variant="outline" onClick={() => setWizard({ ...wizard, step: wizard.step - 1 })} className="flex-1">
+                                        <ArrowLeft className="w-4 h-4 mr-2" />
+                                        Voltar
+                                    </Button>
+                                )}
+
+                                {wizard.step < 4 ? (
+                                    <Button onClick={() => setWizard({ ...wizard, step: wizard.step + 1 })} disabled={!canProceed()} className="flex-1 btn-fluid">
+                                        Próximo
+                                        <ArrowRight className="w-4 h-4 ml-2" />
+                                    </Button>
+                                ) : (
+                                    <Button onClick={handleGenerate} disabled={!canProceed() || isGenerating} className="flex-1 btn-fluid">
+                                        <Rocket className="w-4 h-4 mr-2" />
+                                        {isGenerating ? "Gerando..." : "Gerar Campanha"}
+                                    </Button>
+                                )}
+                            </div>
+
+                            {wizard.step > 1 && (
+                                <Button variant="ghost" onClick={resetWizard} className="w-full mt-4">
+                                    Recomeçar
+                                </Button>
+                            )}
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="creative" className="space-y-6 mt-6">
+                        {!generated ? (
+                            <Card className="glass-card p-12 text-center">
+                                <Rocket className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
+                                <p className="text-muted-foreground">Complete o wizard para gerar a campanha</p>
+                            </Card>
+                        ) : (
+                            <Card className="glass-card p-6">
+                                <h3 className="text-xl font-bold mb-4">✅ Campanha Criada e Salva!</h3>
+
+                                <div className="space-y-4 mb-6">
+                                    <div className="flex items-center gap-2">
+                                        <Badge className="bg-gradient-fluid">{generated.code}</Badge>
+                                        <span className="text-sm text-muted-foreground">Código da Campanha</span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <span className="text-muted-foreground">Canal:</span>
+                                            <span className="ml-2 font-semibold">{generated.metadata.channel === 'whatsapp' ? 'WhatsApp' : 'Redes Sociais'}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">Tom:</span>
+                                            <span className="ml-2 font-semibold">{TONES[generated.metadata.tone].label}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted-foreground">Finalidade:</span>
+                                            <span className="ml-2 font-semibold">{PURPOSES[generated.metadata.purpose].label}</span>
+                                        </div>
+                                        {generated.metadata.groups && (
+                                            <div>
+                                                <span className="text-muted-foreground">Grupos:</span>
+                                                <span className="ml-2 font-semibold">{generated.metadata.groups.length}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <pre className="whitespace-pre-wrap bg-background/50 p-6 rounded-lg border text-sm mb-4">
+                                    {generated.copy}
+                                </pre>
+
+                                <div className="flex gap-2">
+                                    <Button onClick={() => copyToClipboard(generated.copy, "Texto")} className="flex-1 btn-fluid">
+                                        <Copy className="w-4 h-4 mr-2" />
+                                        Copiar Texto
+                                    </Button>
+                                    <Button onClick={() => copyToClipboard(generated.link, "Link")} className="flex-1 btn-fluid">
+                                        <Copy className="w-4 h-4 mr-2" />
+                                        Copiar Link
+                                    </Button>
+                                </div>
+
+                                <Button onClick={resetWizard} variant="outline" className="w-full mt-4">
+                                    Criar Nova Campanha
+                                </Button>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="dashboard" className="space-y-6 mt-6">
+                        <Card className="glass-card p-6">
+                            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-primary" />
+                                Campanhas Ativas
+                            </h3>
+
+                            {activeCampaigns.length === 0 ? (
+                                <div className="text-center py-12 text-muted-foreground">
+                                    <Rocket className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                                    <p>Nenhuma campanha ativa. Crie sua primeira!</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {activeCampaigns.map((campaign) => {
+                                        const percentage = (campaign.currentRedemptions / campaign.maxRedemptions) * 100;
+                                        const remaining = campaign.maxRedemptions - campaign.currentRedemptions;
+                                        const createdDate = campaign.createdAt ? format(new Date(campaign.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "-";
+
+                                        return (
+                                            <motion.div
+                                                key={campaign.code}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                className="border rounded-xl p-5 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all"
+                                            >
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <Badge className={remaining > 10 ? "bg-gradient-fluid" : "bg-destructive"}>
+                                                            {campaign.code}
+                                                        </Badge>
+                                                        <span className="text-sm text-muted-foreground">{campaign.description}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-mono font-bold text-xl text-primary">
+                                                            {campaign.currentRedemptions}/{campaign.maxRedemptions}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {remaining} restantes
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <Progress value={percentage} className="h-2 mb-3" />
+
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                                                    <Calendar className="w-3 h-3" />
+                                                    <span>Criada em: {createdDate}</span>
+                                                </div>
+
+                                                {campaign.metadata && (
+                                                    <div className="flex gap-2 mb-3 text-xs flex-wrap">
+                                                        <Badge variant="outline">{campaign.metadata.channel === 'whatsapp' ? 'WhatsApp' : 'Social'}</Badge>
+                                                        {campaign.metadata.tone && <Badge variant="outline">{TONES[campaign.metadata.tone as ToneType]?.emoji}</Badge>}
+                                                        {campaign.metadata.purpose && <Badge variant="outline">{PURPOSES[campaign.metadata.purpose as PurposeType]?.emoji}</Badge>}
+                                                    </div>
+                                                )}
+
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="flex-1"
+                                                        onClick={() => copyToClipboard(`https://app.horamed.net/auth?campaign=${campaign.code}`, "Link")}
+                                                    >
+                                                        <Copy className="w-3 h-3 mr-2" />
+                                                        Copiar Link
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() => handleDeactivate(campaign.code)}
+                                                    >
+                                                        <Trash2 className="w-3 h-3 mr-2" />
+                                                        Desativar
+                                                    </Button>
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </div>
+    );
+}

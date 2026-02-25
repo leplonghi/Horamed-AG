@@ -10,6 +10,7 @@ import { Download, TrendingUp, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { auth, fetchCollection, orderBy, where } from "@/integrations/firebase";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface SideEffectsDashboardProps {
   itemId?: string;
@@ -105,10 +106,10 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     }
 
     // Sort by date ascending
-    const sortedLogs = [...logs].sort((a, b) => new Date(a.recordedAt).getTime() - new Date(b.recordedAt).getTime());
+    const sortedLogs = [...logs].sort((a, b) => safeGetTime(a.recordedAt) - safeGetTime(b.recordedAt));
 
     const data = sortedLogs.map(log => ({
-      date: format(new Date(log.recordedAt), 'dd/MM', { locale: dateLocale }),
+      date: format(safeDateParse(log.recordedAt), 'dd/MM', { locale: dateLocale }),
       [chartLabels.overallFeeling]: log.overallFeeling,
       [chartLabels.energy]: log.energyLevel,
       [chartLabels.pain]: log.painLevel,
@@ -282,7 +283,7 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
                 <YAxis domain={[1, 5]} />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey={chartLabels.overallFeeling} stroke="#8b5cf6" strokeWidth={2} />
+                <Line type="monotone" dataKey={chartLabels.overallFeeling} stroke="#059669" strokeWidth={2} />
                 <Line type="monotone" dataKey={chartLabels.energy} stroke="#10b981" strokeWidth={2} />
                 <Line type="monotone" dataKey={chartLabels.pain} stroke="#ef4444" strokeWidth={2} />
                 <Line type="monotone" dataKey={chartLabels.nausea} stroke="#f59e0b" strokeWidth={2} />

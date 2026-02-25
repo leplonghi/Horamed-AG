@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, Activity } from "lucide-react";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface HealthDataPoint {
   date: string;
@@ -31,7 +32,7 @@ export default function HealthDataChart({ data }: HealthDataChartProps) {
   }
 
   const chartData = data.map((point) => ({
-    date: format(new Date(point.date), "dd/MMM", { locale: ptBR }),
+    date: format(safeDateParse(point.date), "dd/MMM", { locale: ptBR }),
     peso: point.weight_kg,
     imc: point.weight_kg && point.height_cm 
       ? parseFloat((point.weight_kg / Math.pow(point.height_cm / 100, 2)).toFixed(1))

@@ -15,6 +15,7 @@ import WeightRegistrationModal from "@/components/WeightRegistrationModal";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, ReferenceArea } from "recharts";
 import { useWeightInsights, MedicationMarker } from "@/hooks/useWeightInsights";
 import { motion } from "framer-motion";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface WeightLog {
   id: string;
@@ -60,7 +61,7 @@ export default function WeightHistory() {
     ?.slice()
     .reverse()
     .map((log) => ({
-      date: format(new Date(log.recordedAt), "dd/MM", { locale: dateLocale }),
+      date: format(safeDateParse(log.recordedAt), "dd/MM", { locale: dateLocale }),
       fullDate: log.recordedAt,
       weight: typeof log.weightKg === 'string' ? parseFloat(log.weightKg) : log.weightKg,
     }));
@@ -69,15 +70,15 @@ export default function WeightHistory() {
   const getMedicationMarkersInRange = () => {
     if (!chartData || chartData.length === 0 || !insightsData?.medicationMarkers) return [];
 
-    const firstDate = new Date(chartData[0].fullDate);
-    const lastDate = new Date(chartData[chartData.length - 1].fullDate);
+    const firstDate = safeDateParse(chartData[0].fullDate);
+    const lastDate = safeDateParse(chartData[chartData.length - 1].fullDate);
 
     return insightsData.medicationMarkers.filter((marker: MedicationMarker) => {
-      const markerDate = new Date(marker.startDate);
+      const markerDate = safeDateParse(marker.startDate);
       return markerDate >= firstDate && markerDate <= lastDate;
     }).map((marker: MedicationMarker) => ({
       ...marker,
-      formattedDate: format(new Date(marker.startDate), "dd/MM", { locale: dateLocale })
+      formattedDate: format(safeDateParse(marker.startDate), "dd/MM", { locale: dateLocale })
     }));
   };
 
@@ -373,7 +374,7 @@ export default function WeightHistory() {
                           )}
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(log.recordedAt),
+                          {format(safeDateParse(log.recordedAt),
                             language === 'pt' ? "dd 'de' MMMM 'de' yyyy" : "MMMM dd, yyyy",
                             { locale: dateLocale }
                           )}

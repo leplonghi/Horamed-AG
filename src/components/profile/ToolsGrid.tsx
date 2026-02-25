@@ -42,7 +42,7 @@ export default function ToolsGrid() {
             path: '/relatorios',
             color: "text-indigo-500",
             bg: "bg-indigo-500/10",
-            gradient: "from-indigo-500/20 to-purple-500/5"
+            gradient: "from-indigo-500/20 to-teal-500/5"
         },
         {
             icon: QrCode,

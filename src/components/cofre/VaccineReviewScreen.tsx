@@ -11,6 +11,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface VaccineReviewScreenProps {
   documentId: string;
@@ -93,9 +94,9 @@ export default function VaccineReviewScreen({ documentId, extractedData, onCompl
 
   const formatDateDisplay = (dateStr: string) => {
     if (language === 'pt') {
-      return format(new Date(dateStr), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      return format(safeDateParse(dateStr), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     }
-    return format(new Date(dateStr), "MMMM d, yyyy", { locale: enUS });
+    return format(safeDateParse(dateStr), "MMMM d, yyyy", { locale: enUS });
   };
 
   return (

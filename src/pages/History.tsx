@@ -25,6 +25,7 @@ import { PageSkeleton } from "@/components/LoadingSkeleton";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DoseInstance {
   id: string;
@@ -106,7 +107,7 @@ export default function History() {
 
       if (activeTab === 'today') {
         startDate = startOfDay(now);
-        endDate = new Date(now);
+        endDate = safeDateParse(now);
         endDate.setHours(23, 59, 59, 999);
 
         previousStartDate = subDays(startDate, 1);

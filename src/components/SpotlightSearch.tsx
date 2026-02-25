@@ -209,7 +209,7 @@ export default function SpotlightSearch({ open, onOpenChange }: SpotlightSearchP
       case "document": return "text-blue-500 bg-blue-500/10";
       case "action": return "text-amber-500 bg-amber-500/10";
       case "navigation": return "text-slate-500 bg-slate-500/10";
-      case "setting": return "text-purple-500 bg-purple-500/10";
+      case "setting": return "text-teal-500 bg-teal-500/10";
     }
   };
 

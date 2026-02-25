@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { alarmDB, Alarm } from '@/lib/alarmDB';
 import { useAuth, fetchCollection, setDocument, deleteDocument, orderBy } from '@/integrations/firebase';
 import { toast } from 'sonner';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface UseAlarmsReturn {
   alarms: Alarm[];
@@ -53,7 +54,7 @@ export function useAlarms(): UseAlarmsReturn {
     try {
       const storedAlarms = await alarmDB.getAll();
       const sorted = storedAlarms.sort((a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        safeDateParse(a.scheduledAt).getTime() - safeDateParse(b.scheduledAt).getTime()
       );
       setAlarms(sorted);
       setError(null);
@@ -72,7 +73,7 @@ export function useAlarms(): UseAlarmsReturn {
     try {
       setSyncing(true);
 
-      const { data: cloudAlarms, error: fetchError } = await fetchCollection<any>(
+      const { data: cloudAlarms, error: fetchError } = await fetchCollection<Alarm>(
         `users/${user.uid}/alarms`,
         [orderBy('scheduledAt', 'asc')]
       );
@@ -130,7 +131,6 @@ export function useAlarms(): UseAlarmsReturn {
       // Reload from IndexedDB
       await loadLocalAlarms();
 
-      console.log('[useAlarms] Synced', formattedAlarms.length, 'alarms from cloud');
     } catch (err) {
       console.error('[useAlarms] Cloud sync error:', err);
     } finally {
@@ -222,8 +222,9 @@ export function useAlarms(): UseAlarmsReturn {
         toast.success('Alarme concluído!');
       }
 
+
       if (type === 'NOTIFICATION_CLOSED') {
-        console.log('[useAlarms] Notification closed:', alarmId);
+        // Handle closed notification
       }
     };
 
@@ -320,7 +321,7 @@ export function useAlarms(): UseAlarmsReturn {
 
       // Update state
       setAlarms(prev => [...prev, alarm].sort((a, b) =>
-        new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        safeDateParse(a.scheduledAt).getTime() - safeDateParse(b.scheduledAt).getTime()
       ));
 
       toast.success('Alarme criado com sucesso!');

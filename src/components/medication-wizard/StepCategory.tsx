@@ -58,9 +58,9 @@ export default function StepCategory({ category, onCategoryChange, onComplete }:
       description: t('category.otherDesc'),
       tooltip: t('category.otherTooltip'),
       icon: Package,
-      color: "text-purple-600 dark:text-purple-400",
-      bg: "bg-purple-100 dark:bg-purple-900/30",
-      borderActive: "border-purple-500 bg-purple-50 dark:bg-purple-900/40 ring-2 ring-purple-500/20"
+      color: "text-teal-600 dark:text-teal-400",
+      bg: "bg-teal-100 dark:bg-teal-900/30",
+      borderActive: "border-teal-500 bg-teal-50 dark:bg-teal-900/40 ring-2 ring-teal-500/20"
     },
   ];
 

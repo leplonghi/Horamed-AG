@@ -13,6 +13,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 const COMMON_TIMEZONES = [
   { value: "America/Sao_Paulo", label: "São Paulo (BRT)" },
@@ -52,7 +53,7 @@ export default function TravelMode() {
       return;
     }
 
-    const start = new Date(startDate);
+    const start = safeDateParse(startDate);
     const end = addDays(start, tripDays);
 
     await adjustSchedulesForTimezone(destinationTimezone, start, end);

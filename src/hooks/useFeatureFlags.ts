@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { fetchCollection } from "@/integrations/firebase";
 
 interface FeatureFlag {
+  id: string;
   key: string;
   enabled: boolean;
-  config: Record<string, any>;
+  config: Record<string, unknown>;
 }
 
 interface FeatureFlags {
@@ -16,7 +17,6 @@ interface FeatureFlags {
   aiStreaming: boolean;
   caregiverHandshake: boolean;
   consultationQR: boolean;
-  affiliate: boolean;
   interactionsLite: boolean;
 }
 
@@ -29,7 +29,6 @@ const DEFAULT_FLAGS: FeatureFlags = {
   aiStreaming: false,
   caregiverHandshake: false,
   consultationQR: false,
-  affiliate: false,
   interactionsLite: false,
 };
 
@@ -46,11 +45,11 @@ export function useFeatureFlags() {
       // Trying to fetch from Firestore 'featureFlags' collection
       // Ensure this collection exists and is readable in Firestore Security Rules
       // If collection doesn't exist, it will return empty array
-      const { data } = await fetchCollection<any>("featureFlags");
+      const { data } = await fetchCollection<FeatureFlag>("featureFlags");
 
       if (data && data.length > 0) {
         // Flatten array to object
-        const flagsMap = data.reduce((acc, flag: any) => {
+        const flagsMap = data.reduce((acc, flag) => {
           // Assume document has 'key' and 'enabled' fields
           // Or document ID is the key? 
           // Supabase version had 'key' column. Let's assume documents have 'key' field or use doc ID as key.

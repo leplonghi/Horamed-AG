@@ -33,9 +33,9 @@ export default function ProfileQuickActions() {
     },
     {
       id: "rewards",
-      icon: <Gift className="h-5 w-5 text-purple-500" />,
+      icon: <Gift className="h-5 w-5 text-teal-500" />,
       label: t('profile.myRewardsInvites'),
-      color: "bg-purple-500/10",
+      color: "bg-teal-500/10",
       onClick: () => navigate('/recompensas')
     }
   ];

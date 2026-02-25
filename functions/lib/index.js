@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.syncProtectionAvailable = exports.resetMonthlyProtections = exports.applyCreditsToRenewal = exports.handleReferralPremiumConversion = exports.handleReferralFirstWeek = exports.handleReferralSignup = exports.handleStreakMilestone = exports.claraConsultationPrep = exports.claraWeeklySummary = exports.syncSubscription = exports.generateTravelDoses = exports.caregiverInvite = exports.voiceToText = exports.consultationCard = exports.analyzeDocument = exports.checkMedicationInteractions = exports.checkInteractions = exports.extractDocument = exports.extractExam = exports.extractMedication = exports.scheduleDoseNotifications = exports.sendDoseNotification = exports.healthAssistant = exports.stripeWebhook = exports.createCustomerPortal = exports.onReferralChange = exports.createCheckoutSession = exports.onUserDelete = exports.onUserCreate = void 0;
+exports.syncProtectionAvailable = exports.resetMonthlyProtections = exports.applyCreditsToRenewal = exports.handleReferralFirstWeek = exports.handleReferralSignup = exports.handleStreakMilestone = exports.claraConsultationPrep = exports.claraWeeklySummary = exports.cancelSubscription = exports.applyRetentionOffer = exports.syncSubscription = exports.generateTravelDoses = exports.caregiverInvite = exports.voiceToText = exports.consultationCard = exports.analyzeDocument = exports.checkMedicationInteractions = exports.checkInteractions = exports.extractDocument = exports.extractExam = exports.extractMedication = exports.scheduleDoseNotifications = exports.sendDoseNotification = exports.healthAssistant = exports.stripeWebhook = exports.createCustomerPortal = exports.onReferralChange = exports.createCheckoutSession = exports.onUserDelete = exports.onUserCreate = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const stripe_1 = require("stripe");
@@ -54,10 +54,10 @@ let stripeInstance = null;
 const getStripe = () => {
     var _a;
     if (!stripeInstance) {
-        const key = process.env.STRIPE_SECRET_KEY || ((_a = functions.config().stripe) === null || _a === void 0 ? void 0 : _a.secret);
+        // Use environment variable for production
+        const key = process.env.STRIPE_SECRET_KEY || ((_a = functions.config().stripe) === null || _a === void 0 ? void 0 : _a.secret_key);
+        console.log("[STRIPE] Initializing with key prefix:", (key === null || key === void 0 ? void 0 : key.substring(0, 8)) || 'MISSING');
         if (!key) {
-            // Return a dummy instance or throw, but for deployment safety, logging is better.
-            // However, at runtime this must throw if missing.
             throw new Error("Stripe secret key is missing in environment variables or functions config.");
         }
         stripeInstance = new stripe_1.Stripe(key, {
@@ -85,12 +85,12 @@ const getGenAI = () => {
 // Price Configuration (Updated 2026-01-30)
 const PRICES = {
     BRL: {
-        monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y', // R$ 19,90/mês (Test Mode)
-        annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr', // R$ 199,90/ano (Test Mode)
+        monthly: 'price_1QsLkuHh4P8HSV4Yqcv6t', // R$ 19,90/mês (Live Mode)
+        annual: 'price_1QsgmHh4P8HSV4Yb4o1ovt', // R$ 199,90/ano (Live Mode)
     },
     USD: {
-        monthly: 'price_1SvI4XHh4P8HSV4YGE6v1szt', // US$ 3,99/mês
-        annual: 'price_1SuWdlHh4P8HSV4YsApnqZxY', // US$ 39,99/ano
+        monthly: 'price_1QsLkNHh4P8HSV4Yds1xcc', // US$ 3,99/mês (Live Mode)
+        annual: 'price_1QsuHHh4P8HSV4Ysgmzc2V', // US$ 39,99/ano (Live Mode)
     },
 };
 /**
@@ -145,20 +145,7 @@ exports.onUserDelete = functions.auth.user().onDelete(async (user) => {
  * ==================================================================
  */
 // Helper to calculate discount based on active referrals
-async function calculateReferralDiscount(uid) {
-    const snapshot = await db.collection(`users/${uid}/referrals`)
-        .where('status', '==', 'active')
-        .get();
-    let totalDiscount = 0;
-    snapshot.docs.forEach(doc => {
-        const d = doc.data();
-        if (d.planType === 'premium_monthly')
-            totalDiscount += 20;
-        else if (d.planType === 'premium_annual')
-            totalDiscount += 40;
-    });
-    return Math.min(totalDiscount, 100);
-}
+// Helper removed: calculateReferralDiscount - Replaced by onReferralChange reward logic
 // Create Checkout Session (Renamed to match Frontend)
 exports.createCheckoutSession = functions.https.onCall(async (data, context) => {
     var _a, _b;
@@ -166,7 +153,7 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
     if (!context.auth)
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     // Default to monthly/BR if not provided
-    const { planType = 'monthly', countryCode = 'BR' } = data;
+    const { planType = 'monthly', countryCode = 'BR', redirectUrl } = data;
     const { uid } = context.auth;
     functions.logger.info('Request params', { planType, countryCode, uid });
     try {
@@ -180,7 +167,6 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         if (!email) {
             throw new functions.https.HttpsError('failed-precondition', 'User email not found');
         }
-        functions.logger.info('User data retrieved', { email, hasStripeCustomer: !!userData.stripeCustomerId });
         // Resolve Price ID
         const currency = (countryCode === 'BR' ? 'BRL' : 'USD');
         const priceId = (_b = PRICES[currency]) === null || _b === void 0 ? void 0 : _b[planType];
@@ -193,30 +179,62 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
         const stripe = getStripe();
         functions.logger.info('Stripe instance created');
         if (userData === null || userData === void 0 ? void 0 : userData.stripeCustomerId) {
-            customerId = userData.stripeCustomerId;
-            functions.logger.info('Using existing Stripe customer', { customerId });
+            const potentialId = userData.stripeCustomerId;
+            // Verify if customer exists in current environment (Live vs Test mismatch check)
+            try {
+                const customer = await stripe.customers.retrieve(potentialId);
+                if (customer.deleted) {
+                    functions.logger.warn(`Customer ${potentialId} is deleted in Stripe.`);
+                    customerId = undefined;
+                }
+                else {
+                    customerId = potentialId;
+                    functions.logger.info('Using existing Stripe customer ID', { customerId });
+                }
+            }
+            catch (err) {
+                functions.logger.warn(`Existing customer ID ${potentialId} invalid in this env (Live/Test mismatch?). Creating new. Error: ${err.message}`);
+                customerId = undefined;
+            }
         }
-        else {
+        if (!customerId) {
             functions.logger.info('Creating new Stripe customer', { email });
             const customer = await stripe.customers.create({ email, metadata: { firebaseUid: uid } });
             customerId = customer.id;
             await userDoc.ref.update({ stripeCustomerId: customerId });
-            functions.logger.info('Stripe customer created', { customerId });
+            functions.logger.info('Stripe customer created and updated in DB', { customerId });
         }
-        // Calculate Referral Discount
-        const discountPercent = await calculateReferralDiscount(uid);
-        let couponId;
-        if (discountPercent > 0) {
-            functions.logger.info('Applying referral discount', { discountPercent, uid });
-            // Create a coupon for this session (or reusable if preferred, but dynamic % is easier this way)
-            const coupon = await stripe.coupons.create({
-                percent_off: discountPercent,
-                duration: 'forever',
-                name: `Referral Discount (${discountPercent}%)`,
-                metadata: { firebaseUid: uid }
-            });
-            couponId = coupon.id;
+        else {
+            // STRICT DOUBLE-CHECK: Check Stripe directly for active subscriptions
+            try {
+                const subscriptions = await stripe.subscriptions.list({
+                    customer: customerId,
+                    status: 'active',
+                    limit: 1
+                });
+                if (subscriptions.data.length > 0) {
+                    functions.logger.info('Stripe CONFIRMS active subscription. Preventing double charge.', { uid, subId: subscriptions.data[0].id });
+                    // Sync DB while we are here
+                    await db.collection('users').doc(uid).collection('subscription').doc('current').set({
+                        status: 'active',
+                        stripeSubscriptionId: subscriptions.data[0].id,
+                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                    // Redirect to portal
+                    const portalSession = await stripe.billingPortal.sessions.create({
+                        customer: customerId,
+                        return_url: redirectUrl || 'https://app.horamed.net/perfil',
+                    });
+                    return { url: portalSession.url };
+                }
+            }
+            catch (err) {
+                functions.logger.warn(`Error checking existing subscriptions: ${err.message}. Proceeding with caution.`);
+            }
         }
+        // Referral Rewards are now 'Free Months' applied post-activation logic (see onReferralChange)
+        // No upfront discount on checkout
+        const couponId = undefined;
         functions.logger.info('Creating checkout session', { customerId, priceId, couponId });
         const session = await stripe.checkout.sessions.create({
             mode: 'subscription',
@@ -224,12 +242,17 @@ exports.createCheckoutSession = functions.https.onCall(async (data, context) => 
             customer: customerId,
             line_items: [{ price: priceId, quantity: 1 }],
             discounts: couponId ? [{ coupon: couponId }] : undefined,
-            success_url: `https://app.horamed.net/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://app.horamed.net/assinatura/cancelado`,
+            success_url: redirectUrl
+                ? `${redirectUrl}/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`
+                : `https://app.horamed.net/assinatura/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: redirectUrl
+                ? `${redirectUrl}/assinatura/cancelado`
+                : `https://app.horamed.net/assinatura/cancelado`,
             client_reference_id: uid,
             allow_promotion_codes: true,
             subscription_data: {
-                metadata: { firebaseUid: uid }
+                metadata: { firebaseUid: uid },
+                trial_period_days: 7 // 7 days free trial for all subscriptions
             }
         });
         functions.logger.info('Checkout session created successfully', { sessionId: session.id, url: session.url });
@@ -250,45 +273,66 @@ exports.onReferralChange = functions.firestore.document('users/{userId}/referral
     .onWrite(async (change, context) => {
     const { userId } = context.params;
     const after = change.after.exists ? change.after.data() : null;
-    const before = change.before.exists ? change.before.data() : null;
-    // Only proceed if status changed to/from 'active' or if it's a new active referral
-    const statusChanged = (after === null || after === void 0 ? void 0 : after.status) !== (before === null || before === void 0 ? void 0 : before.status);
-    const isActiveInvolved = (after === null || after === void 0 ? void 0 : after.status) === 'active' || (before === null || before === void 0 ? void 0 : before.status) === 'active';
-    if (!statusChanged && !isActiveInvolved && after)
-        return; // No relevant change
-    functions.logger.info(`Referral change detected for user ${userId}, syncing Stripe...`);
+    // Only evaluate if status is 'active' (meaning purchase confirmed)
+    if ((after === null || after === void 0 ? void 0 : after.status) !== 'active')
+        return;
+    functions.logger.info(`Referral active for ${userId}, evaluating rewards...`);
     try {
-        // Recalculate discount
-        const newDiscount = await calculateReferralDiscount(userId);
-        // Get user's current Stripe Subscription ID
-        const subDoc = await db.collection(`users/${userId}/subscription`).doc('current').get();
-        const subData = subDoc.data();
-        if (!subData || subData.status !== 'active' || !subData.stripeSubscriptionId) {
-            functions.logger.info('No active Stripe subscription to update.');
-            return;
-        }
-        const stripe = getStripe();
-        const subscriptionId = subData.stripeSubscriptionId;
-        // Create new coupon
-        let couponId = undefined;
-        if (newDiscount > 0) {
-            const coupon = await stripe.coupons.create({
-                percent_off: newDiscount,
-                duration: 'forever',
-                name: `Updated Referral Discount (${newDiscount}%)`,
-                metadata: { firebaseUid: userId, reason: 'referral_update' }
-            });
-            couponId = coupon.id;
-        }
-        // Update Subscription in Stripe
-        // Note: This replaces existing discounts
-        await stripe.subscriptions.update(subscriptionId, {
-            discounts: couponId ? [{ coupon: couponId }] : [], // Passing empty array removes discounts if 0
+        // 1. Tally Qualified Referrals
+        const refs = await db.collection(`users/${userId}/referrals`).where('status', '==', 'active').get();
+        let monthlyRefCount = 0;
+        let annualRefCount = 0;
+        refs.docs.forEach(d => {
+            const p = d.data().planType;
+            if (p === 'premium_monthly')
+                monthlyRefCount++;
+            if (p === 'premium_annual')
+                annualRefCount++;
         });
-        functions.logger.info(`Stripe subscription ${subscriptionId} updated with ${newDiscount}% discount.`);
+        // 2. Calculate Total Earned Months
+        // Rule: 1 Month for every 5 Monthly OR every 2 Annual
+        const rewardsFromMonthly = Math.floor(monthlyRefCount / 5);
+        const rewardsFromAnnual = Math.floor(annualRefCount / 2);
+        const totalEarned = Math.min(rewardsFromMonthly + rewardsFromAnnual, 10); // Cap at 10 times
+        // 3. Check against Claimed
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+        const claimed = (userData === null || userData === void 0 ? void 0 : userData.referralRewardsClaimed) || 0;
+        if (totalEarned > claimed) {
+            const monthsToGrant = totalEarned - claimed;
+            functions.logger.info(`User ${userId} earned ${monthsToGrant} new free months! Total Earned: ${totalEarned}`);
+            // 4. Apply Reward to Stripe (Extend Trial/Pause Billing)
+            if ((userData === null || userData === void 0 ? void 0 : userData.stripeSubscriptionId) && (userData === null || userData === void 0 ? void 0 : userData.isPremium)) {
+                const stripe = getStripe();
+                const subId = userData.stripeSubscriptionId;
+                const sub = await stripe.subscriptions.retrieve(subId);
+                if (sub.status === 'active' || sub.status === 'trialing') {
+                    // Calculate new end date
+                    // Use trial_end if exists, else current_period_end
+                    // Add 30 days per reward
+                    const subAny = sub;
+                    const currentAnchor = subAny.trial_end || subAny.current_period_end;
+                    const additionalTime = monthsToGrant * 30 * 24 * 60 * 60; // 30 days in seconds
+                    const newEnd = currentAnchor + additionalTime;
+                    await stripe.subscriptions.update(subId, {
+                        trial_end: newEnd,
+                        proration_behavior: 'none' // Don't charge/refund, just extend
+                    });
+                    functions.logger.info(`Stripe subscription ${subId} extended until ${new Date(newEnd * 1000)}`);
+                    // 5. Update Claimed Count
+                    await userDoc.ref.update({
+                        referralRewardsClaimed: totalEarned,
+                        lastRewardGrantedAt: admin.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                else {
+                    functions.logger.warn(`User ${userId} earned reward but subscription is ${sub.status}. Storing pending claim?`);
+                }
+            }
+        }
     }
     catch (error) {
-        functions.logger.error('Error syncing referral discount to Stripe:', error);
+        functions.logger.error('Error processing referral reward:', error);
     }
 });
 exports.createCustomerPortal = functions.https.onCall(async (data, context) => {
@@ -310,6 +354,15 @@ exports.createCustomerPortal = functions.https.onCall(async (data, context) => {
     }
     catch (error) {
         functions.logger.error('Portal Error:', error);
+        // Self-healing: If customer incorrect/deleted in Stripe, remove from DB so they can re-subscribe
+        if (error.code === 'resource_missing' || (error.message && error.message.includes('No such customer'))) {
+            functions.logger.warn(`Customer ID invalid/deleted. removing from DB users/${uid}`);
+            await db.collection('users').doc(uid).update({
+                stripeCustomerId: admin.firestore.FieldValue.delete(),
+                isPremium: false
+            });
+            throw new functions.https.HttpsError('not-found', 'Stripe customer not found. Please re-subscribe.');
+        }
         throw new functions.https.HttpsError('internal', error.message);
     }
 });
@@ -348,9 +401,10 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                 const snapshot = await usersRef.where('stripeCustomerId', '==', customerId).limit(1).get();
                 if (!snapshot.empty) {
                     const uid = snapshot.docs[0].id;
-                    const status = sub.status === 'active' ? 'active' : 'inactive';
-                    const plan = sub.status === 'active' ? 'premium' : 'free';
-                    await updateUserSubscription(uid, sub.id, customerId, status, plan);
+                    const status = sub.status;
+                    const plan = (status === 'active' || status === 'trialing') ? 'premium' : 'free';
+                    const subAny = sub;
+                    await updateUserSubscription(uid, sub.id, customerId, status, plan, subAny.current_period_end, sub.trial_end, sub.cancel_at_period_end);
                 }
                 break;
             }
@@ -362,14 +416,21 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 });
-async function updateUserSubscription(uid, subId, custId, status, planType) {
-    await db.collection('users').doc(uid).collection('subscription').doc('current').set({
+async function updateUserSubscription(uid, subId, custId, status, planType, currentPeriodEnd, trialEnd, cancelAtPeriodEnd) {
+    const data = {
         status,
         planType,
         stripeSubscriptionId: subId,
         stripeCustomerId: custId,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+    if (currentPeriodEnd)
+        data.expiresAt = admin.firestore.Timestamp.fromMillis(currentPeriodEnd * 1000);
+    if (trialEnd)
+        data.trialEndsAt = admin.firestore.Timestamp.fromMillis(trialEnd * 1000);
+    if (cancelAtPeriodEnd !== undefined)
+        data.cancelAtPeriodEnd = cancelAtPeriodEnd;
+    await db.collection('users').doc(uid).collection('subscription').doc('current').set(data, { merge: true });
     await db.collection('users').doc(uid).set({
         isPremium: planType === 'premium',
         stripeCustomerId: custId
@@ -390,7 +451,7 @@ exports.healthAssistant = functions.https.onCall(async (data, context) => {
     }
     try {
         // Upgrade to Gemini 1.5 Flash for better performance/cost
-        const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
         const lastMessage = messages[messages.length - 1].content;
         // Convert history format (skip system message if it's the first one, or use it as systemInstruction)
         // Gemini API supports systemInstruction in model config, but for simplicity with history array:
@@ -532,7 +593,7 @@ exports.scheduleDoseNotifications = functions.pubsub.schedule('every 15 minutes'
  */
 // Helper for Vision AI
 async function processImage(image, prompt) {
-    const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
     const result = await model.generateContent([
         {
             inlineData: {
@@ -648,7 +709,7 @@ exports.checkInteractions = functions.https.onCall(async (data, context) => {
             }
             Se não houver interações, retorne { "interactions": [] }.
         `;
-        const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -677,7 +738,7 @@ exports.voiceToText = functions.https.onCall(async (data, context) => {
     }
     try {
         const model = getGenAI().getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-3-pro-preview",
             generationConfig: { responseMimeType: "application/json" }
         });
         // Sophisticated System Prompt for Predictive Intelligence
@@ -742,9 +803,177 @@ exports.generateTravelDoses = functions.https.onCall(async (data, context) => {
     return { success: true, message: "Doses de viagem geradas com sucesso" };
 });
 exports.syncSubscription = functions.https.onCall(async (data, context) => {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t;
     if (!context.auth)
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-    return { status: 'synced' };
+    const uid = context.auth.uid;
+    const stripe = getStripe();
+    try {
+        const userDoc = await db.collection('users').doc(uid).get();
+        if (!userDoc.exists)
+            throw new functions.https.HttpsError('not-found', 'User not found');
+        const userData = userDoc.data();
+        const customerId = userData === null || userData === void 0 ? void 0 : userData.stripeCustomerId;
+        if (!customerId) {
+            // No customer ID means definitely no subscription
+            await updateUserSubscription(uid, '', '', 'inactive', 'free');
+            return { status: 'synced', result: 'no_customer_id' };
+        }
+        // Check Stripe for active subscriptions
+        const subscriptions = await stripe.subscriptions.list({
+            customer: customerId,
+            status: 'active',
+            limit: 1
+        });
+        if (subscriptions.data.length > 0) {
+            const sub = subscriptions.data[0];
+            const planType = 'premium'; // Assuming single tier for now
+            // Check for discount (handle both API versions/types)
+            const subAny = sub;
+            // Generic discount detection
+            let discountPercent = 0;
+            let discountType = null;
+            let discountApplied = false;
+            // Check top-level discount (older API/simple case)
+            if ((_b = (_a = subAny.discount) === null || _a === void 0 ? void 0 : _a.coupon) === null || _b === void 0 ? void 0 : _b.percent_off) {
+                discountPercent = subAny.discount.coupon.percent_off;
+                discountType = subAny.discount.coupon.name || 'discount';
+                discountApplied = true;
+            }
+            // Check new discounts array
+            else if (subAny.discounts && subAny.discounts.length > 0) {
+                const firstDiscount = subAny.discounts[0];
+                if ((_c = firstDiscount.coupon) === null || _c === void 0 ? void 0 : _c.percent_off) {
+                    discountPercent = firstDiscount.coupon.percent_off;
+                    discountType = firstDiscount.coupon.name || 'discount';
+                    discountApplied = true;
+                }
+            }
+            // Keep specialized logic for Retention if needed
+            const isRetention = ((_d = sub.metadata) === null || _d === void 0 ? void 0 : _d.retention_claimed) === 'true' ||
+                ((_f = (_e = subAny.discount) === null || _e === void 0 ? void 0 : _e.coupon) === null || _f === void 0 ? void 0 : _f.id) === 'RETENTION_15_OFF' ||
+                (subAny.discounts && subAny.discounts.length > 0 && ((_h = (_g = subAny.discounts[0]) === null || _g === void 0 ? void 0 : _g.coupon) === null || _h === void 0 ? void 0 : _h.id) === 'RETENTION_15_OFF');
+            if (isRetention) {
+                discountType = 'retention';
+                if (discountPercent === 0)
+                    discountPercent = 15;
+                discountApplied = true;
+            }
+            const updateData = {
+                status: sub.status,
+                planType,
+                stripeSubscriptionId: sub.id,
+                stripeCustomerId: customerId,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+                interval: ((_m = (_l = (_k = (_j = sub.items) === null || _j === void 0 ? void 0 : _j.data[0]) === null || _k === void 0 ? void 0 : _k.price) === null || _l === void 0 ? void 0 : _l.recurring) === null || _m === void 0 ? void 0 : _m.interval) || 'month',
+                amount: ((_q = (_p = (_o = sub.items) === null || _o === void 0 ? void 0 : _o.data[0]) === null || _p === void 0 ? void 0 : _p.price) === null || _q === void 0 ? void 0 : _q.unit_amount) || 0,
+                currency: ((_t = (_s = (_r = sub.items) === null || _r === void 0 ? void 0 : _r.data[0]) === null || _s === void 0 ? void 0 : _s.price) === null || _t === void 0 ? void 0 : _t.currency) || 'brl',
+                expiresAt: admin.firestore.Timestamp.fromMillis(sub.current_period_end * 1000),
+                cancelAtPeriodEnd: sub.cancel_at_period_end || false,
+                trialEndsAt: sub.trial_end ? admin.firestore.Timestamp.fromMillis(sub.trial_end * 1000) : null
+            };
+            if (discountApplied) {
+                updateData.discountApplied = true;
+                updateData.discountPercent = discountPercent;
+                updateData.discountType = discountType;
+            }
+            else {
+                updateData.discountApplied = false;
+                updateData.discountPercent = 0;
+                updateData.discountType = null;
+            }
+            // Direct update instead of helper to include discount data
+            await db.collection('users').doc(uid).collection('subscription').doc('current').set(updateData, { merge: true });
+            await db.collection('users').doc(uid).set({
+                isPremium: true,
+                stripeCustomerId: customerId
+            }, { merge: true });
+            return { status: 'synced', result: 'active_found', plan: planType };
+        }
+        else {
+            // Check for trialing?
+            const trialing = await stripe.subscriptions.list({
+                customer: customerId,
+                status: 'trialing',
+                limit: 1
+            });
+            if (trialing.data.length > 0) {
+                const sub = trialing.data[0];
+                const subAny = sub;
+                await updateUserSubscription(uid, sub.id, customerId, 'trialing', 'premium', subAny.current_period_end, sub.trial_end, sub.cancel_at_period_end);
+                return { status: 'synced', result: 'trial_found' };
+            }
+            // Nothing found
+            await updateUserSubscription(uid, '', customerId, 'inactive', 'free');
+            return { status: 'synced', result: 'none_found' };
+        }
+    }
+    catch (error) {
+        functions.logger.error('Sync Subscription Error:', error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+exports.applyRetentionOffer = functions.https.onCall(async (data, context) => {
+    var _a;
+    if (!context.auth)
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const { uid } = context.auth;
+    const stripe = getStripe();
+    try {
+        const userDoc = await db.collection('users').doc(uid).get();
+        const customerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        // Get active subscription
+        const subDoc = await db.collection('users').doc(uid).collection('subscription').doc('current').get();
+        const subData = subDoc.data();
+        if (!customerId || !(subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId)) {
+            throw new functions.https.HttpsError('failed-precondition', 'No active subscription found.');
+        }
+        // Apply coupon
+        await stripe.subscriptions.update(subData.stripeSubscriptionId, {
+            discounts: [{ coupon: 'RETENTION_15_OFF' }],
+            metadata: { retention_claimed: 'true' }
+        });
+        // Update local status immediately to reflect the discount
+        await subDoc.ref.update({
+            discountApplied: true,
+            discountPercent: 15,
+            discountType: 'retention',
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return { success: true };
+    }
+    catch (error) {
+        functions.logger.error('Retention Offer Error:', error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+exports.cancelSubscription = functions.https.onCall(async (data, context) => {
+    if (!context.auth)
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const { uid } = context.auth;
+    const stripe = getStripe();
+    try {
+        // Get active subscription
+        const subDoc = await db.collection('users').doc(uid).collection('subscription').doc('current').get();
+        const subData = subDoc.data();
+        if (!(subData === null || subData === void 0 ? void 0 : subData.stripeSubscriptionId)) {
+            throw new functions.https.HttpsError('failed-precondition', 'No active subscription found.');
+        }
+        // Cancel at period end
+        await stripe.subscriptions.update(subData.stripeSubscriptionId, {
+            cancel_at_period_end: true
+        });
+        // Update local status to reflect pending cancellation
+        await subDoc.ref.update({
+            cancelAtPeriodEnd: true,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        return { success: true };
+    }
+    catch (error) {
+        functions.logger.error('Cancellation Error:', error);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
 });
 /**
  * ==================================================================
@@ -783,7 +1012,7 @@ exports.claraWeeklySummary = functions.https.onCall(async (data, context) => {
             Se for alta, parabenize.
             Retorne JSON: { "summary": "texto", "metrics": { "adherenceRate": ${adherence}, "onTimeRate": 0, "totalDoses": ${total}, "takenDoses": ${taken}, "missedDoses": ${missed} } }
         `;
-        const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -825,7 +1054,7 @@ exports.claraConsultationPrep = functions.https.onCall(async (data, context) => 
             
             Retorne JSON: { "report": "texto_markdown", "metrics": { "medicationsCount": ${medications.length}, "adherenceRate": ${adherenceRate}, "sideEffectsCount": ${sideEffectsCount} } }
         `;
-        const model = getGenAI().getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
         const result = await model.generateContent(prompt);
         const text = result.response.text();
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -843,10 +1072,10 @@ exports.claraConsultationPrep = functions.https.onCall(async (data, context) => 
  */
 const handleStreakMilestone_1 = require("./rewards/handleStreakMilestone");
 Object.defineProperty(exports, "handleStreakMilestone", { enumerable: true, get: function () { return handleStreakMilestone_1.handleStreakMilestone; } });
+// import { handleReferralSignup, handleReferralFirstWeek, handleReferralPremiumConversion } from './rewards/handleReferral';
 const handleReferral_1 = require("./rewards/handleReferral");
 Object.defineProperty(exports, "handleReferralSignup", { enumerable: true, get: function () { return handleReferral_1.handleReferralSignup; } });
 Object.defineProperty(exports, "handleReferralFirstWeek", { enumerable: true, get: function () { return handleReferral_1.handleReferralFirstWeek; } });
-Object.defineProperty(exports, "handleReferralPremiumConversion", { enumerable: true, get: function () { return handleReferral_1.handleReferralPremiumConversion; } });
 const applyCreditsToRenewal_1 = require("./rewards/applyCreditsToRenewal");
 Object.defineProperty(exports, "applyCreditsToRenewal", { enumerable: true, get: function () { return applyCreditsToRenewal_1.applyCreditsToRenewal; } });
 const resetMonthlyProtections_1 = require("./rewards/resetMonthlyProtections");

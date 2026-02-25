@@ -121,7 +121,7 @@ export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDi
         <div className="p-6">
           <DialogHeader>
             <div className="flex items-center justify-center mb-4">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-teal-500 to-pink-500 rounded-full shadow-lg">
                 <Crown className="h-8 w-8 text-white" />
               </div>
             </div>
@@ -194,7 +194,7 @@ export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDi
               ))}
             </div>
 
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 rounded-lg p-4 text-center">
+            <div className="bg-gradient-to-r from-teal-50 to-pink-50 dark:from-teal-950/20 dark:to-pink-950/20 rounded-lg p-4 text-center">
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-sm text-muted-foreground line-through">R$ 29,90</span>
                 <span className="text-3xl font-bold text-foreground">R$ 19,90</span>

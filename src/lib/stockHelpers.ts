@@ -1,5 +1,26 @@
 import { auth, fetchCollection, fetchDocument, updateDocument, where, serverTimestamp } from "@/integrations/firebase";
 
+interface StockDoc {
+  id: string;
+  currentQty: number;
+  projectedEndAt?: string;
+  updatedAt?: unknown;
+}
+
+interface TakenDoseDoc {
+  id: string;
+  itemId: string;
+  status: string;
+  takenAt?: string;
+}
+
+interface ScheduleDoc {
+  id: string;
+  itemId: string;
+  isActive: boolean;
+  times?: string[];
+}
+
 /**
  * Decrement stock and recalculate projectedEndAt
  * Centralizes stock management logic to avoid duplication
@@ -17,7 +38,7 @@ export async function decrementStockWithProjection(itemId: string): Promise<{
     const stockPath = `users/${userId}/stock`;
 
     // Get current stock
-    const { data: stockData, error: fetchError } = await fetchDocument<any>(stockPath, itemId);
+    const { data: stockData, error: fetchError } = await fetchDocument<StockDoc>(stockPath, itemId);
 
     if (fetchError || !stockData) {
       console.log("[Stock] No stock found for item:", itemId);
@@ -76,7 +97,7 @@ async function calculateProjectedEndAt(itemId: string, unitsLeft: number): Promi
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const dosesPath = `users/${userId}/doses`;
-    const { data: takenDoses } = await fetchCollection<any>(dosesPath, [
+    const { data: takenDoses } = await fetchCollection<TakenDoseDoc>(dosesPath, [
       where("itemId", "==", itemId),
       where("status", "==", "taken"),
       where("takenAt", ">=", sevenDaysAgo.toISOString())
@@ -87,7 +108,7 @@ async function calculateProjectedEndAt(itemId: string, unitsLeft: number): Promi
     // If no consumption history, estimate from schedules
     if (dailyConsumption === 0) {
       const schedulesPath = `users/${userId}/schedules`;
-      const { data: schedules } = await fetchCollection<any>(schedulesPath, [
+      const { data: schedules } = await fetchCollection<ScheduleDoc>(schedulesPath, [
         where("itemId", "==", itemId),
         where("isActive", "==", true)
       ]);
@@ -125,7 +146,7 @@ export async function recalculateStockProjection(itemId: string): Promise<void> 
   const userId = user.uid;
   const stockPath = `users/${userId}/stock`;
 
-  const { data: stockData } = await fetchDocument<any>(stockPath, itemId);
+  const { data: stockData } = await fetchDocument<StockDoc>(stockPath, itemId);
 
   if (!stockData) return;
 

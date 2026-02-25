@@ -287,8 +287,8 @@ export default function AddMedicationWizard() {
                     onClick={() => handleMethodSelect("gallery")}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-xl bg-purple-500/10">
-                        <Image className="h-6 w-6 text-purple-600" />
+                      <div className="p-3 rounded-xl bg-teal-500/10">
+                        <Image className="h-6 w-6 text-teal-600" />
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold">{t('wizard.uploadDesc')}</h3>

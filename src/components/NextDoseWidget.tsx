@@ -5,6 +5,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import DoseActionButton from "./DoseActionButton";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface NextDoseWidgetProps {
   dose: {
@@ -23,7 +24,7 @@ interface NextDoseWidgetProps {
 export default function NextDoseWidget({ dose, onTake, className }: NextDoseWidgetProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  const dueTime = new Date(dose.dueAt);
+  const dueTime = safeDateParse(dose.dueAt);
   const now = new Date();
   const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / (1000 * 60));
   const isNow = minutesUntil <= 5 && minutesUntil >= -5;
@@ -45,11 +46,11 @@ export default function NextDoseWidget({ dose, onTake, className }: NextDoseWidg
 
           <div className="space-y-2">
             <h3 className="text-xl font-bold text-foreground">
-              {dose.items.name}
+              {dose.items?.name || "Medicamento"}
             </h3>
-            {dose.items.doseText && (
+            {dose.items?.doseText && (
               <p className="text-sm text-muted-foreground">
-                {dose.items.doseText}
+                {dose.items?.doseText}
               </p>
             )}
             <div className="flex items-center gap-2 text-muted-foreground">

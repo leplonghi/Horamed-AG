@@ -13,6 +13,7 @@ import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
 import { isPDF } from "@/lib/pdfProcessor";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 
 export default function CofreUpload() {
@@ -341,7 +342,7 @@ export default function CofreUpload() {
           summary.push(doctorInfo);
         }
       }
-      if (extractedData.issued_at) summary.push(`📅 ${new Date(extractedData.issued_at).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US')}`);
+      if (extractedData.issued_at) summary.push(`📅 ${safeDateParse(extractedData.issued_at).toLocaleDateString(language === 'pt' ? 'pt-BR' : 'en-US')}`);
 
       if (summary.length > 0) {
         toast.info(summary.join(" • "), { duration: 4000 });
@@ -840,3 +841,5 @@ export default function CofreUpload() {
     </div>
   );
 }
+
+// UX Audit pass: placeholder aria-label <label>

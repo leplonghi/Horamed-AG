@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export function CaregiverVaccineReminders() {
   const { data: reminders, isLoading } = useCaregiverVaccineReminders();
@@ -93,7 +94,7 @@ export function CaregiverVaccineReminders() {
               )}
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(reminder.next_dose_date), "dd 'de' MMMM", { locale: ptBR })}
+                {format(safeDateParse(reminder.next_dose_date), "dd 'de' MMMM", { locale: ptBR })}
               </div>
             </div>
           </div>

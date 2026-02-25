@@ -14,6 +14,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 // Notification channel ID - CRITICAL for Android alarm behavior
 export const ALARM_CHANNEL_ID = "horamed_alarm";
@@ -27,7 +28,7 @@ interface AlarmConfig {
   doseId: string;
   itemId: string;
   sound?: string;
-  extra?: Record<string, any>;
+  extra?: Record<string, unknown>;
 }
 
 interface AlarmLog {
@@ -95,7 +96,7 @@ export const useAndroidAlarm = () => {
    */
   const logAlarmEvent = useCallback((log: AlarmLog) => {
     logsRef.current.push(log);
-    
+
     // Keep only last 100 logs
     if (logsRef.current.length > 100) {
       logsRef.current = logsRef.current.slice(-100);
@@ -133,8 +134,7 @@ export const useAndroidAlarm = () => {
         lightColor: "#10B981",
       });
 
-      console.log("[AndroidAlarm] ✓ Notification channel created:", ALARM_CHANNEL_ID);
-      
+
       // Also create a critical channel for urgent alarms
       await LocalNotifications.createChannel({
         id: "horamed_critical",
@@ -148,7 +148,6 @@ export const useAndroidAlarm = () => {
         lightColor: "#EF4444",
       });
 
-      console.log("[AndroidAlarm] ✓ Critical channel created");
     } catch (error) {
       console.error("[AndroidAlarm] Error creating notification channel:", error);
       logAlarmEvent({
@@ -169,23 +168,23 @@ export const useAndroidAlarm = () => {
     try {
       // Request local notification permissions
       const localResult = await LocalNotifications.requestPermissions();
-      console.log("[AndroidAlarm] Local permissions:", localResult);
 
       // Request push notification permissions
       let pushGranted = false;
       try {
         const pushResult = await PushNotifications.requestPermissions();
         pushGranted = pushResult.receive === "granted";
-        
+
         if (pushGranted) {
           await PushNotifications.register();
         }
+
       } catch (e) {
-        console.log("[AndroidAlarm] Push notifications not available:", e);
+        // Ignore initialization errors
       }
 
       const allGranted = localResult.display === "granted";
-      
+
       setDiagnostics(prev => ({
         ...prev,
         permissionStatus: allGranted ? "granted" : "denied",
@@ -219,15 +218,13 @@ export const useAndroidAlarm = () => {
    */
   const scheduleAlarm = useCallback(async (config: AlarmConfig): Promise<boolean> => {
     if (!isNative) {
-      console.log("[AndroidAlarm] Not on native platform, skipping");
       return false;
     }
 
     const alarmKey = `${config.doseId}-${config.scheduledAt.getTime()}`;
-    
+
     // Prevent duplicate scheduling
     if (scheduledAlarmsRef.current.has(alarmKey)) {
-      console.log("[AndroidAlarm] Alarm already scheduled:", alarmKey);
       return true;
     }
 
@@ -257,9 +254,9 @@ export const useAndroidAlarm = () => {
           },
         ],
       });
-      
+
       scheduledAlarmsRef.current.add(alarmKey);
-      
+
       setDiagnostics(prev => ({
         ...prev,
         totalScheduled: prev.totalScheduled + 1,
@@ -274,16 +271,11 @@ export const useAndroidAlarm = () => {
         details: `Scheduled for ${config.scheduledAt.toISOString()}`,
       });
 
-      console.log("[AndroidAlarm] ✓ Alarm scheduled:", {
-        id: config.id,
-        title: config.title,
-        scheduledAt: config.scheduledAt,
-      });
 
       return true;
     } catch (error) {
       console.error("[AndroidAlarm] Error scheduling alarm:", error);
-      
+
       setDiagnostics(prev => ({
         ...prev,
         totalFailed: prev.totalFailed + 1,
@@ -336,14 +328,21 @@ export const useAndroidAlarm = () => {
       }
 
       if (doses && doses.length > 0) {
-        console.log(`[AndroidAlarm] Scheduling ${doses.length} doses`);
+        interface DoseRow {
+          id: string;
+          due_at: string;
+          status: string;
+          item_id: string;
+          items: { name: string; dose_text: string | null };
+        }
+        const typedDoses = doses as unknown as DoseRow[];
 
-        for (const dose of doses) {
-          const item = dose.items as { name: string; dose_text: string | null };
-          const dueAt = new Date(dose.due_at);
-          
+        for (const dose of typedDoses) {
+          const item = dose.items;
+          const dueAt = safeDateParse(dose.due_at);
+
           // Generate unique ID from dose ID
-          const notificationId = parseInt(dose.id.replace(/\D/g, "").slice(0, 8)) || 
+          const notificationId = parseInt(dose.id.replace(/\D/g, "").slice(0, 8)) ||
             Math.floor(Math.random() * 100000);
 
           await scheduleAlarm({
@@ -369,7 +368,6 @@ export const useAndroidAlarm = () => {
 
     try {
       await LocalNotifications.cancel({ notifications: [{ id: notificationId }] });
-      console.log("[AndroidAlarm] Alarm cancelled:", notificationId);
     } catch (error) {
       console.error("[AndroidAlarm] Error cancelling alarm:", error);
     }
@@ -385,7 +383,6 @@ export const useAndroidAlarm = () => {
       const pending = await LocalNotifications.getPending();
       if (pending.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: pending.notifications });
-        console.log("[AndroidAlarm] Cancelled all alarms:", pending.notifications.length);
       }
       scheduledAlarmsRef.current.clear();
     } catch (error) {
@@ -414,7 +411,6 @@ export const useAndroidAlarm = () => {
     const testTime = new Date(Date.now() + delaySeconds * 1000);
     const testId = Math.floor(Math.random() * 100000);
 
-    console.log(`[AndroidAlarm] Scheduling test alarm for ${testTime.toISOString()}`);
 
     const success = await scheduleAlarm({
       id: testId,
@@ -476,8 +472,7 @@ export const useAndroidAlarm = () => {
     // Listen for notification events
     const setupListeners = async () => {
       await LocalNotifications.addListener("localNotificationReceived", (notification) => {
-        console.log("[AndroidAlarm] Notification received:", notification);
-        
+
         setDiagnostics(prev => ({
           ...prev,
           lastAlarmTriggered: true,
@@ -496,8 +491,7 @@ export const useAndroidAlarm = () => {
       });
 
       await LocalNotifications.addListener("localNotificationActionPerformed", (action) => {
-        console.log("[AndroidAlarm] Action performed:", action);
-        
+
         // Handle action button clicks
         const doseId = action.notification.extra?.doseId;
         if (doseId) {
@@ -524,7 +518,7 @@ export const useAndroidAlarm = () => {
     isAndroid,
     isNative,
     diagnostics,
-    
+
     // Actions
     requestPermissions,
     scheduleAlarm,
@@ -533,7 +527,7 @@ export const useAndroidAlarm = () => {
     cancelAllAlarms,
     sendTestAlarm,
     checkBatteryOptimization,
-    
+
     // Diagnostics
     getAlarmLogs,
     getDiagnostics,

@@ -2,6 +2,13 @@ import { useCallback, useRef } from "react";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, subDays } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { safeDateParse } from "@/lib/safeDateUtils";
+
+interface DoseDoc {
+  id: string;
+  dueAt: string;
+  status: string;
+}
 
 interface StreakData {
   currentStreak: number;
@@ -33,7 +40,7 @@ export function useStreakCalculator() {
       // Get all doses for the last 90 days
       const startDate = startOfDay(subDays(new Date(), 90));
 
-      const { data: doses } = await fetchCollection<any>(
+      const { data: doses } = await fetchCollection<DoseDoc>(
         `users/${user.uid}/doses`,
         [
           where("dueAt", ">=", startDate.toISOString()),
@@ -47,7 +54,8 @@ export function useStreakCalculator() {
       const dayMap = new Map<string, { total: number; taken: number }>();
 
       doses.forEach((dose) => {
-        const day = startOfDay(new Date(dose.dueAt)).toISOString();
+        const doseDate = safeDateParse(dose.dueAt);
+        const day = startOfDay(doseDate).toISOString();
         const current = dayMap.get(day) || { total: 0, taken: 0 };
         current.total++;
         if (dose.status === "taken") current.taken++;
@@ -97,7 +105,7 @@ export function useStreakCalculator() {
       let lastWeekTaken = 0, lastWeekTotal = 0;
 
       doses.forEach((dose) => {
-        const doseDate = new Date(dose.dueAt);
+        const doseDate = safeDateParse(dose.dueAt);
 
         if (doseDate >= thisWeekStart) {
           thisWeekTotal++;

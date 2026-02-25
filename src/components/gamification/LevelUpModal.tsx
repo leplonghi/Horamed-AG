@@ -32,7 +32,7 @@ export function LevelUpModal({ open, onOpenChange, newLevel, xpEarned }: LevelUp
 
   const getLevelBadge = (level: number) => {
     if (level >= 20) return { icon: Trophy, color: 'text-yellow-500', bg: 'bg-yellow-500/20' };
-    if (level >= 10) return { icon: Star, color: 'text-purple-500', bg: 'bg-purple-500/20' };
+    if (level >= 10) return { icon: Star, color: 'text-teal-500', bg: 'bg-teal-500/20' };
     if (level >= 5) return { icon: Sparkles, color: 'text-blue-500', bg: 'bg-blue-500/20' };
     return { icon: Zap, color: 'text-green-500', bg: 'bg-green-500/20' };
   };

@@ -33,6 +33,11 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
       
+      // User Profiles (New subcollection)
+      match /profiles/{profileId} {
+        allow read, write: if isOwner(userId);
+      }
+      
       // Medications (subcollection)
       match /medications/{medicationId} {
         allow read, write: if isOwner(userId);
@@ -94,6 +99,21 @@ service cloud.firestore {
       match /notificationMetrics/{metricId} {
         allow read, write: if isOwner(userId);
       }
+    }
+
+    // ===================================
+    // Campaigns & Marketing
+    // ===================================
+    
+    match /campaigns/{campaignId} {
+      // Allow read for everyone (needed for applying codes on landing pages)
+      allow read: if true;
+      
+      // Developer Note: Ideally restrict write to isAdmin() in production
+      // Allowing authenticated write for now to enable:
+      // 1. Campaign Generator usage
+      // 2. Redemption counter increments (client-side transaction)
+      allow write: if isAuthenticated();
     }
     
     // ===================================

@@ -8,6 +8,45 @@ import { classifyIntent } from '@/ai/intentEngine';
 import { getPersonaFromAge, PersonaType } from '@/ai/personaEngine';
 import { buildSystemPrompt, UserContext } from '@/ai/healthAgent';
 import { detectNavigationIntent } from '@/ai/handlers/navigationHandler';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface SubscriptionDoc {
+  planType?: string;
+  status?: string;
+}
+
+interface AppMetricDoc {
+  id: string;
+  userId: string;
+  eventName: string;
+  createdAt: string;
+}
+
+interface ProfileDoc {
+  birthDate?: string;
+  fullName?: string;
+}
+
+interface MedicationDoc {
+  id: string;
+  name: string;
+  isActive: boolean;
+}
+
+interface StockDoc {
+  id: string;
+  itemId: string;
+  currentQty?: number;
+}
+
+interface DocumentDoc {
+  id: string;
+  title?: string;
+}
+
+interface HealthAssistantResponse {
+  response?: string;
+}
 
 export function useHealthAgent() {
   const { user } = useAuth();
@@ -24,7 +63,7 @@ export function useHealthAgent() {
     if (!user) return { allowed: false, usageCount: 0 };
 
     // Get subscription: users/{uid}/subscription/current
-    const { data: subscription } = await fetchDocument<any>(
+    const { data: subscription } = await fetchDocument<SubscriptionDoc>(
       `users/${user.uid}/subscription`,
       'current'
     );
@@ -39,7 +78,7 @@ export function useHealthAgent() {
     today.setHours(0, 0, 0, 0);
 
     // In Firebase: appMetrics (global collection) filtered by userId
-    const { data: metricsToday } = await fetchCollection<any>(
+    const { data: metricsToday } = await fetchCollection<AppMetricDoc>(
       'appMetrics',
       [
         where('userId', '==', user.uid),
@@ -88,13 +127,13 @@ export function useHealthAgent() {
     }
 
     // Get profile
-    const { data: profile } = await fetchDocument<any>(
+    const { data: profile } = await fetchDocument<ProfileDoc>(
       `users/${user.uid}/profile`,
       'me'
     );
 
     const age = profile?.birthDate
-      ? new Date().getFullYear() - new Date(profile.birthDate).getFullYear()
+      ? new Date().getFullYear() - safeDateParse(profile.birthDate).getFullYear()
       : undefined;
 
     // Determine persona
@@ -102,14 +141,14 @@ export function useHealthAgent() {
 
     // Get active medications
     // users/{uid}/medications
-    const { data: medications } = await fetchCollection<any>(
+    const { data: medications } = await fetchCollection<MedicationDoc>(
       `users/${user.uid}/medications`,
       [where('isActive', '==', true)]
     );
 
     // Get stock data
     // users/{uid}/stock (subcollection)
-    const { data: stock } = await fetchCollection<any>(
+    const { data: stock } = await fetchCollection<StockDoc>(
       `users/${user.uid}/stock`
     );
 
@@ -127,13 +166,13 @@ export function useHealthAgent() {
     }));
 
     // Get documents count
-    const { data: docs } = await fetchCollection<any>(
+    const { data: docs } = await fetchCollection<DocumentDoc>(
       `users/${user.uid}/documents`
     );
     const docCount = docs?.length || 0;
 
     // Get subscription
-    const { data: subscription } = await fetchDocument<any>(
+    const { data: subscription } = await fetchDocument<SubscriptionDoc>(
       `users/${user.uid}/subscription`,
       'current'
     );
@@ -146,7 +185,7 @@ export function useHealthAgent() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { data: metricsToday } = await fetchCollection<any>(
+    const { data: metricsToday } = await fetchCollection<AppMetricDoc>(
       'appMetrics',
       [
         where('userId', '==', user.uid),
@@ -226,7 +265,7 @@ ORIENTAÇÃO FITNESS E BEM-ESTAR:
           { role: 'user', content: message }
         ]
       });
-      const data = result.data as any;
+      const data = result.data as HealthAssistantResponse;
 
       // Log usage
       await logUsage();

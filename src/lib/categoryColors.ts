@@ -43,11 +43,11 @@ const uniqueColorPalette = [
     badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
   },
   { // Violet
-    color: "text-violet-600 dark:text-violet-400",
-    bgColor: "bg-violet-50 dark:bg-violet-950/30",
-    borderColor: "border-violet-200 dark:border-violet-800",
-    iconBg: "bg-violet-100 dark:bg-violet-900/50",
-    badgeColor: "bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+    borderColor: "border-emerald-200 dark:border-emerald-800",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
+    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
   },
   { // Cyan
     color: "text-cyan-600 dark:text-cyan-400",
@@ -78,11 +78,11 @@ const uniqueColorPalette = [
     badgeColor: "bg-lime-100 text-lime-700 dark:bg-lime-900/50 dark:text-lime-300",
   },
   { // Fuchsia
-    color: "text-fuchsia-600 dark:text-fuchsia-400",
-    bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/30",
-    borderColor: "border-fuchsia-200 dark:border-fuchsia-800",
-    iconBg: "bg-fuchsia-100 dark:bg-fuchsia-900/50",
-    badgeColor: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/50 dark:text-fuchsia-300",
+    color: "text-cyan-600 dark:text-cyan-400",
+    bgColor: "bg-cyan-50 dark:bg-cyan-950/30",
+    borderColor: "border-cyan-200 dark:border-cyan-800",
+    iconBg: "bg-cyan-100 dark:bg-cyan-900/50",
+    badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300",
   },
 ];
 
@@ -105,11 +105,11 @@ export const categoryColors: Record<string, CategoryColorConfig> = {
   },
   suplemento: {
     icon: Heart,
-    color: "text-purple-600 dark:text-purple-400",
-    bgColor: "bg-purple-50 dark:bg-purple-950/30",
-    borderColor: "border-purple-200 dark:border-purple-800",
-    iconBg: "bg-purple-100 dark:bg-purple-900/50",
-    badgeColor: "bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300",
+    color: "text-teal-600 dark:text-teal-400",
+    bgColor: "bg-teal-50 dark:bg-teal-950/30",
+    borderColor: "border-teal-200 dark:border-teal-800",
+    iconBg: "bg-teal-100 dark:bg-teal-900/50",
+    badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
   },
   outro: {
     icon: Package,

@@ -6,6 +6,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { functions } from "@/integrations/firebase/client";
 import { httpsCallable } from "firebase/functions";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface MedicationItem {
+  id: string;
+  name: string;
+  doseText?: string | null;
+  profileId?: string;
+  profileName?: string;
+}
 
 interface OverdueDose {
   id: string;
@@ -47,7 +56,7 @@ export const useOverdueDoses = () => {
       const itemsSnap = await getDocs(itemsQuery);
       if (itemsSnap.empty) return [];
 
-      const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const items = itemsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as MedicationItem[];
       const itemIds = items.map(i => i.id);
       const itemsMap = new Map(items.map(i => [i.id, i]));
 
@@ -78,8 +87,12 @@ export const useOverdueDoses = () => {
         })
         .filter(d => itemsMap.has(d.medicationId)); // Only include doses for relevant items (profile filter)
 
-      // Sort
-      doses.sort((a, b) => new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime());
+      // Sort - with safe date parsing
+      doses.sort((a, b) => {
+        const dateA = a.scheduledTime ? safeDateParse(a.scheduledTime) : new Date();
+        const dateB = b.scheduledTime ? safeDateParse(b.scheduledTime) : new Date();
+        return (isNaN(dateA.getTime()) ? 0 : dateA.getTime()) - (isNaN(dateB.getTime()) ? 0 : dateB.getTime());
+      });
 
       // Try to get profile name if easy, otherwise "Você"
       // Assuming med data has cached profile name or we just use "Você" if own profile.
@@ -88,7 +101,19 @@ export const useOverdueDoses = () => {
 
       return doses.map((dose) => {
         const item = itemsMap.get(dose.medicationId);
-        const dueAt = new Date(dose.scheduledTime);
+
+        // Safe date parsing - prevent crashes
+        let dueAt: Date;
+        try {
+          if (!dose.scheduledTime) {
+            dueAt = new Date();
+          } else {
+            const parsed = safeDateParse(dose.scheduledTime);
+            dueAt = isNaN(parsed.getTime()) ? new Date() : parsed;
+          }
+        } catch {
+          dueAt = new Date();
+        }
 
         return {
           id: dose.id,
@@ -122,7 +147,6 @@ export const useOverdueDoses = () => {
       await handleDoseAction({ doseId, action: 'taken' });
 
     } catch (error) {
-      console.error("Error marking dose:", error);
       refresh(); // Revert on error
     }
   }, [queryClient, profileId, refresh]);

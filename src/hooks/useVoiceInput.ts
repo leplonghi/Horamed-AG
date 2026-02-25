@@ -10,7 +10,7 @@ function canUseAIRecording(): boolean {
   return typeof window !== "undefined" &&
     "mediaDevices" in navigator &&
     typeof navigator.mediaDevices?.getUserMedia === "function" &&
-    typeof (window as any).MediaRecorder !== "undefined";
+    typeof globalThis.MediaRecorder !== "undefined";
 }
 
 /**

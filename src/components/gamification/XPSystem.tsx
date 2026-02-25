@@ -24,7 +24,7 @@ export default function XPSystem({
   const progressPercentage = (currentXP / xpToNextLevel) * 100;
 
   const getLevelColor = () => {
-    if (level >= 50) return "from-purple-500 to-pink-500";
+    if (level >= 50) return "from-teal-500 to-pink-500";
     if (level >= 30) return "from-blue-500 to-cyan-500";
     if (level >= 15) return "from-green-500 to-emerald-500";
     if (level >= 5) return "from-yellow-500 to-orange-500";

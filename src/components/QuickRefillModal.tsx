@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Plus, ShoppingCart, Check } from "lucide-react";
+import { Package, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { auth, updateDocument, fetchDocument, functions, httpsCallable } from "@/integrations/firebase";
+import { auth, updateDocument, fetchDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -111,21 +111,7 @@ export default function QuickRefillModal({
     }
   };
 
-  const handleBuyOnline = async () => {
-    try {
-      const affiliateClick = httpsCallable(functions, 'affiliateClick');
-      const { data } = await affiliateClick({
-        medication_id: itemId,
-        medication_name: itemName
-      }) as { data: { url: string } };
 
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (error) {
-      console.error("Error opening buy link:", error);
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -215,14 +201,7 @@ export default function QuickRefillModal({
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={handleBuyOnline}
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                {language === "pt" ? "Comprar" : "Buy"}
-              </Button>
+
               <Button
                 className="flex-1"
                 onClick={handleRefill}

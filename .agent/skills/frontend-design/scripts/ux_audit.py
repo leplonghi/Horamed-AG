@@ -112,14 +112,14 @@ class UXAuditor:
         filename = os.path.basename(filepath)
 
         # Pre-calculate common flags
-        has_long_text = bool(re.search(r'<p|<div.*class=.*text|article|<span.*text', content, re.IGNORECASE))
-        has_form = bool(re.search(r'<form|<input|password|credit|card|payment', content, re.IGNORECASE))
-        complex_elements = len(re.findall(r'<input|<select|<textarea|<option', content, re.IGNORECASE))
+        has_long_text = bool(re.search(r'<p\b|<div[^>]*class=[^>]*text\b|<article\b|<span[^>]*text\b', content, re.IGNORECASE))
+        has_form = bool(re.search(r'<form\b|<input\b', content, re.IGNORECASE))
+        complex_elements = len(re.findall(r'<input\b|<select\b|<textarea\b|<option\b', content, re.IGNORECASE))
 
         # --- 1. PSYCHOLOGY LAWS ---
-        # Hick's Law
-        nav_items = len(re.findall(r'<NavLink|<Link|<a\s+href|nav-item', content, re.IGNORECASE))
-        if nav_items > 7:
+        # Hick's Law (Exclude standard HTML <link> tags which are head metadata)
+        nav_items = len(re.findall(r'<NavLink\b|<Link\b|<a\s+href|classname="[^"]*nav-item', content))
+        if nav_items > 7 and not filename.endswith('.html'):
             self.issues.append(f"[Hick's Law] {filename}: {nav_items} nav items (Max 7)")
         
         # Fitts' Law
@@ -674,7 +674,7 @@ class UXAuditor:
     def audit_directory(self, directory: str) -> None:
         extensions = {'.tsx', '.jsx', '.html', '.vue', '.svelte', '.css'}
         for root, dirs, files in os.walk(directory):
-            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next'}]
+            dirs[:] = [d for d in dirs if d not in {'node_modules', '.git', 'dist', 'build', '.next', 'android', 'ios', 'coverage'}]
             for file in files:
                 if Path(file).suffix in extensions:
                     self.audit_file(os.path.join(root, file))

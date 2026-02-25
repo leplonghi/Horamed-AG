@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Pill, Activity, FileText, Clock, AlertCircle } from 'lucide-react';
 import { useConsultationCard } from '@/hooks/useConsultationCard';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface CardData {
   medications: Array<{
@@ -35,10 +36,10 @@ export default function ConsultationCardView() {
 
   const loadCard = async () => {
     try {
-      const result = await viewCard(token!);
+      const result = await viewCard(token!) as { data: CardData };
       setData(result.data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
@@ -47,7 +48,7 @@ export default function ConsultationCardView() {
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-md w-full p-8 text-center">
           <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-          <h1 className="text-2xl font-bold mb-2">Cartão não encontrado</h1>
+          <h2 className="text-2xl font-bold mb-2">Cartão não encontrado</h2>
           <p className="text-muted-foreground">{error}</p>
         </Card>
       </div>
@@ -72,7 +73,7 @@ export default function ConsultationCardView() {
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             <Clock className="inline h-3 w-3 mr-1" />
-            Válido até {new Date(data.expiresAt).toLocaleString('pt-BR')}
+            Válido até {safeDateParse(data.expiresAt).toLocaleString('pt-BR')}
           </p>
         </div>
 
@@ -98,7 +99,7 @@ export default function ConsultationCardView() {
             <Pill className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">Medicamentos Ativos</h2>
           </div>
-          
+
           {data.medications.length === 0 ? (
             <p className="text-muted-foreground">Nenhum medicamento ativo</p>
           ) : (
@@ -134,18 +135,18 @@ export default function ConsultationCardView() {
               <FileText className="h-5 w-5 text-primary" />
               <h2 className="text-lg font-semibold">Documentos Válidos</h2>
             </div>
-            
+
             <div className="space-y-2">
               {data.documents.map((doc, idx) => (
                 <div key={idx} className="p-3 border rounded-lg">
                   <h3 className="font-medium">{doc.title}</h3>
                   <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
                     <span>
-                      Emitido: {new Date(doc.issued_at).toLocaleDateString('pt-BR')}
+                      Emitido: {safeDateParse(doc.issued_at).toLocaleDateString('pt-BR')}
                     </span>
                     {doc.expires_at && (
                       <span>
-                        Validade: {new Date(doc.expires_at).toLocaleDateString('pt-BR')}
+                        Validade: {safeDateParse(doc.expires_at).toLocaleDateString('pt-BR')}
                       </span>
                     )}
                   </div>

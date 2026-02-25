@@ -28,7 +28,7 @@ export function HistoryTab({ doses, isLoading, onRefresh }: HistoryTabProps) {
 
             <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                    <History className="h-5 w-5 text-purple-600" />
+                    <History className="h-5 w-5 text-teal-600" />
                     {t('history.recentTitle') || "Registros Recentes"}
                 </h3>
                 <Button
@@ -54,7 +54,7 @@ export function HistoryTab({ doses, isLoading, onRefresh }: HistoryTabProps) {
 
                     <Button
                         variant="outline"
-                        className="w-full h-12 rounded-xl bg-purple-500/5 border-purple-500/20 hover:bg-purple-500/10 text-purple-600 font-bold transition-all gap-2"
+                        className="w-full h-12 rounded-xl bg-teal-500/5 border-teal-500/20 hover:bg-teal-500/10 text-teal-600 font-bold transition-all gap-2"
                         onClick={() => navigate('/historico-medicamentos')}
                     >
                         {t('history.viewFullHistory') || "Ver Histórico Completo"}

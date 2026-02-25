@@ -58,37 +58,71 @@ export function useUserProfiles() {
       if (error) throw error;
 
       const profilesList = data || [];
-      setProfiles(profilesList);
-
-      // Cache profiles in localStorage for instant load
-      localStorage.setItem('cachedProfiles', JSON.stringify(profilesList));
-
-      // Determine active profile
-      const savedProfileId = localStorage.getItem('activeProfileId');
       let newActiveProfile: UserProfile | null = null;
 
-      if (savedProfileId && profilesList.length > 0) {
-        newActiveProfile = profilesList.find(p => p.id === savedProfileId) || null;
-      }
+      if (profilesList.length === 0) {
+        // Auto-create default profile for legacy/new users
+        const defaultName = user.displayName || user.email?.split('@')[0] || 'Usuário';
 
-      if (!newActiveProfile && profilesList.length > 0) {
-        newActiveProfile = profilesList.find(p => p.isPrimary) || profilesList[0];
-      }
+        try {
+          const { data: newProfile, error: createError } = await addDocument(`users/${user.uid}/profiles`, {
+            userId: user.uid,
+            name: defaultName,
+            relationship: 'self',
+            isPrimary: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
 
-      if (newActiveProfile) {
-        setActiveProfile(newActiveProfile);
-        localStorage.setItem('activeProfileId', newActiveProfile.id);
-        localStorage.setItem('cachedActiveProfile', JSON.stringify(newActiveProfile));
+          if (createError) throw createError;
+
+          if (newProfile) {
+            const createdProfile = { id: newProfile.id, ...newProfile } as UserProfile;
+            profilesList.push(createdProfile);
+            setProfiles(profilesList);
+            localStorage.setItem('cachedProfiles', JSON.stringify(profilesList));
+
+            newActiveProfile = createdProfile;
+            setActiveProfile(newActiveProfile);
+            localStorage.setItem('activeProfileId', newActiveProfile.id);
+            localStorage.setItem('cachedActiveProfile', JSON.stringify(newActiveProfile));
+
+            toast.success("Perfil principal criado automaticamente");
+          }
+        } catch {
+          // Don't block loading
+        }
+      } else {
+        setProfiles(profilesList);
+        // Cache profiles in localStorage for instant load
+        localStorage.setItem('cachedProfiles', JSON.stringify(profilesList));
+
+        // Determine active profile
+        const savedProfileId = localStorage.getItem('activeProfileId');
+
+        if (savedProfileId && profilesList.length > 0) {
+          newActiveProfile = profilesList.find(p => p.id === savedProfileId) || null;
+        }
+
+        if (!newActiveProfile && profilesList.length > 0) {
+          newActiveProfile = profilesList.find(p => p.isPrimary) || profilesList[0];
+        }
+
+        if (newActiveProfile) {
+          setActiveProfile(newActiveProfile);
+          localStorage.setItem('activeProfileId', newActiveProfile.id);
+          localStorage.setItem('cachedActiveProfile', JSON.stringify(newActiveProfile));
+        }
       }
 
       // Prefetch in background - don't await
       if (profilesList.length > 0) {
         // We'll pass standard snake_case IDs if prefetch expects them, 
         // but here we just pass the list and uid
-        prefetchAllProfiles(profilesList as any, user.uid).catch(console.error);
+        prefetchAllProfiles(profilesList, user.uid).catch(() => { });
       }
-    } catch (error) {
-      console.error('Error loading profiles:', error);
+    } catch {
+      // Profile loading failed silently
     } finally {
       setLoading(false);
     }
@@ -113,9 +147,9 @@ export function useUserProfiles() {
       await loadProfiles();
       toast.success('Perfil criado com sucesso');
       return data;
-    } catch (error: any) {
-      console.error('Error creating profile:', error);
-      toast.error(error.message || 'Erro ao criar perfil');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro ao criar perfil';
+      toast.error(msg);
       throw error;
     }
   };
@@ -131,9 +165,9 @@ export function useUserProfiles() {
 
       await loadProfiles();
       toast.success('Perfil atualizado');
-    } catch (error: any) {
-      console.error('Error updating profile:', error);
-      toast.error(error.message || 'Erro ao atualizar perfil');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro ao atualizar perfil';
+      toast.error(msg);
       throw error;
     }
   };
@@ -154,9 +188,9 @@ export function useUserProfiles() {
 
       await loadProfiles();
       toast.success('Perfil removido');
-    } catch (error: any) {
-      console.error('Error deleting profile:', error);
-      toast.error(error.message || 'Erro ao remover perfil');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Erro ao remover perfil';
+      toast.error(msg);
       throw error;
     }
   };

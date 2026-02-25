@@ -41,7 +41,7 @@ export default function AIChatUI() {
 
   return (
     <Card className="overflow-hidden">
-      <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20">
+      <div className="p-4 border-b bg-gradient-to-r from-teal-50 to-pink-50 dark:from-teal-950/20 dark:to-pink-950/20">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />
           <h3 className="font-semibold text-foreground">Assistente de Saúde</h3>

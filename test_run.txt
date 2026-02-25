@@ -1,0 +1,19 @@
+
+============================================================
+[TEST RUNNER] Unified Test Execution
+============================================================
+Project: C:\Antigravity\horamed\horamed
+Coverage: disabled
+Time: 2026-02-24 12:39:55
+Type: node
+Framework: None
+------------------------------------------------------------
+No test framework found for this project.
+{
+  "script": "test_runner",
+  "project": "C:\\Antigravity\\horamed\\horamed",
+  "type": "node",
+  "framework": null,
+  "passed": true,
+  "message": "No tests configured"
+}

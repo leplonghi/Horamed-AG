@@ -8,6 +8,7 @@ import { Activity, CheckCircle2, AlertCircle, RefreshCw, Smartphone, Bluetooth }
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface IntegrationCardProps {
     provider: IntegrationProvider;
@@ -82,7 +83,7 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                     <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-background/50 p-2 rounded-lg border border-border/50">
                         <RefreshCw className="h-3 w-3" />
                         <span>
-                            Sincronizado: {format(new Date(provider.lastSync), "dd 'de' MMM, HH:mm", { locale: ptBR })}
+                            Sincronizado: {format(safeDateParse(provider.lastSync), "dd 'de' MMM, HH:mm", { locale: ptBR })}
                         </span>
                     </div>
                 )}

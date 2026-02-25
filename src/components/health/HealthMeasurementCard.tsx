@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface HealthMeasurementCardProps {
   title: string;
@@ -105,7 +106,7 @@ export default function HealthMeasurementCard({
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
                 {lastUpdated && (
                   <p className="text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale })}
+                    {formatDistanceToNow(safeDateParse(lastUpdated), { addSuffix: true, locale })}
                   </p>
                 )}
               </div>

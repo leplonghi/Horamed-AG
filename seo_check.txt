@@ -1,0 +1,37 @@
+
+============================================================
+  SEO CHECKER - Search Engine Optimization Audit
+============================================================
+Project: C:\Antigravity\horamed\horamed
+Time: 2026-02-24 12:39:59
+------------------------------------------------------------
+Found 50 page files to analyze
+
+============================================================
+SEO ANALYSIS RESULTS
+============================================================
+
+Issue Summary:
+  [22] Missing meta description
+  [21] Missing Open Graph tags
+  [14] Missing <title> tag
+  [3] Multiple H1 tags (2)
+  [1] Image has empty alt attribute
+  [1] Multiple H1 tags (3)
+
+Affected files (26):
+  - About.tsx
+  - Achievements.tsx
+  - AddMedicationWizard.tsx
+  - Agenda.tsx
+  - AlarmSettings.tsx
+  ... and 21 more
+
+{
+  "script": "seo_checker",
+  "project": "C:\\Antigravity\\horamed\\horamed",
+  "files_checked": 50,
+  "files_with_issues": 26,
+  "issues_found": 62,
+  "passed": false
+}

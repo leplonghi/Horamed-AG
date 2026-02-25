@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Calendar, Infinity, HelpCircle } from "lucide-react";
+
+import { Calendar, Infinity as InfinityIcon, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import StepTooltip from "./StepTooltip";
 import {
@@ -13,6 +14,7 @@ import {
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface StepContinuousProps {
   isContinuous: boolean;
@@ -24,7 +26,7 @@ interface StepContinuousProps {
   onComplete: () => void;
 }
 
-export default function StepContinuous({ 
+export default function StepContinuous({
   isContinuous,
   treatmentDays,
   startDate,
@@ -48,8 +50,8 @@ export default function StepContinuous({
   const today = new Date().toISOString().split('T')[0];
 
   // Calculate end date
-  const endDate = startDate && treatmentDays 
-    ? format(new Date(new Date(startDate).getTime() + treatmentDays * 24 * 60 * 60 * 1000), 'PP', { locale })
+  const endDate = startDate && treatmentDays
+    ? format(new Date(safeDateParse(startDate).getTime() + treatmentDays * 24 * 60 * 60 * 1000), 'PP', { locale })
     : null;
 
   return (
@@ -66,8 +68,8 @@ export default function StepContinuous({
             onClick={() => onContinuousChange(false)}
             className={cn(
               "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-              !isContinuous 
-                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20" 
+              !isContinuous
+                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20"
                 : "border-border hover:border-primary/30 bg-background"
             )}
           >
@@ -104,8 +106,8 @@ export default function StepContinuous({
             onClick={() => onContinuousChange(true)}
             className={cn(
               "relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
-              isContinuous 
-                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20" 
+              isContinuous
+                ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20"
                 : "border-border hover:border-primary/30 bg-background"
             )}
           >
@@ -119,11 +121,12 @@ export default function StepContinuous({
                 <p className="text-xs">{t('wizard.continuousTooltip')}</p>
               </TooltipContent>
             </Tooltip>
+
             <div className={cn(
               "p-3 rounded-full",
               isContinuous ? "bg-primary/20" : "bg-muted"
             )}>
-              <Infinity className={cn("h-6 w-6", isContinuous ? "text-primary" : "text-muted-foreground")} />
+              <InfinityIcon className={cn("h-6 w-6", isContinuous ? "text-primary" : "text-muted-foreground")} />
             </div>
             <div className="text-center">
               <p className="font-semibold text-sm">{t('wizard.continuousLabel')}</p>
@@ -234,7 +237,7 @@ export default function StepContinuous({
           </div>
         )}
 
-        <Button 
+        <Button
           onClick={onComplete}
           className="w-full h-12 text-base font-semibold"
         >

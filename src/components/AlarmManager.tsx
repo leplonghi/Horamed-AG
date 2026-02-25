@@ -17,6 +17,7 @@ import { useAlarms } from '@/hooks/useAlarms';
 import { Alarm } from '@/lib/alarmDB';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 type RecurrenceType = 'once' | 'daily' | 'weekly' | 'monthly' | 'hourly';
 
@@ -114,7 +115,7 @@ export default function AlarmManager() {
 
   // Format scheduled time for display
   const formatScheduledTime = (alarm: Alarm) => {
-    const date = new Date(alarm.scheduledAt);
+    const date = safeDateParse(alarm.scheduledAt);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
     const isTomorrow = date.toDateString() === addDays(now, 1).toDateString();
@@ -130,7 +131,7 @@ export default function AlarmManager() {
 
   // Get status badge for alarm
   const getStatusBadge = (alarm: Alarm) => {
-    const scheduledTime = new Date(alarm.scheduledAt);
+    const scheduledTime = safeDateParse(alarm.scheduledAt);
     const now = new Date();
     const isPast = scheduledTime < now;
 

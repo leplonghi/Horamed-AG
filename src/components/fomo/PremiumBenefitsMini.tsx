@@ -42,7 +42,7 @@ export default function PremiumBenefitsMini({ className, variant = 'horizontal' 
         className={className}
       >
         <Card 
-          className="p-4 cursor-pointer border-primary/20 bg-gradient-to-br from-primary/5 to-purple-500/5 hover:border-primary/40 transition-all"
+          className="p-4 cursor-pointer border-primary/20 bg-gradient-to-br from-primary/5 to-teal-500/5 hover:border-primary/40 transition-all"
           onClick={() => navigate("/planos")}
         >
           <div className="flex items-center gap-2 mb-3">
@@ -86,7 +86,7 @@ export default function PremiumBenefitsMini({ className, variant = 'horizontal' 
       <button
         type="button"
         onClick={() => navigate("/planos")}
-        className="w-full py-3 px-4 bg-gradient-to-r from-primary/10 via-purple-500/10 to-primary/10 rounded-lg border border-primary/20 hover:border-primary/40 transition-all"
+        className="w-full py-3 px-4 bg-gradient-to-r from-primary/10 via-teal-500/10 to-primary/10 rounded-lg border border-primary/20 hover:border-primary/40 transition-all"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

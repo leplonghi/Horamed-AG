@@ -30,6 +30,7 @@ import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
 import SupplementDetailInfo from "@/components/fitness/SupplementDetailInfo";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 export default function AddItem() {
   const navigate = useNavigate();
@@ -357,8 +358,8 @@ export default function AddItem() {
   // Auto-calculate treatment end date
   const calculateEndDate = (): string | null => {
     if (!formData.treatment_start_date || !formData.treatment_duration_days) return null;
-    const startDate = new Date(formData.treatment_start_date);
-    const endDate = new Date(startDate.getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000);
+    const startDate = safeDateParse(formData.treatment_start_date);
+    const endDate = new Date(safeGetTime(startDate) + formData.treatment_duration_days * 24 * 60 * 60 * 1000);
     return endDate.toISOString().split('T')[0];
   };
 
@@ -413,7 +414,7 @@ export default function AddItem() {
 
     try {
       const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
-        ? new Date(new Date(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        ? new Date(safeDateParse(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         : null;
 
       const medData = {
@@ -488,12 +489,12 @@ export default function AddItem() {
         const now = new Date();
 
         for (let day = 0; day < 7; day++) {
-          const date = new Date(now);
+          const date = safeDateParse(now);
           date.setDate(date.getDate() + day);
 
           for (const time of schedule.times) {
             const [hours, minutes] = time.split(":").map(Number);
-            const dueAt = new Date(date);
+            const dueAt = safeDateParse(date);
             dueAt.setHours(hours, minutes, 0, 0);
 
             if (dueAt > now) {
@@ -864,7 +865,7 @@ export default function AddItem() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Data de término:</span>
                       <span className="text-sm font-bold">
-                        {new Date(formData.treatment_end_date).toLocaleDateString("pt-BR")}
+                        {safeDateParse(formData.treatment_end_date).toLocaleDateString("pt-BR")}
                       </span>
                     </div>
 

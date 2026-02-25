@@ -1,11 +1,8 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * Capacitor Configuration - HoraMed
- * 
- * PRODUCTION BUILD NOTES:
- * - server.url is commented out for production builds
- * - For development/testing, uncomment to enable hot-reload
+ * PRODUCTION CONFIG
+ * - server.url must be commented out
  * - webContentsDebuggingEnabled must be FALSE for Play Store release
  */
 const config: CapacitorConfig = {
@@ -14,42 +11,25 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   // Development server - COMMENT OUT FOR PRODUCTION BUILDS
   // server: {
-  //   url: 'https://281a4314-4cea-4c93-9b25-b97f8d39e706.lovableproject.com?forceHideBadge=true',
-  //   cleartext: true,
+  //   url: 'http://192.168.1.10:8080',
+  //   cleartext: true
   // },
   plugins: {
-    LocalNotifications: {
-      smallIcon: 'ic_stat_icon',
-      iconColor: '#0ea5e9',
-      // sound: undefined, // Use default system sound for reliability
-    },
     PushNotifications: {
-      presentationOptions: ['badge', 'sound', 'alert'],
+      presentationOptions: ["badge", "sound", "alert"],
     },
-    SplashScreen: {
-      launchShowDuration: 2000,
-      backgroundColor: '#0ea5e9',
-      showSpinner: false,
-      androidScaleType: 'CENTER_CROP',
-      splashFullScreen: true,
-      splashImmersive: true,
+    Keyboard: {
+      resize: "body",
+      style: "DARK",
+      resizeOnFullScreen: true,
     },
   },
   android: {
-    allowMixedContent: false,
-    captureInput: true,
-    webContentsDebuggingEnabled: false, // MUST be false for Play Store release
-    backgroundColor: '#0ea5e9',
     buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
-    },
-  },
-  ios: {
-    contentInset: 'automatic',
-    scrollEnabled: true,
-    limitsNavigationsToAppBoundDomains: true,
-  },
+      keystorePath: '../keystore/horamed-release.keystore',
+      keystoreAlias: 'horamed-key',
+    }
+  }
 };
 
 export default config;

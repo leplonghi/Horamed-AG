@@ -6,6 +6,7 @@ import { useStockProjection } from "@/hooks/useStockProjection";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import QuickRefillModal from "./QuickRefillModal";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface LowStockQuickRefillProps {
   profileId?: string;
@@ -28,7 +29,7 @@ export default function LowStockQuickRefill({ profileId }: LowStockQuickRefillPr
     if (item.currentQty <= 7) return true;
     if (item.projectedEndAt) {
       const daysLeft = Math.ceil(
-        (new Date(item.projectedEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        (safeDateParse(item.projectedEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
       );
       return daysLeft <= 7;
     }

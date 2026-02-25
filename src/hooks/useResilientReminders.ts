@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, deleteDoc, doc, Timestamp } from "fi
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 import { useAuditLog } from "./useAuditLog";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface ReminderData {
   doseId: string;
@@ -21,7 +22,7 @@ interface NotificationMetric {
   notificationType: "push" | "local" | "web" | "sound" | "whatsapp";
   deliveryStatus: "sent" | "delivered" | "failed" | "fallback";
   errorMessage?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -46,8 +47,8 @@ export const useResilientReminders = () => {
       if (backupData) {
         const reminders = JSON.parse(backupData);
         if (reminders.length > 100) {
-          const sorted = reminders.sort((a: any, b: any) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          const sorted = reminders.sort((a: { createdAt: string }, b: { createdAt: string }) =>
+            safeDateParse(b.createdAt).getTime() - safeDateParse(a.createdAt).getTime()
           );
           localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted.slice(0, 50)));
         }
@@ -304,10 +305,17 @@ export const useResilientReminders = () => {
       );
 
       const failedMetaSnap = await getDocs(q);
-      const failedReminders = failedMetaSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      interface FailedReminderDoc {
+        id: string;
+        doseId: string;
+        scheduledAt: string;
+        notificationData: { itemId: string; title: string; body: string };
+        status: string;
+        retryCount: number;
+      }
+      const failedReminders = failedMetaSnap.docs.map(d => ({ id: d.id, ...d.data() })) as FailedReminderDoc[];
 
       if (failedReminders.length > 0) {
-        console.log(`Retrying ${failedReminders.length} failed reminders`);
 
         for (const reminder of failedReminders) {
           const data = reminder.notificationData;
@@ -316,7 +324,7 @@ export const useResilientReminders = () => {
             itemId: data.itemId,
             title: data.title,
             body: data.body,
-            scheduledAt: new Date(reminder.scheduledAt),
+            scheduledAt: safeDateParse(reminder.scheduledAt),
           });
 
           await updateDocument(`users/${user.uid}/localReminders`, reminder.id, {
@@ -356,7 +364,7 @@ export const useResilientReminders = () => {
       const metricsRef = collection(db, 'users', user.uid, 'notificationMetrics');
       const q = query(metricsRef, where('createdAt', '>=', startDate.toISOString()));
       const snap = await getDocs(q);
-      const data = snap.docs.map(d => d.data()) as any[];
+      const data = snap.docs.map(d => d.data()) as NotificationMetric[];
 
       if (!data) return null;
 

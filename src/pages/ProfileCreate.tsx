@@ -8,16 +8,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Save, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { useSubscription } from "@/hooks/useSubscription";
 import { storage, auth } from "@/integrations/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 export default function ProfileCreate() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { createProfile } = useUserProfiles();
-  const [loading, setLoading] = useState(false);
+  const { createProfile, profiles, loading: profilesLoading } = useUserProfiles();
+  const { isPremium } = useSubscription();
+  const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [profile, setProfile] = useState({
@@ -26,6 +29,18 @@ export default function ProfileCreate() {
     relationship: "self",
     avatarUrl: null as string | null,
   });
+
+  useEffect(() => {
+    if (profilesLoading) return;
+
+    if (isPremium && profiles.length >= 5) {
+      toast.error("Você atingiu o limite de 5 perfis.");
+      navigate("/perfil");
+    } else if (!isPremium && profiles.length >= 1) {
+      toast.error("Atualize para o Premium para criar mais perfis.");
+      navigate("/planos");
+    }
+  }, [isPremium, profiles.length, profilesLoading, navigate]);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -61,13 +76,15 @@ export default function ProfileCreate() {
     }
   };
 
+
+
   const handleSave = async () => {
     if (!profile.name) {
       toast.error("Nome é obrigatório");
       return;
     }
 
-    setLoading(true);
+    setSaving(true);
     try {
       const avatarUrl = await uploadAvatar();
 
@@ -80,11 +97,11 @@ export default function ProfileCreate() {
       });
 
       navigate('/perfil');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating profile:', error);
       toast.error(t("toast.profile.createError"));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -190,11 +207,11 @@ export default function ProfileCreate() {
         {/* Save Button */}
         <Button
           onClick={handleSave}
-          disabled={loading || !profile.name}
+          disabled={saving || !profile.name}
           className="w-full"
         >
           <Save className="h-4 w-4 mr-2" />
-          {loading ? "Salvando..." : "Criar Perfil"}
+          {saving ? "Salvando..." : "Criar Perfil"}
         </Button>
       </div>
     </div>

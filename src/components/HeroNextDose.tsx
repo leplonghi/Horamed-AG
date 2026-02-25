@@ -7,18 +7,10 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
+import { Dose, safeParseDoseDate } from "@/types";
 
 interface HeroNextDoseProps {
-  dose?: {
-    id: string;
-    item_id: string;
-    due_at: string;
-    status: string;
-    items: {
-      name: string;
-      dose_text: string | null;
-    };
-  } | null;
+  dose?: Dose | null;
   nextDayDose?: {
     time: string;
     name: string;
@@ -42,7 +34,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
     setOptimisticTaken(true);
 
     try {
-      await onTake(dose.id, dose.item_id, dose.items.name);
+      await onTake(dose.id, dose.item_id, dose.items?.name || "Medicamento");
     } catch {
       // Rollback on error
       setOptimisticTaken(false);
@@ -53,7 +45,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
 
   const handleSnooze = useCallback(() => {
     if (!dose || !onSnooze || isSubmitting) return;
-    onSnooze(dose.id, dose.items.name);
+    onSnooze(dose.id, dose.items?.name || "Medicamento");
   }, [dose, onSnooze, isSubmitting]);
 
   // Show success state immediately after optimistic update - REFORÇO POSITIVO
@@ -161,7 +153,13 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
 
   // 💊 ESTADO: Dose pendente - AÇÃO PRINCIPAL
   if (dose) {
-    const dueTime = new Date(dose.due_at);
+    const dueTime = safeParseDoseDate(dose);
+
+    // Se a data é inválida, não renderiza o card (evita crash)
+    if (!dueTime) {
+      return null;
+    }
+
     const now = new Date();
     const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / (1000 * 60));
     const isNow = minutesUntil <= 15 && minutesUntil >= -30;
@@ -210,11 +208,11 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
             {/* Nome do medicamento - Grande e claro */}
             <div className="text-center py-2">
               <h2 className="text-3xl font-bold text-foreground leading-tight">
-                {dose.items.name}
+                {dose.items?.name || "Medicamento"}
               </h2>
-              {dose.items.dose_text && (
+              {dose.items?.dose_text && (
                 <p className="text-lg text-muted-foreground mt-1">
-                  {dose.items.dose_text}
+                  {dose.items?.dose_text}
                 </p>
               )}
             </div>

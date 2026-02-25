@@ -90,7 +90,7 @@ export default function PremiumTeaser({ feature, compact, className }: PremiumTe
         className={className}
       >
         <Card 
-          className="p-3 cursor-pointer border-primary/20 bg-gradient-to-r from-primary/5 to-purple-500/5 hover:border-primary/40 transition-all"
+          className="p-3 cursor-pointer border-primary/20 bg-gradient-to-r from-primary/5 to-teal-500/5 hover:border-primary/40 transition-all"
           onClick={() => navigate("/planos")}
         >
           <div className="flex items-center gap-3">
@@ -117,7 +117,7 @@ export default function PremiumTeaser({ feature, compact, className }: PremiumTe
       animate={{ opacity: 1, y: 0 }}
       className={className}
     >
-      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5">
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-teal-500/5">
         <div className="p-4">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">

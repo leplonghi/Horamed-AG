@@ -41,9 +41,9 @@ export default function DrugInteractions() {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg font-semibold">
+            <h2 className="text-lg font-semibold">
               {t('interactions.title')}
-            </h1>
+            </h2>
           </div>
         </div>
 
@@ -108,9 +108,9 @@ export default function DrugInteractions() {
           <h1 className="text-lg font-semibold">
             {t('interactions.title')}
           </h1>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="ml-auto"
             onClick={handleRefresh}
             disabled={loading}
@@ -152,15 +152,15 @@ export default function DrugInteractions() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <Card className={searchResult.has_critical 
+            <Card className={searchResult.has_critical
               ? 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20'
-              : searchResult.total > 0 
+              : searchResult.total > 0
                 ? 'border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-950/20'
                 : 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20'
             }>
               <CardContent className="py-4">
                 <p className="font-medium">
-                  {searchResult.total === 0 
+                  {searchResult.total === 0
                     ? `✅ "${searchMed}" ${t('interactions.appearsSafe')}`
                     : searchResult.has_critical
                       ? `⚠️ "${searchMed}" ${t('interactions.hasCritical')}`

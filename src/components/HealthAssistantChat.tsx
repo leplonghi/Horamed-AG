@@ -10,8 +10,7 @@ import { toast } from "sonner";
 import { useAILimits } from "@/hooks/useAILimits";
 import PaywallDialog from "./PaywallDialog";
 import { Alert, AlertDescription } from "./ui/alert";
-import { AffiliateCard } from "./fitness/AffiliateCard";
-import { getRecommendations, dismissRecommendation, AffiliateProduct } from "@/lib/affiliateEngine";
+
 import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -32,9 +31,6 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
   const [showPaywall, setShowPaywall] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const aiLimits = useAILimits();
-  const [affiliateProduct, setAffiliateProduct] = useState<AffiliateProduct | null>(null);
-  const [showAffiliate, setShowAffiliate] = useState(false);
-
   // Initialize greeting message with translation
   useEffect(() => {
     if (messages.length === 0) {
@@ -111,16 +107,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         response_length: assistantContent.length,
       });
 
-      const fitnessKeywords = ["treino", "academia", "performance", "energia", "sono", "glp-1", "ozempic", "mounjaro", "bariátrica", "workout", "gym", "energy", "sleep"];
-      const isFitnessQuery = fitnessKeywords.some(keyword => userMessage.toLowerCase().includes(keyword));
 
-      if (isFitnessQuery) {
-        const product = getRecommendations({ type: "AI_QUERY", text: userMessage });
-        if (product) {
-          setAffiliateProduct(product);
-          setShowAffiliate(true);
-        }
-      }
 
     } catch (error) {
       console.error("Chat error:", error);
@@ -230,19 +217,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
                 </div>
               </div>
             )}
-            {/* Affiliate Recommendation */}
-            {showAffiliate && affiliateProduct && (
-              <div className="px-2 sm:px-4">
-                <AffiliateCard
-                  product={affiliateProduct}
-                  context="AI_QUERY"
-                  onDismiss={() => {
-                    dismissRecommendation("AI_QUERY");
-                    setShowAffiliate(false);
-                  }}
-                />
-              </div>
-            )}
+
           </div>
         </ScrollArea>
 

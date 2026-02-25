@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 const COLORS = {
   primary: [82, 109, 255] as [number, number, number],
@@ -94,7 +95,7 @@ export function getFrequencyLabels(): Record<string, string> {
 }
 
 export function calculateAge(birthDate: string): number {
-  const birth = new Date(birthDate);
+  const birth = safeDateParse(birthDate);
   const today = new Date();
   let age = today.getFullYear() - birth.getFullYear();
   const monthDiff = today.getMonth() - birth.getMonth();

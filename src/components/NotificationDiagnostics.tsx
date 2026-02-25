@@ -17,6 +17,7 @@ import {
   TestTube
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface DiagnosticResult {
   name: string;
@@ -166,7 +167,7 @@ export function NotificationDiagnostics() {
           name: t('notifDiag.lastNotif'),
           status: lastNotif.delivery_status === "delivered" ? "success" : 
                   lastNotif.delivery_status === "failed" ? "error" : "warning",
-          message: `${lastNotif.delivery_status} - ${new Date(lastNotif.created_at).toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US')}`
+          message: `${lastNotif.delivery_status} - ${safeDateParse(lastNotif.created_at).toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US')}`
         });
       } else {
         results.push({

@@ -14,13 +14,34 @@ import { startOfMonth, endOfMonth } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface MedHistoryDoc {
+  id: string;
+  name: string;
+  doseText?: string;
+}
+
+interface DoseHistoryDoc {
+  id: string;
+  itemId: string;
+  dueAt: string;
+  status: 'scheduled' | 'taken' | 'missed' | 'skipped';
+  takenAt: string | null;
+  itemName?: string;
+  doseText?: string;
+}
+
+interface FormattedDose extends DoseHistoryDoc {
+  items: { name: string; doseText: string };
+}
 
 export default function MedicationHistory() {
   const { id } = useParams();
   const { t, language } = useLanguage();
   const { activeProfile } = useUserProfiles();
-  const [medication, setMedication] = useState<any>(null);
-  const [doses, setDoses] = useState<any[]>([]);
+  const [medication, setMedication] = useState<MedHistoryDoc | null>(null);
+  const [doses, setDoses] = useState<FormattedDose[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +59,7 @@ export default function MedicationHistory() {
       const profileId = activeProfile?.id;
 
       // Load medication info
-      const { data: medData } = await fetchDocument<any>(
+      const { data: medData } = await fetchDocument<MedHistoryDoc>(
         `users/${userId}/medications`,
         id
       );
@@ -54,7 +75,7 @@ export default function MedicationHistory() {
         ? `users/${userId}/profiles/${profileId}/doses`
         : `users/${userId}/doses`;
 
-      const { data: dosesData } = await fetchCollection<any>(
+      const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
         dosesPath,
         [
           where('itemId', '==', id),
@@ -95,7 +116,7 @@ export default function MedicationHistory() {
 
   // Create heatmap data for calendar
   const dosesByDate = doses.reduce((acc, dose) => {
-    const date = new Date(dose.dueAt).toDateString();
+    const date = safeDateParse(dose.dueAt).toDateString();
     if (!acc[date]) acc[date] = { taken: 0, missed: 0, total: 0 };
     acc[date].total++;
     if (dose.status === 'taken') acc[date].taken++;
@@ -203,19 +224,19 @@ export default function MedicationHistory() {
                     const data = dosesByDate[date];
                     return data.taken === data.total;
                   })
-                  .map(date => new Date(date)),
+                  .map(date => safeDateParse(date)),
                 partial: Object.keys(dosesByDate)
                   .filter(date => {
                     const data = dosesByDate[date];
                     return data.taken > 0 && data.taken < data.total;
                   })
-                  .map(date => new Date(date)),
+                  .map(date => safeDateParse(date)),
                 missed: Object.keys(dosesByDate)
                   .filter(date => {
                     const data = dosesByDate[date];
                     return data.missed > 0;
                   })
-                  .map(date => new Date(date)),
+                  .map(date => safeDateParse(date)),
               }}
               modifiersClassNames={{
                 perfect: "bg-success/20 text-success font-bold",

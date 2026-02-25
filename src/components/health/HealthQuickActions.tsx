@@ -34,9 +34,9 @@ export default function HealthQuickActions({
     },
     {
       id: "vaccine",
-      icon: <Syringe className="h-5 w-5 text-purple-500" />,
+      icon: <Syringe className="h-5 w-5 text-teal-500" />,
       label: language === 'pt' ? 'Vacina' : 'Vaccine',
-      color: "bg-purple-500/10",
+      color: "bg-teal-500/10",
       onClick: onAddVaccine
     },
     {

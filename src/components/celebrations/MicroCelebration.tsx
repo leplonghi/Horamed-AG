@@ -14,14 +14,16 @@ interface MicroCelebrationProps {
 const celebrationConfig = {
   dose_taken: {
     icon: Check,
+    image: null,
     color: "text-green-500",
     bgColor: "bg-green-500/20",
-    sound: null, // Could add sound later
+    sound: null,
     duration: 800,
     scale: [1, 1.3, 1],
   },
   streak_day: {
     icon: Flame,
+    image: "/images/rewards/series-icon.png",
     color: "text-orange-500",
     bgColor: "bg-orange-500/20",
     sound: null,
@@ -30,6 +32,7 @@ const celebrationConfig = {
   },
   perfect_day: {
     icon: Star,
+    image: "/images/rewards/perfect-week.png",
     color: "text-yellow-500",
     bgColor: "bg-yellow-500/20",
     sound: null,
@@ -38,6 +41,7 @@ const celebrationConfig = {
   },
   milestone: {
     icon: Trophy,
+    image: "/images/rewards/badge-7days.png",
     color: "text-amber-500",
     bgColor: "bg-amber-500/20",
     sound: null,
@@ -46,14 +50,16 @@ const celebrationConfig = {
   },
   level_up: {
     icon: Zap,
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/20",
+    image: null,
+    color: "text-teal-500",
+    bgColor: "bg-teal-500/20",
     sound: null,
     duration: 1800,
     scale: [1, 1.5, 1.2, 1],
   },
   combo: {
     icon: Sparkles,
+    image: null,
     color: "text-pink-500",
     bgColor: "bg-pink-500/20",
     sound: null,
@@ -90,9 +96,9 @@ export default function MicroCelebration({
       // Pick random message or use provided
       const typeMessages = messages[type];
       setDisplayMessage(message || typeMessages[Math.floor(Math.random() * typeMessages.length)]);
-      
+
       setShow(true);
-      
+
       // Trigger haptic based on celebration type
       if (type === "dose_taken" || type === "combo") {
         triggerHaptic("light");
@@ -134,18 +140,22 @@ export default function MicroCelebration({
           <motion.div
             className={`relative p-6 rounded-full ${config.bgColor}`}
             initial={{ scale: 0, rotate: -180 }}
-            animate={{ 
+            animate={{
               scale: config.scale,
               rotate: 0,
             }}
-            transition={{ 
+            transition={{
               type: "spring",
               stiffness: 300,
               damping: 15,
             }}
           >
-            <Icon className={`h-12 w-12 ${config.color}`} />
-            
+            {config.image ? (
+              <img src={config.image} alt="" className="h-12 w-12" />
+            ) : (
+              <Icon className={`h-12 w-12 ${config.color}`} />
+            )}
+
             {/* Streak number */}
             {streak && streak > 1 && (
               <motion.div
@@ -177,19 +187,19 @@ export default function MicroCelebration({
                 <motion.div
                   key={i}
                   className={`absolute w-2 h-2 rounded-full ${config.bgColor.replace('/20', '')}`}
-                  initial={{ 
-                    x: 0, 
-                    y: 0, 
+                  initial={{
+                    x: 0,
+                    y: 0,
                     opacity: 1,
                     scale: 1,
                   }}
-                  animate={{ 
+                  animate={{
                     x: (Math.random() - 0.5) * 200,
                     y: (Math.random() - 0.5) * 200,
                     opacity: 0,
                     scale: 0,
                   }}
-                  transition={{ 
+                  transition={{
                     duration: config.duration / 1000,
                     delay: i * 0.05,
                     ease: "easeOut",

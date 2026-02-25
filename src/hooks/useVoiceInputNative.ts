@@ -70,10 +70,8 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
 
       // Request microphone permission first
       try {
-        console.log('Requesting microphone permission...');
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach(track => track.stop());
-        console.log('Microphone permission granted');
       } catch (err) {
         console.error('Microphone access error:', err);
         toast.error('Não foi possível acessar o microfone. Verifique as permissões.');
@@ -94,7 +92,6 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
       recognition.lang = options.language || 'pt-BR';
 
       recognition.onstart = () => {
-        console.log('Speech recognition started');
         setIsRecording(true);
         setIsProcessing(false);
 
@@ -116,7 +113,6 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
 
           if (result.isFinal) {
             finalTranscriptRef.current += transcript + ' ';
-            console.log('Final transcript:', transcript);
           } else {
             interimTranscript += transcript;
           }
@@ -125,7 +121,6 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
         const currentText = (finalTranscriptRef.current + interimTranscript).trim();
         if (currentText) {
           setTranscription(currentText);
-          console.log('Current transcription:', currentText);
         }
       };
 
@@ -169,18 +164,15 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
       };
 
       recognition.onend = () => {
-        console.log('Speech recognition ended');
         setIsRecording(false);
         setIsProcessing(false);
 
         const finalText = finalTranscriptRef.current.trim();
         if (finalText) {
-          console.log('Final transcription result:', finalText);
           setTranscription(finalText);
           options.onTranscription?.(finalText);
           toast.success('Voz reconhecida!', { duration: 1500 });
-        } else if (hasResultsRef.current) {
-          console.log('Had results but no final text');
+
         }
 
         // Haptic feedback
@@ -192,7 +184,6 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
       };
 
       recognition.start();
-      console.log('Recognition.start() called');
 
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -205,12 +196,10 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
   }, [options]);
 
   const stopRecording = useCallback(() => {
-    console.log('Stopping recording, isRecording:', isRecording);
     if (recognitionRef.current) {
       setIsProcessing(true);
       try {
         recognitionRef.current.stop();
-        console.log('Recognition.stop() called');
       } catch (error) {
         console.error('Error stopping recognition:', error);
         setIsRecording(false);
@@ -220,7 +209,6 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
   }, [isRecording]);
 
   const toggleRecording = useCallback(() => {
-    console.log('Toggle recording, current state:', isRecording);
     if (isRecording) {
       stopRecording();
     } else {

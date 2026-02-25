@@ -1,6 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useAuth, fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 import { differenceInDays } from 'date-fns';
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface DoseDoc {
+  id: string;
+  itemId: string;
+  status: string;
+  dueAt: string;
+  takenAt?: string;
+}
+
+interface MedicationDoc {
+  id: string;
+  name: string;
+}
 
 interface AdaptiveSuggestion {
   type: 'reschedule' | 'extra_reminder' | 'streak_motivation';
@@ -28,7 +42,7 @@ export const useAdaptiveSuggestions = () => {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
         // Fetch recent dose history: users/{uid}/doses
-        const { data: doses, error } = await fetchCollection<any>(
+        const { data: doses, error } = await fetchCollection<DoseDoc>(
           `users/${user.uid}/doses`,
           [
             where('dueAt', '>=', sevenDaysAgo.toISOString()), // Changed to ISO comparison
@@ -44,7 +58,7 @@ export const useAdaptiveSuggestions = () => {
 
         // Fetch items/medications to get names
         // Since we don't have join, fetch all active medications for naming lookup
-        const { data: medications } = await fetchCollection<any>(
+        const { data: medications } = await fetchCollection<MedicationDoc>(
           `users/${user.uid}/medications`
         );
         const medMap = new Map((medications || []).map(m => [m.id, m]));
@@ -52,8 +66,7 @@ export const useAdaptiveSuggestions = () => {
         const newSuggestions: AdaptiveSuggestion[] = [];
 
         // Group by medication
-        const byMedication = (doses || []).reduce((acc: any, dose: any) => {
-          // dose.itemId
+        const byMedication = (doses || []).reduce<Record<string, { doses: DoseDoc[], name: string }>>((acc, dose) => {
           const med = medMap.get(dose.itemId);
           if (!med) return acc;
 
@@ -62,16 +75,16 @@ export const useAdaptiveSuggestions = () => {
           }
           acc[dose.itemId].doses.push(dose);
           return acc;
-        }, {} as Record<string, { doses: any[], name: string }>);
+        }, {});
 
         // Analyze each medication
-        Object.entries(byMedication as Record<string, { doses: any[], name: string }>).forEach(([itemId, { doses: medDoses, name }]) => {
+        Object.entries(byMedication).forEach(([itemId, { doses: medDoses, name }]) => {
           // Check for consistent delays
           const delays = medDoses
-            .filter((d: any) => d.status === 'taken' && d.takenAt && d.dueAt)
-            .map((d: any) => {
-              const due = new Date(d.dueAt);
-              const taken = new Date(d.takenAt);
+            .filter((d) => d.status === 'taken' && d.takenAt && d.dueAt)
+            .map((d) => {
+              const due = safeDateParse(d.dueAt);
+              const taken = safeDateParse(d.takenAt);
               return (taken.getTime() - due.getTime()) / (1000 * 60); // minutes
             })
             .filter((delay: number) => delay > 30); // Only significant delays
@@ -90,7 +103,7 @@ export const useAdaptiveSuggestions = () => {
           }
 
           // Check for frequent misses
-          const missedCount = medDoses.filter((d: any) => d.status === 'missed').length;
+          const missedCount = medDoses.filter((d) => d.status === 'missed').length;
           if (missedCount >= 3) {
             newSuggestions.push({
               type: 'extra_reminder',

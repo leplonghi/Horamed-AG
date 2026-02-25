@@ -47,7 +47,7 @@ export default function QuickOnboarding({ onComplete }: QuickOnboardingProps) {
       icon: Users,
       title: t('quickOnboarding.careFamily'),
       desc: t('quickOnboarding.manageAll'),
-      color: "bg-purple-500/10 text-purple-500"
+      color: "bg-teal-500/10 text-teal-500"
     },
     {
       id: "all",

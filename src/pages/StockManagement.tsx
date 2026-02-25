@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { auth, updateDocument } from "@/integrations/firebase";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "@/integrations/firebase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +47,7 @@ export default function StockManagement() {
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated");
 
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         currentQty: newUnitsLeft,
         lastRefillAt: new Date().toISOString(),
       };
@@ -79,23 +77,7 @@ export default function StockManagement() {
     }
   };
 
-  const handleRestock = async (itemId: string, itemName: string) => {
-    try {
-      const affiliateClick = httpsCallable(functions, 'affiliateClick');
-      const { data }: any = await affiliateClick({
-        medicationId: itemId,
-        medicationName: itemName
-      });
 
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast.success(t('stock.linkOpened') || 'Link opened in new tab');
-      }
-    } catch (error) {
-      console.error('Error handling restock:', error);
-      toast.error(t('stock.restockError') || 'Error opening restock link');
-    }
-  };
 
   const getStockStatus = (unitsLeft: number, unitsTotal: number) => {
     const percentage = (unitsLeft / unitsTotal) * 100;
@@ -300,8 +282,8 @@ export default function StockManagement() {
                       <span>{Math.round(percentage)}% {t('stock.available')}</span>
                       {item.daysRemaining !== null && item.daysRemaining > 0 && (
                         <span className={`flex items-center gap-1 ${item.daysRemaining <= 7 ? "text-destructive font-medium" :
-                            item.daysRemaining <= 14 ? "text-warning font-medium" :
-                              ""
+                          item.daysRemaining <= 14 ? "text-warning font-medium" :
+                            ""
                           }`}>
                           ~{item.daysRemaining} {t('stock.daysRemainingLabel')}
                           <HelpTooltip content={microcopy.help.stock.daysRemaining} side="left" />
@@ -321,17 +303,6 @@ export default function StockManagement() {
                             <strong>🚨 {t('stock.criticalStock')}</strong>
                             <p>{item.currentQty} {item.currentQty === 1 ? t('stock.criticalDesc') : t('stock.criticalDescPlural')}</p>
                           </div>
-                          {isEnabled('affiliate') && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRestock(item.itemId, item.itemName)}
-                              className="shrink-0"
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              {t('stock.buy')}
-                            </Button>
-                          )}
                         </>
                       ) : (
                         <>

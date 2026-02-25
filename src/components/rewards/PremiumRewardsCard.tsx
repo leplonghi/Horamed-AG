@@ -46,7 +46,7 @@ export function PremiumRewardsCard() {
             {/* Wallet / Credits Card */}
             <Card className="border-emerald-200 dark:border-emerald-900 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-background overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                    <Wallet size={120} />
+                    <img src="/images/rewards/premium-crown.png" alt="" className="w-32 h-32" />
                 </div>
 
                 <CardHeader className="relative z-10 pb-2">
@@ -90,14 +90,14 @@ export function PremiumRewardsCard() {
             {/* Protections Card */}
             <Card className="border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-background overflow-hidden relative">
                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                    <ShieldCheck size={120} />
+                    <img src="/images/rewards/protection-shield.png" alt="" className="w-32 h-32" />
                 </div>
 
                 <CardHeader className="relative z-10 pb-2">
                     <div className="flex justify-between items-start">
                         <div>
                             <Badge variant="secondary" className="mb-2 bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
-                                Streak Protection
+                                Proteção de Série
                             </Badge>
                             <CardTitle className="text-xl font-bold flex items-center gap-2">
                                 Proteções
@@ -119,12 +119,12 @@ export function PremiumRewardsCard() {
                         {Array.from({ length: 3 }).map((_, i) => (
                             <div
                                 key={i}
-                                className={`w-8 h-10 rounded-b-full flex items-center justify-center border-2 transition-all ${i < (protections?.available || 0)
-                                        ? 'bg-blue-500 border-blue-600 text-white shadow-lg shadow-blue-500/30'
-                                        : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-300'
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${i < (protections?.available || 0)
+                                        ? 'opacity-100 scale-100'
+                                        : 'opacity-30 scale-90 grayscale'
                                     }`}
                             >
-                                <ShieldCheck size={16} />
+                                <img src="/images/rewards/protection-shield.png" alt="" className="w-full h-full" />
                             </div>
                         ))}
                         {(protections?.available || 0) > 3 && (

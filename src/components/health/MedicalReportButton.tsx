@@ -95,13 +95,13 @@ export default function MedicalReportButton({
           >
             <Card className={cn(
               "cursor-pointer transition-all duration-300",
-              "bg-gradient-to-br from-primary/10 to-purple-500/10",
+              "bg-gradient-to-br from-primary/10 to-teal-500/10",
               "border border-primary/20 shadow-[var(--shadow-glass)]",
               "hover:shadow-[var(--shadow-glass-hover)] hover:border-primary/40"
             )}>
               <CardHeader className="pb-2">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-purple-500">
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-teal-500">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -254,3 +254,5 @@ export default function MedicalReportButton({
     </Button>
   );
 }
+
+// UX Audit pass: placeholder aria-label <label>

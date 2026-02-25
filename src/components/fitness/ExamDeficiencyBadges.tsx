@@ -45,7 +45,7 @@ export default function ExamDeficiencyBadges({ examData }: ExamDeficiencyBadgesP
   if (checkDeficiency(['glicemia', 'glicose', 'diabetes', 'glucose', 'alta', 'elevada'])) {
     deficiencies.push({
       label: "Alterações glicêmicas",
-      color: "bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-950 dark:text-purple-400 dark:border-purple-800",
+      color: "bg-teal-100 text-teal-700 border-teal-300 dark:bg-teal-950 dark:text-teal-400 dark:border-teal-800",
       detected: true
     });
   }

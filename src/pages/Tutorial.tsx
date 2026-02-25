@@ -22,6 +22,7 @@ import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { FileText } from "lucide-react";
 
 export default function Tutorial() {
   const navigate = useNavigate();
@@ -177,6 +178,32 @@ export default function Tutorial() {
         },
       ],
     },
+    {
+      id: "sintomas",
+      title: t('tutorial.symptoms'),
+      icon: AlertCircle,
+      sections: [
+        {
+          title: t('tutorial.symptomsQ'),
+          icon: AlertCircle,
+          steps: [
+            t('tutorial.symptomsStep1'),
+            t('tutorial.symptomsStep2'),
+            t('tutorial.symptomsStep3'),
+          ],
+          tip: t('tutorial.symptomsTip'),
+        },
+        {
+          title: t('tutorial.clinicalBriefQ'),
+          icon: FileText,
+          steps: [
+            t('tutorial.clinicalBriefStep1'),
+            t('tutorial.clinicalBriefStep2'),
+            t('tutorial.clinicalBriefStep3'),
+          ],
+        },
+      ],
+    },
   ];
 
   return (
@@ -190,11 +217,12 @@ export default function Tutorial() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
+            {/* Using grid-cols-2 sm:grid-cols-3 md:grid-cols-6 instead of grid-cols-5 fully across small screens might overflow or look squished, but we adapt it here */}
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto p-1">
               {tutorials.map((tutorial) => (
-                <TabsTrigger key={tutorial.id} value={tutorial.id} className="gap-2">
+                <TabsTrigger key={tutorial.id} value={tutorial.id} className="gap-2 text-xs sm:text-sm p-2 sm:p-3">
                   <tutorial.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{tutorial.title}</span>
+                  <span className="hidden sm:inline-block leading-none truncate max-w-[80px] md:max-w-[120px]">{tutorial.title}</span>
                 </TabsTrigger>
               ))}
             </TabsList>

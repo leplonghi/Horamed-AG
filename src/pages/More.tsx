@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  FileText, Users, Settings, Crown, LogOut, 
+import {
+  FileText, Users, Settings, Crown, LogOut,
   ChevronRight, HelpCircle, Shield, Bell, QrCode, Package, FolderHeart, History, BookOpen, Plane, Activity
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -26,27 +26,28 @@ export default function More() {
   const { isPremium } = useSubscription();
   const { profiles } = useUserProfiles();
 
+  const currentUser = useAuth();
+
   useEffect(() => {
     loadUserData();
-  }, []);
+  }, [currentUser]);
 
   const loadUserData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = currentUser?.user;
       if (!user) return;
       setUserEmail(user.email || "");
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, nickname")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data: profile } = await fetchDocument<{ full_name?: string; nickname?: string }>(
+        "profiles",
+        user.uid
+      );
 
       if (profile) {
         setUserName(profile.nickname || profile.full_name || "");
       }
-    } catch (error) {
-      console.error("Error loading user data:", error);
+    } catch {
+      // Silent fail - non-critical UI data
     }
   };
 
@@ -57,8 +58,7 @@ export default function More() {
       localStorage.removeItem("biometric_expiry");
       localStorage.removeItem("biometric_enabled");
       toast.success(t('profile.logoutSuccess'));
-    } catch (error: any) {
-      console.error("Error logging out:", error);
+    } catch {
       toast.error(t('profile.logoutError'));
     }
   };
@@ -172,10 +172,10 @@ export default function More() {
               </div>
               <SubscriptionBadge />
             </div>
-            
+
             {!isPremium && (
-              <Button 
-                onClick={() => navigate('/planos')} 
+              <Button
+                onClick={() => navigate('/planos')}
                 className="w-full mt-4"
                 size="lg"
               >
@@ -190,8 +190,8 @@ export default function More() {
         <div className="space-y-2 mb-6">
           <h3 className="text-sm font-semibold text-muted-foreground px-2">{t('more.tools')}</h3>
           {menuItems.map((item) => (
-            <Card 
-              key={item.path} 
+            <Card
+              key={item.path}
               className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(item.path)}
             >
@@ -220,8 +220,8 @@ export default function More() {
         <div className="space-y-2 mb-6">
           <h3 className="text-sm font-semibold text-muted-foreground px-2">{t('more.settings')}</h3>
           {settingsItems.map((item) => (
-            <Card 
-              key={item.path} 
+            <Card
+              key={item.path}
               className="hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate(item.path)}
             >
@@ -277,14 +277,14 @@ export default function More() {
         {/* Legal */}
         <div className="mt-6 text-center text-sm text-muted-foreground space-y-1">
           <p>
-            <button 
+            <button
               onClick={() => navigate('/terms')}
               className="hover:underline"
             >
               {t('more.termsOfUse')}
             </button>
             {" • "}
-            <button 
+            <button
               onClick={() => navigate('/privacy')}
               className="hover:underline"
             >

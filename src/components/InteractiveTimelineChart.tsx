@@ -3,6 +3,7 @@ import { format, parseISO, eachDayOfInterval, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CheckCircle2, XCircle, MinusCircle, Clock } from "lucide-react";
 import { useState } from "react";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface Dose {
   id: string;
@@ -167,7 +168,7 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
 
             <div className="space-y-2">
               {selectedDoses
-                .sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime())
+                .sort((a, b) => safeGetTime(a.dueAt) - safeGetTime(b.dueAt))
                 .map((dose) => (
                   <div
                     key={dose.id}
@@ -176,7 +177,7 @@ export default function InteractiveTimelineChart({ doses, period }: InteractiveT
                     <div className="flex items-center gap-3">
                       {getStatusIcon(dose.status)}
                       <div>
-                        <p className="text-sm font-medium">{dose.items.name}</p>
+                        <p className="text-sm font-medium">{dose.items?.name || "Medicamento"}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(parseISO(dose.dueAt), 'HH:mm')}
                           {dose.takenAt && dose.status === 'taken' && (

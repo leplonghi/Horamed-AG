@@ -143,7 +143,7 @@ export default function DrugInteractionCard({ profileId, compact = false, showUp
 
   if (!canSeeInteractions && showUpgrade) {
     return (
-      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-purple-500/5">
+      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-teal-500/5">
         <CardContent className="pt-6">
           <div className="text-center space-y-3">
             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">

@@ -43,7 +43,7 @@ export function useVaccinationRecords(profileId?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as VaccinationRecord[];
+      return (data as unknown) as VaccinationRecord[];
     },
   });
 }
@@ -64,7 +64,7 @@ export function useVaccinationRecordsByType(vaccineType: 'adulto' | 'infantil', 
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as VaccinationRecord[];
+      return (data as unknown) as VaccinationRecord[];
     },
   });
 }
@@ -79,7 +79,7 @@ export function useCreateVaccinationRecord() {
 
       const { data, error } = await supabase
         .from("vaccination_records")
-        .insert({ ...record, user_id: user.id } as any)
+        .insert({ ...record, user_id: user.id } as Omit<VaccinationRecord, 'id' | 'created_at' | 'updated_at'>)
         .select()
         .single();
 

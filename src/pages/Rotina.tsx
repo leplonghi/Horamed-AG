@@ -18,12 +18,12 @@ import TutorialHint from "@/components/TutorialHint";
 import MedicationWizard from "@/components/medication-wizard/MedicationWizard";
 import { getSupplementTags } from "@/utils/supplementHelpers";
 import SupplementTag from "@/components/fitness/SupplementTag";
-import { AffiliateCard } from "@/components/fitness/AffiliateCard";
-import { getRecommendations, dismissRecommendation } from "@/lib/affiliateEngine";
+
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OceanBackground from "@/components/ui/OceanBackground";
 import { Stock, Schedule, Medication } from "@/hooks/useMedications";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 type SortOption = "name_asc" | "name_desc" | "created_desc" | "created_asc" | "stock_asc" | "stock_desc";
 
@@ -54,26 +54,8 @@ export default function Rotina() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
   const { hasFeature } = useSubscription();
-  const [affiliateProduct, setAffiliateProduct] = useState<any>(null);
-  const [showAffiliateCard, setShowAffiliateCard] = useState(false);
 
-  useEffect(() => {
-    if (!items) return;
-    const hasSupplements = items.some(item =>
-      item.category === 'vitamina' || item.category === 'suplemento'
-    );
 
-    if (hasSupplements) {
-      const product = getRecommendations({
-        type: "MEDICATION_LIST",
-        hasSupplements: true
-      });
-      if (product) {
-        setAffiliateProduct(product);
-        setShowAffiliateCard(true);
-      }
-    }
-  }, [items]);
 
   // Sort and filter items
   const filteredItems = useMemo(() => {
@@ -93,17 +75,20 @@ export default function Rotina() {
         case "name_desc":
           return b.name.localeCompare(a.name, language);
         case "created_desc":
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+          return safeGetTime(b.createdAt || 0) - safeGetTime(a.createdAt || 0);
         case "created_asc":
-          return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-        case "stock_asc":
+          return safeGetTime(a.createdAt || 0) - safeGetTime(b.createdAt || 0);
+
+        case "stock_asc": {
           const stockA = a.stock?.[0]?.unitsLeft ?? Infinity;
           const stockB = b.stock?.[0]?.unitsLeft ?? Infinity;
           return stockA - stockB;
-        case "stock_desc":
+        }
+        case "stock_desc": {
           const stockADesc = a.stock?.[0]?.unitsLeft ?? -1;
           const stockBDesc = b.stock?.[0]?.unitsLeft ?? -1;
           return stockBDesc - stockADesc;
+        }
         default:
           return 0;
       }
@@ -418,22 +403,7 @@ export default function Rotina() {
             </TabsContent>
           </Tabs>
 
-          {/* Affiliate Card */}
-          {showAffiliateCard && affiliateProduct && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <AffiliateCard
-                product={affiliateProduct}
-                context="MEDICATION_LIST"
-                onDismiss={() => {
-                  dismissRecommendation(affiliateProduct.id);
-                  setShowAffiliateCard(false);
-                }}
-              />
-            </motion.div>
-          )}
+
         </div>
       </div>
 

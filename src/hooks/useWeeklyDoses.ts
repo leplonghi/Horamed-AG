@@ -3,6 +3,20 @@ import { auth, fetchCollection, where, updateDocument } from "@/integrations/fir
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { decrementStockWithProjection } from "@/lib/stockHelpers";
+import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+
+interface MedicationDoc {
+    id: string;
+    name: string;
+    profileId?: string;
+}
+
+interface DoseDoc {
+    id: string;
+    dueAt: string;
+    status: string;
+    itemId: string;
+}
 
 export interface Dose {
     id: string;
@@ -28,7 +42,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             if (profileId) {
                 medConstraints.push(where("profileId", "==", profileId));
             }
-            const { data: medications } = await fetchCollection<any>(
+            const { data: medications } = await fetchCollection<MedicationDoc>(
                 `users/${user.uid}/medications`,
                 medConstraints
             );
@@ -38,7 +52,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
 
             // 2. Fetch Doses
             // Firestore filtering by date range
-            const { data: doses, error } = await fetchCollection<any>(
+            const { data: doses, error } = await fetchCollection<DoseDoc>(
                 `users/${user.uid}/doses`,
                 [
                     where("dueAt", ">=", startOfWeek.toISOString()),
@@ -70,7 +84,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
                 .filter(d => d !== null) as Dose[];
 
             // Sort in memory
-            joinedDoses.sort((a, b) => new Date(a.dueAt).getTime() - new Date(b.dueAt).getTime());
+            joinedDoses.sort((a, b) => safeDateParse(a.dueAt).getTime() - safeDateParse(b.dueAt).getTime());
 
             return joinedDoses;
         }
@@ -81,7 +95,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             const user = auth.currentUser;
             if (!user) throw new Error("User not authenticated");
 
-            const updateData: any = { status: newStatus };
+            const updateData: Record<string, string | null> = { status: newStatus };
             if (newStatus === 'taken') {
                 updateData.takenAt = new Date().toISOString();
                 // Decrement stock
@@ -106,7 +120,6 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             queryClient.invalidateQueries({ queryKey: ["weekly-doses"] });
         },
         onError: (error) => {
-            console.error("Error updating dose status:", error);
             toast.error(language === 'pt' ? "Erro ao atualizar status" : "Error updating status");
         }
     });
