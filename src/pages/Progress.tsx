@@ -1,5 +1,6 @@
+import { lazy, Suspense } from "react";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
-import ProgressDashboard from "@/components/ProgressDashboard";
+const ProgressDashboard = lazy(() => import("@/components/ProgressDashboard"));
 import PageHeader from "@/components/PageHeader";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -10,6 +11,7 @@ export default function Progress() {
     longestStreak,
     thisWeekAverage,
     lastWeekAverage,
+    weeklyAdherence,
     loading
   } = useStreakCalculator();
 
@@ -29,14 +31,17 @@ export default function Progress() {
       />
 
       <div className="container mx-auto p-4 space-y-6">
-        <ProgressDashboard
-          currentStreak={currentStreak}
-          longestStreak={longestStreak}
-          thisWeekAverage={thisWeekAverage}
-          lastWeekAverage={lastWeekAverage}
-          monthlyGoal={90} // Default or fetched from settings
-          monthlyProgress={thisWeekAverage} // Approximation for now, effectively using weekly avg as proxy
-        />
+        <Suspense fallback={<div className="h-64 flex items-center justify-center animate-pulse bg-muted/20 rounded-3xl" />}>
+          <ProgressDashboard
+            currentStreak={currentStreak}
+            longestStreak={longestStreak}
+            thisWeekAverage={thisWeekAverage}
+            lastWeekAverage={lastWeekAverage}
+            weeklyAdherence={weeklyAdherence}
+            monthlyGoal={90} // Default or fetched from settings
+            monthlyProgress={thisWeekAverage} // Approximation for now, effectively using weekly avg as proxy
+          />
+        </Suspense>
       </div>
     </div>
   );

@@ -9,26 +9,28 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Soft Medical Blue Theme */
-    --background: 210 50% 98%; /* Very light blue tint */
-    --foreground: 222 47% 25%; /* Dark blue-grey for text - Softer than black */
-    
+    --background: 210 50% 98%;
+    /* Very light blue tint */
+    --foreground: 222 47% 25%;
+    /* Dark blue-grey for text - Softer than black */
+
     --card: 0 0% 100%;
     --card-foreground: 222 47% 25%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 25%;
-    
+
     /* Vibrant Soft Blue */
-    --primary: 221 83% 53%; 
+    --primary: 224 82% 56%;
     --primary-foreground: 210 40% 98%;
-    --primary-hover: 221 83% 48%;
-    
+    --primary-hover: 224 82% 51%;
+
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
-    
+
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    
+
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
 
@@ -38,18 +40,19 @@ All colors MUST be HSL.
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    
+
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
+
     --success: 152 70% 42%;
     --success-foreground: 210 40% 98%;
-    
+
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 221 83% 53%;
-    
-    --radius: 1.25rem; /* Rounded aesthetic */
+
+    --radius: 1.25rem;
+    /* Rounded aesthetic */
 
     /* Fluid Gradient Colors - Soft Blue Theme */
     --gradient-start: 221 83% 53%;
@@ -58,17 +61,17 @@ All colors MUST be HSL.
     --gradient-accent: 230 85% 65%;
 
     /* Modern shadows with depth - Softer blue-tinted shadows */
-    --shadow-xs: 0 1px 2px rgba(35, 55, 80, 0.05);
-    --shadow-sm: 0 2px 8px rgba(35, 55, 80, 0.06), 0 1px 2px rgba(35, 55, 80, 0.04);
-    --shadow-md: 0 4px 20px rgba(35, 55, 80, 0.08), 0 2px 8px rgba(35, 55, 80, 0.04);
-    --shadow-lg: 0 8px 30px rgba(35, 55, 80, 0.12), 0 4px 12px rgba(35, 55, 80, 0.08);
-    --shadow-xl: 0 16px 50px rgba(35, 55, 80, 0.15), 0 8px 20px rgba(35, 55, 80, 0.10);
-    --shadow-glow: 0 0 40px hsl(221 83% 53% / 0.15);
+    --shadow-xs: 0px 1px 2px rgba(35, 55, 80, 0.05);
+    --shadow-sm: 0px 2px 8px rgba(35, 55, 80, 0.06), 0px 1px 2px rgba(35, 55, 80, 0.04);
+    --shadow-md: 0px 4px 20px rgba(35, 55, 80, 0.08), 0px 2px 8px rgba(35, 55, 80, 0.04);
+    --shadow-lg: 0px 8px 30px rgba(35, 55, 80, 0.12), 0px 4px 12px rgba(35, 55, 80, 0.08);
+    --shadow-xl: 0px 16px 50px rgba(35, 55, 80, 0.15), 0px 8px 20px rgba(35, 55, 80, 0.10);
+    --shadow-glow: 0px 8px 40px hsl(221 83% 53% / 0.15);
     --shadow-inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.02);
 
     /* Glass effect shadows - UPDATED: Pro-Max Definition */
-    --shadow-glass: 0 8px 32px rgba(35, 55, 80, 0.08), 0 1px 2px rgba(255, 255, 255, 0.5);
-    --shadow-glass-hover: 0 16px 48px rgba(35, 55, 80, 0.12), 0 8px 16px rgba(35, 55, 80, 0.05);
+    --shadow-glass: 0px 8px 32px rgba(35, 55, 80, 0.08), 0px 1px 2px rgba(255, 255, 255, 0.5);
+    --shadow-glass-hover: 0px 16px 48px rgba(35, 55, 80, 0.12), 0px 8px 16px rgba(35, 55, 80, 0.05);
 
     /* Transitions */
     --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -91,10 +94,10 @@ All colors MUST be HSL.
     --doc-exam-bg: 152 70% 97%;
     --doc-exam-border: 152 70% 42%;
 
-    --doc-vaccine: 280 75% 55%;
-    --doc-vaccine-fg: 280 75% 25%;
-    --doc-vaccine-bg: 280 75% 97%;
-    --doc-vaccine-border: 280 75% 55%;
+    --doc-vaccine: 45 95% 50%;
+    --doc-vaccine-fg: 45 95% 20%;
+    --doc-vaccine-bg: 45 95% 97%;
+    --doc-vaccine-border: 45 95% 50%;
 
     --doc-consultation: 30 95% 55%;
     --doc-consultation-fg: 30 95% 25%;
@@ -120,9 +123,9 @@ All colors MUST be HSL.
     --card-foreground: 220 10% 96%;
     --popover: 220 25% 9%;
     --popover-foreground: 220 10% 96%;
-    --primary: 200 90% 55%;
+    --primary: 210 100% 66%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 200 90% 60%;
+    --primary-hover: 210 100% 71%;
     --secondary: 220 15% 12%;
     --secondary-foreground: 220 10% 96%;
     --muted: 220 15% 12%;
@@ -172,10 +175,10 @@ All colors MUST be HSL.
     --doc-exam-bg: 152 65% 12%;
     --doc-exam-border: 152 65% 50%;
 
-    --doc-vaccine: 280 70% 65%;
-    --doc-vaccine-fg: 280 70% 85%;
-    --doc-vaccine-bg: 280 70% 12%;
-    --doc-vaccine-border: 280 70% 65%;
+    --doc-vaccine: 45 80% 60%;
+    --doc-vaccine-fg: 45 80% 85%;
+    --doc-vaccine-bg: 45 80% 12%;
+    --doc-vaccine-border: 45 80% 60%;
 
     --doc-consultation: 30 90% 60%;
     --doc-consultation-fg: 30 90% 80%;
@@ -203,15 +206,23 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
     /* Native App Feel */
-    -webkit-touch-callout: none; /* Disable callout on long press on iOS */
-    -webkit-user-select: none; /* Disable text selection on iOS/Android */
-    user-select: none; /* Standard syntax for disabling text selection */
-    -webkit-tap-highlight-color: transparent; /* Remove blue highlight on tap */
-    overscroll-behavior-y: none; /* Prevent pull-to-refresh bounce effect on Android/Chrome */
+    -webkit-touch-callout: none;
+    /* Disable callout on long press on iOS */
+    -webkit-user-select: none;
+    /* Disable text selection on iOS/Android */
+    user-select: none;
+    /* Standard syntax for disabling text selection */
+    -webkit-tap-highlight-color: transparent;
+    /* Remove blue highlight on tap */
+    overscroll-behavior-y: none;
+    /* Prevent pull-to-refresh bounce effect on Android/Chrome */
   }
 
   /* Allow text selection only on specific elements where users might want to copy */
-  input, textarea, [contenteditable="true"], .selectable-text {
+  input,
+  textarea,
+  [contenteditable="true"],
+  .selectable-text {
     -webkit-user-select: auto;
     user-select: auto;
   }
@@ -220,6 +231,21 @@ All colors MUST be HSL.
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -278,7 +304,7 @@ All colors MUST be HSL.
 
   .hover-lift:hover {
     @apply -translate-y-1;
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0px 0px 0px transparent;
   }
 
   .hover-scale {
@@ -312,21 +338,21 @@ All colors MUST be HSL.
   /* Clean card without glass effect */
   .card-clean {
     @apply bg-card/95 backdrop-blur-sm border-0 rounded-2xl;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-sm), 0px 0px 0px transparent;
   }
 
   .card-clean:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), 0px 0px 0px transparent;
   }
 
   /* Elevated card with more shadow */
   .card-elevated {
     @apply bg-card border-0 rounded-2xl;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), 0px 0px 0px transparent;
   }
 
   .card-elevated:hover {
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg), 0px 0px 0px transparent;
   }
 
   /* Interactive glass card */
@@ -454,7 +480,7 @@ All colors MUST be HSL.
         hsl(var(--card) / 0.95) 0%,
         hsl(var(--card) / 0.85) 100%);
     backdrop-filter: blur(20px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), 0px 0px 0px transparent;
   }
 
   .card-fluid::before {
@@ -481,12 +507,12 @@ All colors MUST be HSL.
     background: linear-gradient(135deg,
         hsl(var(--gradient-start)) 0%,
         hsl(var(--gradient-mid)) 100%);
-    box-shadow: 0 4px 20px hsl(var(--gradient-start) / 0.3);
+    box-shadow: 0px 4px 6px -1px hsl(var(--gradient-start) / 0.1), 0px 2px 4px -1px hsl(var(--gradient-start) / 0.06);
     transition: all 0.3s ease;
   }
 
   .btn-fluid:hover {
-    box-shadow: 0 6px 30px hsl(var(--gradient-start) / 0.4);
+    box-shadow: 0px 10px 15px -3px hsl(var(--gradient-start) / 0.1), 0px 4px 6px -2px hsl(var(--gradient-start) / 0.05);
     transform: translateY(-2px);
   }
 
@@ -610,7 +636,8 @@ All colors MUST be HSL.
   }
 
   .hover-lift:hover {
-    @apply -translate-y-1 shadow-lg;
+    @apply -translate-y-1;
+    box-shadow: var(--shadow-lg), 0px 0px 0px transparent;
   }
 
   .hover-lift:active {
@@ -648,7 +675,7 @@ All colors MUST be HSL.
   }
 
   .hover-glow:hover {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+    box-shadow: 0px 4px 20px hsl(var(--primary) / 0.3);
   }
 
   /* Underline animation for links */

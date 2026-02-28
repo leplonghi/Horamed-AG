@@ -103,23 +103,26 @@ export function SymptomLoggerModal({ isOpen, onClose, initialFeeling = 'okay', o
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    <div className="space-y-3">
-                        <Label htmlFor="symptom-toggles">{t('symptom.whatExperiencing')}</Label>
-                        <div className="flex flex-wrap gap-2" id="symptom-toggles">
-                            {COMMON_SYMPTOMS.map((symptom) => (
-                                <Toggle
-                                    key={symptom}
-                                    pressed={selectedSymptoms.includes(symptom)}
-                                    onPressedChange={() => toggleSymptom(symptom)}
-                                    className="data-[state=on]:bg-emerald-100 data-[state=on]:text-emerald-800 dark:data-[state=on]:bg-emerald-900/40 dark:data-[state=on]:text-emerald-200"
-                                >
-                                    {t(`symptom.list.${symptom}`)}
-                                </Toggle>
-                            ))}
+                    {/* Symptom toggles only shown when feeling poorly */}
+                    {feeling === 'poor' && (
+                        <div className="space-y-3">
+                            <Label htmlFor="symptom-toggles">{t('symptom.whatExperiencing')}</Label>
+                            <div className="flex flex-wrap gap-2" id="symptom-toggles">
+                                {COMMON_SYMPTOMS.map((symptom) => (
+                                    <Toggle
+                                        key={symptom}
+                                        pressed={selectedSymptoms.includes(symptom)}
+                                        onPressedChange={() => toggleSymptom(symptom)}
+                                        className="data-[state=on]:bg-rose-100 data-[state=on]:text-rose-800 dark:data-[state=on]:bg-rose-900/40 dark:data-[state=on]:text-rose-200"
+                                    >
+                                        {t(`symptom.list.${symptom}`)}
+                                    </Toggle>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
-                    {selectedSymptoms.length > 0 && (
+                    {feeling === 'poor' && selectedSymptoms.length > 0 && (
                         <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-300">
                             <Label htmlFor="severity-radio">{t('symptom.howSevere')}</Label>
                             <RadioGroup id="severity-radio" value={severity} onValueChange={(val) => setSeverity(val as SymptomSeverity)} className="flex space-x-4">
@@ -173,7 +176,10 @@ export function SymptomLoggerModal({ isOpen, onClose, initialFeeling = 'okay', o
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={isSubmitting || (feeling !== 'great' && selectedSymptoms.length === 0 && !notes.trim())}
+                        disabled={
+                            isSubmitting ||
+                            (feeling === 'poor' && selectedSymptoms.length === 0 && !notes.trim())
+                        }
                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                     >
                         {isSubmitting ? t('symptom.saving') : t('symptom.saveCheckin')}

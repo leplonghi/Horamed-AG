@@ -167,10 +167,10 @@ export default function AchievementShareDialog({
                 ease: "easeInOut",
               }}
             >
-              {achievement.level.toLowerCase() === 'bronze' && <img src="/images/rewards/badge-7days.png" alt="" className="w-full h-full" />}
-              {achievement.level.toLowerCase() === 'silver' && <img src="/images/rewards/badge-30days.png" alt="" className="w-full h-full" />}
-              {achievement.level.toLowerCase() === 'gold' && <img src="/images/rewards/premium-crown.png" alt="" className="w-full h-full" />}
-              {achievement.level.toLowerCase() === 'platinum' && <img src="/images/rewards/protection-shield.png" alt="" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'bronze' && <img src="/images/rewards/badge-7days.png" alt="Bronze Badge" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'silver' && <img src="/images/rewards/badge-30days.png" alt="Silver Badge" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'gold' && <img src="/images/rewards/premium-crown.png" alt="Gold Badge" className="w-full h-full" />}
+              {achievement.level.toLowerCase() === 'platinum' && <img src="/images/rewards/protection-shield.png" alt="Platinum Badge" className="w-full h-full" />}
               {!['bronze', 'silver', 'gold', 'platinum'].includes(achievement.level.toLowerCase()) && (
                 <span className="text-8xl">{achievement.icon}</span>
               )}

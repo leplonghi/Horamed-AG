@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth, fetchCollection, fetchDocument, updateDocument, setDocument, orderBy, where } from '@/integrations/firebase';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useRewardHistory } from '@/hooks/useRewardHistory';
 import { generateReferralCode } from '@/lib/referrals';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
@@ -87,6 +88,7 @@ const defaultStats: ReferralStats = {
 export function useReferralSystem() {
   const { user } = useAuth();
   const { isPremium } = useSubscription();
+  const { logReward } = useRewardHistory();
   const [stats, setStats] = useState<ReferralStats>(defaultStats);
   const [loading, setLoading] = useState(true);
   const [headerState, setHeaderState] = useState<'default' | 'new_referral' | 'discount_earned' | 'goal_close'>('default');
@@ -245,6 +247,16 @@ export function useReferralSystem() {
       );
 
       if (error) throw error;
+
+      const reward = stats.availableRewards.find(r => r.id === rewardId);
+
+      logReward({
+        title: "Recompensa Resgatada",
+        description: `Você resgatou a recompensa: ${reward?.type || 'Referência'}.`,
+        value: "Resgatado",
+        type: "positive",
+        date: new Date()
+      });
 
       await loadReferralData();
       return true;

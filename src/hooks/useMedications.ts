@@ -7,12 +7,15 @@ interface MedicationDoc {
     id: string;
     name: string;
     doseText?: string | null;
+    notes?: string;
     instructions?: string;
     category?: string;
     withFood?: boolean;
     isActive: boolean;
     createdAt: string;
     profileId: string;
+    treatmentStartDate?: string;
+    treatmentEndDate?: string;
 }
 
 interface StockDoc {
@@ -49,11 +52,15 @@ export interface Medication {
     id: string;
     name: string;
     doseText: string | null;
+    notes?: string;
+    instructions?: string;
     category: string;
     withFood: boolean;
     isActive: boolean;
     createdAt: string;
     profileId: string;
+    treatmentStartDate?: string;
+    treatmentEndDate?: string;
     schedules?: Schedule[];
     stock?: Stock[];
 }
@@ -101,12 +108,16 @@ export function useMedications(profileId?: string) {
                 return {
                     id: med.id,
                     name: med.name,
-                    doseText: med.doseText || med.instructions,
+                    doseText: med.doseText || null,
+                    instructions: med.instructions || med.notes || "",
+                    notes: med.notes || "",
                     category: med.category || "outro",
                     withFood: med.withFood || false,
                     isActive: med.isActive,
                     createdAt: med.createdAt,
                     profileId: med.profileId,
+                    treatmentStartDate: med.treatmentStartDate,
+                    treatmentEndDate: med.treatmentEndDate,
                     schedules: medSchedules,
                     stock: medStock
                 };

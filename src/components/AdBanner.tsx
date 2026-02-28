@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { X, Sparkles } from 'lucide-react';
+import { IconClose as X, IconSparkles as Sparkles } from '@/components/icons/HoramedIcons';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -22,7 +22,7 @@ export default function AdBanner() {
       >
         <X className="h-4 w-4" />
       </button>
-      
+
       <div className="flex items-start gap-3">
         <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
         <div className="flex-1">

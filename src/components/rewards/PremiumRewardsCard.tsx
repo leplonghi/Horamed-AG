@@ -45,8 +45,8 @@ export function PremiumRewardsCard() {
         <div className="grid gap-4 md:grid-cols-2">
             {/* Wallet / Credits Card */}
             <Card className="border-emerald-200 dark:border-emerald-900 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/30 dark:to-background overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-3 opacity-10">
-                    <img src="/images/rewards/premium-crown.png" alt="" className="w-32 h-32" />
+                <div className="absolute top-0 right-0 p-4 text-6xl opacity-10 select-none pointer-events-none">
+                    👑
                 </div>
 
                 <CardHeader className="relative z-10 pb-2">
@@ -89,8 +89,8 @@ export function PremiumRewardsCard() {
 
             {/* Protections Card */}
             <Card className="border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-background overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-3 opacity-10">
-                    <img src="/images/rewards/protection-shield.png" alt="" className="w-32 h-32" />
+                <div className="absolute top-0 right-0 p-4 text-6xl opacity-10 select-none pointer-events-none">
+                    🛡️
                 </div>
 
                 <CardHeader className="relative z-10 pb-2">
@@ -119,12 +119,12 @@ export function PremiumRewardsCard() {
                         {Array.from({ length: 3 }).map((_, i) => (
                             <div
                                 key={i}
-                                className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${i < (protections?.available || 0)
-                                        ? 'opacity-100 scale-100'
-                                        : 'opacity-30 scale-90 grayscale'
+                                className={`w-10 h-10 rounded-lg flex items-center justify-center text-2xl transition-all ${i < (protections?.available || 0)
+                                    ? 'opacity-100 scale-100'
+                                    : 'opacity-30 scale-90 grayscale'
                                     }`}
                             >
-                                <img src="/images/rewards/protection-shield.png" alt="" className="w-full h-full" />
+                                🛡️
                             </div>
                         ))}
                         {(protections?.available || 0) > 3 && (

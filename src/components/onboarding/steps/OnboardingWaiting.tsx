@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Bell, Loader2, CheckCircle, AlertTriangle } from "lucide-react";
+import { IconBell as Bell, IconLoader as Loader2, IconCheckCircle as CheckCircle, IconAlertTriangle as AlertTriangle } from "@/components/icons/HoramedIcons";
 import { differenceInSeconds } from "date-fns";
 import { Button } from "@/components/ui/button";
 import notificationService from "@/services/NotificationService";
@@ -12,11 +12,11 @@ interface Props {
   onNotificationReceived: () => void;
 }
 
-export default function OnboardingWaiting({ 
-  scheduledTime, 
-  itemName, 
+export default function OnboardingWaiting({
+  scheduledTime,
+  itemName,
   onCreateItem,
-  onNotificationReceived 
+  onNotificationReceived
 }: Props) {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [creating, setCreating] = useState(true);
@@ -29,7 +29,7 @@ export default function OnboardingWaiting({
       const success = await onCreateItem();
       setCreating(false);
       setCreated(success);
-      
+
       if (success) {
         // Also schedule via NotificationService for reliability
         await notificationService.initialize();
@@ -40,7 +40,7 @@ export default function OnboardingWaiting({
           doseText: "1 dose",
           scheduledAt: scheduledTime,
         });
-        
+
         // Start countdown
         const updateCountdown = () => {
           const diff = differenceInSeconds(scheduledTime, new Date());
@@ -65,7 +65,7 @@ export default function OnboardingWaiting({
   useEffect(() => {
     const handleAlarm = (event: CustomEvent) => {
       setAlarmReceived(true);
-      
+
       // Wait a moment to show the checkmark, then proceed
       setTimeout(() => {
         onNotificationReceived();
@@ -73,7 +73,7 @@ export default function OnboardingWaiting({
     };
 
     window.addEventListener("horamed-alarm", handleAlarm as EventListener);
-    
+
     return () => {
       window.removeEventListener("horamed-alarm", handleAlarm as EventListener);
     };
@@ -88,7 +88,7 @@ export default function OnboardingWaiting({
           onNotificationReceived();
         }
       }, 10000);
-      
+
       return () => clearTimeout(timeout);
     }
   }, [secondsLeft, created, alarmReceived, onNotificationReceived]);
@@ -144,7 +144,7 @@ export default function OnboardingWaiting({
         >
           <CheckCircle className="w-12 h-12 text-green-500" />
         </motion.div>
-        
+
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -172,7 +172,7 @@ export default function OnboardingWaiting({
           Teste do alarme
         </h1>
         <p className="text-muted-foreground">
-          {secondsLeft > 0 
+          {secondsLeft > 0
             ? "Feche o app agora e aguarde o alarme tocar."
             : "O alarme deve tocar a qualquer momento..."}
         </p>
@@ -210,7 +210,7 @@ export default function OnboardingWaiting({
               strokeLinecap="round"
             />
           </svg>
-          
+
           {/* Center content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <motion.div

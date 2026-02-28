@@ -50,6 +50,10 @@ interface HubMedDoc {
   isActive: boolean;
   doseText?: string;
   profileId?: string;
+  instructions?: string;
+  notes?: string;
+  treatmentStartDate?: string;
+  treatmentEndDate?: string;
 }
 
 interface HubScheduleDoc {

@@ -1,6 +1,6 @@
 import { useState, useEffect, memo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Search } from "lucide-react";
+import { IconProfile as User, IconSearch as Search } from "@/components/icons/HoramedIcons";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import SubscriptionBadge from "./SubscriptionBadge";

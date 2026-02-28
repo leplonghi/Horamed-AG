@@ -10,10 +10,9 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";
 import { auth, functions, httpsCallable, fetchDocument, fetchCollection, addDocument, updateDocument, deleteDocument, where } from "@/integrations/firebase";
 import { toast } from "sonner";
-import PaywallDialog from "@/components/PaywallDialog";
+import { PremiumPaywall } from "@/components/PremiumPaywall";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
-import UpgradeModal from "@/components/UpgradeModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import NotificationScheduleEditor, { NotificationSchedule } from "@/components/notifications/NotificationScheduleEditor";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -80,8 +79,9 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallTrigger, setPaywallTrigger] = useState<"medication_limit" | "ocr" | "charts" | "family" | "ai" | "generic">("generic");
+  const [usedCount, setUsedCount] = useState<number>(0);
   const [medicationData, setMedicationData] = useState<MedicationData>(INITIAL_DATA);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [processingOCR, setProcessingOCR] = useState(false);
   const [ocrPreview, setOcrPreview] = useState<string | null>(null);
   const [showScheduleEditor, setShowScheduleEditor] = useState(false);
@@ -307,7 +307,8 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
     }
 
     if (!hasFeature("ocr")) {
-      setShowUpgradeModal(true);
+      setPaywallTrigger("ocr");
+      setShowPaywall(true);
       return;
     }
 
@@ -351,7 +352,9 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
       const count = meds ? meds.length : 0;
 
-      if (count >= 1) { // Free limit is 1? Check logic.
+      if (count >= 1) {
+        setPaywallTrigger("medication_limit");
+        setUsedCount(count);
         setShowPaywall(true);
         return false;
       }
@@ -880,17 +883,11 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         </DialogContent>
       </Dialog>
 
-      <UpgradeModal
-        open={showUpgradeModal}
-        onOpenChange={setShowUpgradeModal}
-        feature={t('wizard.ocrFeature')}
-      />
-
-
-      <PaywallDialog
-        open={showPaywall}
-        onOpenChange={setShowPaywall}
-        triggerReason="medication_limit"
+      <PremiumPaywall
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        trigger={paywallTrigger}
+        usedCount={usedCount}
       />
 
       <NotificationScheduleEditor

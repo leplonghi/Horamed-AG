@@ -1,4 +1,3 @@
-import { Home, User, FileText, Pill, Activity } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,15 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where } from "@/integrations/firebase";
+import {
+  IconToday,
+  IconMedications,
+  IconHealth,
+  IconWallet,
+  IconProfile,
+} from "@/components/icons/HoramedIcons";
+
+type NavIconComponent = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
 
 // Memoized nav item to prevent unnecessary re-renders
 const NavItem = memo(function NavItem({
@@ -16,11 +24,10 @@ const NavItem = memo(function NavItem({
   label,
   badge,
   isActive,
-  index,
-  onTap
+  onTap,
 }: {
   path: string;
-  icon: typeof Home;
+  icon: NavIconComponent;
   label: string;
   badge?: number;
   isActive: boolean;
@@ -51,6 +58,8 @@ const NavItem = memo(function NavItem({
             "h-6 w-6 transition-transform duration-200 relative z-10",
             isActive && "scale-110"
           )}
+          size={24}
+          strokeWidth={isActive ? 2 : 1.5}
         />
         {badge && badge > 0 && (
           <Badge
@@ -84,8 +93,6 @@ function Navigation() {
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
-      // We fetch the collection and filter locally for simplicity since we don't have a count-only re-export yet
-      // In a real app we'd use a server-side count or specialized helper
       const { data: documents } = await fetchCollection<any>(`users/${user.uid}/documents`, [
         where("expiresAt", "<=", thirtyDaysFromNow.toISOString()),
         where("expiresAt", ">=", new Date().toISOString())
@@ -100,11 +107,11 @@ function Navigation() {
 
   // Memoize nav items to prevent recreating on each render
   const navItems = useMemo(() => [
-    { path: "/hoje", icon: Home, labelKey: "nav.today" },
-    { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
-    { path: "/dashboard-saude", icon: Activity, labelKey: "nav.health" },
-    { path: "/carteira", icon: FileText, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
-    { path: "/perfil", icon: User, labelKey: "nav.profile" },
+    { path: "/hoje", icon: IconToday, labelKey: "nav.today" },
+    { path: "/medicamentos", icon: IconMedications, labelKey: "nav.routine" },
+    { path: "/dashboard-saude", icon: IconHealth, labelKey: "nav.health" },
+    { path: "/carteira", icon: IconWallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
+    { path: "/perfil", icon: IconProfile, labelKey: "nav.profile" },
   ], [expiringCount]);
 
   return (
@@ -119,7 +126,7 @@ function Navigation() {
               icon={item.icon}
               label={t(item.labelKey)}
               badge={item.badge}
-              isActive={location.pathname === item.path}
+              isActive={location.pathname === item.path || location.pathname.startsWith(item.path + '/')}
               index={index}
               onTap={triggerLight}
             />

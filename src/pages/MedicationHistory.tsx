@@ -49,11 +49,55 @@ export default function MedicationHistory() {
     loadMedicationData();
   }, [id, selectedDate, activeProfile?.id]);
 
+  const loadGeneralHistory = async (userId: string) => {
+    const profileId = activeProfile?.id;
+    const startDate = startOfMonth(selectedDate);
+    const endDate = endOfMonth(selectedDate);
+
+    const dosesPath = profileId
+      ? `users/${userId}/profiles/${profileId}/doses`
+      : `users/${userId}/doses`;
+
+    const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
+      dosesPath,
+      [
+        where('dueAt', '>=', startDate.toISOString()),
+        where('dueAt', '<=', endDate.toISOString()),
+        orderBy('dueAt', 'desc')
+      ]
+    );
+
+    // Load all meds to resolve names
+    const { data: medsData } = await fetchCollection<MedHistoryDoc>(
+      `users/${userId}/medications`, []
+    );
+    const medsMap = new Map(medsData?.map(m => [m.id, m]) || []);
+
+    const formattedDoses = (dosesData || []).map(dose => {
+      const med = medsMap.get(dose.itemId);
+      return {
+        ...dose,
+        items: {
+          name: dose.itemName || med?.name || '',
+          doseText: dose.doseText || med?.doseText || ''
+        }
+      };
+    });
+
+    setDoses(formattedDoses);
+  };
+
   const loadMedicationData = async () => {
     setLoading(true);
     try {
       const user = auth.currentUser;
-      if (!user || !id) return;
+      if (!user) return;
+
+      // If no ID, load general history for all medications
+      if (!id) {
+        await loadGeneralHistory(user.uid);
+        return;
+      }
 
       const userId = user.uid;
       const profileId = activeProfile?.id;
@@ -133,7 +177,7 @@ export default function MedicationHistory() {
 
       <main className="container max-w-4xl mx-auto px-4 pt-20 pb-8">
         <div className="mb-6">
-          <Link to="/rotina">
+          <Link to={id ? "/rotina" : "/medicamentos"}>
             <Button variant="ghost" size="sm" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('medHistory.back')}
@@ -141,7 +185,10 @@ export default function MedicationHistory() {
           </Link>
 
           <h1 className="text-3xl font-bold mb-2">
-            {medication?.name || t('common.loading')}
+            {id
+              ? (medication?.name || t('common.loading'))
+              : (language === 'pt' ? 'Histórico de Doses' : 'Dose History')
+            }
           </h1>
           <p className="text-muted-foreground">
             {t('medHistory.subtitle')}

@@ -225,7 +225,7 @@ export default function PWAInstallPrompt() {
                           className="flex items-center justify-center gap-4"
                         >
                           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg flex items-center justify-center">
-                            <img src="/favicon.png" alt="" className="w-8 h-8" />
+                            <img src="/favicon.png" alt="HoraMed Logo" className="w-8 h-8" />
                           </div>
                           <div className="text-left">
                             <p className="text-sm text-foreground font-medium">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, MicOff, Loader2, X, Volume2, Sparkles } from 'lucide-react';
+import { IconMic as Mic, IconMicOff as MicOff, IconLoader as Loader2, IconClose as X, IconVolume as Volume2, IconSparkles as Sparkles } from '@/components/icons/HoramedIcons';
 import { Button } from '@/components/ui/button';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { processVoiceCommand, speak, VoiceAction } from '@/ai/voiceCommandProcessor';

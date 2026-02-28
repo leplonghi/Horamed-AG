@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, ChevronDown, Settings } from 'lucide-react';
+import { IconPlus as Plus, IconUsers as Users, IconChevronDown as ChevronDown, IconSettings as Settings } from '@/components/icons/HoramedIcons';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';

@@ -1,4 +1,4 @@
-import { Search, Pill, Sparkles } from "lucide-react";
+import { Search, Pill, Sparkles, Leaf, Heart, Package } from "lucide-react";
 import { EmptyStatePro } from "@/components/ui/EmptyStatePro";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,85 +110,183 @@ export function RoutineTab({
                                 }
                             }}
                         >
-                            {filteredItems.filter(item => item.category === 'medicamento').length > 0 && (
-                                <div className="space-y-1.5 sm:space-y-3">
-                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                                        <Pill className="h-3.5 w-3.5" />
-                                        Medicamentos
-                                    </h3>
-                                    {filteredItems
-                                        .filter(item => item.category === 'medicamento')
-                                        .map((item, index) => (
-                                            <motion.div
-                                                key={item.id}
-                                                variants={{
-                                                    hidden: { opacity: 0, y: 20 },
-                                                    show: { opacity: 1, y: 0 }
-                                                }}
-                                            >
-                                                <MedicationItemCard
-                                                    item={item}
-                                                    index={index}
-                                                    onEdit={onEdit}
-                                                    onDelete={onDelete}
-                                                />
-                                            </motion.div>
-                                        ))}
+                            <motion.div
+                                initial="hidden"
+                                animate="show"
+                                variants={{
+                                    hidden: { opacity: 0 },
+                                    show: {
+                                        opacity: 1,
+                                        transition: {
+                                            staggerChildren: 0.05
+                                        }
+                                    }
+                                }}
+                                className="space-y-8"
+                            >
+                                {/* Summary Badges - Quick overview */}
+                                <div className="flex flex-wrap gap-2 mb-4">
+                                    {getCategoryCount("medicamento") > 0 && (
+                                        <div className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-wider border border-blue-200 shadow-sm">
+                                            {getCategoryCount("medicamento")} Medicamentos
+                                        </div>
+                                    )}
+                                    {getCategoryCount("vitamina") > 0 && (
+                                        <div className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider border border-green-200 shadow-sm">
+                                            {getCategoryCount("vitamina")} Vitaminas
+                                        </div>
+                                    )}
+                                    {getCategoryCount("suplemento") > 0 && (
+                                        <div className="px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wider border border-amber-200 shadow-sm">
+                                            {getCategoryCount("suplemento")} Suplementos
+                                        </div>
+                                    )}
                                 </div>
-                            )}
 
-                            {filteredItems.filter(item => item.category === 'vitamina' || item.category === 'suplemento').length > 0 && (
-                                <div className="space-y-1.5 sm:space-y-3 mt-3 sm:mt-6">
-                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5 mb-2">
-                                        <Sparkles className="h-3.5 w-3.5" />
-                                        Suplementos & Vitaminas
-                                    </h3>
-                                    {filteredItems
-                                        .filter(item => item.category === 'vitamina' || item.category === 'suplemento')
-                                        .map((item, index) => (
-                                            <motion.div
-                                                key={item.id}
-                                                variants={{
-                                                    hidden: { opacity: 0, y: 20 },
-                                                    show: { opacity: 1, y: 0 }
-                                                }}
-                                            >
-                                                <MedicationItemCard
-                                                    item={item}
-                                                    index={index}
-                                                    onEdit={onEdit}
-                                                    onDelete={onDelete}
-                                                />
-                                            </motion.div>
-                                        ))}
-                                </div>
-                            )}
+                                {filteredItems.filter(item => item.category === 'medicamento').length > 0 && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/50 border border-blue-100/50">
+                                            <div className="p-2 rounded-lg bg-blue-500 shadow-lg shadow-blue-200">
+                                                <Pill className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-[13px] font-bold text-blue-900 uppercase tracking-tight">
+                                                    Medicamentos
+                                                </h3>
+                                                <p className="text-[10px] text-blue-600/70 font-medium">Tratamentos e remédios controlados</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {filteredItems
+                                                .filter(item => item.category === 'medicamento')
+                                                .map((item, index) => (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        variants={{
+                                                            hidden: { opacity: 0, scale: 0.95 },
+                                                            show: { opacity: 1, scale: 1 }
+                                                        }}
+                                                    >
+                                                        <MedicationItemCard
+                                                            item={item}
+                                                            index={index}
+                                                            onEdit={onEdit}
+                                                            onDelete={onDelete}
+                                                        />
+                                                    </motion.div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
 
-                            {filteredItems.filter(item => item.category === 'outro').length > 0 && (
-                                <div className="space-y-1.5 sm:space-y-3 mt-3 sm:mt-6">
-                                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                                        Outros
-                                    </h3>
-                                    {filteredItems
-                                        .filter(item => item.category === 'outro')
-                                        .map((item, index) => (
-                                            <motion.div
-                                                key={item.id}
-                                                variants={{
-                                                    hidden: { opacity: 0, y: 20 },
-                                                    show: { opacity: 1, y: 0 }
-                                                }}
-                                            >
-                                                <MedicationItemCard
-                                                    item={item}
-                                                    index={index}
-                                                    onEdit={onEdit}
-                                                    onDelete={onDelete}
-                                                />
-                                            </motion.div>
-                                        ))}
-                                </div>
-                            )}
+                                {filteredItems.filter(item => item.category === 'vitamina').length > 0 && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50/50 border border-green-100/50">
+                                            <div className="p-2 rounded-lg bg-green-500 shadow-lg shadow-green-200">
+                                                <Leaf className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-[13px] font-bold text-green-900 uppercase tracking-tight">
+                                                    Vitaminas
+                                                </h3>
+                                                <p className="text-[10px] text-green-600/70 font-medium">Bem-estar e imunidade diária</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {filteredItems
+                                                .filter(item => item.category === 'vitamina')
+                                                .map((item, index) => (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        variants={{
+                                                            hidden: { opacity: 0, scale: 0.95 },
+                                                            show: { opacity: 1, scale: 1 }
+                                                        }}
+                                                    >
+                                                        <MedicationItemCard
+                                                            item={item}
+                                                            index={index}
+                                                            onEdit={onEdit}
+                                                            onDelete={onDelete}
+                                                        />
+                                                    </motion.div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {filteredItems.filter(item => item.category === 'suplemento').length > 0 && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50/50 border border-teal-100/50">
+                                            <div className="p-2 rounded-lg bg-teal-500 shadow-lg shadow-teal-200">
+                                                <Heart className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-[13px] font-bold text-teal-900 uppercase tracking-tight">
+                                                    Suplementos
+                                                </h3>
+                                                <p className="text-[10px] text-teal-600/70 font-medium">Performance e nutrição esportiva</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {filteredItems
+                                                .filter(item => item.category === 'suplemento')
+                                                .map((item, index) => (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        variants={{
+                                                            hidden: { opacity: 0, scale: 0.95 },
+                                                            show: { opacity: 1, scale: 1 }
+                                                        }}
+                                                    >
+                                                        <MedicationItemCard
+                                                            item={item}
+                                                            index={index}
+                                                            onEdit={onEdit}
+                                                            onDelete={onDelete}
+                                                        />
+                                                    </motion.div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {filteredItems.filter(item => item.category === 'outro').length > 0 && (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50/50 border border-gray-100/50">
+                                            <div className="p-2 rounded-lg bg-gray-500 shadow-lg shadow-gray-200">
+                                                <Package className="h-4 w-4 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-[13px] font-bold text-gray-900 uppercase tracking-tight">
+                                                    Outros
+                                                </h3>
+                                                <p className="text-[10px] text-gray-600/70 font-medium">Diversos itens de cuidado</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {filteredItems
+                                                .filter(item => item.category === 'outro')
+                                                .map((item, index) => (
+                                                    <motion.div
+                                                        key={item.id}
+                                                        variants={{
+                                                            hidden: { opacity: 0, scale: 0.95 },
+                                                            show: { opacity: 1, scale: 1 }
+                                                        }}
+                                                    >
+                                                        <MedicationItemCard
+                                                            item={item}
+                                                            index={index}
+                                                            onEdit={onEdit}
+                                                            onDelete={onDelete}
+                                                        />
+                                                    </motion.div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </motion.div>
                         </motion.div>
                     )}
                 </TabsContent>

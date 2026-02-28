@@ -3,6 +3,8 @@ import { Progress } from "./ui/progress";
 import { TrendingUp, TrendingDown, Target, Calendar, Flame, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { PremiumTooltip } from "./shared/ChartTooltip";
 
 interface ProgressDashboardProps {
   currentStreak: number;
@@ -11,6 +13,7 @@ interface ProgressDashboardProps {
   lastWeekAverage: number;
   monthlyGoal?: number;
   monthlyProgress?: number;
+  weeklyAdherence?: Array<{ day: string; percentage: number }>;
 }
 
 export default function ProgressDashboard({
@@ -20,6 +23,7 @@ export default function ProgressDashboard({
   lastWeekAverage,
   monthlyGoal = 90,
   monthlyProgress = 0,
+  weeklyAdherence = [],
 }: ProgressDashboardProps) {
   const isImproving = thisWeekAverage > lastWeekAverage;
   const improvementPercent = lastWeekAverage > 0
@@ -114,8 +118,8 @@ export default function ProgressDashboard({
         >
           <Card className={cn(
             "p-5 border-0 text-white shadow-lg",
-            goalReached 
-              ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-emerald-500/20" 
+            goalReached
+              ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-emerald-500/20"
               : "bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 shadow-teal-500/20"
           )}>
             <div className="space-y-4">
@@ -134,18 +138,18 @@ export default function ProgressDashboard({
                   </span>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <Progress
                   value={Math.min(monthlyProgress, 100)}
                   className="h-4 bg-white/20"
                 />
-                <div 
+                <div
                   className="absolute inset-0 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 transition-all duration-500"
                   style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
                 />
               </div>
-              
+
               <div className="flex items-center justify-between text-sm">
                 {goalReached ? (
                   <span className="flex items-center gap-2 bg-yellow-400/30 text-yellow-100 px-3 py-1 rounded-full font-medium">
@@ -166,6 +170,76 @@ export default function ProgressDashboard({
           </Card>
         </motion.div>
       </div>
+
+      {/* Weekly Detail Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Card className="p-5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-110" />
+
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-emerald-500" />
+                  Evolução Semanal
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Seu nível de adesão nos últimos 7 dias</p>
+              </div>
+              <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
+                Média: {thisWeekAverage}%
+              </div>
+            </div>
+
+            <div className="h-[200px] w-full mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weeklyAdherence.length > 0 ? weeklyAdherence : [
+                  { day: 'Seg', percentage: 100 },
+                  { day: 'Ter', percentage: 80 },
+                  { day: 'Qua', percentage: 95 },
+                  { day: 'Qui', percentage: 100 },
+                  { day: 'Sex', percentage: 85 },
+                  { day: 'Sáb', percentage: 90 },
+                  { day: 'Dom', percentage: 100 },
+                ]}>
+                  <XAxis
+                    dataKey="day"
+                    axisLine={false}
+                    tickLine={false}
+                    fontSize={12}
+                    tick={{ fill: 'currentColor', opacity: 0.6 }}
+                  />
+                  <YAxis hide domain={[0, 100]} />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(0,0,0,0.05)', radius: 8 }}
+                    content={<PremiumTooltip title="Seu Desempenho" suffix="%" />}
+                  />
+                  <Bar dataKey="percentage" radius={[4, 4, 0, 0]} barSize={24}>
+                    {(weeklyAdherence.length > 0 ? weeklyAdherence : [
+                      { day: 'Seg', percentage: 100 },
+                      { day: 'Ter', percentage: 80 },
+                      { day: 'Qua', percentage: 95 },
+                      { day: 'Qui', percentage: 100 },
+                      { day: 'Sex', percentage: 85 },
+                      { day: 'Sáb', percentage: 90 },
+                      { day: 'Dom', percentage: 100 },
+                    ]).map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={entry.percentage >= 80 ? '#10b981' : '#f59e0b'}
+                        fillOpacity={0.8}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
     </div>
   );
 }

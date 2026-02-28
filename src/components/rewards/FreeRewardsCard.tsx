@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { activatePremiumDays } from '@/services/RewardsService';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,7 @@ import { useStreakCalculator } from '@/hooks/useStreakCalculator';
 
 export function FreeRewardsCard() {
     const { user } = useAuth();
+    const queryClient = useQueryClient();
     const { currentStreak } = useStreakCalculator();
     const [isActivating, setIsActivating] = useState(false);
 
@@ -36,7 +37,8 @@ export function FreeRewardsCard() {
         try {
             await activatePremiumDays(user!.uid, Math.min(rewards.remaining, 7)); // Ativa máx 7 dias por vez
             toast.success('Premium ativado com sucesso! Aproveite.');
-            // Invalidate queries would go here
+            queryClient.invalidateQueries({ queryKey: ['premium-days', user?.uid] });
+            queryClient.invalidateQueries({ queryKey: ['subscription', user?.uid] });
         } catch (error) {
             toast.error('Erro ao ativar Premium.');
             console.error(error);
@@ -49,8 +51,8 @@ export function FreeRewardsCard() {
 
     return (
         <Card className="border-teal-200 dark:border-teal-900 bg-gradient-to-br from-teal-50 to-white dark:from-teal-950/30 dark:to-background overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-                <img src="/images/rewards/series-icon.png" alt="" className="w-32 h-32" />
+            <div className="absolute top-0 right-0 p-4 text-6xl opacity-10 select-none pointer-events-none">
+                🔥
             </div>
 
             <CardHeader className="relative z-10 pb-2">
@@ -82,7 +84,7 @@ export function FreeRewardsCard() {
                 <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs font-medium">
                         <div className="flex items-center gap-2">
-                            <img src="/images/rewards/badge-7days.png" alt="" className="w-6 h-6" />
+                            <span className="text-base">🏅</span>
                             <span>Próxima recompensa ({Math.ceil((currentStreak + 0.1) / 7) * 7} dias de série)</span>
                         </div>
                         <span>{currentStreak}/{Math.ceil((currentStreak + 0.1) / 7) * 7} dias</span>

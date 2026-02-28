@@ -311,4 +311,4 @@ export function timestampToDate(timestamp: Timestamp | null): Date | null {
 /**
  * Export query helpers for convenience
  */
-export { where, orderBy, limit, serverTimestamp, query }
+export { where, orderBy, limit, serverTimestamp, query, Timestamp }

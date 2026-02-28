@@ -56,12 +56,14 @@ const getGenAI = () => {
 // Price Configuration (Updated 2026-01-30)
 const PRICES = {
     BRL: {
-        monthly: 'price_1QsLkuHh4P8HSV4Yqcv6t',  // R$ 19,90/mês (Live Mode)
-        annual: 'price_1QsgmHh4P8HSV4Yb4o1ovt',   // R$ 199,90/ano (Live Mode)
+        monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y',
+        annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',
+        lifetime: 'price_1T5ZrAHh4P8HSV4YKrPTGhCg',
     },
     USD: {
-        monthly: 'price_1QsLkNHh4P8HSV4Yds1xcc',  // US$ 3,99/mês (Live Mode)
-        annual: 'price_1QsuHHh4P8HSV4Ysgmzc2V',   // US$ 39,99/ano (Live Mode)
+        monthly: 'price_1SvxqlHh4P8HSV4YpZKzGawy',
+        annual: 'price_1SvxrIHh4P8HSV4YCGnYC8Mn',
+        lifetime: 'price_1T5ZrAHh4P8HSV4YvS5ECHve',
     },
 } as const;
 
@@ -154,7 +156,8 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
 
         // Resolve Price ID
         const currency = (countryCode === 'BR' ? 'BRL' : 'USD') as keyof typeof PRICES;
-        const priceId = PRICES[currency]?.[planType as 'monthly' | 'annual'];
+        const resolvedPlan = planType as 'monthly' | 'annual' | 'lifetime';
+        const priceId = PRICES[currency]?.[resolvedPlan];
 
         if (!priceId) {
             throw new functions.https.HttpsError('invalid-argument', 'Invalid plan type or country code');
@@ -229,8 +232,10 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
 
         functions.logger.info('Creating checkout session', { customerId, priceId, couponId });
 
-        const session = await stripe.checkout.sessions.create({
-            mode: 'subscription',
+        const isLifetime = planType === 'lifetime';
+
+        const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+            mode: isLifetime ? 'payment' : 'subscription',
             payment_method_types: ['card'],
             customer: customerId,
             line_items: [{ price: priceId, quantity: 1 }],
@@ -243,11 +248,27 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
                 : `https://app.horamed.net/assinatura/cancelado`,
             client_reference_id: uid,
             allow_promotion_codes: true,
-            subscription_data: {
-                metadata: { firebaseUid: uid },
-                trial_period_days: 7  // 7 days free trial for all subscriptions
+            metadata: {
+                firebaseUid: uid,
+                planType: planType
             }
-        });
+        };
+
+        if (!isLifetime) {
+            sessionConfig.subscription_data = {
+                metadata: { firebaseUid: uid },
+                trial_period_days: 7
+            };
+        } else {
+            sessionConfig.payment_intent_data = {
+                metadata: {
+                    firebaseUid: uid,
+                    planType: 'lifetime'
+                }
+            };
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionConfig);
 
         functions.logger.info('Checkout session created successfully', { sessionId: session.id, url: session.url });
         return { url: session.url };
@@ -398,7 +419,14 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
                 const subscriptionId = session.subscription as string;
 
                 if (uid) {
-                    await updateUserSubscription(uid, subscriptionId, customerId, 'active', 'premium');
+                    const isLifetime = session.mode === 'payment' && session.metadata?.planType === 'lifetime';
+                    await updateUserSubscription(
+                        uid,
+                        subscriptionId || 'lifetime_payment',
+                        customerId,
+                        'active',
+                        isLifetime ? 'lifetime' : 'premium'
+                    );
                 }
                 break;
             }
@@ -442,7 +470,8 @@ async function updateUserSubscription(uid: string, subId: string, custId: string
     await db.collection('users').doc(uid).collection('subscription').doc('current').set(data, { merge: true });
 
     await db.collection('users').doc(uid).set({
-        isPremium: planType === 'premium',
+        isPremium: (planType === 'premium' || planType === 'lifetime'),
+        planType: planType,
         stripeCustomerId: custId
     }, { merge: true });
 }

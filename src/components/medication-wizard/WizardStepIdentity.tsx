@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,12 +6,101 @@ import { Switch } from "@/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Pill, Leaf, Heart, Package, Check, ChevronsUpDown, Search, Zap, Moon, Shield, Droplets, Dumbbell, Bell, Sparkles } from "lucide-react";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationTypes, NotificationType } from "@/hooks/useNotificationTypes";
+
+// Unidades de dose disponíveis
+const DOSE_UNITS = [
+  { value: "comprimido(s)", label: "Comprimido(s)" },
+  { value: "cápsula(s)", label: "Cápsula(s)" },
+  { value: "ml", label: "Mililitros (ml)" },
+  { value: "mg", label: "Miligramas (mg)" },
+  { value: "g", label: "Gramas (g)" },
+  { value: "mcg", label: "Microgramas (mcg)" },
+  { value: "UI", label: "UI (Unidade Internacional)" },
+  { value: "gota(s)", label: "Gota(s)" },
+  { value: "sachê(s)", label: "Sachê(s)" },
+  { value: "colher(es)", label: "Colher(es)" },
+  { value: "ampola(s)", label: "Ampola(s)" },
+];
+
+// Extrai quantidade e unidade de uma string de dose livre ("1 comprimido", "500mg", etc.)
+function parseDoseText(text: string): { qty: string; unit: string } {
+  if (!text) return { qty: "", unit: "comprimido(s)" };
+  const match = text.match(/^(\d*\.?\d*)\s*(.*)$/);
+  if (!match) return { qty: "", unit: "comprimido(s)" };
+  const rawUnit = match[2]?.trim().toLowerCase() ?? "";
+  const found = DOSE_UNITS.find(u =>
+    u.value.toLowerCase().startsWith(rawUnit) ||
+    rawUnit.startsWith(u.value.toLowerCase().replace("(s)", "").replace("(es)", ""))
+  );
+  return { qty: match[1] ?? "", unit: found?.value ?? (rawUnit || "comprimido(s)") };
+}
+
+interface DoseInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function DoseInput({ value, onChange }: DoseInputProps) {
+  const parsed = parseDoseText(value);
+  const [qty, setQty] = useState(parsed.qty);
+  const [unit, setUnit] = useState(parsed.unit);
+
+  // Sync quando o valor externo mudar (ex: ao carregar medicamento existente)
+  useEffect(() => {
+    const p = parseDoseText(value);
+    setQty(p.qty);
+    // Só atualiza a unidade se for uma unidade conhecida para não sobrescrever seleção
+    if (DOSE_UNITS.find(u => u.value === p.unit)) {
+      setUnit(p.unit);
+    }
+  }, [value]);
+
+  const emit = (newQty: string, newUnit: string) => {
+    const combined = newQty ? `${newQty} ${newUnit}` : newUnit;
+    onChange(combined);
+  };
+
+  return (
+    <div className="flex h-12 rounded-xl border border-border/50 bg-background/50 overflow-hidden focus-within:border-primary transition-all">
+      <input
+        type="text"
+        inputMode="decimal"
+        placeholder="Ex: 1"
+        value={qty}
+        onChange={(e) => {
+          setQty(e.target.value);
+          emit(e.target.value, unit);
+        }}
+        className="w-20 shrink-0 bg-transparent px-3 text-base font-medium outline-none placeholder:text-muted-foreground/50 border-r border-border/30"
+      />
+      <Select
+        value={unit}
+        onValueChange={(u) => {
+          setUnit(u);
+          emit(qty, u);
+        }}
+      >
+        <SelectTrigger className="flex-1 h-full border-0 rounded-none bg-transparent text-sm font-medium shadow-none focus:ring-0 px-3">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="max-h-60">
+          {DOSE_UNITS.map((u) => (
+            <SelectItem key={u.value} value={u.value}>
+              {u.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 interface WizardStepIdentityProps {
   data: {
@@ -296,14 +385,12 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
 
       {/* Dose & Food Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Dose */}
+        {/* Dose — valor + unidade */}
         <div className="space-y-2">
           <Label className="text-base font-semibold text-foreground/90">{t('wizard.dose') || 'Dose'}</Label>
-          <Input
-            placeholder={t('wizard.dosePlaceholder') || 'Ex: 1 caps'}
+          <DoseInput
             value={data.doseText || ''}
-            onChange={(e) => updateData({ doseText: e.target.value })}
-            className="h-12 bg-background/50 border-border/50 text-base"
+            onChange={(val) => updateData({ doseText: val })}
           />
         </div>
 

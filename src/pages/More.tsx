@@ -5,9 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText, Users, Settings, Crown, LogOut,
-  ChevronRight, HelpCircle, Shield, Bell, QrCode, Package, FolderHeart, History, BookOpen, Plane, Activity
+  ChevronRight, HelpCircle, Shield, Bell, QrCode, Package,
+  FolderHeart, History, BookOpen, Plane, Activity, Gift
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -16,6 +18,35 @@ import { useAuth } from "@/contexts/AuthContext";
 import SubscriptionBadge from "@/components/SubscriptionBadge";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
+
+// Colour palette per feature — avoids the "all icons are teal" cliché
+const ICON_COLORS: Record<string, { bg: string; icon: string }> = {
+  "/recompensas": { bg: "bg-amber-500/15", icon: "text-amber-500" },
+  "/diario-efeitos": { bg: "bg-rose-500/15", icon: "text-rose-500" },
+  "/viagem": { bg: "bg-sky-500/15", icon: "text-sky-500" },
+  "/carteira": { bg: "bg-emerald-500/15", icon: "text-emerald-600" },
+  "/historico": { bg: "bg-indigo-500/15", icon: "text-indigo-500" },
+  "/estoque": { bg: "bg-orange-500/15", icon: "text-orange-500" },
+  "/relatorios": { bg: "bg-teal-500/15", icon: "text-teal-600" },
+  "/digitalizar": { bg: "bg-indigo-500/15", icon: "text-indigo-500" },
+  "/perfil": { bg: "bg-teal-500/15", icon: "text-teal-500" },
+  "/exportar": { bg: "bg-lime-500/15", icon: "text-lime-600" },
+  "/tutorial": { bg: "bg-amber-500/15", icon: "text-amber-600" },
+  "/notificacoes": { bg: "bg-red-500/15", icon: "text-red-500" },
+  "/privacy": { bg: "bg-slate-500/15", icon: "text-slate-500" },
+  "/help-support": { bg: "bg-teal-500/15", icon: "text-teal-500" },
+};
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
+};
 
 export default function More() {
   const { t } = useLanguage();
@@ -25,7 +56,6 @@ export default function More() {
   const [userName, setUserName] = useState("");
   const { isPremium } = useSubscription();
   const { profiles } = useUserProfiles();
-
   const currentUser = useAuth();
 
   useEffect(() => {
@@ -42,12 +72,9 @@ export default function More() {
         "profiles",
         user.uid
       );
-
-      if (profile) {
-        setUserName(profile.nickname || profile.full_name || "");
-      }
+      if (profile) setUserName(profile.nickname || profile.full_name || "");
     } catch {
-      // Silent fail - non-critical UI data
+      // Silent fail
     }
   };
 
@@ -64,6 +91,13 @@ export default function More() {
   };
 
   const menuItems = [
+    {
+      title: t('more.rewards') || 'Recompensas & Séries',
+      description: t('more.rewardsDesc') || 'Conquistas, cashback e proteção de série',
+      icon: Gift,
+      path: "/recompensas",
+      badge: <Badge className="ml-2 bg-amber-500 hover:bg-amber-600 border-none text-white">{t('common.hot') || "HOT"}</Badge>,
+    },
     {
       title: t('more.sideEffectsDiary'),
       description: t('more.sideEffectsDiaryDesc'),
@@ -118,141 +152,152 @@ export default function More() {
       description: t('more.familyCaregiversDesc'),
       icon: Users,
       path: "/perfil",
-      badge: isPremium ? <Badge className="ml-2">{profiles.length} {t('more.profiles')}</Badge> : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
+      badge: isPremium
+        ? <Badge className="ml-2">{profiles.length} {t('more.profiles')}</Badge>
+        : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
     },
   ];
 
   const settingsItems = [
-    {
-      title: t('more.exportData'),
-      description: t('more.exportDataDesc'),
-      icon: FileText,
-      path: "/exportar",
-      badge: <Badge variant="secondary" className="ml-2">LGPD</Badge>,
-    },
-    {
-      title: t('more.tutorial'),
-      description: t('more.tutorialDesc'),
-      icon: BookOpen,
-      path: "/tutorial",
-    },
-    {
-      title: t('more.notifications'),
-      description: t('more.notificationsDesc'),
-      icon: Bell,
-      path: "/notificacoes",
-    },
-    {
-      title: t('more.privacyData'),
-      description: t('more.privacyDataDesc'),
-      icon: Shield,
-      path: "/privacy",
-    },
-    {
-      title: t('more.helpSupport'),
-      description: t('more.helpSupportDesc'),
-      icon: HelpCircle,
-      path: "/help-support",
-    },
+    { title: t('more.exportData'), description: t('more.exportDataDesc'), icon: FileText, path: "/exportar", badge: <Badge variant="secondary" className="ml-2">LGPD</Badge> },
+    { title: t('more.tutorial'), description: t('more.tutorialDesc'), icon: BookOpen, path: "/tutorial" },
+    { title: t('more.notifications'), description: t('more.notificationsDesc'), icon: Bell, path: "/notificacoes" },
+    { title: t('more.privacyData'), description: t('more.privacyDataDesc'), icon: Shield, path: "/privacy" },
+    { title: t('more.helpSupport'), description: t('more.helpSupportDesc'), icon: HelpCircle, path: "/help-support" },
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
       <Navigation />
 
-      <main className="container max-w-4xl mx-auto px-4 pt-20 pb-8">
-        {/* User Profile Card */}
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-bold">{userName || t('more.user')}</h2>
-                <p className="text-sm text-muted-foreground">{userEmail}</p>
-              </div>
-              <SubscriptionBadge />
-            </div>
+      <main className="container max-w-2xl mx-auto px-4 pt-20 pb-8">
 
-            {!isPremium && (
-              <Button
-                onClick={() => navigate('/planos')}
-                className="w-full mt-4"
-                size="lg"
-              >
-                <Crown className="h-4 w-4 mr-2" />
-                {t('more.upgradePremium')}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        {/* User Profile Card */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+        >
+          <Card className="mb-6 overflow-hidden border-border/60">
+            <div className="h-1.5 w-full bg-gradient-to-r from-teal-500 via-emerald-400 to-teal-600" />
+            <CardContent className="pt-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center text-white text-xl font-bold shadow-md">
+                    {(userName || userEmail || "?")[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold">{userName || t('more.user')}</h2>
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  </div>
+                </div>
+                <SubscriptionBadge />
+              </div>
+
+              {!isPremium && (
+                <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={() => navigate('/planos')}
+                    className="w-full mt-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/20 hover:opacity-90"
+                    size="lg"
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    {t('more.upgradePremium')}
+                  </Button>
+                </motion.div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Main Features */}
         <div className="space-y-2 mb-6">
-          <h3 className="text-sm font-semibold text-muted-foreground px-2">{t('more.tools')}</h3>
-          {menuItems.map((item) => (
-            <Card
-              key={item.path}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(item.path)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <item.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <div className="flex items-center">
-                        <h4 className="font-semibold">{item.title}</h4>
-                        {item.badge}
+          <h3 className="text-xs font-semibold text-muted-foreground px-1 uppercase tracking-wider mb-3">{t('more.tools')}</h3>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-2"
+          >
+            {menuItems.map((item) => {
+              const colors = ICON_COLORS[item.path] || { bg: "bg-primary/10", icon: "text-primary" };
+              return (
+                <motion.div key={item.path} variants={itemVariants}>
+                  <Card
+                    className="hover:shadow-md transition-all cursor-pointer active:scale-[0.99] border-border/60"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0", colors.bg)}>
+                            <item.icon className={cn("h-5 w-5", colors.icon)} />
+                          </div>
+                          <div>
+                            <div className="flex items-center flex-wrap gap-1">
+                              <h4 className="font-semibold text-sm">{item.title}</h4>
+                              {item.badge}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
 
         {/* Settings */}
         <div className="space-y-2 mb-6">
-          <h3 className="text-sm font-semibold text-muted-foreground px-2">{t('more.settings')}</h3>
-          {settingsItems.map((item) => (
-            <Card
-              key={item.path}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(item.path)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <item.icon className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <div className="flex items-center">
-                        <h4 className="font-semibold">{item.title}</h4>
-                        {item.badge}
+          <h3 className="text-xs font-semibold text-muted-foreground px-1 uppercase tracking-wider mb-3">{t('more.settings')}</h3>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="space-y-2"
+          >
+            {settingsItems.map((item) => {
+              const colors = ICON_COLORS[item.path] || { bg: "bg-muted/60", icon: "text-muted-foreground" };
+              return (
+                <motion.div key={item.path} variants={itemVariants}>
+                  <Card
+                    className="hover:shadow-md transition-all cursor-pointer active:scale-[0.99] border-border/60"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("h-9 w-9 rounded-xl flex items-center justify-center flex-shrink-0", colors.bg)}>
+                            <item.icon className={cn("h-4 w-4", colors.icon)} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-1">
+                              <h4 className="font-medium text-sm">{item.title}</h4>
+                              {'badge' in item && item.badge}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                       </div>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
 
-        {/* Premium Section */}
+        {/* Premium subscription management */}
         {isPremium && (
-          <Card className="mb-6">
+          <Card className="mb-4 border-border/60">
             <CardContent className="p-4">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate('/assinatura')}
-              >
+              <Button variant="outline" className="w-full" onClick={() => navigate('/assinatura')}>
                 <Settings className="h-4 w-4 mr-2" />
                 {t('more.manageSubscription')}
               </Button>
@@ -261,7 +306,7 @@ export default function More() {
         )}
 
         {/* Logout */}
-        <Card>
+        <Card className="border-border/60">
           <CardContent className="p-4">
             <Button
               variant="ghost"
@@ -275,25 +320,13 @@ export default function More() {
         </Card>
 
         {/* Legal */}
-        <div className="mt-6 text-center text-sm text-muted-foreground space-y-1">
+        <div className="mt-6 text-center text-xs text-muted-foreground space-y-1">
           <p>
-            <button
-              onClick={() => navigate('/terms')}
-              className="hover:underline"
-            >
-              {t('more.termsOfUse')}
-            </button>
+            <button onClick={() => navigate('/terms')} className="hover:underline">{t('more.termsOfUse')}</button>
             {" • "}
-            <button
-              onClick={() => navigate('/privacy')}
-              className="hover:underline"
-            >
-              {t('more.privacy')}
-            </button>
+            <button onClick={() => navigate('/privacy')} className="hover:underline">{t('more.privacy')}</button>
           </p>
-          <p className="text-xs">
-            HoraMed • {t('more.tagline')}
-          </p>
+          <p>HoraMed • {t('more.tagline')}</p>
         </div>
       </main>
     </div>

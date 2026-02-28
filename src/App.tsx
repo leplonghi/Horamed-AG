@@ -98,10 +98,17 @@ import HealthAIButton from "./components/HealthAIButton";
 const PWAInstallPrompt = lazy(() => import("./components/PWAInstallPrompt"));
 const NotificationPermissionPrompt = lazy(() => import("./components/NotificationPermissionPrompt"));
 
-// Loading fallback component
+// Loading fallback component — branded, not a raw spinner
 const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
+    <div className="relative">
+      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary to-teal-500 animate-pulse shadow-lg shadow-primary/30" />
+      <div className="absolute inset-0 h-12 w-12 rounded-2xl border-2 border-primary/30 animate-ping" />
+    </div>
+    <div className="h-1 w-24 rounded-full bg-muted overflow-hidden">
+      <div className="h-full bg-gradient-to-r from-primary to-teal-500 animate-[slide_1.2s_ease-in-out_infinite]"
+        style={{ animation: "shimmer 1.2s ease-in-out infinite" }} />
+    </div>
   </div>
 );
 

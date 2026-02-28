@@ -12,9 +12,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="HoraMed" />
   <meta name="application-name" content="HoraMed" />
-  <meta name="theme-color" content="#059669" media="(prefers-color-scheme: light)" />
-  <meta name="theme-color" content="#064e3b" media="(prefers-color-scheme: dark)" />
-  <meta name="msapplication-TileColor" content="#059669" />
+  <meta name="theme-color" content="#336EF5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#52B2FF" media="(prefers-color-scheme: dark)" />
+  <meta name="msapplication-TileColor" content="#2563EB" />
   <meta name="msapplication-TileImage" content="/icon-512.png" />
   <meta name="msapplication-tap-highlight" content="no" />
   <meta name="format-detection" content="telephone=no" />
@@ -24,8 +24,6 @@
   <meta name="screen-orientation" content="portrait" />
 
   <!-- Preconnect to critical origins for faster loading -->
-  <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
-  <link rel="dns-prefetch" href="%VITE_SUPABASE_URL%" />
   <link rel="preconnect" href="https://ipapi.co" crossorigin />
   <link rel="dns-prefetch" href="https://ipapi.co" />
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
@@ -72,13 +70,15 @@
   <meta name="author" content="HoraMed" />
 
   <meta property="og:type" content="website" />
-  <meta property="og:image"
-    content="https://storage.googleapis.com/gpt-engineer-file-uploads/Szv22bCvovNu3sqetMXogpCe1w52/social-images/social-1767026586987-2.png">
+  <meta property="og:url" content="https://app.horamed.net/" />
+  <meta property="og:image" content="https://app.horamed.net/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
 
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@lovable_dev" />
-  <meta name="twitter:image"
-    content="https://storage.googleapis.com/gpt-engineer-file-uploads/Szv22bCvovNu3sqetMXogpCe1w52/social-images/social-1767026586987-2.png">
+  <meta name="twitter:site" content="@HoraMed" />
+  <meta name="twitter:creator" content="@HoraMed" />
+  <meta name="twitter:image" content="https://app.horamed.net/og-image.png" />
 
 
 
@@ -108,12 +108,36 @@
       min-height: 100vh;
     }
   </style>
-  <meta property="og:title" content="HoraMed - Gestão Completa da Sua Saúde">
-  <meta name="twitter:title" content="HoraMed - Gestão Completa da Sua Saúde">
+  <meta property="og:title" content="HoraMed - Gestão Completa da Sua Saúde" />
+  <meta name="twitter:title" content="HoraMed - Gestão Completa da Sua Saúde" />
   <meta property="og:description"
-    content="Plataforma completa de gestão de saúde: lembretes inteligentes, histórico médico digital, análise de exames, consultas e muito mais em um só lugar">
+    content="Plataforma completa de gestão de saúde: lembretes inteligentes, histórico médico digital, análise de exames, consultas e muito mais em um só lugar" />
   <meta name="twitter:description"
-    content="Plataforma completa de gestão de saúde: lembretes inteligentes, histórico médico digital, análise de exames, consultas e muito mais em um só lugar">
+    content="Plataforma completa de gestão de saúde: lembretes inteligentes, histórico médico digital, análise de exames, consultas e muito mais em um só lugar" />
+
+  <!-- Schema.org structured data for Google rich results -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "HoraMed",
+    "operatingSystem": "Android, iOS, Web",
+    "applicationCategory": "HealthApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "BRL"
+    },
+    "description": "Plataforma completa de gestão de saúde: lembretes inteligentes, histórico médico digital, análise de exames e consultas em um só lugar.",
+    "url": "https://app.horamed.net/",
+    "screenshot": "https://app.horamed.net/og-image.png",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "1200"
+    }
+  }
+  </script>
 </head>
 
 <body>

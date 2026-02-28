@@ -9,12 +9,14 @@
 export const STRIPE_PRICES_USD = {
   monthly: 'price_1SvxqlHh4P8HSV4YpZKzGawy', // $3.99/month
   annual: 'price_1SvxrIHh4P8HSV4YCGnYC8Mn',  // $39.99/year
+  lifetime: 'price_1T5ZrAHh4P8HSV4YvS5ECHve', // $99.00 lifetime
 } as const;
 
 // Brazilian prices (BRL) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_BRL = {
   monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y', // R$ 19,90/mês
   annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',  // R$ 199,90/ano
+  lifetime: 'price_1T5ZrAHh4P8HSV4YKrPTGhCg', // R$ 499,00 lifetime
 } as const;
 
 // Legacy export for backward compatibility
@@ -30,6 +32,8 @@ export const STRIPE_PRODUCTS = {
   // Legacy exports
   premiumMonthly: 'prod_TtBQvShFDZtpfU',
   premiumAnnual: 'prod_TtBQUlvlE0CONT',
+  premiumLifetimeBRL: 'prod_U3hF8vjIzyKFH5',
+  premiumLifetimeUSD: 'prod_U3hFyuAC8K0EIL',
 } as const;
 
 export const PRICING = {
@@ -44,6 +48,10 @@ export const PRICING = {
     annual: 39.99,
     currency: 'USD',
     symbol: '$',
+  },
+  lifetime: {
+    brl: 499.90,
+    usd: 99.99,
   },
   trial_days: 7,
 } as const;

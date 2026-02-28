@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { IconCheckCircle as CheckCircle2, IconHistory as Clock, IconAlertCircle as AlertCircle } from '@/components/icons/HoramedIcons';
 import { useAuth, fetchCollection, where, orderBy, limit, fetchDocument } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';

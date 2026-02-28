@@ -31,9 +31,10 @@ export {
     limit,
     serverTimestamp,
     query,
+    Timestamp,
 } from './firestore'
 
 // Re-export Firebase types for convenience
 export type { User } from 'firebase/auth'
-export type { DocumentData, Timestamp } from 'firebase/firestore'
+export type { DocumentData } from 'firebase/firestore'
 export { httpsCallable } from 'firebase/functions'

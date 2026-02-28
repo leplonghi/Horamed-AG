@@ -46,18 +46,20 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
     { value: "cápsulas", label: t('wizard.capsules'), emoji: "💊" },
     { value: "gotas", label: t('wizard.drops'), emoji: "💧" },
     { value: "ml", label: t('wizard.ml'), emoji: "🧴" },
+    { value: "gramas", label: t('wizard.grams'), emoji: "⚖️" },
+    { value: "mg", label: t('wizard.mg'), emoji: "⚖️" },
     { value: "sachês", label: t('wizard.doses'), emoji: "📦" },
     { value: "adesivos", label: language === 'pt' ? 'Adesivos' : 'Patches', emoji: "🩹" },
     { value: "ampolas", label: language === 'pt' ? 'Ampolas' : 'Ampoules', emoji: "💉" },
     { value: "unidades", label: t('wizard.units'), emoji: "📦" },
   ];
 
-  const daysRemaining = stock.unitsTotal > 0 && dosesPerDay > 0 
-    ? Math.floor(stock.unitsTotal / dosesPerDay) 
+  const daysRemaining = stock.unitsTotal > 0 && dosesPerDay > 0
+    ? Math.floor(stock.unitsTotal / dosesPerDay)
     : 0;
 
   const isLowStock = daysRemaining > 0 && daysRemaining <= 7;
-  const endDate = daysRemaining > 0 
+  const endDate = daysRemaining > 0
     ? format(new Date(Date.now() + daysRemaining * 24 * 60 * 60 * 1000), 'PP', { locale })
     : null;
 
@@ -74,8 +76,8 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
           onClick={() => onStockChange({ ...stock, enabled: !stock.enabled })}
           className={cn(
             "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
-            stock.enabled 
-              ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20" 
+            stock.enabled
+              ? "border-primary bg-primary/10 shadow-md ring-2 ring-primary/20"
               : "border-border hover:border-primary/30 bg-background"
           )}
         >
@@ -160,9 +162,9 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
                   min="1"
                   placeholder={t("placeholder.quantity")}
                   value={stock.unitsTotal || ""}
-                  onChange={(e) => onStockChange({ 
-                    ...stock, 
-                    unitsTotal: parseInt(e.target.value) || 0 
+                  onChange={(e) => onStockChange({
+                    ...stock,
+                    unitsTotal: parseInt(e.target.value) || 0
                   })}
                   className="h-11"
                 />
@@ -201,8 +203,8 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
             {stock.unitsTotal > 0 && dosesPerDay > 0 && (
               <div className={cn(
                 "p-4 rounded-xl",
-                isLowStock 
-                  ? "bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700" 
+                isLowStock
+                  ? "bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 dark:border-amber-700"
                   : "bg-primary/5 border border-primary/20"
               )}>
                 <div className="flex items-center justify-between mb-2">
@@ -240,7 +242,7 @@ export default function StepStock({ stock, dosesPerDay, onStockChange, onComplet
           </div>
         )}
 
-        <Button 
+        <Button
           onClick={onComplete}
           className="w-full h-12 text-base font-semibold"
         >

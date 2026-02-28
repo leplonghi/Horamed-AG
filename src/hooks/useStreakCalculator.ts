@@ -16,6 +16,7 @@ interface StreakData {
   isImproving: boolean;
   lastWeekAverage: number;
   thisWeekAverage: number;
+  weeklyAdherence: { day: string; percentage: number }[];
 }
 
 const CACHE_KEY = "streak-data";
@@ -31,6 +32,7 @@ export function useStreakCalculator() {
       isImproving: false,
       lastWeekAverage: 0,
       thisWeekAverage: 0,
+      weeklyAdherence: [],
     };
 
     try {
@@ -119,12 +121,30 @@ export function useStreakCalculator() {
       const thisWeekAverage = thisWeekTotal > 0 ? (thisWeekTaken / thisWeekTotal) * 100 : 0;
       const lastWeekAverage = lastWeekTotal > 0 ? (lastWeekTaken / lastWeekTotal) * 100 : 0;
 
+      // Generate weekly adherence trend (last 7 days)
+      const weeklyAdherence = [];
+      const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = subDays(new Date(), i);
+        const dayKey = startOfDay(d).toISOString();
+        const dayData = dayMap.get(dayKey);
+        const dayName = daysOfWeek[d.getDay()];
+
+        const percentage = dayData && dayData.total > 0
+          ? Math.round((dayData.taken / dayData.total) * 100)
+          : 0;
+
+        weeklyAdherence.push({ day: dayName, percentage });
+      }
+
       return {
         currentStreak,
         longestStreak: Math.max(longestStreak, currentStreak),
         isImproving: thisWeekAverage > lastWeekAverage,
         lastWeekAverage: Math.round(lastWeekAverage),
         thisWeekAverage: Math.round(thisWeekAverage),
+        weeklyAdherence,
       };
     } catch (error) {
       console.error("Error calculating streaks:", error);
@@ -155,6 +175,7 @@ export function useStreakCalculator() {
     isImproving: streakData?.isImproving ?? false,
     lastWeekAverage: streakData?.lastWeekAverage ?? 0,
     thisWeekAverage: streakData?.thisWeekAverage ?? 0,
+    weeklyAdherence: streakData?.weeklyAdherence ?? [],
     loading,
     refresh
   };

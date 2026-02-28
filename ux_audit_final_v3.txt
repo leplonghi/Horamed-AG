@@ -1,0 +1,21 @@
+
+[UX AUDIT] 434 files checked
+--------------------------------------------------
+[*] WARNINGS (2886):
+  - [Persuasion] index.html: Prices without anchoring. Show original price to frame discount value.
+  - [Persuasion] index.html: Social proof without specific numbers. Use 'Join 10,000+' format.
+  - [Typography] index.html: Text elements found without line-height. Body: 1.4-1.6, Headings: 1.1-1.3
+  - [Color] index.html: Color variables without HSL. Consider HSL for easier palette adjustment (Hue, Saturation, Lightness).
+  - [Performance] App.css: Animating expensive properties (height, width, margin, padding). Use transform/opacity where possible.
+  - [Fitts' Law] App.tsx: Small targets (< 44px)
+  - [Typography] App.tsx: Text elements found without line-height. Body: 1.4-1.6, Headings: 1.1-1.3
+  - [Animation] App.tsx: Routing detected without page transitions. Consider fade/slide for context continuity.
+  - [Fitts' Law] index.css: Small targets (< 44px)
+  - [Cognitive Load] index.css: High visual noise detected. Many colors and borders increase cognitive load.
+  - [Typography] index.css: Heading has line-height 1.7 (>1.3). Headings should be tighter (1.1-1.3).
+  - [Typography] index.css: Fixed font sizes without clamp(). Consider fluid typography: clamp(MIN, PREFERRED, MAX)
+  - [Performance] index.css: Animating expensive properties (padding, left, top, width, right, bottom, height). Use transform/opacity where possible.
+  - [Visual] index.css: Many gradients detected (83). Ensure this serves purpose, not decoration.
+  - [Visual] index.css: Many border declarations (15). Simplify for cleaner look.
+[+] PASSED CHECKS: 220
+STATUS: PASS

@@ -4,10 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Check, Crown, Shield, Sparkles, Star, Zap, Gift, Loader2,
-  Pill, Bell, BarChart3, FileText, Users, Bot, Camera, FileCheck, Ban,
-  HeartPulse, X
-} from "lucide-react";
+  IconArrowLeft as ArrowLeft,
+  IconCheck as Check,
+  IconCrown as Crown,
+  IconShield as Shield,
+  IconSparkles as Sparkles,
+  IconStar as Star,
+  IconZap as Zap,
+  IconGift as Gift,
+  IconLoader as Loader2,
+  IconMedications as Pill,
+  IconBell as Bell,
+  IconChart as BarChart3,
+  IconFile as FileText,
+  IconUsers as Users,
+  IconAI as Bot,
+  IconCamera as Camera,
+  IconCheckCircle as FileCheck,
+  IconBan as Ban,
+  IconHeartPulse as HeartPulse,
+  IconClose as X,
+} from "@/components/icons/HoramedIcons";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { auth } from "@/integrations/firebase";
 import { functions } from "@/integrations/firebase/client";
@@ -25,13 +42,14 @@ export default function Plans() {
   const { isPremium, subscription, isOnTrial, trialDaysLeft } = useSubscription();
 
   const [loading, setLoading] = useState(false);
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("annual");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "annual" | "lifetime">("lifetime");
   const [referralDiscount, setReferralDiscount] = useState(0);
 
   const isBrazil = countryCode === 'BR';
   const pricing = isBrazil ? PRICING.brl : PRICING.usd;
   const monthlyPrice = pricing.monthly;
   const annualPrice = pricing.annual;
+  const lifetimePriceValue = isBrazil ? PRICING.lifetime.brl : PRICING.lifetime.usd;
   const annualMonthly = annualPrice / 12;
   const savingsPercent = Math.round((1 - annualMonthly / monthlyPrice) * 100);
 
@@ -179,6 +197,20 @@ export default function Plans() {
                 -{savingsPercent}%
               </Badge>
             </button>
+            <button
+              onClick={() => setBillingCycle("lifetime")}
+              className={cn(
+                "px-6 py-3 rounded-xl text-sm font-medium transition-all duration-300 relative group",
+                billingCycle === "lifetime"
+                  ? "bg-background shadow-lg text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Lifetime
+              <Badge className="absolute -top-6 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-[10px] px-2 py-0.5 border-none shadow-lg animate-bounce whitespace-nowrap">
+                {t('plans.specialOffer') || "OFERTA ÚNICA"}
+              </Badge>
+            </button>
           </div>
         </motion.div>
 
@@ -221,16 +253,44 @@ export default function Plans() {
                     {formatPrice(monthlyPrice)}/{t('plans.mo')}
                   </p>
                 )}
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
-                    {formatPrice(billingCycle === "annual" ? annualMonthly : monthlyPrice)}
-                  </span>
-                  <span className="text-muted-foreground">/{t('plans.mo')}</span>
-                </div>
-                {billingCycle === "annual" && (
-                  <p className="text-sm text-muted-foreground">
-                    {formatPrice(annualPrice)} {t('plans.billedAnnually')}
-                  </p>
+                {billingCycle === "lifetime" ? (
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
+                        {formatPrice(lifetimePriceValue)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Pagamento único. Acesso vitalício.
+                    </p>
+                    {/* ROI Calculator — break-even clarity */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1"
+                    >
+                      <p className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                        💡 Em {Math.ceil(lifetimePriceValue / annualPrice)} {Math.ceil(lifetimePriceValue / annualPrice) === 1 ? 'ano' : 'anos'} você já está no lucro
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Economize {formatPrice(Math.max(0, annualPrice * 5 - lifetimePriceValue))} em 5 anos vs. plano anual
+                      </p>
+                    </motion.div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-bold bg-gradient-to-r from-primary to-teal-500 bg-clip-text text-transparent">
+                        {formatPrice(billingCycle === "annual" ? annualMonthly : monthlyPrice)}
+                      </span>
+                      <span className="text-muted-foreground">/{t('plans.mo')}</span>
+                    </div>
+                    {billingCycle === "annual" && (
+                      <p className="text-sm text-muted-foreground">
+                        {formatPrice(annualPrice)} {t('plans.billedAnnually')}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
@@ -272,6 +332,11 @@ export default function Plans() {
                       <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                       {t('plans.loading')}
                     </>
+                  ) : billingCycle === "lifetime" ? (
+                    <>
+                      <Gift className="h-5 w-5 mr-2" />
+                      Garantir Acesso Vitalício
+                    </>
                   ) : (
                     <>
                       <Zap className="h-5 w-5 mr-2" />
@@ -282,7 +347,10 @@ export default function Plans() {
               )}
 
               <p className="text-xs text-center text-muted-foreground">
-                {t('plans.cancelAnytime')}
+                {billingCycle === "lifetime"
+                  ? "Sem mensalidades. Para sempre."
+                  : t('plans.cancelAnytime')
+                }
               </p>
             </div>
           </div>
@@ -388,16 +456,25 @@ export default function Plans() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <div className="flex items-center gap-3">
               <div className="flex -space-x-3">
-                {['👨', '👩', '👴', '👧', '👨‍⚕️'].map((emoji, i) => (
+                {[
+                  { name: "Ana", color: "bg-teal-400" },
+                  { name: "João", color: "bg-blue-400" },
+                  { name: "Maria", color: "bg-indigo-400" },
+                  { name: "Dr. Silva", color: "bg-emerald-400" },
+                  { name: "Carla", color: "bg-amber-400" }
+                ].map((user, i) => (
                   <div
                     key={i}
-                    className="h-10 w-10 rounded-full bg-muted border-2 border-background flex items-center justify-center text-lg shadow-sm"
+                    className={cn(
+                      "h-10 w-10 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold text-white shadow-sm transition-transform hover:scale-110 hover:z-20 cursor-default",
+                      user.color
+                    )}
                   >
-                    {emoji}
+                    {user.name.charAt(0)}
                   </div>
                 ))}
               </div>
-              <span className="text-sm text-muted-foreground font-medium">+10.000</span>
+              <span className="text-sm text-muted-foreground font-medium">+100.000 usuários</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-0.5">

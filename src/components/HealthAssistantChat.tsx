@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAILimits } from "@/hooks/useAILimits";
-import PaywallDialog from "./PaywallDialog";
+import { PremiumPaywall } from "./PremiumPaywall";
 import { Alert, AlertDescription } from "./ui/alert";
 
 import { Badge } from "./ui/badge";
@@ -260,7 +260,11 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         </div>
       </Card>
 
-      <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} feature="ai_agent" />
+      <PremiumPaywall
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        trigger="ai"
+      />
     </>
   );
 }

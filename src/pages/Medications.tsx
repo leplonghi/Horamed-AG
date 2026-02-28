@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, updateDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Search, Plus, Pill, Leaf, Clock, BookOpen, X } from "lucide-react";
+import { Pencil, Trash2, Search, Plus, Pill, Leaf, Heart, Clock, BookOpen, X } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -23,6 +23,64 @@ import SmartMedicationInsights from "@/components/medications/SmartMedicationIns
 import MedicationStatsGrid from "@/components/medications/MedicationStatsGrid";
 import OceanBackground from "@/components/ui/OceanBackground";
 import type { LucideIcon } from "lucide-react";
+
+// Hash determinístico: mesmo nome = mesma cor sempre
+function nameHash(str: string): number {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+// Paletas FORTES — o gradiente é o fundo do card, texto em branco
+// [from, to] = gradiente, accent = cor da barra/ícone, darkFrom/darkTo = dark mode
+const CATEGORY_PALETTES: Record<string, Array<{
+  from: string; to: string;          // gradiente claro (light mode)
+  darkFrom: string; darkTo: string;  // gradiente dark mode
+  accent: string;                    // cor sólida do acento (ícone bg, barra)
+  iconBg: string;                    // fundo do ícone
+}>> = {
+  medicamento: [
+    { from: "#2563eb", to: "#1d4ed8", darkFrom: "#1e40af", darkTo: "#1e3a8a", accent: "#3b82f6", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#4f46e5", to: "#4338ca", darkFrom: "#3730a3", darkTo: "#312e81", accent: "#818cf8", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#4338ca", to: "#3730a3", darkFrom: "#312e81", darkTo: "#1e1b4b", accent: "#818cf8", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#0284c7", to: "#0369a1", darkFrom: "#075985", darkTo: "#0c4a6e", accent: "#38bdf8", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#0891b2", to: "#0e7490", darkFrom: "#164e63", darkTo: "#083344", accent: "#22d3ee", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#1d4ed8", to: "#0ea5e9", darkFrom: "#1e3a8a", darkTo: "#075985", accent: "#60a5fa", iconBg: "rgba(255,255,255,0.22)" },
+  ],
+  vitamina: [
+    { from: "#16a34a", to: "#15803d", darkFrom: "#14532d", darkTo: "#052e16", accent: "#4ade80", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#059669", to: "#047857", darkFrom: "#065f46", darkTo: "#064e3b", accent: "#34d399", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#0d9488", to: "#0f766e", darkFrom: "#134e4a", darkTo: "#042f2e", accent: "#2dd4bf", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#ca8a04", to: "#b45309", darkFrom: "#78350f", darkTo: "#451a03", accent: "#fbbf24", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#22c55e", to: "#16a34a", darkFrom: "#166534", darkTo: "#14532d", accent: "#86efac", iconBg: "rgba(255,255,255,0.22)" },
+  ],
+  suplemento: [
+    { from: "#0d9488", to: "#0f766e", darkFrom: "#134e4a", darkTo: "#042f2e", accent: "#5eead4", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#db2777", to: "#be185d", darkFrom: "#831843", darkTo: "#500724", accent: "#f9a8d4", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#d97706", to: "#b45309", darkFrom: "#78350f", darkTo: "#451a03", accent: "#fcd34d", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#dc2626", to: "#b91c1c", darkFrom: "#7f1d1d", darkTo: "#450a0a", accent: "#fca5a5", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#0f766e", to: "#0d9488", darkFrom: "#115e59", darkTo: "#134e4a", accent: "#5eead4", iconBg: "rgba(255,255,255,0.22)" },
+    { from: "#0891b2", to: "#0e7490", darkFrom: "#164e63", darkTo: "#083344", accent: "#67e8f9", iconBg: "rgba(255,255,255,0.22)" },
+  ],
+  outro: [
+    { from: "#52525b", to: "#3f3f46", darkFrom: "#3f3f46", darkTo: "#27272a", accent: "#a1a1aa", iconBg: "rgba(255,255,255,0.18)" },
+  ],
+};
+
+const CATEGORY_ICONS: Record<string, React.ElementType> = {
+  medicamento: Pill,
+  vitamina: Leaf,
+  suplemento: Heart,
+  outro: Pill,
+};
+
+function getItemPalette(category: string, name: string) {
+  const palettes = CATEGORY_PALETTES[category] ?? CATEGORY_PALETTES.outro;
+  const idx = nameHash(name) % palettes.length;
+  return { ...palettes[idx], icon: CATEGORY_ICONS[category] ?? Pill };
+}
+
+
 
 interface MedDoc {
   id: string;
@@ -171,7 +229,8 @@ export default function Medications() {
 
   // Separar por categoria
   const medicamentos = filteredItems.filter(item => item.category === 'medicamento');
-  const suplementos = filteredItems.filter(item => item.category === 'suplemento' || item.category === 'vitamina');
+  const vitaminas = filteredItems.filter(item => item.category === 'vitamina');
+  const suplementos = filteredItems.filter(item => item.category === 'suplemento');
 
   const deleteItem = async (id: string) => {
     if (!confirm(t('medications.confirmDelete'))) return;
@@ -228,7 +287,7 @@ export default function Medications() {
     }
   };
 
-  // Card com ações visíveis - Design focado em ação clara
+  // Card com gradiente saturado como fundo real
   const ItemCard = ({ item, index }: { item: Item; index: number }) => {
     const scheduleSummary = getScheduleSummary(item.schedules);
     const isSupplement = item.category === 'suplemento' || item.category === 'vitamina';
@@ -236,97 +295,116 @@ export default function Medications() {
     const stockInfo = item.stock?.[0];
     const lowStock = stockInfo && stockInfo.currentQty <= 5;
 
+    const palette = getItemPalette(item.category, item.name);
+    const CategoryIcon = palette.icon;
+    const isDark = document.documentElement.classList.contains('dark');
+    const bg = isDark
+      ? `linear-gradient(135deg, ${palette.darkFrom} 0%, ${palette.darkTo} 100%)`
+      : `linear-gradient(135deg, ${palette.from} 0%, ${palette.to} 100%)`;
+
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: index * 0.03 }}
-        whileTap={{ scale: 0.99 }}
+        transition={{ delay: index * 0.04, ease: [0.22, 1, 0.36, 1] }}
+        whileTap={{ scale: 0.98 }}
+        className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-xl cursor-default"
+        style={{ transition: "box-shadow 0.2s, transform 0.2s" }}
       >
+        {/* Camada de gradiente absoluta — impossível de sobrescrever */}
         <div
-          className={cn(
-            "p-4 rounded-2xl transition-all duration-200",
-            "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-            "border border-border/30 shadow-[var(--shadow-glass)]",
-            "hover:shadow-[var(--shadow-glass-hover)] hover:border-border/50",
-            isSupplement && "ring-1 ring-performance/20"
-          )}
-        >
-          {/* Linha principal com info */}
-          <div className="flex items-center gap-3 mb-3">
-            <div className={cn(
-              "w-11 h-11 rounded-xl flex items-center justify-center shrink-0",
-              isSupplement ? "bg-performance/10" : "bg-primary/10"
-            )}>
-              {isSupplement ? (
-                <Leaf className="w-5 h-5 text-performance" />
-              ) : (
-                <Pill className="w-5 h-5 text-primary" />
-              )}
-            </div>
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            backgroundImage: bg,
+          }}
+        />
 
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-base truncate">{item.name}</h3>
-                {supplementCategory && (
-                  <SupplementCategoryTag category={supplementCategory} size="sm" />
-                )}
+        {/* Conteúdo acima da cor */}
+        <div className="relative z-10">
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: "rgba(255,255,255,0.22)" }}
+              >
+                <CategoryIcon className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-3 mt-0.5">
-                {scheduleSummary && (
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{scheduleSummary}</span>
-                  </div>
-                )}
-                {stockInfo && (
-                  <span className={cn(
-                    "text-xs px-2 py-0.5 rounded-full",
-                    lowStock ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"
-                  )}>
-                    {stockInfo.currentQty} {stockInfo.unitLabel || (language === 'pt' ? 'un.' : 'units')}
-                  </span>
-                )}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                  <h3 className="font-bold text-base text-white truncate">{item.name}</h3>
+                  {supplementCategory && (
+                    <SupplementCategoryTag category={supplementCategory} size="sm" />
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  {scheduleSummary && (
+                    <div className="flex items-center gap-1 text-sm" style={{ color: "rgba(255,255,255,0.82)" }}>
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{scheduleSummary}</span>
+                    </div>
+                  )}
+                  {stockInfo && (
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                      style={lowStock
+                        ? { background: "rgba(239,68,68,0.35)", color: "#fecaca" }
+                        : { background: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.9)" }
+                      }
+                    >
+                      {stockInfo.currentQty} {stockInfo.unitLabel || (language === 'pt' ? 'un.' : 'units')}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Linha de ações - SEMPRE VISÍVEL */}
-          <div className="flex items-center gap-2 pt-2 border-t border-muted/30">
+          {/* Barra de ações */}
+          <div
+            className="flex items-center gap-1 px-3 py-2"
+            style={{ background: "rgba(0,0,0,0.22)", borderTop: "1px solid rgba(255,255,255,0.15)" }}
+          >
             <Button
               size="sm"
-              variant="outline"
-              className="flex-1 h-10 rounded-xl font-medium"
+              variant="ghost"
+              className="flex-1 h-8 rounded-xl font-semibold text-xs text-white hover:bg-white/20"
               onClick={() => navigate(`/adicionar?edit=${item.id}`)}
             >
-              <Pencil className="h-4 w-4 mr-1.5" />
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
               {language === 'pt' ? 'Editar' : 'Edit'}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-xl"
+              className="h-8 w-8 rounded-xl hover:bg-white/20"
+              style={{ color: "rgba(255,255,255,0.7)" }}
               title={language === 'pt' ? 'Ver bula' : 'View package insert'}
               onClick={(e) => handleOpenBula(item.name, e)}
             >
-              <BookOpen className="h-4 w-4" />
+              <BookOpen className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-10 w-10 rounded-xl text-destructive hover:bg-destructive/10"
-              onClick={(e) => {
-                e.stopPropagation();
-                deleteItem(item.id);
-              }}
+              className="h-8 w-8 rounded-xl hover:bg-white/20"
+              style={{ color: "rgba(254,202,202,0.9)" }}
+              onClick={(e) => { e.stopPropagation(); deleteItem(item.id); }}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
       </motion.div>
     );
   };
+
+
+
+
+
 
   // Seção de categoria - Clean
   const CategorySection = ({
@@ -510,7 +588,7 @@ export default function Medications() {
               >
                 {(!categoryFilter || categoryFilter === 'medicamento') && medicamentos.length > 0 && (
                   <CategorySection
-                    title={t('medications.medicationsSection')}
+                    title={language === 'pt' ? 'Medicamentos' : 'Medications'}
                     icon={Pill}
                     items={medicamentos}
                     emptyMessage={t('medications.noMedications')}
@@ -518,13 +596,23 @@ export default function Medications() {
                   />
                 )}
 
+                {(!categoryFilter || categoryFilter === 'vitamina') && vitaminas.length > 0 && (
+                  <CategorySection
+                    title={language === 'pt' ? 'Vitaminas' : 'Vitamins'}
+                    icon={Leaf}
+                    items={vitaminas}
+                    emptyMessage={language === 'pt' ? 'Nenhuma vitamina cadastrada' : 'No vitamins registered'}
+                    accentColor="bg-emerald-500/10 text-emerald-600"
+                  />
+                )}
+
                 {(!categoryFilter || categoryFilter === 'suplemento') && suplementos.length > 0 && (
                   <CategorySection
-                    title={t('medications.supplementsSection')}
-                    icon={Leaf}
+                    title={language === 'pt' ? 'Suplementos' : 'Supplements'}
+                    icon={Heart}
                     items={suplementos}
                     emptyMessage={t('medications.noSupplements')}
-                    accentColor="bg-performance/10 text-performance"
+                    accentColor="bg-teal-500/10 text-teal-600"
                   />
                 )}
               </motion.div>

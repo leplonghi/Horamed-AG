@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Smile, Meh, Frown, Activity } from 'lucide-react';
-import { GeneralFeeling } from '@/lib/symptomService';
+import { IconSmile as Smile, IconMeh as Meh, IconFrown as Frown, IconActivity as Activity } from '@/components/icons/HoramedIcons';
+import { GeneralFeeling, symptomService } from '@/lib/symptomService';
 import { SymptomLoggerModal } from './SymptomLoggerModal';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DailyCheckInWidgetProps {
     onLogComplete: () => void;
@@ -14,12 +15,36 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export function DailyCheckInWidget({ onLogComplete, hasLoggedToday }: DailyCheckInWidgetProps) {
     const { t } = useLanguage();
+    const { user } = useAuth();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedFeeling, setSelectedFeeling] = useState<GeneralFeeling | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const handleFeelingSelect = (feeling: GeneralFeeling) => {
-        setSelectedFeeling(feeling);
-        setIsModalOpen(true);
+    // 'great' and 'okay' save directly — no symptom modal needed
+    const handleFeelingSelect = async (feeling: GeneralFeeling) => {
+        if (feeling === 'poor') {
+            setSelectedFeeling('poor');
+            setIsModalOpen(true);
+            return;
+        }
+
+        if (!user) return;
+        setIsSaving(true);
+        try {
+            await symptomService.logSymptom({
+                userId: user.uid,
+                date: new Date(),
+                generalFeeling: feeling,
+                symptoms: [],
+                correlatedMedications: [],
+            });
+            onLogComplete();
+            toast.success(t('symptom.successSave'));
+        } catch {
+            toast.error(t('symptom.errorSave') || 'Erro ao salvar. Tente novamente.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleModalClose = () => {
@@ -78,6 +103,7 @@ export function DailyCheckInWidget({ onLogComplete, hasLoggedToday }: DailyCheck
                             variant="outline"
                             className="flex flex-col h-24 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-colors group"
                             onClick={() => handleFeelingSelect('great')}
+                            disabled={isSaving}
                         >
                             <Smile className="h-8 w-8 mb-2 text-zinc-400 group-hover:text-emerald-500 transition-colors" />
                             <span>{t('symptom.feelingGreat')}</span>
@@ -86,6 +112,7 @@ export function DailyCheckInWidget({ onLogComplete, hasLoggedToday }: DailyCheck
                             variant="outline"
                             className="flex flex-col h-24 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 transition-colors group"
                             onClick={() => handleFeelingSelect('okay')}
+                            disabled={isSaving}
                         >
                             <Meh className="h-8 w-8 mb-2 text-zinc-400 group-hover:text-amber-500 transition-colors" />
                             <span>{t('symptom.feelingOkay')}</span>
@@ -94,6 +121,7 @@ export function DailyCheckInWidget({ onLogComplete, hasLoggedToday }: DailyCheck
                             variant="outline"
                             className="flex flex-col h-24 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 transition-colors group"
                             onClick={() => handleFeelingSelect('poor')}
+                            disabled={isSaving}
                         >
                             <Frown className="h-8 w-8 mb-2 text-zinc-400 group-hover:text-rose-500 transition-colors" />
                             <span>{t('symptom.feelingPoor')}</span>

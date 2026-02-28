@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { startOfDay, subDays, differenceInDays, startOfWeek } from "date-fns";
+import { auth, fetchCollection, fetchDocument, updateDocument, where } from "@/integrations/firebase";
+import { useRewardHistory } from "@/hooks/useRewardHistory";
+import { startOfDay, subDays, startOfWeek } from "date-fns";
+
+interface ProfileDoc {
+  tutorial_flags?: TutorialFlagsWithStreak;
+}
 
 interface StreakRecoveryData {
   missions_completed?: number;
@@ -38,6 +43,7 @@ interface StreakProtectionActions {
 }
 
 export function useStreakProtection() {
+  const { logReward } = useRewardHistory();
   const [data, setData] = useState<StreakProtectionData>({
     freezesAvailable: 1,
     freezesUsedThisWeek: 0,
@@ -52,16 +58,10 @@ export function useStreakProtection() {
 
   const loadProtectionData = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      // Get user profile for streak protection data
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
+      const { data: profile } = await fetchDocument<ProfileDoc>(`users/${user.uid}/profile`, 'me');
       const streakData = (profile?.tutorial_flags as TutorialFlagsWithStreak | undefined)?.streak_protection || {};
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }).toISOString();
 
@@ -70,15 +70,16 @@ export function useStreakProtection() {
         ? (streakData.freezes_used_this_week ?? 0)
         : 0;
 
-      // Check if streak is at risk (yesterday was missed)
+      // Check if streak is at risk (yesterday was missed) - Migrated to Firebase path
       const yesterday = startOfDay(subDays(new Date(), 1));
 
-      const { data: yesterdayDoses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", yesterday.toISOString())
-        .lt("due_at", startOfDay(new Date()).toISOString());
+      const { data: yesterdayDoses } = await fetchCollection<any>(
+        `users/${user.uid}/doses`,
+        [
+          where("dueAt", ">=", yesterday.toISOString()),
+          where("dueAt", "<", startOfDay(new Date()).toISOString())
+        ]
+      );
 
       let streakAtRisk = false;
       if (yesterdayDoses && yesterdayDoses.length > 0) {
@@ -114,17 +115,12 @@ export function useStreakProtection() {
 
   const useFreeze = async (): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user || data.freezesAvailable <= 0) return false;
 
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 }).toISOString();
 
-      // Update profile with freeze used
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
+      const { data: profile } = await fetchDocument<ProfileDoc>(`users/${user.uid}/profile`, 'me');
 
       const currentFlags = (profile?.tutorial_flags as TutorialFlagsWithStreak) || {};
       const updatedFlags = {
@@ -137,10 +133,16 @@ export function useStreakProtection() {
         }
       };
 
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: updatedFlags })
-        .eq("user_id", user.id);
+      await updateDocument(`users/${user.uid}/profile`, 'me', { tutorial_flags: updatedFlags });
+
+      // Log reward for freeze usage
+      logReward({
+        title: "Escudo Ativado",
+        description: "Você usou um congelamento de streak para salvar sua sequência.",
+        value: "-1 Freeze",
+        type: "negative", // Subtracting a resource, but it's a positive action for the user
+        date: new Date()
+      });
 
       await loadProtectionData();
       return true;
@@ -157,14 +159,10 @@ export function useStreakProtection() {
 
   const completeRecoveryMission = async (): Promise<boolean> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return false;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
+      const { data: profile } = await fetchDocument<ProfileDoc>(`users/${user.uid}/profile`, 'me');
 
       const currentFlags = (profile?.tutorial_flags as TutorialFlagsWithStreak) || {};
       const newMissionsCompleted = (data.recoveryMissionsCompleted || 0) + 1;
@@ -188,12 +186,20 @@ export function useStreakProtection() {
         }
       };
 
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: updatedFlags })
-        .eq("user_id", user.id);
+      await updateDocument(`users/${user.uid}/profile`, 'me', { tutorial_flags: updatedFlags });
 
       await loadProtectionData();
+
+      if (newMissionsCompleted >= data.recoveryMissionsNeeded) {
+        logReward({
+          title: "Sequência Recuperada",
+          description: `Você completou as missões e recuperou seu streak!`,
+          value: "+50 XP",
+          type: "positive",
+          date: new Date()
+        });
+      }
+
       return newMissionsCompleted >= data.recoveryMissionsNeeded;
     } catch (error) {
       console.error("Error completing recovery mission:", error);

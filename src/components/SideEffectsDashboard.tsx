@@ -4,13 +4,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useSideEffectsLog, SideEffectLog } from "@/hooks/useSideEffectsLog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { PremiumTooltip } from "./shared/ChartTooltip";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Download, TrendingUp, Activity } from "lucide-react";
+import { TrendingUp, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { auth, fetchCollection, orderBy, where } from "@/integrations/firebase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PremiumPaywall } from "./PremiumPaywall";
+import { Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 interface SideEffectsDashboardProps {
   itemId?: string;
@@ -31,6 +37,8 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
   const [medications, setMedications] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedMedication, setSelectedMedication] = useState<string>(itemId || "");
   const [chartData, setChartData] = useState<Record<string, unknown>[]>([]);
+  const { isPremium } = useSubscription();
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const dateLocale = language === 'pt' ? ptBR : enUS;
 
@@ -68,37 +76,6 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
     loadMedications();
   }, [loadMedications]);
 
-  const loadChartData = useCallback(async (medId: string) => {
-    const [overall, energy, pain, nausea, sleep] = await Promise.all([
-      getCorrelationData(medId, 'overallFeeling'),
-      getCorrelationData(medId, 'energyLevel'),
-      getCorrelationData(medId, 'painLevel'),
-      getCorrelationData(medId, 'nauseaLevel'),
-      getCorrelationData(medId, 'sleepQuality'),
-    ]) as [CorrelationPoint[], CorrelationPoint[], CorrelationPoint[], CorrelationPoint[], CorrelationPoint[]];
-
-    // Combine data points by date for the chart
-    // We assume getCorrelationData returns { recordedAt, value } array
-    // Map to simple date string "dd/MM"
-
-    // Naive combination: iterate over overallFeeling (or longest array) and try to match others?
-    // Or just push all points. 
-    // Recharts handles missing data keys gracefully if we structure it right.
-    // The previous implementation assumed indices match or data is dense.
-    // getCorrelationData fetches logs for that item.
-    // Since all metrics come from the SAME logs usually (user rates everything at once), 
-    // we should iterate over the unique logs for this medication.
-
-    // Better way: use 'logs' from hook which are already fetched?
-    // But 'fetchLogs' sets state 'logs'.
-    // 'getCorrelationData' fetches independently.
-    // Let's rely on 'logs' state if it is filtered by itemId.
-
-    // We can just re-process 'logs' if they are loaded for 'selectedMedication'.
-    // `fetchLogs(selectedMedication)` is called in the effect below.
-  }, [getCorrelationData, dateLocale]);
-
-  // Redoing the chart data logic to depend on 'logs' which are already loaded for the selected medication
   useEffect(() => {
     if (!logs || logs.length === 0) {
       setChartData([]);
@@ -123,9 +100,16 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
   useEffect(() => {
     if (selectedMedication) {
       fetchLogs(selectedMedication);
-      // loadChartData is removed as we use 'logs' in the effect above
     }
   }, [selectedMedication, fetchLogs]);
+
+  const handleExport = () => {
+    if (!isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+    exportToPDF();
+  };
 
   const exportToPDF = async () => {
     try {
@@ -175,19 +159,11 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold">{t('sideEffects.diaryTitle')}</h2>
-          <p className="text-muted-foreground">
-            {t('sideEffects.diarySubtitle')}
-          </p>
-        </div>
-        <Button onClick={exportToPDF} disabled={logs.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          {t('sideEffects.exportToDoctorBtn')}
-        </Button>
-      </div>
+      <PremiumPaywall
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        trigger="charts"
+      />
 
       {/* Medication Selector */}
       <Card>
@@ -265,7 +241,24 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
 
       {/* Chart */}
       {chartData.length > 0 ? (
-        <Card>
+        <Card className="relative overflow-hidden">
+          {!isPremium && (
+            <div
+              className="absolute inset-x-0 bottom-0 top-[70px] z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[4px] cursor-pointer group"
+              onClick={() => setShowPaywall(true)}
+            >
+              <div className="bg-primary text-primary-foreground p-3 rounded-full mb-3 shadow-lg group-hover:scale-110 transition-transform">
+                <Lock className="h-6 w-6" />
+              </div>
+              <h4 className="font-bold text-lg">{t('sideEffects.premiumChartTitle') || 'Análise Premium'}</h4>
+              <p className="text-sm text-muted-foreground px-8 text-center">
+                {t('sideEffects.premiumChartDesc') || 'Desbloqueie gráficos de evolução e correlações para um acompanhamento médico profissional.'}
+              </p>
+              <Button variant="outline" className="mt-4 border-primary text-primary hover:bg-primary/10">
+                {t('common.upgradeToUnlock') || 'Evoluir para Premium'}
+              </Button>
+            </div>
+          )}
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
@@ -275,13 +268,16 @@ export function SideEffectsDashboard({ itemId }: SideEffectsDashboardProps) {
               {t('sideEffects.evolutionSubtitle')}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className={cn(
+            "transition-all duration-500",
+            !isPremium && "opacity-40 grayscale blur-[1px]"
+          )}>
             <ResponsiveContainer width="100%" height={400}>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis domain={[1, 5]} />
-                <Tooltip />
+                <Tooltip content={<PremiumTooltip title={t('sideEffects.diaryTitle')} />} />
                 <Legend />
                 <Line type="monotone" dataKey={chartLabels.overallFeeling} stroke="#059669" strokeWidth={2} />
                 <Line type="monotone" dataKey={chartLabels.energy} stroke="#10b981" strokeWidth={2} />

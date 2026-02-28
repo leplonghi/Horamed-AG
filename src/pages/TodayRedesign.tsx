@@ -173,7 +173,6 @@ export default function TodayRedesign() {
   const { overdueDoses } = useOverdueDoses();
   const { width, height } = useWindowSize(); // Window size for confetti
   const [showConfetti, setShowConfetti] = useState(false);
-  const [reloadTrigger, setReloadTrigger] = useState(0);
   const [lowStockItems, setLowStockItems] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [timelineItems, setTimelineItems] = useState<TimelineItem[]>([]);
@@ -191,6 +190,7 @@ export default function TodayRedesign() {
   const [nextPendingDose, setNextPendingDose] = useState<Dose | null>(null);
   const [nextDayDose, setNextDayDose] = useState<{ time: string; name: string } | null>(null);
   const [hasLoggedSymptomsToday, setHasLoggedSymptomsToday] = useState(false);
+  const [hasMedications, setHasMedications] = useState(true); // default true → avoids flash on load
   // Milestone detection
   useEffect(() => {
     if (isNewMilestone && milestone) {
@@ -386,8 +386,8 @@ export default function TodayRedesign() {
       // Trigger confetti for positive reinforcement
       setShowConfetti(true);
 
-      // Reload data via trigger
-      setReloadTrigger(prev => prev + 1);
+      // Use latestLoadRef to avoid stale selectedDate closure
+      latestLoadRef.current();
       refreshStreak();
       refreshAlerts();
     } catch (error) {
@@ -418,7 +418,7 @@ export default function TodayRedesign() {
         });
 
         toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
-        setReloadTrigger(prev => prev + 1);
+        latestLoadRef.current();
       }
     } catch (error) {
       console.error("Error snoozing dose:", error);
@@ -528,8 +528,8 @@ export default function TodayRedesign() {
           subtitle: dose.doseText || dose.items?.dose_text || undefined,
           status: dose.status === "taken" ? "done" : dose.status === "missed" ? "missed" : "pending",
           itemId: dose.item_id || dose.itemId, // item_id from Dose, itemId from legacy
-          onMarkDone: () => markAsTaken(dose.id, dose.item_id || dose.itemId, dose.itemName || dose.items?.name || ""),
-          onSnooze: () => snoozeDose(dose.id, dose.itemName || dose.items?.name || "")
+          onMarkDone: () => markAsTakenRef.current(dose.id, dose.item_id || dose.itemId, dose.itemName || dose.items?.name || ""),
+          onSnooze: () => snoozeDoseRef.current(dose.id, dose.itemName || dose.items?.name || "")
         });
       });
 
@@ -579,6 +579,21 @@ export default function TodayRedesign() {
         }
       }
 
+      // If no doses today, check if user has ANY medications at all (new user detection)
+      if (doses.length === 0) {
+        try {
+          const itemsPath = activeProfile?.id
+            ? `users/${userId}/profiles/${activeProfile.id}/items`
+            : `users/${userId}/items`;
+          const { data: userItems } = await fetchCollection(itemsPath, []);
+          setHasMedications((userItems ?? []).length > 0);
+        } catch {
+          setHasMedications(true); // assume true on error
+        }
+      } else {
+        setHasMedications(true);
+      }
+
       // Check for daily symptom log
       if (isToday2 && user) {
         try {
@@ -595,7 +610,7 @@ export default function TodayRedesign() {
     } finally {
       setLoading(false);
     }
-  }, [activeProfile?.id, t, getProfileCache, loadTomorrowFirstDose, markAsTaken, snoozeDose, authUser]); // Added required dependencies
+  }, [activeProfile?.id, t, getProfileCache, loadTomorrowFirstDose, authUser]); // markAsTaken/snoozeDose removed — accessed via stable refs (markAsTakenRef/snoozeDoseRef)
 
   // Load greeting/quote once on mount or when key dependencies change
   useEffect(() => {
@@ -653,35 +668,44 @@ export default function TodayRedesign() {
     // Greeting set
   }, [activeProfile, userName, language, t]);
 
-  // Load data when date or profile changes - combined for performance
+  // Load data when date or profile changes
+  // IMPORTANT: loadData/loadEventCounts are NOT in deps (they change every render).
+  // We use stable refs to always call the latest version without triggering loops.
   useEffect(() => {
     const loadAll = async () => {
       await Promise.all([
-        loadData(selectedDate, true),
-        loadEventCounts()
+        latestLoadDataRef.current(selectedDate, true),
+        latestLoadEventCountsRef.current()
       ]);
     };
     loadAll();
-  }, [selectedDate, activeProfile?.id, loadData, loadEventCounts]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, activeProfile?.id]);
+
 
   // Agendar notificações apenas uma vez
   useEffect(() => {
     scheduleNotificationsForNextDay();
   }, [scheduleNotificationsForNextDay]);
 
-  // Realtime subscription para atualizações de doses/consultas/eventos (com debounce)
-  const realtimeDebounceRef = useRef<number | null>(null);
+  // Single shared debounce ref — used by all 3 onSnapshot listeners
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable refs — updated every render so callbacks always have the latest values
+  // without being listed in effect dependency arrays (which would cause infinite loops)
+  const latestLoadRef = useRef<() => void>(() => { });
+  const latestLoadDataRef = useRef(loadData);
+  const latestLoadEventCountsRef = useRef(loadEventCounts);
+  const markAsTakenRef = useRef(markAsTaken);
+  const snoozeDoseRef = useRef(snoozeDose);
+  // No deps array — runs after every render to keep refs fresh
+  useEffect(() => {
+    latestLoadRef.current = () => loadData(selectedDate);
+    latestLoadDataRef.current = loadData;
+    latestLoadEventCountsRef.current = loadEventCounts;
+    markAsTakenRef.current = markAsTaken;
+    snoozeDoseRef.current = snoozeDose;
+  });
 
-  const handleRealtimeChange = useCallback(() => {
-    if (realtimeDebounceRef.current) {
-      window.clearTimeout(realtimeDebounceRef.current);
-    }
-
-    // Increased debounce to 1s to reduce unnecessary renders
-    realtimeDebounceRef.current = window.setTimeout(() => {
-      loadData(selectedDate);
-    }, 1000);
-  }, [loadData, selectedDate]);
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -695,11 +719,11 @@ export default function TodayRedesign() {
     const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
     const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
 
-    // Only update if external changes happen (not our own optimistic updates)
-    // Actually, we can just trigger a reload
+    // All 3 listeners share one debounced reload — max 1 reload/sec total
     const handleRemoteChange = () => {
-      setReloadTrigger(prev => prev + 1);
-    }
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+      realtimeDebounceRef.current = setTimeout(() => latestLoadRef.current(), 1000);
+    };
 
     const qDoses = firestoreQuery(collection(db, dosesPath));
     const qApts = firestoreQuery(collection(db, appointmentsPath));
@@ -797,6 +821,7 @@ export default function TodayRedesign() {
               onTake={markAsTaken}
               onSnooze={snoozeDose}
               allDoneToday={allDoneToday}
+              hasMedications={hasMedications}
             />
 
             {/* Garantia Absoluta de Notificações - Permissões Android (P0) */}

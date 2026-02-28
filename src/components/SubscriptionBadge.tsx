@@ -1,4 +1,4 @@
-import { Crown, Clock, Sparkles } from 'lucide-react';
+import { IconCrown as Crown, IconHistory as Clock, IconSparkles as Sparkles } from '@/components/icons/HoramedIcons';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 

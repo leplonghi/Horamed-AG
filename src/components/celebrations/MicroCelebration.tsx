@@ -151,7 +151,7 @@ export default function MicroCelebration({
             }}
           >
             {config.image ? (
-              <img src={config.image} alt="" className="h-12 w-12" />
+              <img src={config.image} alt="Celebration Badge" className="h-12 w-12" />
             ) : (
               <Icon className={`h-12 w-12 ${config.color}`} />
             )}

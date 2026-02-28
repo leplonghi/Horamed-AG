@@ -1,12 +1,13 @@
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Check, Clock, Sparkles } from "lucide-react";
+import { Check, Clock, Plus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
 import { memo, useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dose, safeParseDoseDate } from "@/types";
 
 interface HeroNextDoseProps {
@@ -18,9 +19,84 @@ interface HeroNextDoseProps {
   onTake: (doseId: string, itemId: string, itemName: string) => void;
   onSnooze?: (doseId: string, itemName: string) => void;
   allDoneToday?: boolean;
+  hasMedications?: boolean;
 }
 
-function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: HeroNextDoseProps) {
+// ─── New User Onboarding Empty State ────────────────────────────────────────
+function NewUserEmptyState({ language }: { language: string }) {
+  const navigate = useNavigate();
+  const isPt = language === 'pt';
+
+  const steps = isPt
+    ? ['Cadastre seu medicamento', 'Configure o hor\u00e1rio', 'Receba lembretes']
+    : ['Add your medication', 'Set the schedule', 'Get reminders'];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+    >
+      <Card className="overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/5 via-teal-500/5 to-background shadow-[var(--shadow-glass)]">
+        {/* Accent line */}
+        <div className="h-1 w-full bg-gradient-to-r from-primary via-teal-400 to-emerald-500" />
+        <div className="p-6 flex flex-col items-center text-center gap-5">
+          {/* Icon */}
+          <motion.div
+            className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center shadow-lg shadow-primary/25"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Sparkles className="h-8 w-8 text-white" />
+          </motion.div>
+
+          {/* Headline */}
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-foreground">
+              {isPt ? 'Bem-vindo ao HoraMed! \ud83c\udf89' : 'Welcome to HoraMed! \ud83c\udf89'}
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
+              {isPt
+                ? 'Em 3 passos simples voc\u00ea nunca esquece um medicamento'
+                : 'In 3 simple steps you\u2019ll never miss a dose again'}
+            </p>
+          </div>
+
+          {/* 3 Steps */}
+          <div className="flex items-start gap-3 w-full max-w-xs">
+            {steps.map((step, i) => (
+              <motion.div
+                key={i}
+                className="flex-1 flex flex-col items-center gap-1.5"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.12 }}
+              >
+                <div className="h-8 w-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center border border-primary/25">
+                  {i + 1}
+                </div>
+                <p className="text-[11px] text-muted-foreground text-center leading-tight">{step}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <Button
+            onClick={() => navigate('/adicionar-medicamento')}
+            className="w-full max-w-xs bg-gradient-to-r from-primary to-teal-500 text-white font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all duration-200"
+            size="lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {isPt ? 'Adicionar primeiro medicamento' : 'Add first medication'}
+          </Button>
+        </div>
+      </Card>
+    </motion.div>
+  );
+}
+
+function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMedications = true }: HeroNextDoseProps) {
+
   const { language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,6 +158,11 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday }: Her
         </Card>
       </motion.div>
     );
+  }
+
+  // 🆕 ESTADO: Novo usuário sem medicamentos — Empty state educacional
+  if (!hasMedications && !allDoneToday && !dose) {
+    return <NewUserEmptyState language={language} />;
   }
 
   // ✅ ESTADO: Tudo certo por hoje

@@ -159,11 +159,11 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      target: 'es2015',
+      target: 'esnext',
       minify: 'terser',
       terserOptions: {
         compress: {
-          drop_console: true, // Remove console.logs in production
+          drop_console: true,
           drop_debugger: true,
           pure_funcs: ['console.log', 'console.info', 'console.debug'],
         },
@@ -172,10 +172,47 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: (id) => {
             if (id.includes('node_modules')) {
-              if (id.includes('firebase')) {
-                return 'firebase';
-              }
-              // Group everything else into vendor to ensure robust React execution
+              // PDF.js — heavy, isolated, lazy-loaded only on /carteira
+              if (id.includes('pdfjs-dist')) return 'pdf-viewer';
+
+              // Firebase — isolated to maximize cache lifetime
+              if (id.includes('firebase')) return 'firebase';
+
+              // Charts — recharts + d3 (only loaded on progress/health pages)
+              if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'charts';
+
+              // Animations — framer-motion
+              if (id.includes('framer-motion')) return 'animations';
+
+              // Icons — lucide tree-shaken but still sizeable
+              if (id.includes('lucide-react')) return 'icons';
+
+              // Date utilities
+              if (id.includes('date-fns')) return 'date-utils';
+
+              // i18n — i18next + react-i18next
+              if (id.includes('i18next') || id.includes('react-i18next') || id.includes('i18n-ally')) return 'i18n';
+
+              // UI notifications — sonner + hot-toast
+              if (id.includes('sonner') || id.includes('react-hot-toast')) return 'ui-notifications';
+
+              // UI component primitives — Radix + utilities
+              if (id.includes('@radix-ui') || id.includes('class-variance-authority') || id.includes('clsx') || id.includes('tailwind-merge') || id.includes('cmdk')) return 'ui-core';
+
+              // TanStack Query + Router
+              if (id.includes('@tanstack')) return 'tanstack';
+
+              // Capacitor plugins — only loaded on mobile
+              if (id.includes('@capacitor')) return 'capacitor';
+
+              // React + ReactDOM + react-router: keep in ONE chunk to avoid circular dep
+              // (react-core → vendor → react-core was a circular chunk warning)
+              if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('react-router') || id.includes('scheduler')) return 'react-core';
+
+              // next-themes, react-helmet, etc.
+              if (id.includes('next-themes') || id.includes('react-helmet') || id.includes('react-error-boundary')) return 'ui-misc';
+
+              // everything else → vendor
               return 'vendor';
             }
           },
