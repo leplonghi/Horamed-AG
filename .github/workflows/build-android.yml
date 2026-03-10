@@ -8,12 +8,12 @@ on:
     inputs:
       version_code:
         description: 'Android versionCode (ex: 19)'
-        required: true
-        default: '19'
+        required: false
+        default: ''
       version_name:
         description: 'Android versionName (ex: 1.0.19)'
-        required: true
-        default: '1.0.19'
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -42,27 +42,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create .env file
+      - name: Create .env file from repository secrets
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
         run: |
           cat > .env << EOF
-          VITE_FIREBASE_API_KEY="${{ secrets.VITE_FIREBASE_API_KEY }}"
-          VITE_FIREBASE_AUTH_DOMAIN="${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}"
-          VITE_FIREBASE_PROJECT_ID="${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
-          VITE_FIREBASE_STORAGE_BUCKET="${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}"
-          VITE_FIREBASE_MESSAGING_SENDER_ID="${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}"
-          VITE_FIREBASE_APP_ID="${{ secrets.VITE_FIREBASE_APP_ID }}"
-          VITE_FIREBASE_MEASUREMENT_ID="${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}"
+          VITE_FIREBASE_API_KEY="${VITE_FIREBASE_API_KEY:-AIzaSyAeEHqEKubTYTZboROg71VOYq_1WqoRjck}"
+          VITE_FIREBASE_AUTH_DOMAIN="horamed-firebase.firebaseapp.com"
+          VITE_FIREBASE_PROJECT_ID="horamed-firebase"
+          VITE_FIREBASE_STORAGE_BUCKET="horamed-firebase.firebasestorage.app"
+          VITE_FIREBASE_MESSAGING_SENDER_ID="299174581868"
+          VITE_FIREBASE_APP_ID="${VITE_FIREBASE_APP_ID:-1:299174581868:web:8f12e40d915f5d9e956a49}"
+          VITE_FIREBASE_MEASUREMENT_ID="${VITE_FIREBASE_MEASUREMENT_ID:-G-4JLQ2SGXSE}"
           EOF
+
+      - name: Update version if provided
+        if: github.event.inputs.version_code != ''
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.event.inputs.version_code }}/" android/app/build.gradle
+          sed -i "s/versionName \"[^\"]*\"/versionName \"${{ github.event.inputs.version_name }}\"/" android/app/build.gradle
+          echo "Updated to versionCode=${{ github.event.inputs.version_code }} versionName=${{ github.event.inputs.version_name }}"
 
       - name: Build web (production)
         run: npm run build
 
       - name: Sync web assets to Android
         run: npx cap sync android
-
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/keystore/horamed-release.keystore
 
       - name: Build Android AAB (release)
         working-directory: android
@@ -76,3 +83,9 @@ jobs:
           name: horamed-release-${{ github.run_number }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+      - name: Show build info
+        run: |
+          echo "✅ AAB gerado com sucesso!"
+          echo "📦 Faça o download do artifact 'horamed-release-${{ github.run_number }}' acima"
+          echo "🚀 Suba o .aab no Google Play Console"
