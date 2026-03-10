@@ -7,15 +7,9 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where } from "@/integrations/firebase";
-import {
-  IconToday,
-  IconMedications,
-  IconHealth,
-  IconWallet,
-  IconProfile,
-} from "@/components/icons/HoramedIcons";
+import { CalendarBlank, Pill, Heartbeat, Wallet, User as UserIcon } from "@phosphor-icons/react";
 
-type NavIconComponent = React.ComponentType<{ className?: string; size?: number; strokeWidth?: number }>;
+type NavIconComponent = React.ComponentType<{ className?: string; size?: number; weight?: any }>;
 
 // Memoized nav item to prevent unnecessary re-renders
 const NavItem = memo(function NavItem({
@@ -59,7 +53,7 @@ const NavItem = memo(function NavItem({
             isActive && "scale-110"
           )}
           size={24}
-          strokeWidth={isActive ? 2 : 1.5}
+          weight={isActive ? "fill" : "duotone"}
         />
         {badge && badge > 0 && (
           <Badge
@@ -107,11 +101,11 @@ function Navigation() {
 
   // Memoize nav items to prevent recreating on each render
   const navItems = useMemo(() => [
-    { path: "/hoje", icon: IconToday, labelKey: "nav.today" },
-    { path: "/medicamentos", icon: IconMedications, labelKey: "nav.routine" },
-    { path: "/dashboard-saude", icon: IconHealth, labelKey: "nav.health" },
-    { path: "/carteira", icon: IconWallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
-    { path: "/perfil", icon: IconProfile, labelKey: "nav.profile" },
+    { path: "/hoje", icon: CalendarBlank, labelKey: "nav.today" },
+    { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
+    { path: "/dashboard-saude", icon: Heartbeat, labelKey: "nav.health" },
+    { path: "/carteira", icon: Wallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
+    { path: "/perfil", icon: UserIcon, labelKey: "nav.profile" },
   ], [expiringCount]);
 
   return (

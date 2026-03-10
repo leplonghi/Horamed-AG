@@ -12,6 +12,7 @@ import { lazy, Suspense, useState, useEffect } from "react";
 import { isLandingDomain } from "@/lib/domainConfig";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { ProfileCacheProvider } from "./contexts/ProfileCacheContext";
+import { IconContext } from "@phosphor-icons/react";
 import { trackAppOpened } from "./hooks/useAppMetrics";
 import { usePushNotifications } from "./hooks/usePushNotifications";
 import { useDoseGeneration } from "./hooks/useDoseGeneration";
@@ -352,13 +353,15 @@ const App = () => {
               <TooltipProvider>
                 <ProfileCacheProvider>
                   <SubscriptionProvider>
-                    <HashRouter>
-                      <AuthProvider>
-                        <ScrollToTop />
-                        {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
-                        <AppContent />
-                      </AuthProvider>
-                    </HashRouter>
+                    <IconContext.Provider value={{ weight: "duotone", mirrored: false }}>
+                      <HashRouter>
+                        <AuthProvider>
+                          <ScrollToTop />
+                          {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
+                          <AppContent />
+                        </AuthProvider>
+                      </HashRouter>
+                    </IconContext.Provider>
                   </SubscriptionProvider>
                 </ProfileCacheProvider>
               </TooltipProvider>
