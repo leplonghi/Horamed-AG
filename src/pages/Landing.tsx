@@ -349,8 +349,7 @@ const Landing = () => {
         <div className="absolute inset-0">
           <img
             src={heroBg}
-            alt=""
-            aria-hidden
+            alt="HoraMed Health Management"
             className="w-full h-full object-cover"
             style={{ filter: "blur(4px) brightness(1.05) saturate(0.8)" }}
           />
