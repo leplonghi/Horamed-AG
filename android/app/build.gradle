@@ -20,9 +20,9 @@ android {
     signingConfigs {
         release {
             storeFile file('../keystore/horamed-release.keystore')
-            storePassword System.getenv("HORAMED_KEYSTORE_PASSWORD") ?: 'Gringo08!'
+            storePassword System.getenv("HORAMED_KEYSTORE_PASSWORD")
             keyAlias 'horamed-key'
-            keyPassword System.getenv("HORAMED_KEYSTORE_PASSWORD") ?: 'Gringo08!'
+            keyPassword System.getenv("HORAMED_KEYSTORE_PASSWORD")
         }
     }
 
