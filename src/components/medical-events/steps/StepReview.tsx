@@ -1,7 +1,7 @@
 import { MedicalEventFormData } from '@/types/medicalEvents';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Calendar as CalIcon, MapPin, User, Clock, AlertCircle } from 'lucide-react';
+import { Check, CalendarBlank as CalIcon, MapPin, User, Clock, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';

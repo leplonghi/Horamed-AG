@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, ArrowLeft, Clock, Info } from "lucide-react";
+import { ArrowRight, ArrowLeft, Clock, Info } from "@phosphor-icons/react";
 import { format, addMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

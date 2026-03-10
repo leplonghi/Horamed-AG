@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, query, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { TrendingUp, Calendar, Pill, Target, Clock, AlertCircle, Lightbulb, Activity, Award, Package, AlertTriangle } from "lucide-react";
+import { TrendUp as TrendingUp, CalendarBlank as Calendar, Pill, Target, Clock, WarningCircle as AlertCircle, Lightbulb, Heartbeat as Activity, Medal as Award, Package, Warning as AlertTriangle } from "@phosphor-icons/react";
 import { format, subDays, startOfWeek, startOfMonth, eachDayOfInterval, endOfMonth } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useSubscription } from "@/hooks/useSubscription";

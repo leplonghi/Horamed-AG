@@ -5,15 +5,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
-import {
-  CheckCircle2, Crown, Calendar, CreditCard,
-  ArrowLeft, AlertCircle, Sparkles, XCircle,
-  AlertTriangle, Heart, TrendingDown, Shield, Gift
-} from "lucide-react";
+import { CheckCircle as CheckCircle2, Crown, CalendarBlank as Calendar, CreditCard, ArrowLeft, WarningCircle as AlertCircle, Sparkle as Sparkles, XCircle, Warning as AlertTriangle, Heart, TrendDown as TrendingDown, Shield, Gift } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PRICING } from "@/lib/stripeConfig";
-import { Loader2 } from "lucide-react";
+import { Spinner as Loader2 } from "@phosphor-icons/react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {

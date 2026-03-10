@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import DoseTimeline from "@/components/DoseTimeline";
-import { ArrowLeft, TrendingUp, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowLeft, TrendUp as TrendingUp, CalendarBlank as CalendarIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { startOfMonth, endOfMonth } from "date-fns";

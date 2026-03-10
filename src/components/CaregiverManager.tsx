@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { UserPlus, Trash2, Copy, CheckCircle, Clock } from 'lucide-react';
+import { UserPlus, Trash as Trash2, Copy, CheckCircle, Clock } from "@phosphor-icons/react";
 import { useCaregivers } from '@/hooks/useCaregivers';
 import { useToast } from '@/hooks/use-toast';
 import { useLanguage } from '@/contexts/LanguageContext';

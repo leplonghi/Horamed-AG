@@ -1,6 +1,6 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+﻿import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { HelpCircle, Navigation, Pill, BarChart3, Bot, Mic } from "lucide-react";
+import { Question as HelpCircle, NavigationArrow as Navigation, Pill, ChartBar as BarChart3, Robot as Bot, Microphone as Mic } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface VoiceCommandsSheetProps {
@@ -56,7 +56,7 @@ const commandsEn = {
 };
 
 const categories = [
-  { key: "navigation", icon: Navigation, label: "Navegação", labelEn: "Navigation" },
+  { key: "navigation", icon: NavigationArrow as Navigation, label: "Navegação", labelEn: "Navigation" },
   { key: "medications", icon: Pill, label: "Medicamentos", labelEn: "Medications" },
   { key: "queries", icon: BarChart3, label: "Consultas", labelEn: "Queries" },
   { key: "assistant", icon: Bot, label: "Assistente", labelEn: "Assistant" },

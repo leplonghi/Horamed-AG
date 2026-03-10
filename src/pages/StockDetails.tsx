@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Package } from "lucide-react";
+import { ArrowLeft, Package } from "@phosphor-icons/react";
 import { StockTimeline } from "@/components/StockTimeline";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

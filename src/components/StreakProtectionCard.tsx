@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Shield, Flame, AlertTriangle, CheckCircle, Snowflake } from "lucide-react";
+import { Shield, Flame, Warning as AlertTriangle, CheckCircle, Snowflake } from "@phosphor-icons/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

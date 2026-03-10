@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell, BellRing, Smartphone, CheckCircle2, XCircle, Loader2, AlertTriangle, Settings, ChevronRight } from "lucide-react";
+import { Bell, BellRinging as BellRing, DeviceMobile as Smartphone, CheckCircle as CheckCircle2, XCircle, Spinner as Loader2, Warning as AlertTriangle, Gear as Settings, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";

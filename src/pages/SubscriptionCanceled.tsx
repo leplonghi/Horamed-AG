@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { XCircle, ArrowLeft, HelpCircle } from "lucide-react";
+import { XCircle, ArrowLeft, Question as HelpCircle } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 

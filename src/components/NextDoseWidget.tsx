@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, Pill } from "lucide-react";
+import { Clock, Pill } from "@phosphor-icons/react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import DoseActionButton from "./DoseActionButton";

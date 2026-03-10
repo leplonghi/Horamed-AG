@@ -1,15 +1,6 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  Sparkles,
-  Clock,
-  AlertTriangle,
-  TrendingUp,
-  Calendar,
-  Shield,
-  Lightbulb,
-  CheckCircle2
-} from "lucide-react";
+import { Sparkle as Sparkles, Clock, Warning as AlertTriangle, TrendUp as TrendingUp, CalendarBlank as Calendar, Shield, Lightbulb, CheckCircle as CheckCircle2 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HealthDocument } from "@/hooks/useCofre";

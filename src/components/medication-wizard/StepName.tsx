@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Search, HelpCircle, Mic, MicOff, Loader2 } from "lucide-react";
+import { Check, MagnifyingGlass as Search, Question as HelpCircle, Microphone as Mic, MicrophoneSlash as MicOff, Spinner as Loader2 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

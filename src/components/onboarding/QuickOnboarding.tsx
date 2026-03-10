@@ -4,14 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { auth, updateDocument, fetchCollection, setDocument } from "@/integrations/firebase";
-import {
-  Pill,
-  FileText,
-  Users,
-  Sparkles,
-  ArrowRight,
-  Check
-} from "lucide-react";
+import { Pill, FileText, Users, Sparkle as Sparkles, ArrowRight, Check } from "@phosphor-icons/react";
 import logo from "@/assets/logo_HoraMed.png";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useLanguage } from "@/contexts/LanguageContext";

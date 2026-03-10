@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pencil, Trash2, Camera, Search, Plus, Pill, Calendar, UtensilsCrossed, Package, Sparkles, ArrowUpDown, SortAsc, SortDesc } from "lucide-react";
+import { PencilSimple as Pencil, Trash as Trash2, Camera, MagnifyingGlass as Search, Plus, Pill, CalendarBlank as Calendar, ForkKnife as UtensilsCrossed, Package, Sparkle as Sparkles, ArrowsDownUp as ArrowUpDown, SortAscending as SortAsc, SortDescending as SortDesc } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";

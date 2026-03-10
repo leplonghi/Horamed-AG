@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Clock, CheckCircle2, XCircle, SkipForward, Calendar } from "lucide-react";
+import { Clock, CheckCircle as CheckCircle2, XCircle, SkipForward, CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";

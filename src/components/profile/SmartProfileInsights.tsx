@@ -1,9 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Crown, Bell, AlertTriangle, CheckCircle,
-  FileText, Scale, Users, Gift
-} from "lucide-react";
+import { Crown, Bell, Warning as AlertTriangle, CheckCircle, FileText, Scales as Scale, Users, Gift } from "@phosphor-icons/react";
 import SmartInsightsBase, { Insight } from "@/components/shared/SmartInsightsBase";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

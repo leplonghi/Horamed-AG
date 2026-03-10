@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Clock, MoreHorizontal, Pencil, Trash2, Package } from "lucide-react";
+import { Check, Clock, DotsThree as MoreHorizontal, PencilSimple as Pencil, Trash as Trash2, Package } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {

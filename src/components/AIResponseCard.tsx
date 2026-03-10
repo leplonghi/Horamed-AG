@@ -1,5 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Bot, X } from "lucide-react";
+﻿import { Card, CardContent } from "@/components/ui/card";
+import { Robot as Bot, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 

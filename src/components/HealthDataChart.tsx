@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, Activity } from "lucide-react";
+import { TrendUp as TrendingUp, Heartbeat as Activity } from "@phosphor-icons/react";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface HealthDataPoint {

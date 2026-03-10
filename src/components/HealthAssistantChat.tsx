@@ -3,7 +3,7 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
-import { Heart, Send, X, Loader2, Sparkles } from "lucide-react";
+import { Heart, PaperPlaneRight as Send, X, Spinner as Loader2, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";

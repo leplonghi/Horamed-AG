@@ -1,4 +1,11 @@
-import { Plus, Camera, Package, Calendar, Pill, FileText } from "lucide-react";
+import {
+  IconPlus as Plus,
+  IconCamera as Camera,
+  IconArchive as Package,
+  IconCalendar as Calendar,
+  IconPill as Pill,
+  IconFileText as FileText
+} from "@/components/icons/HoramedIcons";
 import QuickActionsBase, { QuickAction } from "@/components/shared/QuickActionsBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -20,33 +27,37 @@ export default function MedicationQuickActions({
   const actions: QuickAction[] = [
     {
       id: "add",
-      icon: <Plus className="h-5 w-5 text-primary" />,
+      icon: <Plus className="h-6 w-6" />,
       label: language === 'pt' ? 'Adicionar' : 'Add',
-      color: "bg-primary/10",
+      color: "bg-primary/20",
+      textColor: "text-primary font-black uppercase tracking-tighter",
       onClick: onAddMedication
     },
     {
       id: "scan",
-      icon: <Camera className="h-5 w-5 text-teal-500" />,
-      label: language === 'pt' ? 'Escanear Receita' : 'Scan Prescription',
-      color: "bg-teal-500/10",
+      icon: <Camera className="h-6 w-6" />,
+      label: language === 'pt' ? 'Escanear' : 'Scan',
+      color: "bg-teal-500/20",
+      textColor: "text-teal-600 font-black uppercase tracking-tighter",
       onClick: onScanPrescription
     },
     {
       id: "stock",
-      icon: <Package className="h-5 w-5 text-warning" />,
+      icon: <Package className="h-6 w-6" />,
       label: language === 'pt' ? 'Estoque' : 'Stock',
-      color: "bg-warning/10",
+      color: "bg-amber-500/20",
+      textColor: "text-amber-600 font-black uppercase tracking-tighter",
       onClick: onViewStock
     },
     {
       id: "schedule",
-      icon: <Calendar className="h-5 w-5 text-success" />,
+      icon: <Calendar className="h-6 w-6" />,
       label: language === 'pt' ? 'Agenda' : 'Schedule',
-      color: "bg-success/10",
+      color: "bg-emerald-500/20",
+      textColor: "text-emerald-600 font-black uppercase tracking-tighter",
       onClick: onViewSchedule
     }
   ];
 
-  return <QuickActionsBase actions={actions} columns={4} />;
+  return <QuickActionsBase actions={actions} columns={4} className="mt-2" />;
 }

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { HelpCircle } from "lucide-react";
+import { Question as HelpCircle } from "@phosphor-icons/react";
 import StepTooltip from "./StepTooltip";
 import {
   Tooltip,

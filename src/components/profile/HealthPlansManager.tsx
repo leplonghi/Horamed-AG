@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Plus, X, CreditCard, Shield } from "lucide-react";
+import { Plus, X, CreditCard, Shield } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

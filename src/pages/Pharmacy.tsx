@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, TrendingDown, MapPin, ExternalLink, Truck, Store, Lock } from "lucide-react";
+import { MagnifyingGlass as Search, TrendDown as TrendingDown, MapPin, ArrowSquareOut as ExternalLink, Truck, Storefront as Store, Lock } from "@phosphor-icons/react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 
 import { useTranslation } from "@/contexts/LanguageContext";

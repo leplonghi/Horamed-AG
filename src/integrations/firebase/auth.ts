@@ -13,6 +13,7 @@ import {
     getRedirectResult,
     setPersistence,
     browserLocalPersistence,
+    getAdditionalUserInfo,
 } from 'firebase/auth'
 import { auth } from './client'
 
@@ -117,7 +118,8 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             return { user: null, error: null } // User will be redirected
         } else {
             const result = await signInWithPopup(auth, provider)
-            return { user: result.user, error: null }
+            const additionalInfo = getAdditionalUserInfo(result)
+            return { user: result.user, isNewUser: additionalInfo?.isNewUser, error: null }
         }
     } catch (error: any) {
         return { user: null, error }

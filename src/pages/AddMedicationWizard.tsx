@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Camera, Check, Image, Sparkles } from "lucide-react";
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, Camera, Check, Image, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

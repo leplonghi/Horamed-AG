@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FileText, Building, Calendar, Loader2, Check, ArrowLeft } from "lucide-react";
+import { FileText, Building, CalendarBlank as Calendar, Spinner as Loader2, Check, ArrowLeft } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";

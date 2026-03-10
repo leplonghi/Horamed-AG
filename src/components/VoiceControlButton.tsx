@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { IconMic as Mic, IconMicOff as MicOff, IconLoader as Loader2, IconClose as X, IconVolume as Volume2, IconSparkles as Sparkles } from '@/components/icons/HoramedIcons';
+import { Microphone as Mic, MicrophoneSlash as MicOff, Spinner as Loader2, X, SpeakerHigh as Volume2, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { processVoiceCommand, speak, VoiceAction } from '@/ai/voiceCommandProcessor';

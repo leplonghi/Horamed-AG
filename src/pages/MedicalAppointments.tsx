@@ -5,15 +5,7 @@ import Navigation from "@/components/Navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Calendar,
-  Plus,
-  Stethoscope,
-  Clock,
-  MapPin,
-  CheckCircle2,
-  XCircle
-} from "lucide-react";
+import { CalendarBlank as Calendar, Plus, Stethoscope, Clock, MapPin, CheckCircle as CheckCircle2, XCircle } from "@phosphor-icons/react";
 import { format, isFuture, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";

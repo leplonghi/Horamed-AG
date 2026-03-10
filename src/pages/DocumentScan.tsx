@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, FileText, Pill, Stethoscope, Upload, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Spinner as Loader2, FileText, Pill, Stethoscope, Upload, CheckCircle as CheckCircle2, ArrowLeft } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';

@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Activity, Calendar, FileText, Stethoscope, Brain, ArrowRight, TrendingUp } from "lucide-react";
+import {
+  IconActivity as Activity,
+  IconCalendar as Calendar,
+  IconFile as FileText,
+  IconHealth as Stethoscope,
+  IconAI as Brain,
+  IconChevronRight as ArrowRight,
+  IconTrendingUp as TrendingUp,
+  IconClock as Timeline
+} from "@/components/icons/HoramedIcons";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
@@ -38,23 +47,17 @@ export default function Saude() {
       if (!user) return;
 
       const [appointmentsRes, examsRes, vaccinesRes, measurementsRes, nextAppointmentRes, lastCheckupRes] = await Promise.all([
-        // These counts are approximate by fetching. 
-        // For production scale, aggregation queries or counters are better.
         fetchCollection<any>(`users/${user.uid}/appointments`),
         fetchCollection<any>(`users/${user.uid}/exams`),
         fetchCollection<any>(`users/${user.uid}/healthDocuments`, [
           where('category', '==', 'vaccination')
         ]),
         fetchCollection<any>(`users/${user.uid}/vitals`),
-
-        // Next appointment
         fetchCollection<any>(`users/${user.uid}/appointments`, [
           where('date', '>=', new Date().toISOString()),
           orderBy('date', 'asc'),
           limit(1)
         ]),
-
-        // Last checkup
         fetchCollection<any>(`users/${user.uid}/appointments`, [
           where('date', '<', new Date().toISOString()),
           orderBy('date', 'desc'),
@@ -93,42 +96,48 @@ export default function Saude() {
       description: t('saude.healthAgendaDesc'),
       icon: Calendar,
       path: "/saude/agenda",
-      color: "from-teal-500 to-teal-600",
+      gradient: "from-blue-600/20 to-blue-400/10",
+      iconColor: "text-blue-500",
     },
     {
       title: t('saude.medicalAppointments'),
       description: t('saude.medicalAppointmentsDesc'),
       icon: Stethoscope,
       path: "/consultas",
-      color: "from-blue-500 to-blue-600",
+      gradient: "from-blue-500/20 to-indigo-400/10",
+      iconColor: "text-indigo-500",
     },
     {
       title: t('saude.labExams'),
       description: t('saude.labExamsDesc'),
       icon: FileText,
       path: "/exames",
-      color: "from-green-500 to-green-600",
+      gradient: "from-sky-600/20 to-blue-400/10",
+      iconColor: "text-sky-500",
     },
     {
       title: t('saude.healthDashboard'),
       description: t('saude.healthDashboardDesc'),
       icon: TrendingUp,
       path: "/dashboard-saude",
-      color: "from-teal-500 to-teal-600",
+      gradient: "from-violet-600/20 to-blue-400/10",
+      iconColor: "text-violet-500",
     },
     {
       title: t('saude.timeline'),
       description: t('saude.timelineDesc'),
-      icon: Calendar,
+      icon: Timeline,
       path: "/linha-do-tempo",
-      color: "from-orange-500 to-orange-600",
+      gradient: "from-blue-400/20 to-cyan-400/10",
+      iconColor: "text-cyan-500",
     },
     {
       title: t('saude.aiAnalysis'),
       description: t('saude.aiAnalysisDesc'),
       icon: Brain,
       path: "/analise-saude",
-      color: "from-pink-500 to-pink-600",
+      gradient: "from-blue-700/20 to-indigo-500/10",
+      iconColor: "text-indigo-400",
     },
   ];
 
@@ -136,41 +145,44 @@ export default function Saude() {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 }
+      transition: { staggerChildren: 0.06 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 15, scale: 0.98 },
+    show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 300, damping: 25 } }
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen relative overflow-x-hidden">
       <OceanBackground variant="page" />
       <Header />
 
-      <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6 page-container relative z-10">
+      <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-7 page-container relative z-10">
         {/* Hero Header */}
         <PageHeroHeader
           icon={<Activity className="h-6 w-6 text-primary" />}
           title={t('saude.title')}
           subtitle={t('saude.subtitle')}
+          badge="Saúde"
         />
 
         {/* Quick Actions */}
-        <HealthQuickActions
-          onScheduleAppointment={() => navigate('/consultas')}
-          onAddExam={() => navigate('/exames')}
-          onAddVaccine={() => navigate('/carteira-vacina')}
-          onViewTimeline={() => navigate('/linha-do-tempo')}
-        />
+        <div className="relative">
+          <HealthQuickActions
+            onScheduleAppointment={() => navigate('/consultas')}
+            onAddExam={() => navigate('/exames')}
+            onAddVaccine={() => navigate('/carteira-vacina')}
+            onViewTimeline={() => navigate('/linha-do-tempo')}
+          />
+        </div>
 
-        {/* Drug Interactions Alert */}
-        <DrugInteractionAlert className="w-full" />
-
-        {/* Medical Report Card */}
-        <MedicalReportButton variant="card" />
+        {/* Alerts & Focus Actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <DrugInteractionAlert className="w-full" />
+          <MedicalReportButton variant="card" />
+        </div>
 
         {/* Smart Insights */}
         <SmartHealthInsights
@@ -193,46 +205,48 @@ export default function Saude() {
           onStatClick={handleStatClick}
         />
 
-        {/* Health Sections Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-3"
-        >
-          {healthSections.map((section) => (
-            <motion.div key={section.path} variants={itemVariants}>
-              <Link to={section.path}>
-                <Card className={cn(
-                  "group cursor-pointer transition-all duration-300",
-                  "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl",
-                  "border border-border/30 shadow-[var(--shadow-glass)]",
-                  "hover:shadow-[var(--shadow-glass-hover)] hover:border-border/50 hover:scale-[1.02]"
-                )}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+        {/* Health Sections Grid - Enhanced Premium Style */}
+        <div className="space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/60 px-1">{t('common.explore')}</h3>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3.5"
+          >
+            {healthSections.map((section) => (
+              <motion.div key={section.path} variants={itemVariants}>
+                <Link to={section.path}>
+                  <div className={cn(
+                    "card-interactive h-full group bg-gradient-to-br border-0",
+                    section.gradient
+                  )}>
+                    <div className="p-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3.5 min-w-0">
                         <div className={cn(
-                          "p-2.5 rounded-xl bg-gradient-to-br group-hover:scale-110 transition-transform",
-                          section.color
+                          "p-2.5 rounded-xl bg-white/10 backdrop-blur-md shadow-sm transition-all duration-500",
+                          "group-hover:scale-110 group-hover:bg-white/20",
+                          section.iconColor
                         )}>
-                          <section.icon className="h-5 w-5 text-white" />
+                          <section.icon className="h-5 w-5" />
                         </div>
-                        <div>
-                          <CardTitle className="text-base">{section.title}</CardTitle>
-                          <CardDescription className="text-xs mt-0.5 line-clamp-1">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm tracking-tight text-foreground/90 group-hover:text-primary transition-colors">
+                            {section.title}
+                          </h4>
+                          <p className="text-[11px] font-medium text-muted-foreground/70 line-clamp-1 mt-0.5 group-hover:text-muted-foreground transition-colors">
                             {section.description}
-                          </CardDescription>
+                          </p>
                         </div>
                       </div>
-                      <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </div>
-                  </CardHeader>
-                </Card>
-              </Link>
-            </motion.div>
-          ))}
-        </motion.div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </main>
 
       <Navigation />

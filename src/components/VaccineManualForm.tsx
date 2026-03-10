@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreateVaccinationRecord } from "@/hooks/useVaccinationRecords";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface VaccineManualFormProps {

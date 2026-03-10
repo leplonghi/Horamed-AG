@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, Zap, Target } from "lucide-react";
+import { TrendUp as TrendingUp, Lightning as Zap, Target } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
 
 interface FitnessProgressWidgetsProps {

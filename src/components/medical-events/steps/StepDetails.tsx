@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin, Stethoscope } from 'lucide-react';
+import { MapPin, Stethoscope } from "@phosphor-icons/react";
 
 interface StepDetailsProps {
     formData: Partial<MedicalEventFormData>;

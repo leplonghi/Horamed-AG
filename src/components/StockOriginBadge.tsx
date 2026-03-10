@@ -1,4 +1,4 @@
-import { FileText, Package } from "lucide-react";
+import { FileText, Package } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";

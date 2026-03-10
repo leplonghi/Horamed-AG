@@ -2,13 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Calendar as CalendarIcon,
-  Clock,
-  Pill
-} from "lucide-react";
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, CalendarBlank as CalendarIcon, Clock, Pill } from "@phosphor-icons/react";
 import { 
   format, 
   addDays, 

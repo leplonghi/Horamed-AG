@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Check, Crown, Sparkles } from "lucide-react";
+import { Check, Crown, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";

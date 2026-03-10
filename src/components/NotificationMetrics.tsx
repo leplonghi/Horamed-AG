@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { AlertCircle, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Clock, XCircle } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NotificationMetric {

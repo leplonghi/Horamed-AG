@@ -1,8 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import {
-    Plane, Activity, FileText, QrCode, Pill,
-    Thermometer, Stethoscope, Microscope
-} from "lucide-react";
+import { Airplane as Plane, Heartbeat as Activity, FileText, QrCode, Pill, Thermometer, Stethoscope, Microscope } from "@phosphor-icons/react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";

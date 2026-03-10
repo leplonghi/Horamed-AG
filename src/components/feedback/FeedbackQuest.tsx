@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { addDocument, setDocument, serverTimestamp } from "@/integrations/firebase";
 import { toast } from "sonner";
-import {
-    Check, Star, Heart, Bug, Zap, Clock, Package,
-    Brain, ShieldCheck, ThumbsUp, ThumbsDown, Meh, Frown, Smile
-} from "lucide-react";
+import { Check, Star, Heart, Bug, Lightning as Zap, Clock, Package, Brain, ShieldCheck, ThumbsUp, ThumbsDown, SmileyMeh as Meh, SmileySad as Frown, Smiley as Smile } from "@phosphor-icons/react";
 
 interface FeedbackQuestProps {
     onComplete: () => void;

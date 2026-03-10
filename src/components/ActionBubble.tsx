@@ -1,9 +1,9 @@
-import { motion } from "framer-motion";
-import { LucideIcon } from "lucide-react";
+﻿import { motion } from "framer-motion";
+import { Icon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface ActionBubbleProps {
-  icon: LucideIcon;
+  icon: Icon;
   label: string;
   color?: "primary" | "success" | "warning" | "info";
   onClick: () => void;

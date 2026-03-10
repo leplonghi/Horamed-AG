@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Loader2 } from "lucide-react";
+import { ShoppingBag, Spinner as Loader2 } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import PharmacyPriceCard from "./PharmacyPriceCard";
 import { useLanguage } from "@/contexts/LanguageContext";

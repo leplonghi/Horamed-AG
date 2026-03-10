@@ -1,5 +1,12 @@
 import { useMemo } from "react";
-import { Pill, Leaf, AlertTriangle, TrendingUp, Package, Clock } from "lucide-react";
+import {
+  IconPill as Pill,
+  IconHealth as Leaf,
+  IconAlertTriangle as AlertTriangle,
+  IconTrendingUp as TrendingUp,
+  IconArchive as Package,
+  IconClock as Clock
+} from "@/components/icons/HoramedIcons";
 import SmartInsightsBase, { Insight } from "@/components/shared/SmartInsightsBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -42,7 +49,7 @@ export default function SmartMedicationInsights({
       result.push({
         id: "low-stock",
         type: "warning",
-        icon: <Package className="h-5 w-5 text-warning" />,
+        icon: <Package className="h-5 w-5" />,
         title: language === 'pt'
           ? `${lowStockItems.length} ${lowStockItems.length === 1 ? 'item' : 'itens'} com estoque baixo`
           : `${lowStockItems.length} ${lowStockItems.length === 1 ? 'item' : 'items'} with low stock`,
@@ -65,7 +72,7 @@ export default function SmartMedicationInsights({
       result.push({
         id: "no-schedule",
         type: "info",
-        icon: <Clock className="h-5 w-5 text-primary" />,
+        icon: <Clock className="h-5 w-5" />,
         title: language === 'pt'
           ? `${noScheduleItems.length} ${noScheduleItems.length === 1 ? 'item sem horário' : 'itens sem horários'}`
           : `${noScheduleItems.length} ${noScheduleItems.length === 1 ? 'item without schedule' : 'items without schedules'}`,
@@ -84,7 +91,7 @@ export default function SmartMedicationInsights({
       result.push({
         id: "all-good",
         type: "success",
-        icon: <TrendingUp className="h-5 w-5 text-success" />,
+        icon: <TrendingUp className="h-5 w-5" />,
         title: language === 'pt' ? 'Tudo em ordem!' : 'All good!',
         description: language === 'pt'
           ? 'Seus medicamentos estão configurados corretamente'
@@ -102,7 +109,7 @@ export default function SmartMedicationInsights({
       result.push({
         id: "mix-info",
         type: "info",
-        icon: <Leaf className="h-5 w-5 text-performance" />,
+        icon: <Leaf className="h-5 w-5" />,
         title: language === 'pt'
           ? `${medications.length} medicamentos + ${supplements.length} suplementos`
           : `${medications.length} medications + ${supplements.length} supplements`,
@@ -115,5 +122,5 @@ export default function SmartMedicationInsights({
     return result;
   }, [items, language, onActionClick]);
 
-  return <SmartInsightsBase insights={insights} maxVisible={2} />;
+  return <SmartInsightsBase insights={insights} maxVisible={1} className="mt-4" />;
 }

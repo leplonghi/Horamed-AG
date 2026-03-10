@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { FileText, Download, TrendingUp, TrendingDown, Calendar } from "lucide-react";
+import { FileText, Download, TrendUp as TrendingUp, TrendDown as TrendingDown, CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";

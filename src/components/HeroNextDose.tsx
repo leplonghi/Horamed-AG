@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Check, Clock, Plus, Sparkles } from "lucide-react";
+import { Check, Clock, Plus, Sparkle as Sparkles, Pill, Bell, Confetti } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -28,66 +28,85 @@ function NewUserEmptyState({ language }: { language: string }) {
   const isPt = language === 'pt';
 
   const steps = isPt
-    ? ['Cadastre seu medicamento', 'Configure o hor\u00e1rio', 'Receba lembretes']
+    ? ['Cadastre seu medicamento', 'Configure o horário', 'Receba lembretes']
     : ['Add your medication', 'Set the schedule', 'Get reminders'];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: 'easeOut' }}
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
     >
-      <Card className="overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/5 via-teal-500/5 to-background shadow-[var(--shadow-glass)]">
-        {/* Accent line */}
-        <div className="h-1 w-full bg-gradient-to-r from-primary via-teal-400 to-emerald-500" />
-        <div className="p-6 flex flex-col items-center text-center gap-5">
+      <Card className="overflow-hidden border border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-blue-400/5 to-background shadow-[var(--shadow-glass)] relative">
+        {/* Animated Background Blobs */}
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl p-6" />
+        <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl p-6" />
+
+        <div className="p-5 flex flex-col items-center text-center gap-4 relative z-10">
           {/* Icon */}
           <motion.div
-            className="h-16 w-16 rounded-2xl bg-gradient-to-br from-primary to-teal-500 flex items-center justify-center shadow-lg shadow-primary/25"
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25"
+            animate={{
+              scale: [1, 1.05, 1],
+              rotate: [0, 2, -2, 0]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Sparkles className="h-8 w-8 text-white" />
+            <Sparkles className="h-7 w-7 text-white" weight="duotone" />
           </motion.div>
 
           {/* Headline */}
           <div className="space-y-1">
-            <h2 className="text-xl font-bold text-foreground">
-              {isPt ? 'Bem-vindo ao HoraMed! \ud83c\udf89' : 'Welcome to HoraMed! \ud83c\udf89'}
+            <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+              {isPt ? 'Bem-vindo ao HoraMed!' : 'Welcome to HoraMed!'}
+              <Confetti className="h-5 w-5 text-blue-500" weight="duotone" />
             </h2>
             <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
               {isPt
-                ? 'Em 3 passos simples voc\u00ea nunca esquece um medicamento'
-                : 'In 3 simple steps you\u2019ll never miss a dose again'}
+                ? 'Em 3 passos simples você nunca esquece um medicamento'
+                : 'In 3 simple steps you’ll never miss a dose again'}
             </p>
           </div>
 
           {/* 3 Steps */}
-          <div className="flex items-start gap-3 w-full max-w-xs">
-            {steps.map((step, i) => (
-              <motion.div
-                key={i}
-                className="flex-1 flex flex-col items-center gap-1.5"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + i * 0.12 }}
-              >
-                <div className="h-8 w-8 rounded-full bg-primary/15 text-primary text-sm font-bold flex items-center justify-center border border-primary/25">
-                  {i + 1}
-                </div>
-                <p className="text-[11px] text-muted-foreground text-center leading-tight">{step}</p>
-              </motion.div>
-            ))}
-          </div>
+          {(() => {
+            const stepIcons = [Pill, Clock, Bell];
+            const stepColors = [
+              'from-blue-400 to-blue-500',
+              'from-blue-500 to-blue-600',
+              'from-blue-600 to-indigo-600',
+            ];
+            return (
+              <div className="flex items-start gap-4 w-full max-w-xs my-1">
+                {steps.map((step, i) => {
+                  const Icon = stepIcons[i];
+                  return (
+                    <motion.div
+                      key={i}
+                      className="flex-1 flex flex-col items-center gap-2"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.15 + i * 0.12 }}
+                    >
+                      <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${stepColors[i]} flex items-center justify-center shadow-md shadow-blue-500/10`}>
+                        <Icon className="h-5 w-5 text-white" weight="duotone" />
+                      </div>
+                      <p className="text-[10px] text-muted-foreground font-medium text-center leading-tight whitespace-pre-wrap">{step}</p>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* CTA */}
           <Button
             onClick={() => navigate('/adicionar-medicamento')}
-            className="w-full max-w-xs bg-gradient-to-r from-primary to-teal-500 text-white font-semibold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:scale-[1.02] transition-all duration-200"
+            className="w-full max-w-xs h-12 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white font-bold shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all duration-200"
             size="lg"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            {isPt ? 'Adicionar primeiro medicamento' : 'Add first medication'}
+            <Plus className="h-4 w-4 mr-2" weight="bold" />
+            {isPt ? 'Adicionar primeiro remédio' : 'Add first medication'}
           </Button>
         </div>
       </Card>
@@ -128,32 +147,26 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
   if (optimisticTaken) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        transition={{ duration: 0.4 }}
       >
-        <Card className="p-10 bg-gradient-to-br from-green-500/20 to-emerald-500/10 border-green-500/40 backdrop-blur-xl shadow-[var(--shadow-glass)]">
-          <div className="flex flex-col items-center text-center gap-4">
-            <motion.div
-              className="h-20 w-20 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-            >
-              <Check className="h-10 w-10 text-white" />
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <h2 className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {language === 'pt' ? 'Boa! ✓' : 'Done! ✓'}
-              </h2>
-              <p className="text-base text-muted-foreground mt-1">
-                {language === 'pt' ? 'Dose registrada com sucesso' : 'Dose recorded successfully'}
-              </p>
-            </motion.div>
+        <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30 backdrop-blur-xl shadow-[var(--shadow-glass)] flex flex-col items-center text-center gap-3">
+          <motion.div
+            className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          >
+            <Check className="h-8 w-8 text-white" weight="bold" />
+          </motion.div>
+          <div>
+            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {language === 'pt' ? 'Feito! ✓' : 'Done! ✓'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {language === 'pt' ? 'Dose registrada com sucesso' : 'Dose recorded successfully'}
+            </p>
           </div>
         </Card>
       </motion.div>
@@ -169,31 +182,24 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
   if (allDoneToday || (!dose && !nextDayDose)) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <Card className="p-5 bg-gradient-to-br from-green-500/15 to-emerald-500/5 border-green-500/30 backdrop-blur-lg shadow-[var(--shadow-glass)]">
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-              <Check className="h-6 w-6 text-white" />
+        <Card className="p-3.5 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border-blue-500/20 backdrop-blur-lg shadow-[var(--shadow-glass)]">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-inner">
+              <Check className="h-5 w-5 text-white" weight="bold" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-green-600 dark:text-green-400">
-                {language === 'pt' ? 'Tudo certo por hoje' : 'All good for today'}
+              <h2 className="text-base font-semibold text-blue-700 dark:text-blue-400">
+                {language === 'pt' ? 'Tudo certo hoje' : 'All good today'}
               </h2>
-              {nextDayDose ? (
-                <p className="text-sm text-muted-foreground">
-                  {language === 'pt'
-                    ? `Próxima às ${nextDayDose.time}`
-                    : `Next at ${nextDayDose.time}`
-                  }
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  {language === 'pt' ? 'Dia concluído' : 'Day completed'}
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                {nextDayDose
+                  ? (language === 'pt' ? `Próxima às ${nextDayDose.time}` : `Next at ${nextDayDose.time}`)
+                  : (language === 'pt' ? 'Dia concluído' : 'Day completed')
+                }
+              </p>
             </div>
           </div>
         </Card>
@@ -205,27 +211,21 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
   if (!dose && nextDayDose) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
       >
-        <Card className="p-8 bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30 backdrop-blur-lg shadow-[var(--shadow-glass)]">
-          <div className="flex flex-col items-center text-center gap-4">
-            <div className="h-20 w-20 rounded-full bg-primary/15 flex items-center justify-center">
-              <Clock className="h-10 w-10 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground uppercase tracking-wide font-semibold mb-1">
-                {language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE'}
-              </p>
-              <h2 className="text-2xl font-bold text-foreground">{nextDayDose.name}</h2>
-              <p className="text-base text-muted-foreground mt-1">
-                {language === 'pt'
-                  ? `Amanhã às ${nextDayDose.time}`
-                  : `Tomorrow at ${nextDayDose.time}`
-                }
-              </p>
-            </div>
+        <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-400/5 border-blue-500/20 backdrop-blur-lg shadow-[var(--shadow-glass)] text-center space-y-2">
+          <div className="mx-auto h-14 w-14 rounded-full bg-blue-500/10 flex items-center justify-center">
+            <Clock className="h-7 w-7 text-blue-500" />
+          </div>
+          <div>
+            <p className="text-[10px] text-blue-500/70 uppercase tracking-widest font-bold mb-1">
+              {language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE'}
+            </p>
+            <h2 className="text-xl font-bold text-foreground">{nextDayDose.name}</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {language === 'pt' ? `Amanhã às ${nextDayDose.time}` : `Tomorrow at ${nextDayDose.time}`}
+            </p>
           </div>
         </Card>
       </motion.div>
@@ -248,27 +248,29 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
 
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        layout
       >
         <Card className={cn(
-          "p-6 transition-all backdrop-blur-xl shadow-[var(--shadow-glass)]",
+          "p-4 transition-all backdrop-blur-xl shadow-[var(--shadow-glass)] relative overflow-hidden",
           isOverdue
-            ? "bg-gradient-to-br from-destructive/20 to-orange-500/10 border-destructive/40 ring-2 ring-destructive/30"
+            ? "bg-gradient-to-br from-blue-600/20 to-blue-400/10 border-blue-500 ring-1 ring-blue-500/30"
             : isNow
-              ? "bg-gradient-to-br from-primary/20 to-primary/10 border-primary ring-2 ring-primary/30 shadow-glow"
-              : "bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30"
+              ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500 ring-1 ring-blue-500/30 shadow-glow"
+              : "bg-gradient-to-br from-blue-500/15 to-blue-600/5 border-blue-500/20"
         )}>
-          <div className="space-y-5">
-            {/* Header com status e horário */}
+          {/* Subtle Shine Background */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" />
+
+          <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
               <span className={cn(
-                "text-xs uppercase tracking-wider font-bold px-3 py-1 rounded-full",
+                "text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-md",
                 isOverdue
-                  ? "bg-destructive/20 text-destructive"
+                  ? "bg-blue-600/20 text-blue-600"
                   : isNow
-                    ? "bg-primary/20 text-primary"
+                    ? "bg-blue-500/20 text-blue-500"
                     : "bg-muted text-muted-foreground"
               )}>
                 {isOverdue
@@ -278,62 +280,53 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
                     : (language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE')
                 }
               </span>
-              <div className="flex items-center gap-1.5 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm font-semibold">
+              <div className="flex items-center gap-1.5 text-blue-600/70 font-bold">
+                <Clock className="h-3.5 w-3.5" />
+                <span className="text-xs">
                   {format(dueTime, "HH:mm", { locale: dateLocale })}
                 </span>
               </div>
             </div>
 
-            {/* Nome do medicamento - Grande e claro */}
-            <div className="text-center py-2">
-              <h2 className="text-3xl font-bold text-foreground leading-tight">
+            <div className="text-center py-1">
+              <h2 className="text-2xl font-bold text-foreground leading-tight tracking-tight">
                 {dose.items?.name || "Medicamento"}
               </h2>
               {dose.items?.dose_text && (
-                <p className="text-lg text-muted-foreground mt-1">
+                <p className="text-base text-muted-foreground font-medium mt-0.5">
                   {dose.items?.dose_text}
                 </p>
               )}
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <Button
                 size="lg"
                 onClick={handleTake}
                 disabled={isSubmitting}
                 className={cn(
-                  "w-full h-20 text-xl font-bold rounded-2xl shadow-lg transition-all active:scale-[0.97] group relative overflow-hidden",
-                  "flex flex-col items-center justify-center gap-1",
-                  isOverdue
-                    ? "bg-destructive hover:bg-destructive/90 shadow-destructive/30 animate-[pulse_2s_infinite]"
-                    : "bg-primary hover:bg-primary/90 shadow-primary/30",
-                  isNow && !isOverdue && "shadow-[0_0_20px_rgba(59,130,246,0.4)]"
+                  "w-full h-14 text-base font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.96] group relative overflow-hidden",
+                  "flex flex-col items-center justify-center gap-0",
+                  "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30",
+                  isNow && "shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                 )}
               >
-                {/* Shine effect */}
-                <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent z-10" />
-
-                <div className="flex items-center gap-2 relative z-20">
-                  <Check className="h-7 w-7" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
+                <div className="flex items-center gap-2">
+                  <Check className="h-6 w-6" weight="bold" />
                   <span>{language === 'pt' ? 'Tomei agora' : 'I took it'}</span>
                 </div>
-                <span className="text-xs font-normal opacity-80 relative z-20">
-                  {language === 'pt' ? 'Toque para confirmar' : 'Tap to confirm'}
-                </span>
               </Button>
 
-              {/* Botão secundário: Adiar - mais discreto */}
               {onSnooze && (
                 <Button
                   variant="ghost"
-                  size="lg"
+                  size="sm"
                   onClick={handleSnooze}
                   disabled={isSubmitting}
-                  className="w-full h-11 text-sm font-medium rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                  className="w-full h-9 text-xs font-semibold rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-500/5 transition-all"
                 >
-                  <Clock className="h-4 w-4 mr-2" />
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
                   {language === 'pt' ? 'Lembrar depois (+15 min)' : 'Remind me later (+15 min)'}
                 </Button>
               )}

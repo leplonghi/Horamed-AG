@@ -1,18 +1,7 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import {
-  Camera,
-  Pill,
-  Bell,
-  Check,
-  ArrowRight,
-  Sparkles,
-  MessageCircle,
-  Clock,
-  Plus,
-  Loader2
-} from "lucide-react";
+import { Camera, Pill, Bell, Check, ArrowRight, Sparkle as Sparkles, ChatCircle as MessageCircle, Clock, Plus, Spinner as Loader2 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -57,8 +46,8 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
   const claraMessages: Record<OnboardingStep, ClaraMessage> = {
     welcome: {
       text: language === 'pt'
-        ? "Olá! Sou a Clara, sua assistente de saúde. Vou te ajudar a configurar tudo em menos de 30 segundos! 🩺"
-        : "Hi! I'm Clara, your health assistant. I'll help you set everything up in less than 30 seconds! 🩺",
+        ? "Olá! Sou a Clara, sua assistente de saúde. Vou te ajudar a configurar tudo em menos de 30 segundos!"
+        : "Hi! I'm Clara, your health assistant. I'll help you set everything up in less than 30 seconds!",
     },
     "add-medication": {
       text: language === 'pt'
@@ -67,13 +56,13 @@ export default function SimpleOnboarding({ onComplete }: SimpleOnboardingProps) 
     },
     notifications: {
       text: language === 'pt'
-        ? "Quase lá! Ative as notificações para nunca esquecer seus horários. 🔔"
-        : "Almost there! Enable notifications to never miss your doses. 🔔",
+        ? "Quase lá! Ative as notificações para nunca esquecer seus horários."
+        : "Almost there! Enable notifications to never miss your doses.",
     },
     complete: {
       text: language === 'pt'
-        ? "Pronto! Tudo configurado. Agora você nunca mais vai esquecer seus medicamentos! 🎉"
-        : "Done! Everything is set up. You'll never forget your medications again! 🎉",
+        ? "Pronto! Tudo configurado. Agora você nunca mais vai esquecer seus medicamentos!"
+        : "Done! Everything is set up. You'll never forget your medications again!",
     },
   };
 

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart, ArrowRight } from "@phosphor-icons/react";
 
 interface Props {
   onNext: () => void;

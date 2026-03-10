@@ -1,7 +1,7 @@
 import { format, subDays, startOfDay } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingDown, TrendingUp, Minus, Calendar } from "lucide-react";
+import { TrendDown as TrendingDown, TrendUp as TrendingUp, Minus, CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { ConsumptionEntry } from "@/hooks/useStockProjection";
 import { useLanguage } from "@/contexts/LanguageContext";
 

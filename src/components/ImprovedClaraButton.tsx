@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
-import { Heart, X, Sparkles } from "lucide-react";
+import { Heart, X, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth, fetchDocument, updateDocument, setDocument } from "@/integrations/firebase";

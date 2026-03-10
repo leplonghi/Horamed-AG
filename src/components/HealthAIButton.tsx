@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Send } from "lucide-react";
+import { X, PaperPlaneRight as Send } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

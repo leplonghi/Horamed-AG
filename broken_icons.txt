@@ -1,0 +1,16 @@
+﻿=== AUDITORIA DE ICONES PHOSPHOR-ICONS ===
+Arquivos escaneados: 562
+Icones validos encontrados: 173
+Icones invalidos encontrados: 2
+
+=== ICONES INVALIDOS (nao existem em dist/csr/*.es.js) ===
+
+INVALIDO: Icon
+  -> src\components\fitness\SupplementTag.tsx
+  -> src\components\profile\ProfileMenu.tsx
+  -> src\components\ActionBubble.tsx
+  -> src\components\EmptyStateAnimated.tsx
+
+INVALIDO: IconContext
+  -> src\App.tsx
+

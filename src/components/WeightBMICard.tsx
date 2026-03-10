@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scale, Plus, TrendingUp, TrendingDown, Info, Minus } from "lucide-react";
+import { Scales as Scale, Plus, TrendUp as TrendingUp, TrendDown as TrendingDown, Info, Minus } from "@phosphor-icons/react";
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from "recharts";
 import { format, subMonths, startOfMonth, endOfMonth, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";

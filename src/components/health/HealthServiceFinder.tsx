@@ -1,6 +1,6 @@
-
+﻿
 import { useState } from "react";
-import { MapPin, Search, ExternalLink, Navigation } from "lucide-react";
+import { MapPin, MagnifyingGlass as Search, ArrowSquareOut as ExternalLink, NavigationArrow as Navigation } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

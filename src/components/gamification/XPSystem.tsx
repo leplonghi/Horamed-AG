@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Trophy, TrendingUp, Star } from "lucide-react";
+import { Trophy, TrendUp as TrendingUp, Star } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface XPSystemProps {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
-import { Lightbulb, X, AlertTriangle, Info, TrendingUp } from "lucide-react";
+import { Lightbulb, X, Warning as AlertTriangle, Info, TrendUp as TrendingUp } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { startOfDay, subDays, differenceInHours } from "date-fns";

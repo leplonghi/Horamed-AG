@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { fetchCollection, orderBy, where, limit } from "@/integrations/firebase";
-import { Scale, Plus, History } from "lucide-react";
+import { Scales as Scale, Plus, ClockCounterClockwise as History } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import VitalsRegistrationModal from "./VitalsRegistrationModal";

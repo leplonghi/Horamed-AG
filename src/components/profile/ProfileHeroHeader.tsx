@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Crown, Camera, Loader2 } from "lucide-react";
+import { Crown, Camera, Spinner as Loader2 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

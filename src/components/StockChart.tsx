@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Package, AlertTriangle, TrendingDown, Info } from "lucide-react";
+import { Package, Warning as AlertTriangle, TrendDown as TrendingDown, Info } from "@phosphor-icons/react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { differenceInDays } from "date-fns";
 import InfoDialog from "./InfoDialog";

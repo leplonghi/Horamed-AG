@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
-import { Calendar, Infinity as InfinityIcon, HelpCircle } from "lucide-react";
+import { CalendarBlank as Calendar, Infinity as InfinityIcon, Question as HelpCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import StepTooltip from "./StepTooltip";
 import {

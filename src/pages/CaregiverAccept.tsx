@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
+import { UserPlus, CheckCircle, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { useCaregivers } from '@/hooks/useCaregivers';
 
 export default function CaregiverAccept() {

@@ -1,6 +1,6 @@
 import { RewardsDashboard } from '@/components/rewards/RewardsDashboard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Gift } from 'lucide-react';
+import { ArrowLeft, Gift } from "@phosphor-icons/react";
 import { useNavigate } from 'react-router-dom';
 import Navigation from '@/components/Navigation';
 import { motion } from 'framer-motion';

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { format, addDays, addHours, setHours, setMinutes } from 'date-fns';
 import { ptBR, enUS } from 'date-fns/locale';
-import { Bell, BellOff, Plus, Trash2, Clock, Calendar, Volume2, VolumeX, Vibrate, RefreshCw, Play, Settings, ChevronRight, AlertCircle, CheckCircle, Cloud, CloudOff } from 'lucide-react';
+import { Bell, BellSlash as BellOff, Plus, Trash as Trash2, Clock, CalendarBlank as Calendar, SpeakerHigh as Volume2, SpeakerNone as VolumeX, DeviceTabletSpeaker as Vibrate, ArrowsClockwise as RefreshCw, Play, Gear as Settings, CaretRight as ChevronRight, WarningCircle as AlertCircle, CheckCircle, Cloud, CloudSlash as CloudOff } from "@phosphor-icons/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

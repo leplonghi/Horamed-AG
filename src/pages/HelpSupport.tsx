@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Mail, FileText, ExternalLink, BookOpen, Lightbulb, Play } from "lucide-react";
+import { ArrowLeft, Envelope as Mail, FileText, ArrowSquareOut as ExternalLink, BookOpen, Lightbulb, Play } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import {

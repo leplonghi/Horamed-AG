@@ -8,7 +8,7 @@ import Header from "@/components/Header";
 import PageHeader from "@/components/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Scale, Plus, ArrowLeft, TrendingDown, TrendingUp, Minus, Pill, Leaf, Info } from "lucide-react";
+import { Scales as Scale, Plus, ArrowLeft, TrendDown as TrendingDown, TrendUp as TrendingUp, Minus, Pill, Leaf, Info } from "@phosphor-icons/react";
 import { format, differenceInDays } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import WeightRegistrationModal from "@/components/WeightRegistrationModal";

@@ -1,4 +1,4 @@
-import { Pill, FileText, Stethoscope, FlaskConical, Heart, Sparkles } from "lucide-react";
+import { Pill, FileText, Stethoscope, Flask as FlaskConical, Heart, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import {
   Drawer,

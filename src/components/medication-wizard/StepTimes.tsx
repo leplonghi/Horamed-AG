@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Trash2, Clock, HelpCircle, Sparkles } from "lucide-react";
+import { Plus, Trash as Trash2, Clock, Question as HelpCircle, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

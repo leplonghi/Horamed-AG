@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, CaretDown as ChevronDown } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 

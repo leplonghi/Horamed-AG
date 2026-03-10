@@ -10,7 +10,7 @@ import XPSystem from "@/components/gamification/XPSystem";
 import StreakAnimation from "@/components/celebrations/StreakAnimation";
 import AchievementShareDialog from "@/components/gamification/AchievementShareDialog";
 import { Achievement } from "@/hooks/useAchievements";
-import { Trophy, Star, Flame, Lock } from "lucide-react";
+import { Trophy, Star, Flame, Lock } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/LoadingSkeleton";

@@ -4,15 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Target, 
-  Zap, 
-  Clock, 
-  CheckCircle2, 
-  Gift,
-  Sparkles,
-  Timer
-} from "lucide-react";
+import { Target, Lightning as Zap, Clock, CheckCircle as CheckCircle2, Gift, Sparkle as Sparkles, Timer } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";

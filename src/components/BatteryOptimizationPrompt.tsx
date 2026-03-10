@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Battery, AlertTriangle, Settings, X, ExternalLink } from "lucide-react";
+import { BatteryFull as Battery, Warning as AlertTriangle, Gear as Settings, X, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Capacitor } from "@capacitor/core";

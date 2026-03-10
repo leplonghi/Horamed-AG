@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Bell, Smartphone, Watch, ChevronRight, Settings2, Bug, Edit3, Plus, X } from "lucide-react";
+import { ArrowLeft, Bell, DeviceMobile as Smartphone, Watch, CaretRight as ChevronRight, GearSix as Settings2, Bug, PencilSimple as Edit3, Plus, X } from "@phosphor-icons/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useNavigate } from "react-router-dom";
 import { auth, fetchDocument, setDocument } from "@/integrations/firebase";

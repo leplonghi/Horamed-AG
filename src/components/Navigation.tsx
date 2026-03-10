@@ -7,9 +7,9 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where } from "@/integrations/firebase";
-import { CalendarBlank, Pill, Heartbeat, Wallet, User as UserIcon } from "@phosphor-icons/react";
+import { IconToday as CalendarBlank, IconMedications as Pill, IconHealth as Heartbeat, IconWallet as Wallet, IconProfile as UserIcon } from "@/components/icons/HoramedIcons";
 
-type NavIconComponent = React.ComponentType<{ className?: string; size?: number; weight?: any }>;
+type NavIconComponent = React.ComponentType<{ className?: string; size?: number | string }>;
 
 // Memoized nav item to prevent unnecessary re-renders
 const NavItem = memo(function NavItem({
@@ -33,10 +33,10 @@ const NavItem = memo(function NavItem({
       to={path}
       onClick={onTap}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 relative group",
+        "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group",
         isActive
-          ? "text-primary font-semibold scale-110"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          ? "text-primary font-bold scale-110"
+          : "text-primary/60 hover:text-primary/90 hover:bg-primary/5"
       )}
     >
       {isActive && (
@@ -53,7 +53,6 @@ const NavItem = memo(function NavItem({
             isActive && "scale-110"
           )}
           size={24}
-          weight={isActive ? "fill" : "duotone"}
         />
         {badge && badge > 0 && (
           <Badge
@@ -65,8 +64,8 @@ const NavItem = memo(function NavItem({
         )}
       </div>
       <span className={cn(
-        "text-[10px] relative z-10",
-        isActive && "font-bold"
+        "text-[10px] tracking-wide relative z-10",
+        isActive ? "font-bold" : "font-medium"
       )}>{label}</span>
     </Link>
   );

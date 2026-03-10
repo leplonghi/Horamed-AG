@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Bell, FileText, Users, Sparkles, Check } from "lucide-react";
+import { Bell, FileText, Users, Sparkle as Sparkles, Check } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useLanguage } from "@/contexts/LanguageContext";

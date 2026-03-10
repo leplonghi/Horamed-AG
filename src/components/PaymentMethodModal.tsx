@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CreditCard, Shield, CheckCircle2, Loader2 } from "lucide-react";
+import { CreditCard, Shield, CheckCircle as CheckCircle2, Spinner as Loader2 } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface PaymentMethodModalProps {

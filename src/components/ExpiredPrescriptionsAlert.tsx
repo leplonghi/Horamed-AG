@@ -1,4 +1,4 @@
-import { AlertTriangle, Calendar, FileText, X } from "lucide-react";
+import { Warning as AlertTriangle, CalendarBlank as Calendar, FileText, X } from "@phosphor-icons/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -1,4 +1,4 @@
-import { AlertTriangle, XCircle, AlertCircle, X, ShieldAlert, ExternalLink } from "lucide-react";
+import { Warning as AlertTriangle, XCircle, WarningCircle as AlertCircle, X, ShieldWarning as ShieldAlert, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CriticalAlert } from "@/hooks/useCriticalAlerts";

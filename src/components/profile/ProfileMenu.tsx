@@ -1,10 +1,10 @@
-import React from "react";
-import { ChevronRight, LucideIcon } from "lucide-react";
+﻿import React from "react";
+import { CaretRight as ChevronRight, Icon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
 interface ProfileMenuItemProps {
-    icon: LucideIcon;
+    icon: Icon;
     label: string;
     value?: string | React.ReactNode;
     onClick?: () => void;

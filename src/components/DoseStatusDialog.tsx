@@ -6,7 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, SkipForward } from "lucide-react";
+import { CheckCircle as CheckCircle2, XCircle, SkipForward } from "@phosphor-icons/react";
 
 interface DoseStatusDialogProps {
   open: boolean;

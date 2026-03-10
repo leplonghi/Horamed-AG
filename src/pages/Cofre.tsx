@@ -1,18 +1,16 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
-    Plus,
-    Search,
-    FileText,
-    Pill,
-    TestTube2,
-    Syringe,
-    Calendar,
-    ArrowRight,
-    Upload,
-    FolderOpen,
-    ShieldCheck
-} from "lucide-react";
+    IconPlus,
+    IconSearch,
+    IconFile as FileText,
+    IconMedications as Pill,
+    IconHistory as Calendar,
+    IconChevronRight as ArrowRight,
+    IconUpload,
+    IconPlans as FolderOpen,
+    IconShield as ShieldCheck,
+    IconTestTube,
+    IconSyringe,
+} from "@/components/icons/HoramedIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -33,16 +31,16 @@ import { motion } from "framer-motion";
 const CATEGORIES = [
     { value: "all", label: "Todos", icon: FolderOpen, color: "text-primary", bg: "bg-primary/10", activeBg: "bg-primary text-white" },
     { value: "receita", label: "Receitas", icon: Pill, color: "text-blue-500", bg: "bg-blue-500/10", activeBg: "bg-blue-500 text-white" },
-    { value: "exame", label: "Exames", icon: TestTube2, color: "text-emerald-500", bg: "bg-emerald-500/10", activeBg: "bg-emerald-500 text-white" },
-    { value: "vacinacao", label: "Vacinas", icon: Syringe, color: "text-amber-500", bg: "bg-amber-500/10", activeBg: "bg-amber-500 text-white" },
+    { value: "exame", label: "Exames", icon: IconTestTube, color: "text-emerald-500", bg: "bg-emerald-500/10", activeBg: "bg-emerald-500 text-white" },
+    { value: "vacinacao", label: "Vacinas", icon: IconSyringe, color: "text-amber-500", bg: "bg-amber-500/10", activeBg: "bg-amber-500 text-white" },
     { value: "consulta", label: "Consultas", icon: Calendar, color: "text-rose-500", bg: "bg-rose-500/10", activeBg: "bg-rose-500 text-white" },
 ];
 
 function getCategoryMeta(slug?: string) {
-    const map: Record<string, { icon: typeof Pill; color: string; bg: string; label: string }> = {
+    const map: Record<string, { icon: any; color: string; bg: string; label: string }> = {
         receita: { icon: Pill, label: "Receita", color: "text-blue-500", bg: "bg-blue-500/10" },
-        exame: { icon: TestTube2, label: "Exame", color: "text-emerald-500", bg: "bg-emerald-500/10" },
-        vacinacao: { icon: Syringe, label: "Vacina", color: "text-amber-500", bg: "bg-amber-500/10" },
+        exame: { icon: IconTestTube, label: "Exame", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+        vacinacao: { icon: IconSyringe, label: "Vacina", color: "text-amber-500", bg: "bg-amber-500/10" },
         consulta: { icon: Calendar, label: "Consulta", color: "text-rose-500", bg: "bg-rose-500/10" },
     };
     return map[slug || ""] || { icon: FileText, label: "Documento", color: "text-muted-foreground", bg: "bg-muted/30" };
@@ -72,36 +70,37 @@ export default function Cofre() {
     };
 
     return (
-        <div className="min-h-screen bg-background relative">
+        <div className="min-h-screen bg-background relative overflow-x-hidden">
             <OceanBackground variant="page" />
             <Header />
 
-            <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-5 page-container relative z-10">
+            <main className="container max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 space-y-6 page-container relative z-10">
                 {/* Hero Header */}
                 <PageHeroHeader
                     icon={<ShieldCheck className="h-6 w-6 text-primary" />}
                     title={t("wallet.title") || "Carteira de Saúde"}
                     subtitle={t("wallet.subtitle") || "Seus documentos médicos em um só lugar"}
+                    badge="Wallet"
                     action={{
                         label: t("common.add") || "Adicionar",
-                        icon: <Plus className="h-5 w-5" />,
+                        icon: <IconPlus className="h-5 w-5" />,
                         onClick: () => navigate("/carteira/upload"),
                     }}
                 />
 
                 {/* Floating Search */}
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <div className="relative">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <div className="relative group">
+                        <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input
                             placeholder={(t("common.search") || "Buscar") + " documentos..."}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className={cn(
-                                "pl-10 h-12 rounded-2xl",
-                                "bg-card/80 backdrop-blur-xl border-border/30",
-                                "shadow-[var(--shadow-glass)] focus:shadow-[var(--shadow-glass-hover)]",
-                                "transition-shadow"
+                                "pl-11 h-14 rounded-3xl",
+                                "bg-card/40 backdrop-blur-xl border-border/30",
+                                "shadow-glass focus:shadow-glass-hover focus-visible:ring-primary/20",
+                                "transition-all duration-300"
                             )}
                         />
                     </div>
@@ -112,24 +111,25 @@ export default function Cofre() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.15 }}
-                    className="flex gap-2 overflow-x-auto no-scrollbar pb-1"
+                    className="flex gap-2.5 overflow-x-auto no-scrollbar pb-2 px-1"
                 >
                     {CATEGORIES.map((cat) => {
                         const isActive = activeTab === cat.value;
+                        const CategoryIcon = cat.icon;
                         return (
                             <motion.button
                                 key={cat.value}
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => setActiveTab(cat.value)}
                                 className={cn(
-                                    "flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-medium whitespace-nowrap",
-                                    "transition-all duration-200 border",
+                                    "flex items-center gap-2.5 px-6 py-3.5 rounded-2xl text-[13px] font-bold whitespace-nowrap",
+                                    "transition-all duration-300 border shadow-glass",
                                     isActive
-                                        ? cn(cat.activeBg, "border-transparent shadow-lg")
-                                        : "bg-card/60 backdrop-blur-sm border-border/30 text-foreground hover:bg-card/80"
+                                        ? "bg-primary text-white border-transparent shadow-glow"
+                                        : "bg-card/30 backdrop-blur-xl border-border/20 text-foreground/80 hover:bg-card/50 hover:border-border/40"
                                 )}
                             >
-                                <cat.icon className={cn("h-4 w-4", isActive ? "text-inherit" : cat.color)} />
+                                <CategoryIcon className={cn("h-4.5 w-4.5", isActive ? "text-inherit" : cat.color)} />
                                 {cat.label}
                             </motion.button>
                         );
@@ -138,11 +138,11 @@ export default function Cofre() {
 
                 {/* Document List */}
                 {isLoading ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {[1, 2, 3, 4].map((i) => (
-                            <Card key={i} className="rounded-3xl border-border/30 bg-card/60 backdrop-blur-xl">
+                            <Card key={i} className="rounded-3xl border-0 bg-card/40 backdrop-blur-xl">
                                 <CardContent className="p-4 flex items-center gap-4">
-                                    <Skeleton className="h-12 w-12 rounded-2xl" />
+                                    <Skeleton className="h-14 w-14 rounded-2xl" />
                                     <div className="flex-1 space-y-2">
                                         <Skeleton className="h-4 w-3/4" />
                                         <Skeleton className="h-3 w-1/2" />
@@ -153,27 +153,27 @@ export default function Cofre() {
                     </div>
                 ) : !filteredDocuments || filteredDocuments.length === 0 ? (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                        <Card className="rounded-3xl border-border/30 bg-card/60 backdrop-blur-xl shadow-[var(--shadow-glass)]">
-                            <CardContent className="py-16 text-center">
-                                <div className="bg-primary/10 rounded-3xl w-20 h-20 flex items-center justify-center mx-auto mb-5">
-                                    <FileText className="h-10 w-10 text-primary" />
+                        <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass">
+                            <CardContent className="py-20 text-center">
+                                <div className="bg-primary/10 rounded-[2rem] w-24 h-24 flex items-center justify-center mx-auto mb-6 shadow-inner-light">
+                                    <FileText className="h-12 w-12 text-primary" />
                                 </div>
-                                <h3 className="text-lg font-semibold mb-1">
+                                <h3 className="text-xl font-bold mb-2">
                                     {searchTerm ? t("common.none") || "Nenhum resultado" : t("wallet.noDocuments") || "Nenhum documento"}
                                 </h3>
-                                <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+                                <p className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto">
                                     {searchTerm
-                                        ? "Tente buscar por outro termo"
-                                        : "Adicione receitas, exames e vacinas para organizar sua saúde"}
+                                        ? "Tente buscar por outro termo ou limpe os filtros"
+                                        : "Adicione receitas, exames e vacinas para organizar sua saúde com segurança"}
                                 </p>
                                 {!searchTerm && (
-                                    <div className="flex gap-3 justify-center">
-                                        <Button className="rounded-2xl gap-2" onClick={() => navigate("/carteira/upload")}>
-                                            <Upload className="h-4 w-4" /> Digitalizar
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-xs mx-auto">
+                                        <Button className="rounded-2xl h-12 gap-2 flex-1 shadow-glow" onClick={() => navigate("/carteira/upload")}>
+                                            <IconUpload className="h-5 w-5" /> Digitalizar
                                         </Button>
-                                        <Button variant="outline" className="rounded-2xl gap-2 border-border/30"
+                                        <Button variant="outline" className="rounded-2xl h-12 gap-2 flex-1 bg-white/20 border-white/20 backdrop-blur-sm"
                                             onClick={() => navigate("/carteira/criar")}>
-                                            <Plus className="h-4 w-4" /> Manual
+                                            <IconPlus className="h-5 w-5" /> Manual
                                         </Button>
                                     </div>
                                 )}
@@ -181,58 +181,52 @@ export default function Cofre() {
                         </Card>
                     </motion.div>
                 ) : (
-                    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3">
+                    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3.5">
                         {filteredDocuments.map((doc) => {
                             const meta = getCategoryMeta(doc.categorySlug);
                             const IconComponent = meta.icon;
                             return (
                                 <motion.div key={doc.id} variants={itemVariants}>
-                                    <Card
-                                        className={cn(
-                                            "rounded-3xl border border-border/30 shadow-[var(--shadow-glass)]",
-                                            "bg-card/80 backdrop-blur-xl cursor-pointer",
-                                            "hover:shadow-[var(--shadow-glass-hover)] hover:scale-[1.01] active:scale-[0.99]",
-                                            "transition-all duration-200"
-                                        )}
+                                    <div
+                                        className="card-interactive overflow-hidden cursor-pointer"
                                         onClick={() => navigate(`/carteira/${doc.id}`)}
                                     >
-                                        <CardContent className="p-4 flex items-center gap-4">
+                                        <div className="p-4 flex items-center gap-4">
                                             {/* Icon */}
-                                            <div className={cn("h-12 w-12 rounded-2xl flex items-center justify-center shrink-0", meta.bg)}>
-                                                <IconComponent className={cn("h-6 w-6", meta.color)} />
+                                            <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-glass-hover bg-white/5", meta.bg)}>
+                                                <IconComponent className={cn("h-7 w-7", meta.color)} />
                                             </div>
 
                                             {/* Content */}
                                             <div className="flex-1 min-w-0">
-                                                <h4 className="font-semibold truncate text-sm">
+                                                <h4 className="font-bold truncate text-base text-foreground/90">
                                                     {doc.title || t("wallet.documents") || "Documento"}
                                                 </h4>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Badge
-                                                        variant="secondary"
-                                                        className="text-[10px] h-5 px-2 font-medium rounded-full bg-muted/50"
-                                                    >
+                                                <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground/70 font-semibold uppercase tracking-wider">
+                                                    <span className={cn("px-2 py-0.5 rounded-md bg-white/5", meta.color)}>
                                                         {meta.label}
-                                                    </Badge>
+                                                    </span>
                                                     {doc.provider && (
-                                                        <span className="text-[11px] text-muted-foreground truncate">
-                                                            {doc.provider}
+                                                        <span className="truncate">
+                                                            • {doc.provider}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
 
                                             {/* Date + Arrow */}
-                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                            <div className="flex flex-col items-end gap-1.5 shrink-0 pr-1">
                                                 {doc.createdAt && (
-                                                    <span className="text-[11px] text-muted-foreground font-medium">
+                                                    <span className="text-[10px] text-muted-foreground/60 font-black uppercase italic tracking-widest">
                                                         {format(safeDateParse(doc.createdAt), "dd MMM", { locale: dateLocale })}
                                                     </span>
                                                 )}
-                                                <ArrowRight className="h-4 w-4 text-muted-foreground/40" />
+                                                <div className="h-7 w-7 rounded-full bg-muted/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
+                                                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                                                </div>
                                             </div>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -248,10 +242,10 @@ export default function Cofre() {
                 >
                     <Button
                         size="lg"
-                        className="h-14 w-14 rounded-2xl shadow-2xl"
+                        className="h-16 w-16 rounded-2xl shadow-glow-primary active:scale-95 transition-all duration-200 bg-primary"
                         onClick={() => navigate("/carteira/upload")}
                     >
-                        <Plus className="h-6 w-6" />
+                        <IconPlus className="h-7 w-7" />
                     </Button>
                 </motion.div>
             </main>

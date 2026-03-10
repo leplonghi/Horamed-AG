@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, Shield, Sparkles, RefreshCw } from 'lucide-react';
+import { ArrowLeft, MagnifyingGlass as Search, Shield, Sparkle as Sparkles, ArrowsClockwise as RefreshCw } from "@phosphor-icons/react";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useMedicationInteractions } from '@/hooks/useMedicationInteractions';

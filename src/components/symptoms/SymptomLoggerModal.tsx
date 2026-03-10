@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { GeneralFeeling, SymptomSeverity, symptomService, SymptomLog } from '@/lib/symptomService';
 import { analyzeSymptomCorrelation } from '@/lib/correlationEngine';
-import { ShieldAlert, Info } from 'lucide-react';
+import { ShieldWarning as ShieldAlert, Info } from "@phosphor-icons/react";
 import { useAuth } from '@/contexts/AuthContext';
 
 import { useLanguage } from '@/contexts/LanguageContext';

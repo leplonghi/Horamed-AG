@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, Activity } from "lucide-react";
+import { TrendUp as TrendingUp, TrendDown as TrendingDown, Minus, Heartbeat as Activity } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 

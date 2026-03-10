@@ -1,0 +1,12 @@
+√ Copying web assets from dist to android\app\src\main\assets\public in 137.26ms
+√ Creating capacitor.config.json in android\app\src\main\assets in 1.19ms
+√ copy android in 248.58ms
+√ Updating Android plugins in 27.68ms
+[info] Found 5 Capacitor plugins for android:
+       @aparajita/capacitor-biometric-auth@9.1.2
+       @capacitor/app@7.1.0
+       @capacitor/local-notifications@7.0.3
+       @capacitor/push-notifications@7.0.3
+       @horamed/android-permissions@1.0.0
+√ update android in 452.60ms
+[info] Sync finished in 0.872s

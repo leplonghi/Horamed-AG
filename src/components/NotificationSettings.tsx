@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Bell, Clock, Moon, Zap, Loader2 } from "lucide-react";
+import { Bell, Clock, Moon, Lightning as Zap, Spinner as Loader2 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { usePushSubscription } from "@/hooks/usePushSubscription";

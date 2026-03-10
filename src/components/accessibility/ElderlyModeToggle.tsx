@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Accessibility, Eye, Volume2, ZoomIn, Hand } from "lucide-react";
+import { Wheelchair as Accessibility, Eye, SpeakerHigh as Volume2, MagnifyingGlassPlus as ZoomIn, Hand } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";

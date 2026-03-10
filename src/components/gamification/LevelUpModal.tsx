@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Star, Sparkles, Trophy, Zap } from "lucide-react";
+import { Star, Sparkle as Sparkles, Trophy, Lightning as Zap } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Confetti from "react-confetti";
 import { useState, useEffect } from "react";

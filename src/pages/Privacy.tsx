@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Shield, Trash2, Download } from "lucide-react";
+import { ArrowLeft, Shield, Trash as Trash2, Download } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { auth } from "@/integrations/firebase/client";

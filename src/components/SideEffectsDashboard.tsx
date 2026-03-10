@@ -7,14 +7,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { PremiumTooltip } from "./shared/ChartTooltip";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { TrendingUp, Activity } from "lucide-react";
+import { TrendUp as TrendingUp, Heartbeat as Activity } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { auth, fetchCollection, orderBy, where } from "@/integrations/firebase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PremiumPaywall } from "./PremiumPaywall";
-import { Lock } from "lucide-react";
+import { Lock } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 

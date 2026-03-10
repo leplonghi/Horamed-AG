@@ -4,7 +4,7 @@ import { fetchCollection, orderBy, fetchDocument, limit } from "@/integrations/f
 import { useAuth } from "@/integrations/firebase/auth";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
-import { Scale, Heart, Flame, Activity } from "lucide-react";
+import { Scales as Scale, Heart, Flame, Heartbeat as Activity } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
@@ -47,7 +47,7 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
     const getPressureColor = (systolic: number, diastolic: number) => {
         if (systolic >= 140 || diastolic >= 90) return "text-red-500 bg-red-50";
         if (systolic >= 120 || diastolic >= 80) return "text-orange-500 bg-orange-50";
-        return "text-emerald-500 bg-emerald-50";
+        return "text-blue-500 bg-blue-50";
     };
 
     const pulse = pressureLog?.pulse || "--";
@@ -58,13 +58,13 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
         show: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.1
+                staggerChildren: 0.08
             }
         }
     };
 
     const item = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 15 },
         show: { opacity: 1, y: 0 }
     };
 
@@ -73,35 +73,35 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
             variants={container}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-2 gap-3 mb-6"
+            className="grid grid-cols-2 gap-2 mb-4"
         >
-            {/* Card 1: Heart/Pressure (Matches Reference 'Heart') */}
+            {/* Card 1: Heart/Pressure */}
             <motion.div variants={item}>
                 <Card
-                    className="border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all rounded-[1.5rem] overflow-hidden cursor-pointer h-full"
+                    className="border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all rounded-2xl overflow-hidden cursor-pointer h-full"
                     onClick={() => navigate('/sinais-vitais?tab=pressure')}
                 >
-                    <CardContent className="p-4 flex flex-col justify-between h-full min-h-[110px]">
+                    <CardContent className="p-3 flex flex-col justify-between h-full min-h-[90px]">
                         <div className="flex justify-between items-start">
-                            <div className={cn("p-2 rounded-xl", pressureLog ? getPressureColor(pressureLog.systolic, pressureLog.diastolic) : "bg-red-50 text-red-500")}>
-                                <Heart className="h-5 w-5 fill-current" />
+                            <div className={cn("p-1.5 rounded-lg", pressureLog ? getPressureColor(pressureLog.systolic, pressureLog.diastolic) : "bg-red-50 text-red-500")}>
+                                <Heart className="h-4 w-4 fill-current" />
                             </div>
                         </div>
-                        <div className="mt-3">
+                        <div className="mt-2">
                             {loadingPressure ? (
                                 <Skeleton className="h-6 w-16" />
                             ) : (
                                 <div>
-                                    <div className="flex items-baseline mb-0.5">
-                                        <span className="text-xl font-bold text-slate-800">
+                                    <div className="flex items-baseline mb-0">
+                                        <span className="text-lg font-black text-slate-800 tracking-tighter">
                                             {pressureLog ? pressureLog.systolic : '--'}
                                         </span>
-                                        <span className="text-sm text-slate-400 mx-0.5">/</span>
-                                        <span className="text-lg font-medium text-slate-500">
+                                        <span className="text-xs text-slate-400 mx-0.5 font-bold">/</span>
+                                        <span className="text-base font-bold text-slate-500 tracking-tighter">
                                             {pressureLog ? pressureLog.diastolic : '--'}
                                         </span>
                                     </div>
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                         {language === 'pt' ? 'Pressão' : 'Pressure'}
                                     </p>
                                 </div>
@@ -111,30 +111,30 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
                 </Card>
             </motion.div>
 
-            {/* Card 2: Weight (Matches Reference but adapted) */}
+            {/* Card 2: Weight */}
             <motion.div variants={item}>
                 <Card
-                    className="border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all rounded-[1.5rem] overflow-hidden cursor-pointer h-full"
+                    className="border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all rounded-2xl overflow-hidden cursor-pointer h-full"
                     onClick={() => navigate('/sinais-vitais?tab=weight')}
                 >
-                    <CardContent className="p-4 flex flex-col justify-between h-full min-h-[110px]">
+                    <CardContent className="p-3 flex flex-col justify-between h-full min-h-[90px]">
                         <div className="flex justify-between items-start">
-                            <div className="p-2 rounded-xl bg-blue-50 text-blue-500">
-                                <Scale className="h-5 w-5" />
+                            <div className="p-1.5 rounded-lg bg-blue-50 text-blue-500">
+                                <Scale className="h-4 w-4" />
                             </div>
                         </div>
-                        <div className="mt-3">
+                        <div className="mt-2">
                             {loadingWeight ? (
                                 <Skeleton className="h-6 w-16" />
                             ) : (
                                 <div>
-                                    <div className="flex items-baseline mb-0.5">
-                                        <span className="text-xl font-bold text-slate-800">
+                                    <div className="flex items-baseline mb-0">
+                                        <span className="text-lg font-black text-slate-800 tracking-tighter">
                                             {weightLog ? weightLog.weightKg : '--'}
                                         </span>
-                                        <span className="text-xs font-semibold text-slate-400 ml-1">kg</span>
+                                        <span className="text-[10px] font-black text-slate-400 ml-0.5">KG</span>
                                     </div>
-                                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                         {language === 'pt' ? 'Peso' : 'Weight'}
                                     </p>
                                 </div>
@@ -144,53 +144,53 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
                 </Card>
             </motion.div>
 
-            {/* Card 3: Streak (Matches Reference 'Activity/Fire') */}
+            {/* Card 3: Streak */}
             <motion.div variants={item}>
                 <Card
-                    className="border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all rounded-[1.5rem] overflow-hidden cursor-pointer h-full bg-gradient-to-br from-orange-500 to-amber-500"
+                    className="border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all rounded-2xl overflow-hidden cursor-pointer h-full bg-gradient-to-br from-orange-500 to-amber-500"
                     onClick={() => navigate('/progresso')}
                 >
-                    <CardContent className="p-4 flex flex-col justify-between h-full min-h-[110px] text-white">
+                    <CardContent className="p-3 flex flex-col justify-between h-full min-h-[90px] text-white">
                         <div className="flex justify-between items-start">
-                            <div className="p-2 rounded-xl bg-white/20">
-                                <Flame className="h-5 w-5 text-white fill-current" />
+                            <div className="p-1.5 rounded-lg bg-white/20">
+                                <Flame className="h-4 w-4 text-white fill-current" />
                             </div>
                         </div>
-                        <div className="mt-3">
-                            <div className="flex items-baseline mb-0.5">
-                                <span className="text-xl font-bold">
+                        <div className="mt-2">
+                            <div className="flex items-baseline mb-0">
+                                <span className="text-lg font-black tracking-tighter">
                                     {streakData.currentStreak}
                                 </span>
                             </div>
-                            <p className="text-[10px] font-medium text-white/80 uppercase tracking-widest">
-                                {language === 'pt' ? 'Dias Seguidos' : 'Streak'}
+                            <p className="text-[9px] font-black text-white/80 uppercase tracking-widest">
+                                {language === 'pt' ? 'DIAS' : 'STREAK'}
                             </p>
                         </div>
                     </CardContent>
                 </Card>
             </motion.div>
 
-            {/* Card 4: Pulse / Activity (Matches Reference 'Steps') */}
+            {/* Card 4: Pulse */}
             <motion.div variants={item}>
                 <Card
-                    className="border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all rounded-[1.5rem] overflow-hidden cursor-pointer h-full"
+                    className="border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all rounded-2xl overflow-hidden cursor-pointer h-full"
                     onClick={() => navigate('/sinais-vitais')}
                 >
-                    <CardContent className="p-4 flex flex-col justify-between h-full min-h-[110px]">
+                    <CardContent className="p-3 flex flex-col justify-between h-full min-h-[90px]">
                         <div className="flex justify-between items-start">
-                            <div className="p-2 rounded-xl bg-teal-50 text-teal-500">
-                                <Activity className="h-5 w-5" />
+                            <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-500">
+                                <Activity className="h-4 w-4" />
                             </div>
                         </div>
-                        <div className="mt-3">
+                        <div className="mt-2">
                             <div>
-                                <div className="flex items-baseline mb-0.5">
-                                    <span className="text-xl font-bold text-slate-800">
+                                <div className="flex items-baseline mb-0">
+                                    <span className="text-lg font-black text-slate-800 tracking-tighter">
                                         {pulse}
                                     </span>
-                                    <span className="text-xs font-semibold text-slate-400 ml-1">bpm</span>
+                                    <span className="text-[10px] font-black text-slate-400 ml-0.5">BPM</span>
                                 </div>
-                                <p className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                                     {language === 'pt' ? 'Pulso' : 'Pulse'}
                                 </p>
                             </div>

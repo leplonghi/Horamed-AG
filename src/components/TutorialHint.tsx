@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Lightbulb, Sparkles, Info, AlertTriangle, Zap } from "lucide-react";
+import { X, Lightbulb, Sparkle as Sparkles, Info, Warning as AlertTriangle, Lightning as Zap } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";

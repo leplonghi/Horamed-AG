@@ -1,5 +1,5 @@
 import { memo, useState, useCallback } from "react";
-import { AlertTriangle, Clock, Check, Loader2 } from "lucide-react";
+import { Warning as AlertTriangle, Clock, Check, Spinner as Loader2 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useOverdueDoses } from "@/hooks/useOverdueDoses";
 import { motion, AnimatePresence } from "framer-motion";

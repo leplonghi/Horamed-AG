@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Star, Trophy, ChevronRight, Zap } from "lucide-react";
+import { Flame, Star, Trophy, CaretRight as ChevronRight, Lightning as Zap } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useXPSystem } from "@/hooks/useXPSystem";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";

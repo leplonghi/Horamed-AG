@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { IconClose as X, IconSparkles as Sparkles } from '@/components/icons/HoramedIcons';
+import { X, Sparkle as Sparkles } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSubscription } from '@/hooks/useSubscription';

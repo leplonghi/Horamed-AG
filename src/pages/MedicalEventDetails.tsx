@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMedicalEvent, useMedicalEvents } from '@/hooks/useMedicalEvents';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Calendar, FileText, MapPin, User, Clock, Check, Trash2, Bell, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CalendarBlank as Calendar, FileText, MapPin, User, Clock, Check, Trash as Trash2, Bell, Warning as AlertTriangle } from "@phosphor-icons/react";
 import { useLanguage } from '@/contexts/LanguageContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

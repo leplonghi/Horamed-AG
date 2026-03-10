@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pill, Check, Sparkles, ArrowRight, Clock } from "lucide-react";
+import { Pill, Check, Sparkle as Sparkles, ArrowRight, Clock, SunHorizon, Sun, Moon } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import MicroCelebration from "@/components/celebrations/MicroCelebration";
@@ -14,9 +14,9 @@ import MicroCelebration from "@/components/celebrations/MicroCelebration";
 import { useTranslation } from "@/contexts/LanguageContext";
 // Quick time suggestions for faster selection
 const QUICK_TIMES = [
-  { label: "Manhã", time: "08:00", icon: "🌅" },
-  { label: "Almoço", time: "12:00", icon: "☀️" },
-  { label: "Noite", time: "20:00", icon: "🌙" },
+  { label: "Manhã", time: "08:00", icon: SunHorizon },
+  { label: "Almoço", time: "12:00", icon: Sun },
+  { label: "Noite", time: "20:00", icon: Moon },
 ];
 
 export default function OnboardingWow() {
@@ -51,7 +51,7 @@ export default function OnboardingWow() {
       const { data: item, error: itemError } = await supabase
         .from('items')
         .insert({
-          user_id: user.id,
+          user_id: user.uid,
           name: itemName,
           category: 'medicamento',
           is_active: true
@@ -74,16 +74,16 @@ export default function OnboardingWow() {
 
       // Show celebration
       setShowCelebration(true);
-      
+
       // Mark onboarding as complete
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
-        .eq('user_id', user.id);
+        .eq('user_id', user.uid);
 
       // Navigate after celebration
       setTimeout(() => {
-        toast.success('Pronto! Seu primeiro lembrete foi criado 🎉');
+        toast.success('Pronto! Seu primeiro lembrete foi criado');
         navigate('/hoje');
       }, 1500);
     } catch (error) {
@@ -98,19 +98,19 @@ export default function OnboardingWow() {
       await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
-        .eq('user_id', user.id);
+        .eq('user_id', user.uid);
     }
     navigate('/hoje');
   };
 
   return (
     <>
-      <MicroCelebration 
-        type="perfect_day" 
-        trigger={showCelebration} 
+      <MicroCelebration
+        type="perfect_day"
+        trigger={showCelebration}
         message="Primeiro lembrete criado!"
       />
-      
+
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 flex items-center justify-center p-4">
         <Card className="w-full max-w-md p-6 sm:p-8">
           <AnimatePresence mode="wait">
@@ -124,7 +124,7 @@ export default function OnboardingWow() {
               >
                 {/* Header - Simplified */}
                 <div className="text-center space-y-3">
-                  <motion.div 
+                  <motion.div
                     className="inline-flex p-4 bg-primary/10 rounded-2xl"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -149,7 +149,7 @@ export default function OnboardingWow() {
                     onKeyDown={(e) => e.key === 'Enter' && itemName.trim() && setStep(2)}
                   />
 
-                  <Button 
+                  <Button
                     onClick={() => setStep(2)}
                     disabled={!itemName.trim()}
                     className="w-full h-12 text-base gap-2"
@@ -158,8 +158,8 @@ export default function OnboardingWow() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
 
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     onClick={handleSkip}
                     className="w-full text-muted-foreground"
                   >
@@ -187,14 +187,14 @@ export default function OnboardingWow() {
 
                 {/* Quick time buttons */}
                 <div className="grid grid-cols-3 gap-2">
-                  {QUICK_TIMES.map(({ label, time, icon }) => (
+                  {QUICK_TIMES.map(({ label, time, icon: Icon }) => (
                     <Button
                       key={time}
                       variant={doseTime === time ? "default" : "outline"}
                       onClick={() => setDoseTime(time)}
                       className="h-auto py-3 flex-col gap-1"
                     >
-                      <span className="text-lg">{icon}</span>
+                      <Icon className="h-6 w-6 text-primary" weight="duotone" />
                       <span className="text-xs">{label}</span>
                       <span className="text-xs opacity-70">{time}</span>
                     </Button>
@@ -216,16 +216,16 @@ export default function OnboardingWow() {
                 />
 
                 <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setStep(1)} 
+                  <Button
+                    variant="outline"
+                    onClick={() => setStep(1)}
                     className="flex-1 h-12"
                   >
                     Voltar
                   </Button>
-                  <Button 
-                    onClick={handleQuickAdd} 
-                    disabled={loading} 
+                  <Button
+                    onClick={handleQuickAdd}
+                    disabled={loading}
                     className="flex-1 h-12 gap-2"
                   >
                     {loading ? (
@@ -247,13 +247,12 @@ export default function OnboardingWow() {
             {[1, 2].map((s) => (
               <div
                 key={s}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s === step
-                    ? 'w-8 bg-primary'
-                    : s < step
+                className={`h-1.5 rounded-full transition-all duration-300 ${s === step
+                  ? 'w-8 bg-primary'
+                  : s < step
                     ? 'w-4 bg-primary/50'
                     : 'w-4 bg-muted'
-                }`}
+                  }`}
               />
             ))}
           </div>

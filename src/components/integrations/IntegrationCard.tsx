@@ -4,7 +4,7 @@ import { IntegrationProvider, IntegrationStatus } from '@/types/integration-type
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Activity, CheckCircle2, AlertCircle, RefreshCw, Smartphone, Bluetooth } from 'lucide-react';
+import { Heartbeat as Activity, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, ArrowsClockwise as RefreshCw, DeviceMobile as Smartphone, Bluetooth } from "@phosphor-icons/react";
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';

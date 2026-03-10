@@ -5,14 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
-import {
-    Bell,
-    AlertTriangle,
-    CheckCircle,
-    XCircle,
-    ExternalLink,
-    Apple,
-} from "lucide-react";
+import { Bell, Warning as AlertTriangle, CheckCircle, XCircle, ArrowSquareOut as ExternalLink, AppleLogo as Apple } from "@phosphor-icons/react";
 
 interface IOSPermissionStatus {
     notificationsGranted: boolean;

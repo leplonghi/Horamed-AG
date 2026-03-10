@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, FileText, Shield, AlertCircle, CreditCard, Lock, Cookie, Mail, Gift } from "lucide-react";
+import { ArrowLeft, FileText, Shield, WarningCircle as AlertCircle, CreditCard, Lock, Cookie, Envelope as Mail, Gift } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Separator } from "@/components/ui/separator";

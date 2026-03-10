@@ -1,4 +1,4 @@
-import { Flame, TrendingUp, Calendar } from "lucide-react";
+import { Flame, TrendUp as TrendingUp, CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";

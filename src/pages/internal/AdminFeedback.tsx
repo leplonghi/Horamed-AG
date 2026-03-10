@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useCollection } from "@/integrations/firebase";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Star, Bug, ThumbsUp, Users, RefreshCcw } from "lucide-react";
+import { ArrowLeft, Star, Bug, ThumbsUp, Users, ArrowCounterClockwise as RefreshCcw } from "@phosphor-icons/react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
 export default function AdminFeedback() {

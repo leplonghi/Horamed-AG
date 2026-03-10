@@ -1,6 +1,6 @@
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { TrendingUp, TrendingDown, Target, Calendar, Flame, Trophy } from "lucide-react";
+import { TrendUp as TrendingUp, TrendDown as TrendingDown, Target, CalendarBlank as Calendar, Flame, Trophy } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -153,7 +153,7 @@ export default function ProgressDashboard({
               <div className="flex items-center justify-between text-sm">
                 {goalReached ? (
                   <span className="flex items-center gap-2 bg-yellow-400/30 text-yellow-100 px-3 py-1 rounded-full font-medium">
-                    🎉 Meta atingida!
+                    Meta atingida!
                   </span>
                 ) : (
                   <span className="text-white/80">

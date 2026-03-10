@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bell, Volume2, Clock, AlertCircle, Smartphone, Activity, Battery, ChevronRight } from "lucide-react";
+import { Bell, SpeakerHigh as Volume2, Clock, WarningCircle as AlertCircle, DeviceMobile as Smartphone, Heartbeat as Activity, BatteryFull as Battery, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";

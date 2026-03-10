@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Clock, Copy } from "lucide-react";
+import { Warning as AlertTriangle, CheckCircle, Clock, Copy } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PrescriptionStatusBadgeProps {

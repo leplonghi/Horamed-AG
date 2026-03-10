@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, Pill, Sparkles, Activity } from "lucide-react";
+import { Plus, Pill, Sparkle as Sparkles, Heartbeat as Activity } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
 interface EmptyStateProProps {

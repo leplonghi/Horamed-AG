@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pill, CheckCircle2 } from "lucide-react";
+import { Plus, Pill, CheckCircle as CheckCircle2 } from "@phosphor-icons/react";
 import { PrescriptionBulkAddWizard } from "@/components/PrescriptionBulkAddWizard";
 
 interface MedicationQuickAddCardProps {

@@ -3,19 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  ArrowLeft,
-  Bell,
-  BellRing,
-  Check,
-  ChevronRight,
-  Smartphone,
-  Settings,
-  AlertTriangle,
-  CheckCircle2,
-  XCircle,
-  Info
-} from "lucide-react";
+import { ArrowLeft, Bell, BellRinging as BellRing, Check, CaretRight as ChevronRight, DeviceMobile as Smartphone, Gear as Settings, Warning as AlertTriangle, CheckCircle as CheckCircle2, XCircle, Info } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";

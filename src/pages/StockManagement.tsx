@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, AlertTriangle, Plus, Minus, Edit, Info, ExternalLink } from "lucide-react";
+import { Package, Warning as AlertTriangle, Plus, Minus, PencilSimple as Edit, Info, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";

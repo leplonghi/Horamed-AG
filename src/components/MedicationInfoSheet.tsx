@@ -1,7 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Pill, Tag, FileText, Info, ShieldAlert, Activity, Zap, Ban, BookOpen } from "lucide-react";
+import { Warning as AlertTriangle, Pill, Tag, FileText, Info, ShieldWarning as ShieldAlert, Heartbeat as Activity, Lightning as Zap, Prohibit as Ban, BookOpen } from "@phosphor-icons/react";
 import { MedicationInfo } from "@/hooks/useMedicationInfo";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea } from "@/components/ui/scroll-area";

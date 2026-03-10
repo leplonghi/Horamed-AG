@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle, Sparkle as Sparkles, ArrowRight } from "@phosphor-icons/react";
 import Confetti from "react-confetti";
 
 interface Props {

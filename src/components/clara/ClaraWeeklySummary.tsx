@@ -5,16 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Sparkles,
-  TrendingUp,
-  Calendar,
-  Clock,
-  ChevronDown,
-  ChevronUp,
-  RefreshCw,
-  Share2
-} from "lucide-react";
+import { Sparkle as Sparkles, TrendUp as TrendingUp, CalendarBlank as Calendar, Clock, CaretDown as ChevronDown, CaretUp as ChevronUp, ArrowsClockwise as RefreshCw, ShareNetwork as Share2 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { functions } from "@/integrations/firebase/client"; // Firebase import

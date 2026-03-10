@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, AlertCircle, AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
+import { ArrowRight, WarningCircle as AlertCircle, Warning as AlertTriangle, CheckCircle as CheckCircle2, Info, X } from "@phosphor-icons/react";
 
 export interface Insight {
   id: string;

@@ -1,4 +1,4 @@
-import { Camera, Upload, Edit } from "lucide-react";
+import { Camera, Upload, PencilSimple as Edit } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import {
   Drawer,

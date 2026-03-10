@@ -7,10 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-    Clock, Plus, X, Bell, BellOff, Volume2, Vibrate, Trash2,
-    Sun, Moon, Sunrise, Sunset, Edit3, Check, AlertCircle, Copy, Play
-} from "lucide-react";
+import { Clock, Plus, X, Bell, BellSlash as BellOff, SpeakerHigh as Volume2, DeviceTabletSpeaker as Vibrate, Trash as Trash2, Sun, Moon, SunHorizon as Sunrise, SunDim as Sunset, PencilSimple as Edit3, Check, WarningCircle as AlertCircle, Copy, Play } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";

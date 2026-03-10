@@ -12,15 +12,7 @@ import DoseTimeline from "@/components/DoseTimeline";
 import InfoDialog from "@/components/InfoDialog";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subWeeks, subMonths, subDays, startOfDay } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import {
-  TrendingUp,
-  TrendingDown,
-  Activity,
-  Clock,
-  Target,
-  BarChart3,
-  Minus
-} from "lucide-react";
+import { TrendUp as TrendingUp, TrendDown as TrendingDown, Heartbeat as Activity, Clock, Target, ChartBar as BarChart3, Minus, Confetti, Warning } from "@phosphor-icons/react";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -436,9 +428,15 @@ export default function History() {
                   <div className={`p-3 rounded-lg ${difference > 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
                     <p className={`text-sm font-medium ${difference > 0 ? 'text-success' : 'text-destructive'}`}>
                       {difference > 0 ? (
-                        <>🎉 {t('history.congratsImproved', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</>
+                        <div className="flex items-center gap-2">
+                          <Confetti className="w-4 h-4" weight="duotone" />
+                          <span>{t('history.congratsImproved', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
+                        </div>
                       ) : (
-                        <>⚠️ {t('history.commitmentDropped', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</>
+                        <div className="flex items-center gap-2">
+                          <Warning className="w-4 h-4" weight="duotone" />
+                          <span>{t('history.commitmentDropped', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
+                        </div>
                       )}
                     </p>
                   </div>

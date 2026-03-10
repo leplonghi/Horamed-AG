@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check } from "lucide-react";
+import { Check } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { auth, updateDocument, addDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

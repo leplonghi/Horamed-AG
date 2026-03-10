@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, updateDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Search, Plus, Pill, Leaf, Heart, Clock, BookOpen, X } from "lucide-react";
+import { PencilSimple as Pencil, Trash as Trash2, MagnifyingGlass as Search, Plus, Pill, Leaf, Heart, Clock, BookOpen, X } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -22,7 +22,7 @@ import MedicationQuickActions from "@/components/medications/MedicationQuickActi
 import SmartMedicationInsights from "@/components/medications/SmartMedicationInsights";
 import MedicationStatsGrid from "@/components/medications/MedicationStatsGrid";
 import OceanBackground from "@/components/ui/OceanBackground";
-import type { LucideIcon } from "lucide-react";
+import type { Icon } from "@phosphor-icons/react";
 
 // Hash determinístico: mesmo nome = mesma cor sempre
 function nameHash(str: string): number {
@@ -415,7 +415,7 @@ export default function Medications() {
     accentColor
   }: {
     title: string;
-    icon: LucideIcon;
+    icon: Icon;
     items: Item[];
     emptyMessage: string;
     accentColor: string;

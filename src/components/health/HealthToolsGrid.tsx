@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Activity, FileText, QrCode, BookOpen } from "lucide-react";
+import { Heartbeat as Activity, FileText, QrCode, BookOpen } from "@phosphor-icons/react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";

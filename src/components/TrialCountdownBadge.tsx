@@ -1,6 +1,6 @@
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useNavigate } from "react-router-dom";
-import { Crown, Clock } from "lucide-react";
+import { Crown, Clock } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
 

@@ -1,4 +1,4 @@
-
+﻿
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/integrations/firebase';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -6,7 +6,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Crown, Sparkles, HeartHandshake, PartyPopper } from 'lucide-react';
+import { Crown, Sparkle as Sparkles, HandHeart as HeartHandshake, Confetti as PartyPopper } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { BETA_TESTER_EMAILS } from '@/config/betaTesters';

@@ -1,16 +1,6 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-  FolderOpen,
-  Clock,
-  AlertTriangle,
-  CheckCircle2,
-  FileText,
-  FlaskConical,
-  Syringe,
-  Stethoscope,
-  TrendingUp
-} from "lucide-react";
+import { FolderOpen, Clock, Warning as AlertTriangle, CheckCircle as CheckCircle2, FileText, Flask as FlaskConical, Syringe, Stethoscope, TrendUp as TrendingUp } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { HealthDocument } from "@/hooks/useCofre";
 import { differenceInDays, addDays, isAfter, isBefore } from "date-fns";

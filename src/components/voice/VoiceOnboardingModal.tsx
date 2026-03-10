@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Navigation, Pill, MessageCircle, ChevronRight, Check, Sparkles } from "lucide-react";
+import { Microphone as Mic, NavigationArrow as Navigation, Pill, ChatCircle as MessageCircle, CaretRight as ChevronRight, Check, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -23,7 +23,7 @@ const steps = [
     bgColor: "bg-primary/10",
   },
   {
-    icon: Navigation,
+    icon: NavigationArrow as Navigation,
     titlePt: "Navegue Facilmente",
     titleEn: "Navigate Easily",
     descPt: "Diga 'Ir para hoje', 'Abrir rotina' ou 'Ver perfil' para navegar pelo app sem tocar na tela.",

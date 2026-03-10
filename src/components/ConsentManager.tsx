@@ -3,7 +3,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { useConsents, ConsentPurpose } from "@/hooks/useConsents";
 import { useAuditLog } from "@/hooks/useAuditLog";
-import { Shield, Bell, Share2, TrendingUp, Mail } from "lucide-react";
+import { Shield, Bell, ShareNetwork as Share2, TrendUp as TrendingUp, Envelope as Mail } from "@phosphor-icons/react";
 
 const consentLabels: Record<ConsentPurpose, { label: string; description: string; icon: any }> = {
   health_data: {

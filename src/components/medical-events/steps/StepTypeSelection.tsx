@@ -1,7 +1,7 @@
 import { MedicalEventFormData, EventType } from '@/types/medicalEvents';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Stethoscope, FileText, Syringe, Activity } from 'lucide-react';
+import { Stethoscope, FileText, Syringe, Heartbeat as Activity } from "@phosphor-icons/react";
 import { cn } from '@/lib/utils';
 
 interface StepTypeProps {

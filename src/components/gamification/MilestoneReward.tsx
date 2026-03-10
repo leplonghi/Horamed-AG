@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, Gift, Star, Sparkles } from "lucide-react";
+import { Trophy, Gift, Star, Sparkle as Sparkles } from "@phosphor-icons/react";
 import ConfettiExplosion from "../celebrations/ConfettiExplosion";
 import { useState, useEffect } from "react";
 

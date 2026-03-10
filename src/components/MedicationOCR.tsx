@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, X, Sparkles } from "lucide-react";
+import { Camera, Upload, X, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { functions, httpsCallable } from "@/integrations/firebase";
 

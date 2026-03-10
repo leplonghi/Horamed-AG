@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 
 interface ProgressPillProps {
   current: number;

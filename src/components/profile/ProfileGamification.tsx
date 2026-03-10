@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Trophy, Flame, Gift, Star, ChevronRight } from "lucide-react";
+import { Trophy, Flame, Gift, Star, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";

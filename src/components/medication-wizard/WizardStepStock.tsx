@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package, AlertTriangle, HelpCircle, CheckCircle2, Bell } from "lucide-react";
+import { Package, Warning as AlertTriangle, Question as HelpCircle, CheckCircle as CheckCircle2, Bell } from "@phosphor-icons/react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";

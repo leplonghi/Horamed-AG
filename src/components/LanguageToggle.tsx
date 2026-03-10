@@ -1,6 +1,6 @@
 import { useLanguage, Language } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
-import { Globe } from 'lucide-react';
+import { Globe } from "@phosphor-icons/react";
 import {
   DropdownMenu,
   DropdownMenuContent,

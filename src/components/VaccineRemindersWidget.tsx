@@ -1,4 +1,4 @@
-import { Bell, Calendar, Syringe } from "lucide-react";
+import { Bell, CalendarBlank as Calendar, Syringe } from "@phosphor-icons/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useVaccineReminders } from "@/hooks/useVaccineReminders";

@@ -582,11 +582,12 @@ export default function TodayRedesign() {
       // If no doses today, check if user has ANY medications at all (new user detection)
       if (doses.length === 0) {
         try {
-          const itemsPath = activeProfile?.id
-            ? `users/${userId}/profiles/${activeProfile.id}/items`
-            : `users/${userId}/items`;
-          const { data: userItems } = await fetchCollection(itemsPath, []);
-          setHasMedications((userItems ?? []).length > 0);
+          const medConstraints = []; // Check for ANY medication to detect returning users
+          if (activeProfile?.id) {
+            medConstraints.push(where("profileId", "==", activeProfile.id));
+          }
+          const { data: userMeds } = await fetchCollection(`users/${userId}/medications`, medConstraints);
+          setHasMedications((userMeds ?? []).length > 0);
         } catch {
           setHasMedications(true); // assume true on error
         }
@@ -766,7 +767,7 @@ export default function TodayRedesign() {
       <OceanBackground variant="page" />
       <Header />
 
-      <main className="page-container container mx-auto max-w-2xl px-4 space-y-6 relative z-10">
+      <main className="page-container container mx-auto max-w-2xl px-4 space-y-4 relative z-10">
 
         {loading ? (
           <div className="space-y-6 pt-2 animate-pulse">
@@ -797,8 +798,8 @@ export default function TodayRedesign() {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* 📍 HEADER - Saudação simples e limpa */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <div className="pt-2">
-              <h1 className="text-2xl font-bold text-foreground">
+            <div className="pt-1">
+              <h1 className="text-xl font-bold text-foreground">
                 {greeting}{userName ? `, ${userName}` : ''}
               </h1>
             </div>
@@ -837,14 +838,14 @@ export default function TodayRedesign() {
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* 📋 TIMELINE - Lista de Doses (Phase 1 Main Content) */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <div className="mt-2 mb-6 px-1">
+            <div className="mt-1 mb-4 px-1">
               <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
             </div>
 
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* 🏥 DAILY CHECK-IN WIDGET */}
             {/* ═══════════════════════════════════════════════════════════════ */}
-            <div className="mb-6">
+            <div className="mb-4">
               <DailyCheckInWidget
                 hasLoggedToday={hasLoggedSymptomsToday}
                 onLogComplete={() => setHasLoggedSymptomsToday(true)}

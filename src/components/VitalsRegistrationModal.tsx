@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { addDocument, auth } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { Scale, CalendarIcon, Activity, Heart, Droplets } from "lucide-react";
+import { Scales as Scale, CalendarBlank as CalendarIcon, Heartbeat as Activity, Heart, Drop as Droplets } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";

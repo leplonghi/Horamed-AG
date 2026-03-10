@@ -3,14 +3,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Users, 
-  Crown, 
-  Medal, 
-  Flame,
-  Trophy,
-  Star
-} from "lucide-react";
+import { Users, Crown, Medal, Flame, Trophy, Star } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";

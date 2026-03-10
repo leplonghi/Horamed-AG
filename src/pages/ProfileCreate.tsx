@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Save, Upload } from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save, Upload } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";

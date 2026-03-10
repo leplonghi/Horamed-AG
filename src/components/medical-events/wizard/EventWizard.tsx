@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { MedicalEventFormData, defaultEventFormData, EventType } from '@/types/medicalEvents';
 import { createMedicalEvent } from '@/lib/medicalEvents';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext'; // Assuming AuthContext exists
 

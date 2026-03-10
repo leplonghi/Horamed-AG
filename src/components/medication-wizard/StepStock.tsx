@@ -1,4 +1,4 @@
-import { Package, AlertTriangle, HelpCircle, Bell, TrendingDown } from "lucide-react";
+import { Package, Warning as AlertTriangle, Question as HelpCircle, Bell, TrendDown as TrendingDown } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

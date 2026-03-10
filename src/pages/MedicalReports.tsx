@@ -8,16 +8,7 @@ import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { useSubscription } from "@/hooks/useSubscription";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import {
-  FileText,
-  Download,
-  Calendar,
-  Activity,
-  Pill,
-  ChevronLeft,
-  Clock,
-  FileCheck
-} from "lucide-react";
+import { FileText, Download, CalendarBlank as Calendar, Heartbeat as Activity, Pill, CaretLeft as ChevronLeft, Clock, FileText as FileCheck } from "@phosphor-icons/react";
 import {
   Select,
   SelectContent,

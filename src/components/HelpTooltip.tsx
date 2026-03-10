@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HelpCircle, X } from "lucide-react";
+import { Question as HelpCircle, X } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";

@@ -1,7 +1,7 @@
 import { useWeightInsights } from "@/hooks/useWeightInsights";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingDown, TrendingUp, Minus, Activity, Clock, Info, Scale, ArrowRight } from "lucide-react";
+import { TrendDown as TrendingDown, TrendUp as TrendingUp, Minus, Heartbeat as Activity, Clock, Info, Scales as Scale, ArrowRight } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";

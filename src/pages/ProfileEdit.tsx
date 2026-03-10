@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, FloppyDisk as Save } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import AvatarUpload from "@/components/AvatarUpload";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

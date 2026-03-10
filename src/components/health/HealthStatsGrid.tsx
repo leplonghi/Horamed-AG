@@ -1,4 +1,9 @@
-import { Stethoscope, FileText, Syringe, Activity } from "lucide-react";
+import {
+  IconHealth as Stethoscope,
+  IconFile as FileText,
+  IconSparkles as Vaccine,
+  IconActivity as Activity
+} from "@/components/icons/HoramedIcons";
 import StatsGridBase, { StatItem } from "@/components/shared/StatsGridBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -10,12 +15,12 @@ interface HealthStatsGridProps {
   onStatClick?: (type: string) => void;
 }
 
-export default function HealthStatsGrid({ 
+export default function HealthStatsGrid({
   appointmentsCount,
   examsCount,
   vaccinesCount,
   measurementsCount,
-  onStatClick 
+  onStatClick
 }: HealthStatsGridProps) {
   const { language } = useLanguage();
 
@@ -40,7 +45,7 @@ export default function HealthStatsGrid({
       id: "vaccines",
       label: language === 'pt' ? 'Vacinas' : 'Vaccines',
       value: vaccinesCount,
-      icon: <Syringe className="h-4 w-4 text-teal-500" />,
+      icon: <Vaccine className="h-4 w-4 text-teal-500" />,
       color: "bg-teal-500/10 text-teal-500",
       onClick: () => onStatClick?.("vaccines")
     },

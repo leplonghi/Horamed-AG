@@ -4,19 +4,11 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Check, 
-  ArrowRight, 
-  Sparkles, 
-  Bell, 
-  FileText, 
-  Users,
-  Gift,
-  Clock
-} from "lucide-react";
+import { Check, ArrowRight, Sparkle as Sparkles, Bell, FileText, Users, Gift, Clock } from "@phosphor-icons/react";
 import logo from "@/assets/logo_HoraMed.png";
 import Confetti from "react-confetti";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Custom hook for window size (for confetti)
 function useWindowSize() {
@@ -40,17 +32,34 @@ export default function Welcome() {
   const [showConfetti, setShowConfetti] = useState(true);
   const { width, height } = useWindowSize();
 
+  const benefits = [
+    { icon: Bell, text: t('welcome.benefit1') },
+    { icon: FileText, text: t('welcome.benefit2') },
+    { icon: Users, text: t('welcome.benefit3') },
+  ];
+
   useEffect(() => {
     // Stop confetti after 4 seconds
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, []);
 
-  const benefits = [
-    { icon: Bell, text: t('welcome.benefit1') },
-    { icon: FileText, text: t('welcome.benefit2') },
-    { icon: Users, text: t('welcome.benefit3') },
-  ];
+  // Use the auth hook from context
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const storageKey = `seen_welcome_${user.uid}`;
+      const seen = localStorage.getItem(storageKey);
+
+      if (seen === 'true') {
+        console.log("User already seen welcome, redirecting...");
+        navigate("/hoje", { replace: true });
+      } else {
+        localStorage.setItem(storageKey, 'true');
+      }
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary/10 via-background to-background flex items-center justify-center p-6">

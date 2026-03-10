@@ -13,7 +13,7 @@ import StreakBadge from "@/components/StreakBadge";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { format, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon, TrendingUp, History, Pill } from "lucide-react";
+import { CalendarBlank as CalendarIcon, TrendUp as TrendingUp, ClockCounterClockwise as History, Pill, Confetti, Smiley, Lightning } from "@phosphor-icons/react";
 import { safeParseDoseDate } from "@/types";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import type { Dose } from "@/types";
@@ -313,10 +313,25 @@ export default function MyDoses() {
                   <span className="text-2xl font-bold text-primary">{progress}%</span>
                 </div>
                 <Progress value={progress} className="h-3" />
-                <p className="text-sm text-muted-foreground">
-                  {progress >= 90 && "🎉 Você está indo muito bem!"}
-                  {progress >= 70 && progress < 90 && "💪 Bom trabalho! Continue assim!"}
-                  {progress >= 50 && progress < 70 && "⚡ Você pode melhorar!"}
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  {progress >= 90 && (
+                    <>
+                      <Confetti className="w-4 h-4 text-primary" weight="duotone" />
+                      Você está indo muito bem!
+                    </>
+                  )}
+                  {progress >= 70 && progress < 90 && (
+                    <>
+                      <Smiley className="w-4 h-4 text-primary" weight="duotone" />
+                      Bom trabalho! Continue assim!
+                    </>
+                  )}
+                  {progress >= 50 && progress < 70 && (
+                    <>
+                      <Lightning className="w-4 h-4 text-orange-500" weight="duotone" />
+                      Você pode melhorar!
+                    </>
+                  )}
                   {progress < 50 && "Vamos retomar o compromisso!"}
                 </p>
               </div>

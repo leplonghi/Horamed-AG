@@ -1,4 +1,4 @@
-import { Heart, AlertTriangle, Package, Clock, Sparkles, ChevronRight } from "lucide-react";
+import { Heart, Warning as AlertTriangle, Package, Clock, Sparkle as Sparkles, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

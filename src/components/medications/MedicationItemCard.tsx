@@ -1,4 +1,13 @@
-import { Pencil, Trash2, Clock, Package, Utensils, Calendar, AlertTriangle, BookOpen } from "lucide-react";
+import {
+    IconPencil as Pencil,
+    IconTrash as Trash2,
+    IconClock as Clock,
+    IconArchive as Package,
+    IconSilverware as Utensils,
+    IconCalendar as Calendar,
+    IconAlertTriangle as AlertTriangle,
+    IconArrowRight as BookOpen
+} from "@/components/icons/HoramedIcons";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { getUniqueItemColors } from "@/lib/categoryColors";
@@ -70,20 +79,9 @@ function getDaysRemaining(currentQty: number, dosesPerDay: number): number | nul
     return Math.floor(currentQty / dosesPerDay);
 }
 
-/** Formata data de término estimada */
-function getEstimatedEndDate(daysLeft: number): string {
-    const date = new Date();
-    date.setDate(date.getDate() + daysLeft);
-    return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
-}
-
 export function MedicationItemCard({ item, index, onEdit, onDelete }: MedicationItemCardProps) {
     const colors = getUniqueItemColors(item.name, item.category);
     const CategoryIcon = colors.icon;
-
-    const cardBg = `linear-gradient(145deg, ${colors.softFrom} 0%, ${colors.softTo} 100%)`;
-    const iconBg = `linear-gradient(135deg, ${colors.accentFrom} 0%, ${colors.accentTo} 100%)`;
-    const borderColor = `${colors.accentFrom}15`;
 
     const stockInfo = item.stock?.[0];
     const allTimes = getAllTimes(item.schedules);
@@ -98,204 +96,153 @@ export function MedicationItemCard({ item, index, onEdit, onDelete }: Medication
     const primarySchedule = item.schedules?.[0];
     const freqLabel = primarySchedule ? (FREQ_LABELS[primarySchedule.freqType] || primarySchedule.freqType) : null;
 
-    const textPrimary = colors.textColor;
-    const textSecondary = `${colors.textColor}cc`;
-    const textMuted = `${colors.textColor}80`;
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.03, duration: 0.3 }}
-            whileTap={{ scale: 0.985 }}
-            style={{
-                borderRadius: 20,
-                overflow: "hidden",
-                border: `1px solid ${borderColor}`,
-                background: cardBg,
-                cursor: "pointer",
-                marginBottom: 12,
-                position: "relative",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.03)"
-            }}
+            transition={{ delay: index * 0.05, duration: 0.4 }}
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="card-interactive rounded-[2rem] p-4 sm:p-5 relative group overflow-hidden border border-white/10 mb-4"
             onClick={() => onEdit(item.id)}
         >
-            <div style={{ padding: "12px 14px" }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                    {/* Compact Icon */}
-                    <div style={{
-                        width: 44, height: 44, borderRadius: 14,
-                        background: iconBg,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        flexShrink: 0,
-                        position: "relative",
-                        boxShadow: `0 4px 10px ${colors.accentFrom}25`,
-                    }}>
-                        <CategoryIcon style={{ width: 22, height: 22, color: "#fff" }} />
-                        {criticalStock && (
-                            <div style={{
-                                position: "absolute",
-                                top: -2, right: -2,
-                                width: 14, height: 14, borderRadius: "50%",
-                                background: "#ef4444", border: "2px solid #fff",
-                                display: "flex", alignItems: "center", justifyContent: "center"
-                            }}>
-                                <AlertTriangle style={{ width: 8, height: 8, color: "#fff" }} />
-                            </div>
-                        )}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        {/* Title & Badge Row */}
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                                <h3 style={{ fontSize: 15, fontWeight: 700, color: textPrimary, letterSpacing: "-0.01em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                    {item.name}
-                                </h3>
-                                {(item.category === 'suplemento' || item.category === 'vitamina') && (
-                                    <div style={{ transform: "scale(0.85)", transformOrigin: "left center" }}>
-                                        <SupplementCategoryTag category={detectSupplementCategory(item.name)} size="sm" />
-                                    </div>
-                                )}
-                            </div>
-                            <div style={{
-                                fontSize: 9, fontWeight: 800,
-                                background: `${colors.accentFrom}15`,
-                                color: colors.accentFrom,
-                                padding: "1px 6px", borderRadius: 6,
-                                textTransform: "uppercase",
-                                border: `0.5px solid ${colors.accentFrom}20`,
-                                marginLeft: 8, flexShrink: 0
-                            }}>
-                                {item.category}
-                            </div>
+            <div className="flex gap-4 items-start relative z-10">
+                {/* Category Icon */}
+                <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center relative shrink-0"
+                    style={{
+                        background: `linear-gradient(135deg, ${colors.accentFrom} 0%, ${colors.accentTo} 100%)`,
+                        boxShadow: `0 8px 16px ${colors.accentFrom}30`
+                    }}
+                >
+                    <CategoryIcon className="w-7 h-7 text-white" />
+                    {criticalStock && (
+                        <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive border-2 border-background flex items-center justify-center animate-pulse">
+                            <AlertTriangle className="w-3 h-3 text-white" />
                         </div>
-
-                        {/* Dose & Indicators Row */}
-                        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 3.5 }}>
-                                <Package style={{ width: 11, height: 11, color: colors.accentFrom }} />
-                                <span style={{ fontSize: 12, color: textPrimary, fontWeight: 600 }}>
-                                    {item.doseText || "1 dose"}
-                                </span>
-                            </div>
-                            {item.withFood && (
-                                <div style={{ display: "flex", alignItems: "center", gap: 3, background: "#f0fdf4", padding: "1px 6px", borderRadius: 4, border: "0.5px solid #dcfce7" }}>
-                                    <Utensils style={{ width: 10, height: 10, color: "#16a34a" }} />
-                                    <span style={{ fontSize: 9, fontWeight: 700, color: "#16a34a", textTransform: "uppercase" }}>Refeição</span>
-                                </div>
-                            )}
-                            <span style={{ color: `${textPrimary}30`, fontSize: 10 }}>•</span>
-                            {freqLabel && (
-                                <div style={{ display: "flex", alignItems: "center", gap: 3.5 }}>
-                                    <Clock style={{ width: 11, height: 11, color: textSecondary, opacity: 0.7 }} />
-                                    <span style={{ fontSize: 11, color: textSecondary, fontWeight: 500 }}>
-                                        {freqLabel}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Treatment Context (Dates & Instructions) - High Density */}
-                {(item.treatmentEndDate || item.instructions) && (
-                    <div style={{
-                        marginTop: 10, padding: "8px 10px", borderRadius: 12,
-                        background: "rgba(255,255,255,0.4)", border: "1px solid rgba(0,0,0,0.03)",
-                        display: "flex", flexDirection: "column", gap: 4
-                    }}>
-                        {item.treatmentEndDate && (
-                            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                                <Calendar style={{ width: 10, height: 10, color: textMuted }} />
-                                <span style={{ fontSize: 10, fontWeight: 600, color: textSecondary }}>
-                                    Termina em {new Date(item.treatmentEndDate).toLocaleDateString('pt-BR')}
+                <div className="flex-1 min-w-0 pt-0.5">
+                    <div className="flex justify-between items-start">
+                        <div className="flex flex-col gap-0.5 min-w-0">
+                            <h3 className="text-lg font-bold text-foreground leading-tight truncate">
+                                {item.name}
+                            </h3>
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border"
+                                    style={{
+                                        color: colors.accentFrom,
+                                        borderColor: `${colors.accentFrom}30`,
+                                        backgroundColor: `${colors.accentFrom}10`
+                                    }}
+                                >
+                                    {item.category}
                                 </span>
+                                {(item.category === 'suplemento' || item.category === 'vitamina') && (
+                                    <SupplementCategoryTag category={detectSupplementCategory(item.name)} size="sm" />
+                                )}
+                            </div>
+                        </div>
+
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-9 h-9 rounded-xl bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </Button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                        <div className="flex items-center gap-1.5">
+                            <Package className="w-4 h-4 opacity-70" style={{ color: colors.accentFrom }} />
+                            <span className="text-sm font-semibold text-foreground/80">
+                                {item.doseText || "1 dose"}
+                            </span>
+                        </div>
+
+                        {item.withFood && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20">
+                                <Utensils className="w-3.5 h-3.5 text-green-500" />
+                                <span className="text-[10px] font-bold text-green-500 uppercase">Refeição</span>
                             </div>
                         )}
-                        {item.instructions && (
-                            <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
-                                <BookOpen style={{ width: 10, height: 10, color: textMuted, marginTop: 2 }} />
-                                <p style={{ fontSize: 10.5, color: textSecondary, fontStyle: "italic", lineHeight: 1.25, fontWeight: 500 }}>
-                                    {item.instructions}
-                                </p>
+
+                        {freqLabel && (
+                            <div className="flex items-center gap-1.5 opacity-60">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-sm font-medium">{freqLabel}</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Treatment Info */}
+            {(item.treatmentEndDate || item.instructions) && (
+                <div className="mt-4 p-3 rounded-2xl bg-white/5 border border-white/5 space-y-2 relative z-10">
+                    {item.treatmentEndDate && (
+                        <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+                            <Calendar className="w-3.5 h-3.5 opacity-50" />
+                            <span>Termina em {new Date(item.treatmentEndDate).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                    )}
+                    {item.instructions && (
+                        <div className="flex items-start gap-2 text-xs text-muted-foreground/90 font-medium italic leading-relaxed">
+                            <BookOpen className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-50" />
+                            <span>{item.instructions}</span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Bottom Row: Next Doses & Stock */}
+            <div className="mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                <div className="flex flex-wrap gap-2">
+                    {allTimes.map((t) => (
+                        <div
+                            key={t}
+                            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${t === nextDose
+                                    ? "bg-primary text-primary-foreground shadow-glow shadow-primary/30 scale-105"
+                                    : "bg-white/5 text-muted-foreground border border-white/5"
+                                }`}
+                        >
+                            {t}
+                        </div>
+                    ))}
+                </div>
+
+                {stockInfo && (
+                    <div className="flex items-center gap-3 min-w-[140px]">
+                        <div className="flex-1">
+                            <div className="flex justify-between items-center mb-1 text-[10px] font-bold uppercase tracking-tight text-muted-foreground/70">
+                                <span>Estoque</span>
+                                <span className={criticalStock ? "text-destructive" : ""}>
+                                    {stockInfo.currentQty} {stockInfo.unitLabel}
+                                </span>
+                            </div>
+                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${stockPct}%` }}
+                                    className={`h-full rounded-full ${criticalStock ? "bg-destructive shadow-[0_0_8px_rgba(239,68,68,0.5)]" : lowStock ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]"
+                                        }`}
+                                />
+                            </div>
+                        </div>
+                        {daysRemaining !== null && (
+                            <div className={`shrink-0 w-11 h-11 rounded-full border-2 flex flex-col items-center justify-center text-[10px] font-black transition-colors ${criticalStock ? "border-destructive/30 text-destructive bg-destructive/5" : "border-primary/20 text-primary bg-primary/5"
+                                }`}>
+                                <span>{daysRemaining}</span>
+                                <span className="text-[7px] -mt-1 opacity-60 uppercase font-bold">dias</span>
                             </div>
                         )}
                     </div>
                 )}
-
-                {/* Third Layer: Schedule & Stock Grid */}
-                <div style={{
-                    display: "grid",
-                    gridTemplateColumns: stockInfo ? "1fr 1fr" : "1fr",
-                    gap: 10,
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTop: "1px dashed rgba(0,0,0,0.06)"
-                }}>
-                    {/* Times Grid */}
-                    {allTimes.length > 0 && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                                {allTimes.map((t) => (
-                                    <div
-                                        key={t}
-                                        style={{
-                                            fontSize: 10.5, fontWeight: 700,
-                                            padding: "1.5px 6px", borderRadius: 6,
-                                            background: t === nextDose ? colors.accentFrom : "rgba(255,255,255,0.6)",
-                                            color: t === nextDose ? "#fff" : textPrimary,
-                                            border: t === nextDose ? "none" : "1px solid rgba(0,0,0,0.03)"
-                                        }}
-                                    >
-                                        {t}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Stock Indicator - Minimalist */}
-                    {stockInfo && (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9.5, fontWeight: 600 }}>
-                                <span style={{ color: textSecondary }}>Qtde: {stockInfo.currentQty}</span>
-                                {daysRemaining !== null && (
-                                    <span style={{ color: criticalStock ? "#ef4444" : textSecondary }}>
-                                        {daysRemaining}d.
-                                    </span>
-                                )}
-                            </div>
-                            <div style={{ height: 4, borderRadius: 2, background: "rgba(0,0,0,0.05)", overflow: "hidden" }}>
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${stockPct}%` }}
-                                    style={{
-                                        height: "100%",
-                                        background: criticalStock ? "#ef4444" : lowStock ? "#f59e0b" : colors.accentFrom
-                                    }}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Quick Actions overlayed or small bottom row? Let's use a very subtle bottom border for delete on hover/active */}
-            <div style={{
-                position: "absolute", top: 8, right: 8,
-                display: "flex", gap: 4
-            }}>
-                <Button
-                    variant="ghost" size="icon"
-                    className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm text-red-500/50 hover:text-red-600 hover:bg-white/40"
-                    onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.name); }}
-                >
-                    <Trash2 style={{ width: 14, height: 14 }} />
-                </Button>
             </div>
         </motion.div>
     );
 }
-
-

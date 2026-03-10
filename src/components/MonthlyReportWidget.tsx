@@ -1,7 +1,7 @@
 import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, ChevronRight } from "lucide-react";
+import { FileText, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";

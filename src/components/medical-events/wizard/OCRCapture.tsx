@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Camera, Upload, Loader2, FileText } from 'lucide-react';
+import { Camera, Upload, Spinner as Loader2, FileText } from "@phosphor-icons/react";
 
 interface OCRCaptureProps {
     onDataExtracted: (data: any) => void;

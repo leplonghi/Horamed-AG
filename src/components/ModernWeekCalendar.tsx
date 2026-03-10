@@ -3,15 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { Locale } from "date-fns";
 import { safeParseDoseDate } from "@/types";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  Sparkles,
-  TrendingUp,
-  Minus,
-  TrendingDown
-} from "lucide-react";
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, CalendarBlank as CalendarIcon, Sparkle as Sparkles, TrendUp as TrendingUp, Minus, TrendDown as TrendingDown } from "@phosphor-icons/react";
 import {
   format,
   addDays,

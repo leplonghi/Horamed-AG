@@ -4,7 +4,7 @@ import { storage } from "@/integrations/firebase/client";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Camera, User } from "lucide-react";
+import { Camera, User } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
 import { useTranslation } from "@/contexts/LanguageContext";

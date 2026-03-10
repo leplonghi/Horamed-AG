@@ -173,6 +173,13 @@ class SupabaseQueryBuilder {
     return this;
   }
 
+  upsert(data: Record<string, unknown>, options?: { onConflict?: string }): this & PromiseLike<QueryResult> {
+    this.updateData = data;
+    // For simplicity in this compat layer, we treat upsert as an update if filters exist,
+    // or we'll handle it in execute by checking if it should be an addDoc or setDoc.
+    return this as this & PromiseLike<QueryResult>;
+  }
+
   async single(): Promise<SingleResult> {
     try {
       // If we have an eq filter on doc ID pattern, try direct doc fetch
@@ -217,10 +224,22 @@ class SupabaseQueryBuilder {
         };
       }
 
-      // Handle UPDATE
+      // Handle UPDATE / UPSERT
       if (this.updateData && this.filters.length > 0) {
         const q = this.buildQuery();
         const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+          // If upsert-like behavior is needed and no doc found, create one
+          const colRef = collection(db, this.collectionName);
+          const docRef = await addDoc(colRef, {
+            ...this.updateData,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+          return { data: [{ id: docRef.id, ...this.updateData }], error: null };
+        }
+
         const updates = snapshot.docs.map(async (d) => {
           const docRef = doc(db, this.collectionName, d.id);
           await updateDoc(docRef, {

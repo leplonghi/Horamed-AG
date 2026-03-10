@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import MedicationWizard from "./medication-wizard/MedicationWizard";
 import { useLanguage } from "@/contexts/LanguageContext";

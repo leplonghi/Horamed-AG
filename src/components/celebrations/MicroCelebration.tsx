@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Flame, Star, Zap, Heart, Trophy, Sparkles } from "lucide-react";
+import { Check, Flame, Star, Lightning as Zap, Heart, Trophy, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
 interface MicroCelebrationProps {

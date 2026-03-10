@@ -5,13 +5,7 @@ import heroBg from "@/assets/landing-hero-bg-new.png";
 import appScreenHoje from "@/assets/app-screen-hoje.png";
 import appScreenRotina from "@/assets/app-screen-rotina.png";
 import appScreenPerfil from "@/assets/app-screen-perfil.png";
-import {
-  Bell, FileText, Users, Shield, Brain, Smartphone,
-  Star, Check, ArrowRight, Camera, HeartPulse,
-  Trophy, Pill, ChevronDown, Lock, Clock,
-  Activity, CalendarCheck, Sparkles, CheckCircle2, TrendingUp,
-  Stethoscope, MessageCircle,
-} from "lucide-react";
+import { Bell, FileText, Users, Shield, Brain, DeviceMobile as Smartphone, Star, Check, ArrowRight, Camera, Heartbeat as HeartPulse, Trophy, Pill, CaretDown as ChevronDown, Lock, Clock, Heartbeat as Activity, CalendarCheck, Sparkle as Sparkles, CheckCircle as CheckCircle2, TrendUp as TrendingUp, Stethoscope, ChatCircle as MessageCircle, Syringe, Heart, Alarm } from "@phosphor-icons/react";
 import { getAuthRedirectUrl } from "@/lib/domainConfig";
 import SEOHead from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -28,8 +22,8 @@ const C = {
   bg: "linear-gradient(160deg, hsl(204 80% 96%) 0%, hsl(210 60% 99%) 50%, hsl(204 80% 97%) 100%)",
   bgFlat: "hsl(204 80% 97%)",
   card: "#ffffff",
-  text: "hsl(222 47% 18%)",
-  muted: "hsl(215 16% 47%)",
+  text: "hsl(222 60% 12%)",
+  muted: "hsl(222 30% 45%)",
   border: "hsl(210 40% 90%)",
   success: "hsl(142 69% 45%)",
 };
@@ -48,12 +42,12 @@ function ScrollProgress() {
 
 /* ─── Floating ambient particles ─────────────────────────────────── */
 const PARTICLES = [
-  { icon: "💊", x: "8%", y: "18%", delay: 0, dur: 6 },
-  { icon: "🫀", x: "85%", y: "15%", delay: 1.2, dur: 7 },
-  { icon: "⏰", x: "75%", y: "70%", delay: 0.5, dur: 5 },
-  { icon: "🩺", x: "12%", y: "75%", delay: 2, dur: 8 },
-  { icon: "✨", x: "50%", y: "8%", delay: 0.8, dur: 6.5 },
-  { icon: "💉", x: "92%", y: "45%", delay: 1.5, dur: 7.5 },
+  { icon: Pill, x: "8%", y: "18%", delay: 0, dur: 6 },
+  { icon: Heart, x: "85%", y: "15%", delay: 1.2, dur: 7 },
+  { icon: Alarm, x: "75%", y: "70%", delay: 0.5, dur: 5 },
+  { icon: Stethoscope, x: "12%", y: "75%", delay: 2, dur: 8 },
+  { icon: Sparkles, x: "50%", y: "8%", delay: 0.8, dur: 6.5 },
+  { icon: Syringe, x: "92%", y: "45%", delay: 1.5, dur: 7.5 },
 ];
 function FloatingParticles() {
   return (
@@ -66,7 +60,7 @@ function FloatingParticles() {
           animate={{ y: [-12, 12, -12], rotate: [-8, 8, -8], opacity: [0.12, 0.22, 0.12] }}
           transition={{ duration: p.dur, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
         >
-          {p.icon}
+          <p.icon className="w-6 h-6" />
         </motion.div>
       ))}
     </div>
@@ -517,10 +511,10 @@ const Landing = () => {
                   style={{ background: C.card, borderColor: C.border, minWidth: "160px" }}
                 >
                   <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: C.grad }}>
-                    <Bell className="h-4 w-4 text-white" />
+                    <Alarm className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold" style={{ color: C.text }}>⏰ {isPt ? "Hora do remédio!" : "Time for meds!"}</p>
+                    <p className="text-xs font-semibold" style={{ color: C.text }}>{isPt ? "Hora do remédio!" : "Time for meds!"}</p>
                     <p className="text-[10px]" style={{ color: C.muted }}>Omeprazol · 20:00</p>
                   </div>
                 </motion.div>
@@ -541,7 +535,7 @@ const Landing = () => {
                     <Trophy className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold" style={{ color: C.text }}>30 {isPt ? "dias" : "days"} 🔥</p>
+                    <p className="text-xs font-bold" style={{ color: C.text }}>30 {isPt ? "dias" : "days"}</p>
                     <p className="text-[10px]" style={{ color: C.muted }}>{isPt ? "Sequência perfeita!" : "Perfect streak!"}</p>
                   </div>
                 </motion.div>

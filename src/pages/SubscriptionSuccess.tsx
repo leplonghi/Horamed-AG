@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { CheckCircle, Sparkle as Sparkles, ArrowRight, Spinner as Loader2 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import ConfettiExplosion from "@/components/celebrations/ConfettiExplosion";
 import { useLanguage } from "@/contexts/LanguageContext";

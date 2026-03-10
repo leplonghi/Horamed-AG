@@ -1,17 +1,6 @@
 import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  MessageCircle,
-  Sparkles,
-  Clock,
-  Package,
-  TrendingUp,
-  Calendar,
-  Heart,
-  Lightbulb,
-  ChevronRight,
-  X
-} from "lucide-react";
+import { ChatCircle as MessageCircle, Sparkle as Sparkles, Clock, Package, TrendUp as TrendingUp, CalendarBlank as Calendar, Heart, Lightbulb, CaretRight as ChevronRight, X } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Crown, Lock, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Crown, Lock, Sparkle as Sparkles, TrendUp as TrendingUp, Users } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,7 +66,7 @@ const FEATURE_CONFIG = {
   },
 };
 
-import { Trophy } from "lucide-react";
+import { Trophy } from "@phosphor-icons/react";
 
 export default function PremiumTeaser({ feature, compact, className }: PremiumTeaserProps) {
   const navigate = useNavigate();

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { TravelPackingList } from "@/components/TravelPackingList";
 import { useTravelMode } from "@/hooks/useTravelMode";
-import { Plane, MapPin, Calendar, Clock, Sparkles } from "lucide-react";
+import { Airplane as Plane, MapPin, CalendarBlank as Calendar, Clock, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { addDays } from "date-fns";

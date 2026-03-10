@@ -2,7 +2,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FreeRewardsCard } from './FreeRewardsCard';
 import { PremiumRewardsCard } from './PremiumRewardsCard';
-import { Share2, Users, Gift, ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
+import { ShareNetwork as Share2, Users, Gift, ArrowUpRight, ArrowDownRight, Clock } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSubscription } from '@/hooks/useSubscription';

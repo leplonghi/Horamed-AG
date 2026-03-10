@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { MedicalEventFormData } from "@/types/medicalEvents";
-import { ArrowLeft, ArrowRight, MapPin, Bell } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, Bell } from "@phosphor-icons/react";
 
 interface StepDetailsProps {
     formData: Partial<MedicalEventFormData>;

@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles } from "lucide-react";
+import { Sparkle as Sparkles } from "@phosphor-icons/react";
 
 export default function EnergyHintWidget() {
   // Simple rule-based energy prediction

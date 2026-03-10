@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarBlank as CalendarIcon, CaretLeft as ChevronLeft, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, startOfMonth, endOfMonth, endOfWeek, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";

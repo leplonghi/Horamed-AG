@@ -1,6 +1,6 @@
 import { useWeightInsights } from "@/hooks/useWeightInsights";
 import { Button } from "@/components/ui/button";
-import { Scale, TrendingDown, TrendingUp, Minus, ArrowRight } from "lucide-react";
+import { Scales as Scale, TrendDown as TrendingDown, TrendUp as TrendingUp, Minus, ArrowRight } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { Check, X, Utensils } from "lucide-react";
+import { Check, X, ForkKnife as Utensils } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { cn } from "@/lib/utils";

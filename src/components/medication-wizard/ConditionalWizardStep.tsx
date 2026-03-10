@@ -1,5 +1,5 @@
 import { ReactNode, useState } from "react";
-import { Check, ChevronDown, ChevronUp, HelpCircle } from "lucide-react";
+import { Check, CaretDown as ChevronDown, CaretUp as ChevronUp, Question as HelpCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {

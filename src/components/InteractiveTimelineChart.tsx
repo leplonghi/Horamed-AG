@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO, eachDayOfInterval, startOfDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CheckCircle2, XCircle, MinusCircle, Clock } from "lucide-react";
+import { CheckCircle as CheckCircle2, XCircle, MinusCircle, Clock } from "@phosphor-icons/react";
 import { useState } from "react";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 

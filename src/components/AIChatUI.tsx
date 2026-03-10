@@ -1,7 +1,7 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User } from "lucide-react";
+import { Robot as Bot, User } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import AIAssistantInput from "./AIAssistantInput";
 

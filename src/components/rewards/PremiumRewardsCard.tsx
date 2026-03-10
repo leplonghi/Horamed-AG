@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, CalendarCheck, ShieldCheck } from 'lucide-react';
+import { Wallet, TrendUp as TrendingUp, CalendarCheck, ShieldCheck } from "@phosphor-icons/react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';

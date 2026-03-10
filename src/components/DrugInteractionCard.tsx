@@ -3,16 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { 
-  AlertTriangle, 
-  XCircle, 
-  Info, 
-  ChevronDown, 
-  ChevronUp, 
-  Shield,
-  Sparkles,
-  ExternalLink
-} from 'lucide-react';
+import { Warning as AlertTriangle, XCircle, Info, CaretDown as ChevronDown, CaretUp as ChevronUp, Shield, Sparkle as Sparkles, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMedicationInteractions, MedicationInteraction } from '@/hooks/useMedicationInteractions';
 import { useLanguage } from '@/contexts/LanguageContext';

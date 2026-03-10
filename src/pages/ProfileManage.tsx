@@ -4,7 +4,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { auth, deleteDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { ArrowLeft, Edit, Trash2, UserCircle } from "lucide-react";
+import { ArrowLeft, PencilSimple as Edit, Trash as Trash2, UserCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

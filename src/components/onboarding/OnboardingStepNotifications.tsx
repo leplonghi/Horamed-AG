@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Bell, BellOff, Check, Loader2, AlertCircle, Smartphone } from "lucide-react";
+import { Bell, BellSlash as BellOff, Check, Spinner as Loader2, WarningCircle as AlertCircle, DeviceMobile as Smartphone } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Capacitor } from "@capacitor/core";
@@ -25,18 +25,18 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
 
   const requestPermission = async () => {
     setState("requesting");
-    
+
     try {
       if (isNative) {
         // Request push notification permission
         const pushResult = await PushNotifications.requestPermissions();
-        
+
         if (pushResult.receive === "granted") {
           await PushNotifications.register();
-          
+
           // Also request local notifications
           const localResult = await LocalNotifications.requestPermissions();
-          
+
           if (localResult.display === "granted") {
             setState("granted");
             // Save preference to database
@@ -54,9 +54,9 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
           setState("denied");
           return;
         }
-        
+
         const permission = await Notification.requestPermission();
-        
+
         if (permission === "granted") {
           setState("granted");
           await saveNotificationPreference(true);
@@ -90,7 +90,7 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
 
   const sendTestNotification = async () => {
     setState("testing");
-    
+
     try {
       if (isNative) {
         // Send local notification
@@ -98,7 +98,7 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
           notifications: [
             {
               id: 99999,
-              title: language === 'pt' ? "🎉 Notificações funcionando!" : "🎉 Notifications working!",
+              title: language === 'pt' ? "Notificações funcionando!" : "Notifications working!",
               body: language === 'pt' ? "Você receberá lembretes assim para seus medicamentos" : "You'll receive reminders like this for your medications",
               schedule: { at: new Date(Date.now() + 1000) },
               sound: "notification.wav",
@@ -106,7 +106,7 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
             },
           ],
         });
-        
+
         // Wait a bit and show success
         setTimeout(() => {
           setTestReceived(true);
@@ -114,11 +114,11 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
         }, 2000);
       } else {
         // Web notification
-        new Notification(language === 'pt' ? "🎉 Notificações funcionando!" : "🎉 Notifications working!", {
+        new Notification(language === 'pt' ? "Notificações funcionando!" : "Notifications working!", {
           body: language === 'pt' ? "Você receberá lembretes assim para seus medicamentos" : "You'll receive reminders like this for your medications",
           icon: "/favicon.png",
         });
-        
+
         setTimeout(() => {
           setTestReceived(true);
           setState("success");
@@ -155,7 +155,7 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          {state === "success" 
+          {state === "success"
             ? (language === 'pt' ? "Perfeito! Tudo pronto" : "Perfect! All set")
             : (language === 'pt' ? "Nunca esqueça um remédio" : "Never forget a medication")
           }
@@ -167,7 +167,7 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          {state === "success" 
+          {state === "success"
             ? (language === 'pt' ? "Você receberá lembretes no horário certo para cada medicamento" : "You'll receive reminders at the right time for each medication")
             : (language === 'pt' ? "Ative as notificações para receber lembretes nos horários dos seus medicamentos" : "Enable notifications to receive reminders at your medication times")
           }
@@ -193,13 +193,13 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
                     {language === 'pt' ? "Lembretes inteligentes" : "Smart reminders"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {language === 'pt' 
-                      ? "Receba alertas personalizados para cada dose" 
+                    {language === 'pt'
+                      ? "Receba alertas personalizados para cada dose"
                       : "Get personalized alerts for each dose"}
                   </p>
                 </div>
               </div>
-              
+
               <Button
                 size="lg"
                 className="w-full"
@@ -231,13 +231,13 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
                     {language === 'pt' ? "Permissão concedida!" : "Permission granted!"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {language === 'pt' 
-                      ? "Vamos fazer um teste rápido" 
+                    {language === 'pt'
+                      ? "Vamos fazer um teste rápido"
                       : "Let's do a quick test"}
                   </p>
                 </div>
               </div>
-              
+
               <Button
                 size="lg"
                 className="w-full"
@@ -272,13 +272,13 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
                     {language === 'pt' ? "Notificação recebida!" : "Notification received!"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {language === 'pt' 
-                      ? "Tudo funcionando perfeitamente" 
+                    {language === 'pt'
+                      ? "Tudo funcionando perfeitamente"
                       : "Everything working perfectly"}
                   </p>
                 </div>
               </div>
-              
+
               <Button
                 size="lg"
                 className="w-full"
@@ -300,13 +300,13 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
                     {language === 'pt' ? "Permissão negada" : "Permission denied"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {language === 'pt' 
-                      ? "Você pode ativar depois nas configurações" 
+                    {language === 'pt'
+                      ? "Você pode ativar depois nas configurações"
                       : "You can enable this later in settings"}
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Button
                   variant="outline"

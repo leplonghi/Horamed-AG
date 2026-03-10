@@ -5,7 +5,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar as CalendarIcon, Stethoscope, Activity, Pill, CheckCircle2, Clock, Link as LinkIcon, Plus, Filter, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { CalendarBlank as CalendarIcon, Stethoscope, Heartbeat as Activity, Pill, CheckCircle as CheckCircle2, Clock, Link as LinkIcon, Plus, Funnel as Filter, CaretLeft as ChevronLeft, CaretRight as ChevronRight, ArrowsClockwise as RefreshCw } from "@phosphor-icons/react";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";

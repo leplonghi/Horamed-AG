@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Plus, FileText, FileDown } from "lucide-react";
+import { Plus, FileText, FileArrowDown as FileDown } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";

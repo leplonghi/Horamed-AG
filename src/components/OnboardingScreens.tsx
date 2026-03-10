@@ -1,25 +1,25 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, WarningCircle, Heart, Confetti } from "@phosphor-icons/react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const screens = [
   {
-    emoji: "🤯",
+    icon: WarningCircle,
     title: "Esquecer remédios e perder receitas é um caos.",
     subtitle: "O HoraMed resolve isso pra você.",
     description: "Nunca mais se preocupe em esquecer seus medicamentos ou perder documentos importantes."
   },
   {
-    emoji: "💙",
+    icon: Heart,
     title: "Nós lembramos seus medicamentos",
     subtitle: "Organizamos seus documentos",
     description: "E ajudamos você a cuidar da sua família com tranquilidade e segurança."
   },
   {
-    emoji: "🎉",
+    icon: Confetti,
     title: "Cadastre seus remédios, marque quando tomar",
     subtitle: "E guarde seus exames",
     description: "O resto é com a gente. Simples, rápido e eficaz."
@@ -104,15 +104,17 @@ export default function OnboardingScreens() {
         <CardContent className="p-8 space-y-6">
           {/* Progress bar */}
           <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-primary transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
 
           {/* Content */}
-          <div className="text-center space-y-4 py-8">
-            <div className="text-6xl mb-4">{screen.emoji}</div>
+          <div className="text-center space-y-4 py-8 flex flex-col items-center">
+            <div className="p-4 rounded-3xl bg-primary/10 mb-2">
+              <screen.icon size={64} weight="duotone" className="text-primary" />
+            </div>
             <h2 className="text-2xl font-bold leading-tight">
               {screen.title}
             </h2>
@@ -126,8 +128,8 @@ export default function OnboardingScreens() {
 
           {/* Actions */}
           <div className="space-y-3">
-            <Button 
-              onClick={handleNext} 
+            <Button
+              onClick={handleNext}
               className="w-full gap-2"
               size="lg"
             >
@@ -160,11 +162,10 @@ export default function OnboardingScreens() {
             {screens.map((_, index) => (
               <div
                 key={index}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentScreen 
-                    ? "w-8 bg-primary" 
+                className={`h-2 rounded-full transition-all ${index === currentScreen
+                    ? "w-8 bg-primary"
                     : "w-2 bg-muted"
-                }`}
+                  }`}
               />
             ))}
           </div>

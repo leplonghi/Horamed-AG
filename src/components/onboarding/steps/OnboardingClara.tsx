@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, MessageCircle } from "lucide-react";
+import { ArrowRight, ChatCircle as MessageCircle } from "@phosphor-icons/react";
 // Clara avatar loaded via URL to reduce bundle size
 const claraAvatarUrl = "/images/clara.jpg";
 

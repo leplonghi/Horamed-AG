@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Camera, Upload, X, Sparkles, AlertCircle, FileText } from "lucide-react";
+import { Camera, Upload, X, Sparkle as Sparkles, WarningCircle as AlertCircle, FileText } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { convertPDFToImages, isPDF } from "@/lib/pdfProcessor";

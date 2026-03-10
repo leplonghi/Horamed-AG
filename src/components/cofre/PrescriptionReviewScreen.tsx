@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ChevronRight, Check, Package } from "lucide-react";
+import { CaretRight as ChevronRight, Check, Package } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { auth, addDocument, updateDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

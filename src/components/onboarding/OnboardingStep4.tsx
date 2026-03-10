@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Plus, Eye } from "lucide-react";
+import { Sparkle as Sparkles, Plus, Eye } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";

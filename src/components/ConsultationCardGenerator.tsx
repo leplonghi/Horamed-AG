@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { QrCode, Copy, ExternalLink, Clock } from 'lucide-react';
+import { QrCode, Copy, ArrowSquareOut as ExternalLink, Clock } from "@phosphor-icons/react";
 import { useConsultationCard } from '@/hooks/useConsultationCard';
 import { useUserProfiles } from '@/hooks/useUserProfiles';
 import { useToast } from '@/hooks/use-toast';

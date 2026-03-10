@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Bell, CheckCircle, TrendingUp, ArrowRight, ArrowLeft } from "lucide-react";
+import { Bell, CheckCircle, TrendUp as TrendingUp, ArrowRight, ArrowLeft } from "@phosphor-icons/react";
 
 interface Props {
   onNext: () => void;

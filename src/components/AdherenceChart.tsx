@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { Calendar } from "lucide-react";
+import { CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

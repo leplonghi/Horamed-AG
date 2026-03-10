@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Loader2, Download, AlertCircle } from 'lucide-react';
+import { FileText, Spinner as Loader2, Download, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format, subDays } from 'date-fns';

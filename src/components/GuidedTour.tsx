@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { X, ChevronRight, ChevronLeft, Sparkles, Home, Pill, FileText, User, Heart } from "lucide-react";
+import { X, CaretRight as ChevronRight, CaretLeft as ChevronLeft, Sparkle as Sparkles, House as Home, Pill, FileText, User, Heart } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";

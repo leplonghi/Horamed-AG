@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, ArrowLeft, AlertTriangle, Smartphone, Battery, CheckCircle } from "lucide-react";
+import { Bell, BellSlash as BellOff, ArrowLeft, Warning as AlertTriangle, DeviceMobile as Smartphone, BatteryFull as Battery, CheckCircle } from "@phosphor-icons/react";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import { trackNotificationEvent, NotificationEvents } from "@/hooks/useNotificationMetrics";

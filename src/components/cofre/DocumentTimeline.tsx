@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { format, isThisMonth, isThisYear, parseISO } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { FileText, FlaskConical, Syringe, Stethoscope, FolderOpen } from "lucide-react";
+import { FileText, Flask as FlaskConical, Syringe, Stethoscope, FolderOpen } from "@phosphor-icons/react";
 import { DocumentoSaude } from "@/hooks/useCofre";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";

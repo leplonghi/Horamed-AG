@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, Pill } from "lucide-react";
+import { CheckCircle as CheckCircle2, Clock, Pill } from "@phosphor-icons/react";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 
 interface Props {

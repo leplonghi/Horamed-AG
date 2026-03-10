@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Download, Share, Plus, Smartphone, ChevronUp } from 'lucide-react';
+import { X, Download, ShareNetwork as Share, Plus, DeviceMobile as Smartphone, CaretUp as ChevronUp } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useLanguage } from '@/contexts/LanguageContext';

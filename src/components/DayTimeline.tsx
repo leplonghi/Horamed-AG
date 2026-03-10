@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { format, isToday } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Check, Calendar, Stethoscope, TestTube, Pill } from "lucide-react";
+import { Check, CalendarBlank as Calendar, Stethoscope, TestTube, Pill } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -51,39 +51,39 @@ export default function DayTimeline({
   const getItemStyles = (type: string, status: string) => {
     const isDone = status === "done";
 
-    // Base styles (Clean Blue Theme - Image Reference 1)
+    // Base styles (Clean Blue Theme)
     const base = {
-      card: "bg-white border-0 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1",
-      iconBox: "bg-indigo-100 text-indigo-600",
+      card: "bg-white/80 backdrop-blur-sm border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5",
+      iconBox: "bg-blue-100/50 text-blue-600",
       title: "text-slate-800",
       subtitle: "text-slate-500",
-      timeBadge: "bg-blue-50 text-blue-600 font-bold"
+      timeBadge: "bg-blue-50 text-blue-600 font-extrabold"
     };
 
     if (type === "medication") {
       base.iconBox = "bg-blue-100 text-blue-600";
     } else if (type === "appointment") {
-      base.iconBox = "bg-emerald-100 text-emerald-600";
-      base.timeBadge = "bg-emerald-50 text-emerald-600";
+      base.iconBox = "bg-indigo-100 text-indigo-600";
+      base.timeBadge = "bg-indigo-50 text-indigo-600";
     } else if (type === "exam") {
-      base.iconBox = "bg-teal-100 text-teal-600";
-      base.timeBadge = "bg-teal-50 text-teal-600";
+      base.iconBox = "bg-sky-100 text-sky-600";
+      base.timeBadge = "bg-sky-50 text-sky-600";
     }
 
     if (isDone) {
       return {
-        card: "bg-slate-50 border-0 opacity-60 shadow-none",
+        card: "bg-slate-100/40 border-0 opacity-50 shadow-none",
         iconBox: "bg-slate-200 text-slate-400",
-        title: "text-slate-500 line-through",
-        subtitle: "text-slate-400",
-        timeBadge: "bg-slate-100 text-slate-400"
+        title: "text-slate-400 line-through",
+        subtitle: "text-slate-300",
+        timeBadge: "bg-slate-100 text-slate-300"
       };
     }
 
     if (status === "missed") {
       return {
         ...base,
-        card: "bg-red-50/50 border border-red-100",
+        card: "bg-red-50/40 border border-red-100/50",
         iconBox: "bg-red-100 text-red-500",
         timeBadge: "bg-red-50 text-red-500"
       }
@@ -93,30 +93,29 @@ export default function DayTimeline({
   };
 
   return (
-    <div className="w-full space-y-5 pb-20">
+    <div className="w-full space-y-3 pb-20">
       {/* Header Section */}
-      <div className="flex items-center justify-between px-1 pt-2">
-        <h3 className="text-xl font-bold text-slate-800 tracking-tight">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-sm font-black text-blue-600/80 uppercase tracking-widest">
           {language === 'pt' ? 'PRÓXIMAS DOSES' : 'UPCOMING DOSES'}
         </h3>
-        {/* We can put a 'See all' link here later if needed */}
       </div>
 
       {/* List content */}
-      <div className="space-y-4">
+      <div className="space-y-2">
         {items.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center p-10 bg-white/60 rounded-3xl border-2 border-dashed border-slate-200 text-center"
+            className="flex flex-col items-center justify-center p-8 bg-white/40 rounded-3xl border border-dashed border-slate-200 text-center"
           >
-            <div className="h-16 w-16 bg-slate-100/50 rounded-full flex items-center justify-center mb-4 text-slate-400">
-              <Calendar className="h-8 w-8" />
+            <div className="h-12 w-12 bg-slate-100/50 rounded-full flex items-center justify-center mb-3 text-slate-400">
+              <Calendar className="h-6 w-6" />
             </div>
-            <p className="text-slate-600 font-semibold mb-1 text-lg">
+            <p className="text-slate-600 font-bold mb-0.5 text-base">
               {language === 'pt' ? 'Tudo tranquilo!' : 'All clear!'}
             </p>
-            <p className="text-slate-500">
+            <p className="text-xs text-slate-400">
               {language === 'pt' ? 'Nenhum medicamento agendado.' : 'No medications scheduled.'}
             </p>
           </motion.div>
@@ -129,39 +128,39 @@ export default function DayTimeline({
               return (
                 <motion.div
                   key={item.id}
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                  exit={{ opacity: 0, scale: 0.9 }}
                   transition={{
                     type: "spring",
-                    stiffness: 300,
-                    damping: 25,
-                    delay: index * 0.05
+                    stiffness: 400,
+                    damping: 30,
+                    delay: index * 0.04
                   }}
                 >
-                  <Card className={cn("rounded-[1.5rem] overflow-hidden relative", styles.card)}>
-                    <CardContent className="p-5 flex items-center gap-5">
+                  <Card className={cn("rounded-2xl overflow-hidden relative", styles.card)}>
+                    <CardContent className="p-3 flex items-center gap-3.5">
                       {/* Left Icon Squircle */}
-                      <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm transition-colors", styles.iconBox)}>
+                      <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-colors", styles.iconBox)}>
                         {getTypeIcon(item.type)}
                       </div>
 
                       {/* Middle Text Content */}
                       <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h4 className={cn("text-lg font-bold truncate leading-tight mb-1", styles.title)}>
+                        <h4 className={cn("text-base font-bold truncate leading-tight", styles.title)}>
                           {item.title}
                         </h4>
                         {item.subtitle && (
-                          <p className={cn("text-sm truncate font-medium", styles.subtitle)}>
+                          <p className={cn("text-xs truncate font-medium mt-0.5", styles.subtitle)}>
                             {item.subtitle}
                           </p>
                         )}
                       </div>
 
                       {/* Right Action / Time */}
-                      <div className="flex flex-col items-end gap-3 shrink-0">
+                      <div className="flex flex-col items-end gap-2 shrink-0">
                         {/* Time Badge - Pill Shape */}
-                        <span className={cn("px-3 py-1 rounded-full text-xs tracking-wide font-extrabold shadow-sm", styles.timeBadge)}>
+                        <span className={cn("px-2 py-0.5 rounded-md text-[10px] tracking-wide font-black", styles.timeBadge)}>
                           {item.time}
                         </span>
 
@@ -170,21 +169,21 @@ export default function DayTimeline({
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center shadow-md shadow-blue-200"
+                            className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm"
                           >
-                            <Check className="h-5 w-5 text-white stroke-[3]" />
+                            <Check className="h-4 w-4 text-white" weight="bold" />
                           </motion.div>
                         ) : (
                           item.onMarkDone ? (
                             <button
                               onClick={(e) => {
-                                e.stopPropagation(); // Prevent card click
+                                e.stopPropagation();
                                 item.onMarkDone?.();
                               }}
-                              className="h-8 w-8 rounded-full border-[3px] border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                              className="h-7 w-7 rounded-full border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group focus:outline-none"
                               aria-label="Mark as done"
                             >
-                              <div className="h-4 w-4 rounded-full bg-slate-300 group-hover:bg-blue-400 transition-colors" />
+                              <div className="h-3 w-3 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
                             </button>
                           ) : null
                         )}

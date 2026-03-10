@@ -1,6 +1,6 @@
-import { Card, CardContent } from "./ui/card";
+﻿import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { TrendingUp, Activity, LineChart } from "lucide-react";
+import { TrendUp as TrendingUp, Heartbeat as Activity, ChartLine as LineChart } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 

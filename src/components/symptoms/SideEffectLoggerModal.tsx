@@ -10,7 +10,7 @@ import { useSideEffectsLog, COMMON_SIDE_EFFECTS } from '@/hooks/useSideEffectsLo
 import { useMedications } from '@/hooks/useMedications';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { AlertCircle, Thermometer, Zap, Activity } from 'lucide-react';
+import { WarningCircle as AlertCircle, Thermometer, Lightning as Zap, Heartbeat as Activity } from "@phosphor-icons/react";
 
 interface SideEffectLoggerModalProps {
     isOpen: boolean;

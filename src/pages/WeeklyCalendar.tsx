@@ -3,7 +3,7 @@ import { useWeeklyDoses } from "@/hooks/useWeeklyDoses";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Pill, XCircle, SkipForward, TrendingUp, Calendar, Target } from "lucide-react";
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, CheckCircle as CheckCircle2, Circle, Pill, XCircle, SkipForward, TrendUp as TrendingUp, CalendarBlank as Calendar, Target } from "@phosphor-icons/react";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, addWeeks, subWeeks, isSameDay, parseISO, isBefore } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import Navigation from "@/components/Navigation";

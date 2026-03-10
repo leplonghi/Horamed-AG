@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Check, Loader2, Sparkles, Calendar, ChevronDown, Camera, Upload, Edit3, Pill } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Spinner as Loader2, Sparkle as Sparkles, CalendarBlank as Calendar, CaretDown as ChevronDown, Camera, Upload, PencilSimple as Edit3, Pill } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WizardStepIdentity } from "./WizardStepIdentity";
 import { WizardStepScheduleConditional } from "./WizardStepScheduleConditional";

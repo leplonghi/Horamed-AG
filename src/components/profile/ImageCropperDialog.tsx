@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useTranslation } from '@/contexts/LanguageContext';
-import { Loader2 } from 'lucide-react';
+import { Spinner as Loader2 } from "@phosphor-icons/react";
 import { getCroppedImg } from '@/lib/utils';
 import { toast } from 'sonner';
 

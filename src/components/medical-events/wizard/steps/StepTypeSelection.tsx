@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Stethoscope, FileText, Activity, Calendar } from "lucide-react";
+import { Stethoscope, FileText, Heartbeat as Activity, CalendarBlank as Calendar } from "@phosphor-icons/react";
 import { MedicalEventFormData, EventType } from "@/types/medicalEvents";
 import { cn } from "@/lib/utils";
 

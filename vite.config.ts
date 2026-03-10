@@ -49,24 +49,36 @@ export default defineConfig(({ mode }) => {
           dir: "ltr",
           icons: [
             {
-              src: "/favicon.png?v=3",
+              src: "/favicon.png?v=10",
               sizes: "64x64",
               type: "image/png",
             },
             {
-              src: "/apple-touch-icon.png?v=3",
+              src: "/pwa-192x192.png?v=10",
+              sizes: "192x192",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "/pwa-512x512.png?v=10",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "any",
+            },
+            {
+              src: "/apple-touch-icon.png?v=10",
               sizes: "180x180",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "/icon-512.png?v=3",
+              src: "/icon-512.png?v=10",
               sizes: "512x512",
               type: "image/png",
               purpose: "any maskable",
             },
             {
-              src: "/icon-1024.png?v=3",
+              src: "/icon-1024.png?v=10",
               sizes: "1024x1024",
               type: "image/png",
             },

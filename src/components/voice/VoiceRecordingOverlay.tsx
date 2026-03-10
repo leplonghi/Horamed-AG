@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Volume2, X, HelpCircle } from "lucide-react";
+import { SpeakerHigh as Volume2, X, Question as HelpCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";

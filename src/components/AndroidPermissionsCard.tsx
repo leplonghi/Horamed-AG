@@ -4,16 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Capacitor } from "@capacitor/core";
-import {
-    Battery,
-    Clock,
-    AlertTriangle,
-    CheckCircle,
-    XCircle,
-    ExternalLink,
-    ChevronDown,
-    ChevronUp,
-} from "lucide-react";
+import { BatteryFull as Battery, Clock, Warning as AlertTriangle, CheckCircle, XCircle, ArrowSquareOut as ExternalLink, CaretDown as ChevronDown, CaretUp as ChevronUp } from "@phosphor-icons/react";
 import {
     getAndroidPermissionStatus,
     getManufacturerInstructions,

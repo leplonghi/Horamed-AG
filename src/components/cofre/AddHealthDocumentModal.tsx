@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, FlaskConical, Syringe, FolderOpen, Camera, Upload, X, Loader2, AlertCircle } from "lucide-react";
+import { FileText, Flask as FlaskConical, Syringe, FolderOpen, Camera, Upload, X, Spinner as Loader2, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { auth, addDocument, fetchCollection, where, storage, functions, httpsCallable } from "@/integrations/firebase";
 import { ref, uploadBytes } from "firebase/storage";

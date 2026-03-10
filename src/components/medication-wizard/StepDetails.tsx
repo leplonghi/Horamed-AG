@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, Utensils, FileText, Pill, Bell } from "lucide-react";
+import { ArrowRight, ForkKnife as Utensils, FileText, Pill, Bell } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotificationTypes, NotificationType, getNotificationTypeLabel, getNotificationTypeDescription } from "@/hooks/useNotificationTypes";

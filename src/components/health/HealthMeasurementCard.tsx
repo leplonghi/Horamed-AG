@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, TrendingUp, TrendingDown, Minus, History, ChevronRight } from "lucide-react";
+import { Plus, TrendUp as TrendingUp, TrendDown as TrendingDown, Minus, ClockCounterClockwise as History, CaretRight as ChevronRight } from "@phosphor-icons/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Crown, Sparkles, Check, ChevronRight } from "lucide-react";
+import { IconCrown, IconSparkles, IconCheck as Check, IconChevronRight as ChevronRight, IconPlans } from "@/components/icons/HoramedIcons";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -29,7 +29,7 @@ export default function PlanOverviewCard() {
                 <>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                     <div className="absolute bottom-0 left-0 w-16 h-16 bg-yellow-400/20 rounded-full blur-xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-                    <Sparkles className="absolute top-2 right-2 h-4 w-4 text-yellow-200/50 animate-pulse" />
+                    <IconSparkles className="absolute top-2 right-2 h-4 w-4 text-yellow-200/50 animate-pulse" />
                 </>
             )}
 
@@ -39,10 +39,11 @@ export default function PlanOverviewCard() {
                         "p-1.5 rounded-lg shrink-0",
                         isPremium ? "bg-white/20" : "bg-primary/10"
                     )}>
-                        <Crown className={cn(
-                            "h-5 w-5",
-                            isPremium ? "text-white" : "text-primary"
-                        )} />
+                        {isPremium ? (
+                            <IconCrown className="h-5 w-5 text-white" />
+                        ) : (
+                            <IconPlans className="h-5 w-5 text-primary" />
+                        )}
                     </div>
                     <div>
                         <h3 className={cn(

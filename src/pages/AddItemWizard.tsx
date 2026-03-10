@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Pill, Sparkles, Check } from "lucide-react";
+import { ArrowLeft, Pill, Sparkle as Sparkles, Check } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { auth, addDocument } from "@/integrations/firebase";

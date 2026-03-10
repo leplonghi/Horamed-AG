@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Flame, Trophy, TrendingUp } from "lucide-react";
+import { Flame, Trophy, TrendUp as TrendingUp } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 

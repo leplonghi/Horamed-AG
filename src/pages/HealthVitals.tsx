@@ -9,11 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-    Activity, Scale, Heart, Droplets, ArrowLeft, Plus, History,
-    ChevronRight, Info, Camera, MoreHorizontal, Trash2, Calendar as CalendarIcon,
-    TrendingUp, AlertTriangle
-} from "lucide-react";
+import { Heartbeat as Activity, Scales as Scale, Heart, Drop as Droplets, ArrowLeft, Plus, ClockCounterClockwise as History, CaretRight as ChevronRight, Info, Camera, DotsThree as MoreHorizontal, Trash as Trash2, CalendarBlank as CalendarIcon, TrendUp as TrendingUp, Warning as AlertTriangle } from "@phosphor-icons/react";
 import VitalsRegistrationModal, { VitalType } from "@/components/VitalsRegistrationModal";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";

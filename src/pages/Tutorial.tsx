@@ -2,27 +2,12 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  Clock,
-  Pill,
-  Package,
-  FolderHeart,
-  Calendar,
-  Bell,
-  Camera,
-  Share2,
-  AlertCircle,
-  CheckCircle2,
-  ArrowRight,
-  Gift,
-  Users,
-} from "lucide-react";
+import { Plus, Clock, Pill, Package, Folder as FolderHeart, CalendarBlank as Calendar, Bell, Camera, ShareNetwork as Share2, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, ArrowRight, Gift, Users } from "@phosphor-icons/react";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { FileText } from "lucide-react";
+import { FileText } from "@phosphor-icons/react";
 
 export default function Tutorial() {
   const navigate = useNavigate();

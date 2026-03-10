@@ -15,20 +15,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import {
-  Activity,
-  Heart,
-  Thermometer,
-  Droplet,
-  Scale,
-  Wind,
-  History,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Save,
-  Loader2
-} from "lucide-react";
+import { Heartbeat as Activity, Heart, Thermometer, Drop as Droplet, Scales as Scale, Wind, ClockCounterClockwise as History, TrendUp as TrendingUp, TrendDown as TrendingDown, Minus, FloppyDisk as Save, Spinner as Loader2 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";

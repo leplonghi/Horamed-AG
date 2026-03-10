@@ -1,6 +1,6 @@
 import { RewardsDashboard } from '@/components/rewards/RewardsDashboard';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from "@phosphor-icons/react";
 import { useNavigate } from 'react-router-dom';
 
 export default function RewardsPage() {

@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Spinner as Loader2 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 

@@ -1,15 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Droplets,
-  Heart,
-  Activity,
-  Wind,
-  Smile,
-  Moon,
-  Scale,
-  Thermometer
-} from "lucide-react";
+import { Drop as Droplets, Heart, Heartbeat as Activity, Wind, Smiley as Smile, Moon, Scales as Scale, Thermometer } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { auth, addDocument, fetchCollection, orderBy, limit } from "@/integrations/firebase";
 import { toast } from "sonner";

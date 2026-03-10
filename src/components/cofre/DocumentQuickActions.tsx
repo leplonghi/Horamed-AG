@@ -1,14 +1,5 @@
 import { motion } from "framer-motion";
-import { 
-  Camera, 
-  Upload, 
-  FileText, 
-  Syringe, 
-  FlaskConical,
-  Stethoscope,
-  Scan,
-  QrCode
-} from "lucide-react";
+import { Camera, Upload, FileText, Syringe, Flask as FlaskConical, Stethoscope, Scan, QrCode } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 

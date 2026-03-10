@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { X, AlertCircle, CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import { X, WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Warning as AlertTriangle, Info } from "@phosphor-icons/react";
 import { ReactNode } from "react";
 
 interface ActionFeedbackInlineProps {

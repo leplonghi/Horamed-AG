@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface FloatingActionHubProps {

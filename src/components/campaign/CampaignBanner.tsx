@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Crown, Clock, ArrowRight, Lock } from "lucide-react";
+import { Crown, Clock, ArrowRight, Lock } from "@phosphor-icons/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchDocument } from "@/integrations/firebase";
 import FeedbackQuest from "@/components/feedback/FeedbackQuest";

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Info, Lightbulb, AlertCircle, Sparkles, Zap } from "lucide-react";
+import { Info, Lightbulb, WarningCircle as AlertCircle, Sparkle as Sparkles, Lightning as Zap } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type TooltipType = "info" | "tip" | "warning" | "feature";

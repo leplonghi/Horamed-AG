@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Scale, Calendar, Ruler } from "lucide-react";
+import { Scales as Scale, CalendarBlank as Calendar, Ruler } from "@phosphor-icons/react";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";

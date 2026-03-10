@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Lightbulb } from "lucide-react";
+import { Clock, Lightbulb } from "@phosphor-icons/react";
 import { getSupplementUsageInfo } from "@/utils/supplementHelpers";
 
 interface SupplementDetailInfoProps {

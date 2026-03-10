@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useSideEffectsLog, COMMON_SIDE_EFFECTS, SideEffectInput } from "@/hooks/useSideEffectsLog";
 import { toast } from "sonner";
-import { Smile, Meh, Frown, Zap, Heart, Moon, X } from "lucide-react";
+import { Smiley as Smile, SmileyMeh as Meh, SmileySad as Frown, Lightning as Zap, Heart, Moon, X } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 

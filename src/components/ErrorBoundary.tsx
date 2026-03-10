@@ -1,7 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { WarningCircle as AlertCircle } from "@phosphor-icons/react";
 
 interface Props {
   children: ReactNode;

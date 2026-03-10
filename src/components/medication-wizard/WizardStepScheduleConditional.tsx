@@ -7,10 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import {
-  Plus, X, Clock, Sun, Moon, Sunrise, Sunset, Bell, BellOff, Volume2, Check,
-  Calendar, RefreshCw, Package, AlertTriangle, CheckCircle2, HelpCircle, Sparkles
-} from "lucide-react";
+import { Plus, X, Clock, Sun, Moon, SunHorizon as Sunrise, SunDim as Sunset, Bell, BellSlash as BellOff, SpeakerHigh as Volume2, Check, CalendarBlank as Calendar, ArrowsClockwise as RefreshCw, Package, Warning as AlertTriangle, CheckCircle as CheckCircle2, Question as HelpCircle, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ConditionalWizardStep } from "./ConditionalWizardStep";

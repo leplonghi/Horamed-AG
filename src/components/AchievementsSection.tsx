@@ -1,7 +1,7 @@
 import { useAchievements } from "@/hooks/useAchievements";
 import AchievementCard from "./AchievementCard";
 import { Card } from "./ui/card";
-import { Trophy, Lock } from "lucide-react";
+import { Trophy, Lock } from "@phosphor-icons/react";
 import { Skeleton } from "./ui/skeleton";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 

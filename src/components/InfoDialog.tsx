@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { HelpCircle } from "lucide-react";
+import { Question as HelpCircle } from "@phosphor-icons/react";
 import { Button } from "./ui/button";
 
 interface InfoDialogProps {

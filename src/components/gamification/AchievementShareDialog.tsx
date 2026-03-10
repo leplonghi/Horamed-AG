@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Achievement } from "@/hooks/useAchievements";
-import { Share2, Twitter, Facebook, Copy, Check, Download } from "lucide-react";
+import { ShareNetwork as Share2, TwitterLogo as Twitter, FacebookLogo as Facebook, Copy, Check, Download } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 

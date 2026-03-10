@@ -9,7 +9,7 @@ import { functions } from "@/integrations/firebase/client";
 import { httpsCallable } from "firebase/functions";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, AlertTriangle, Gift, CheckCircle, XCircle } from "lucide-react";
+import { Spinner as Loader2, Warning as AlertTriangle, Gift, CheckCircle, XCircle } from "@phosphor-icons/react";
 import { PRICING } from "@/lib/stripeConfig";
 
 interface ManageSubscriptionModalProps {

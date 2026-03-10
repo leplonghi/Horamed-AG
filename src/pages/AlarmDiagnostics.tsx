@@ -6,20 +6,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Bell, 
-  BellOff, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle,
-  Battery,
-  Smartphone,
-  RefreshCw,
-  Play,
-  Clock,
-  Activity,
-  Shield
-} from "lucide-react";
+import { Bell, BellSlash as BellOff, CheckCircle, XCircle, Warning as AlertTriangle, BatteryFull as Battery, DeviceMobile as Smartphone, ArrowsClockwise as RefreshCw, Play, Clock, Heartbeat as Activity, Shield } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Send, Loader2 } from "lucide-react";
+import { Sparkle as Sparkles, PaperPlaneRight as Send, Spinner as Loader2 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useHealthAgent } from "@/hooks/useHealthAgent";
 import UpgradeModal from "@/components/UpgradeModal";

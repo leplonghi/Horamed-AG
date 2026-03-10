@@ -5,7 +5,12 @@ import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Pill, Package, History } from "lucide-react";
+import {
+  IconPill as Pill,
+  IconPlus as Plus,
+  IconHistory as History,
+  IconArchive as Package
+} from "@/components/icons/HoramedIcons";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
@@ -17,6 +22,7 @@ import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { useTranslation } from "@/contexts/LanguageContext";
+import OceanBackground from "@/components/ui/OceanBackground";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -296,76 +302,80 @@ export default function MedicamentosHub() {
 
   if (loading) {
     return (
-      <>
+      <div className="relative min-h-screen">
+        <OceanBackground variant="page" />
         <Header />
-        <div className="min-h-screen bg-gradient-subtle pt-20 p-6 pb-24">
+        <div className="pt-20 p-6 pb-24 relative z-10">
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="h-8 w-48 skeleton rounded-lg" />
             <ListSkeleton count={5} />
           </div>
         </div>
         <Navigation />
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="relative min-h-screen">
+      <OceanBackground variant="page" />
       <Header />
-      <div className="min-h-screen bg-gradient-subtle page-container px-3 sm:px-6">
-        <div className="max-w-4xl mx-auto space-y-3 sm:space-y-6">
-          {/* Header - Compact for mobile */}
-          <div className="flex items-center justify-between py-2">
-            <div className="flex items-center gap-2">
-              <div className="p-2 sm:p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
-                <Pill className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+
+      <div className="page-container relative z-10 px-3 sm:px-6 pb-24">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-8">
+          {/* Main Info Header */}
+          <div className="flex items-center justify-between py-2 mt-2">
+            <div className="flex items-center gap-3">
+              <div className="p-2 sm:p-3 bg-primary/10 backdrop-blur-md rounded-2xl border border-primary/20 shadow-glass">
+                <Pill className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
               <div>
-                <h2 className="text-xl sm:text-3xl font-bold tracking-tight text-foreground/90">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                   {t('meds.title')}
                 </h2>
-                <p className="text-xs text-muted-foreground hidden sm:block font-medium">
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium">
                   {t('meds.manageDesc')}
                 </p>
               </div>
             </div>
+
             <Button
-              size="sm"
-              className="rounded-xl hover-lift gap-1.5 shadow-lg h-10 px-4 bg-gradient-to-br from-primary to-blue-600 text-white hover:brightness-110 font-bold tracking-wide transition-all border border-white/10 shadow-primary/25"
+              size="lg"
+              className="rounded-2xl gap-2 shadow-glow bg-primary text-primary-foreground hover:brightness-110 font-bold transition-all active:scale-95 px-4 sm:px-6"
               onClick={() => setWizardOpen(true)}
             >
-              <Plus className="h-4 w-4 stroke-[3]" />
+              <Plus className="h-5 w-5 stroke-[3]" />
               <span className="hidden sm:inline">{t('common.add')}</span>
             </Button>
           </div>
 
-          {/* Section Tabs - Compact horizontal for mobile */}
+          {/* Navigation Tabs */}
           <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-10 sm:h-auto p-1 sm:p-1.5 rounded-xl sm:rounded-2xl bg-muted/60 backdrop-blur-sm gap-0.5 sm:gap-1">
+            <TabsList className="w-full grid grid-cols-3 h-14 p-1.5 rounded-3xl bg-card/40 backdrop-blur-xl border border-white/10 shadow-glass gap-2">
               <TabsTrigger
                 value="rotina"
-                className="rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center sm:flex-col justify-center gap-1.5 sm:gap-1 transition-all"
+                className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow flex items-center justify-center gap-2 transition-all font-semibold"
               >
-                <Pill className="h-4 w-4 text-primary" />
-                <span className="text-[11px] sm:text-xs font-medium">{t('meds.myMeds')}</span>
+                <Pill className="h-4 w-4" />
+                <span className="text-[13px] sm:text-sm">{t('meds.myMeds')}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="estoque"
-                className="rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center sm:flex-col justify-center gap-1.5 sm:gap-1 transition-all"
+                className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow flex items-center justify-center gap-2 transition-all font-semibold"
               >
-                <Package className="h-4 w-4 text-amber-600" />
-                <span className="text-[11px] sm:text-xs font-medium">{t('meds.stock')}</span>
+                <Package className="h-4 w-4" />
+                <span className="text-[13px] sm:text-sm">{t('meds.stock')}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="historico"
-                className="rounded-lg sm:rounded-xl py-1.5 sm:py-3 px-2 data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-md flex items-center sm:flex-col justify-center gap-1.5 sm:gap-1 transition-all"
+                className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow flex items-center justify-center gap-2 transition-all font-semibold"
               >
-                <History className="h-4 w-4 text-teal-600" />
-                <span className="text-[11px] sm:text-xs font-medium">{t('meds.history')}</span>
+                <History className="h-4 w-4" />
+                <span className="text-[13px] sm:text-sm">{t('meds.history')}</span>
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="rotina">
+            <TabsContent value="rotina" className="mt-6">
               <RoutineTab
                 items={items}
                 searchTerm={searchTerm}
@@ -378,7 +388,7 @@ export default function MedicamentosHub() {
               />
             </TabsContent>
 
-            <TabsContent value="estoque">
+            <TabsContent value="estoque" className="mt-6">
               <StockTab
                 stockProjections={stockProjections}
                 isLoading={stockLoading}
@@ -387,12 +397,13 @@ export default function MedicamentosHub() {
               />
             </TabsContent>
 
-            <TabsContent value="historico">
+            <TabsContent value="historico" className="mt-6">
               <HistoryTab doses={historyDoses} isLoading={historyLoading} onRefresh={fetchHistory} />
             </TabsContent>
           </Tabs>
         </div>
       </div>
+
       <Navigation />
 
       <MedicationWizard
@@ -421,6 +432,6 @@ export default function MedicamentosHub() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Crown, Check, Users, Sparkles, AlertTriangle, Timer, TrendingUp, Zap, Star, Shield } from "lucide-react";
+import { Crown, Check, Users, Sparkle as Sparkles, Warning as AlertTriangle, Timer, TrendUp as TrendingUp, Lightning as Zap, Star, Shield } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";

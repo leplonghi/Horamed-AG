@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Settings, Bell, FileDown, HelpCircle, Gift, Crown } from "lucide-react";
+import { Gear as Settings, Bell, FileArrowDown as FileDown, Question as HelpCircle, Gift, Crown } from "@phosphor-icons/react";
 import QuickActionsBase, { QuickAction } from "@/components/shared/QuickActionsBase";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/hooks/useSubscription";

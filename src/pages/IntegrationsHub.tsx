@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, PlusCircle, Smartphone, Watch, Zap } from 'lucide-react';
+import { ArrowLeft, PlusCircle, DeviceMobile as Smartphone, Watch, Lightning as Zap } from "@phosphor-icons/react";
 import { integrationService } from '@/services/IntegrationService';
 import { IntegrationProvider, IntegrationStatus } from '@/types/integration-types';
 import { IntegrationCard } from '@/components/integrations/IntegrationCard';

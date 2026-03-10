@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Package, ShoppingCart, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Package, ShoppingCart, WarningCircle as AlertCircle, CheckCircle as CheckCircle2 } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 

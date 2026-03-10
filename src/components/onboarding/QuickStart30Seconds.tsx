@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pill, Camera, ArrowRight, Check, Sparkles, Clock, Bell } from "lucide-react";
+import { Pill, Camera, ArrowRight, Check, Sparkle as Sparkles, Clock, Bell } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";

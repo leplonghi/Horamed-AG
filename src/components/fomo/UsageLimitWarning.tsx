@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { AlertTriangle, Crown, Zap } from "lucide-react";
+import { Warning as AlertTriangle, Crown, Lightning as Zap } from "@phosphor-icons/react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

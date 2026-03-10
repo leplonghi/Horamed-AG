@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Flame, Shield, Crown } from "lucide-react";
+import { Flame, Shield, Crown } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";

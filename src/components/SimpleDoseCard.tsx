@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Pill, Info } from "lucide-react";
+import { Clock, Pill, Info } from "@phosphor-icons/react";
 import { motion } from "framer-motion";
 import MedicationInfoSheet from "./MedicationInfoSheet";
 import { useMedicationInfo } from "@/hooks/useMedicationInfo";

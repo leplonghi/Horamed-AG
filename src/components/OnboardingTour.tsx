@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
-import { X, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Check } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 

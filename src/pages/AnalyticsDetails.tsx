@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, BarChart3 } from "lucide-react";
+import { ArrowLeft, ChartBar as BarChart3 } from "@phosphor-icons/react";
 import AdherenceChart from "@/components/AdherenceChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import InteractiveTimelineChart from "@/components/InteractiveTimelineChart";

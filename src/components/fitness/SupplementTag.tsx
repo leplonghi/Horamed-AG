@@ -1,5 +1,5 @@
-import { Badge } from "@/components/ui/badge";
-import { Zap, Moon, Shield, Droplets, Dumbbell, LucideIcon } from "lucide-react";
+﻿import { Badge } from "@/components/ui/badge";
+import { Lightning as Zap, Moon, Shield, Drop as Droplets, Barbell as Dumbbell, Icon } from "@phosphor-icons/react";
 
 export type SupplementCategoryType = "energy" | "sleep" | "immunity" | "performance" | "hydration";
 
@@ -9,7 +9,7 @@ interface SupplementTagProps {
 
 interface TagConfig {
   label: string;
-  icon: LucideIcon;
+  icon: Icon;
   className: string;
 }
 

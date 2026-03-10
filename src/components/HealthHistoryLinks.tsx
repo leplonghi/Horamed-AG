@@ -1,11 +1,6 @@
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
-import { 
-  Calendar, 
-  TrendingUp, 
-  Stethoscope,
-  Share2
-} from "lucide-react";
+import { CalendarBlank as Calendar, TrendUp as TrendingUp, Stethoscope, ShareNetwork as Share2 } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 

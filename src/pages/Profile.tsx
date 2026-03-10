@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
-import {
-  Bell, Shield, HelpCircle, LogOut, FileDown,
-  Crown, FileText, Smartphone, Activity, BookOpen, Plane, Gift
-} from "lucide-react";
+import { Bell, Shield, Question as HelpCircle, SignOut as LogOut, FileArrowDown as FileDown, Crown, FileText, DeviceMobile as Smartphone, Heartbeat as Activity, BookOpen, Airplane as Plane, Gift } from "@phosphor-icons/react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";

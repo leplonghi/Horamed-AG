@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Lightbulb, Sparkles, Info, AlertTriangle, CheckCircle } from "lucide-react";
+import { X, Lightbulb, Sparkle as Sparkles, Info, Warning as AlertTriangle, CheckCircle } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 type TipType = "tip" | "info" | "success" | "warning";

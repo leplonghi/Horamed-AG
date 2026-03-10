@@ -1,5 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Droplets } from "lucide-react";
+import { Drop as Droplets } from "@phosphor-icons/react";
 
 export default function HydrationWidget() {
   // Simple estimation based on user having supplements

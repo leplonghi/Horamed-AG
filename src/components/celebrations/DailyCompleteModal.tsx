@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { CheckCircle, X } from "lucide-react";
+import { CheckCircle, X } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConfettiExplosion from "./ConfettiExplosion";

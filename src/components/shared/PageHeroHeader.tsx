@@ -7,6 +7,7 @@ interface PageHeroHeaderProps {
   icon: ReactNode;
   title: string;
   subtitle: string;
+  badge?: string;
   action?: {
     label: string;
     icon?: ReactNode;
@@ -30,10 +31,18 @@ const iconBgStyles = {
   info: "bg-info/20",
 };
 
+const badgeStyles = {
+  default: "bg-primary/10 text-primary border-primary/20",
+  success: "bg-success/10 text-success border-success/20",
+  warning: "bg-warning/10 text-warning border-warning/20",
+  info: "bg-info/10 text-info border-info/20",
+};
+
 export default function PageHeroHeader({
   icon,
   title,
   subtitle,
+  badge,
   action,
   className,
   variant = "default"
@@ -50,12 +59,20 @@ export default function PageHeroHeader({
     >
       {/* Decorative blur */}
       <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-      
+
       <div className="relative flex items-start justify-between gap-4">
-        <div className="space-y-2">
+        <div className="space-y-4">
+          {badge && (
+            <div className={cn(
+              "inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border backdrop-blur-md",
+              badgeStyles[variant]
+            )}>
+              {badge}
+            </div>
+          )}
           <div className="flex items-center gap-3">
             <div className={cn(
-              "p-3 rounded-2xl backdrop-blur-sm",
+              "p-3 rounded-2xl backdrop-blur-sm shadow-glass",
               iconBgStyles[variant]
             )}>
               {icon}
@@ -70,11 +87,11 @@ export default function PageHeroHeader({
             </div>
           </div>
         </div>
-        
+
         {action && (
-          <Button 
-            size="lg" 
-            className="gap-2 rounded-2xl hover-lift hidden sm:flex shadow-lg" 
+          <Button
+            size="lg"
+            className="gap-2 rounded-2xl hover-lift hidden sm:flex shadow-lg"
             onClick={action.onClick}
           >
             {action.icon}

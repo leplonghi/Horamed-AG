@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { MedicalEventFormData } from "@/types/medicalEvents";
-import { ArrowLeft, Check, Calendar, Clock, MapPin, User, FileText } from "lucide-react";
+import { ArrowLeft, Check, CalendarBlank as Calendar, Clock, MapPin, User, FileText } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 

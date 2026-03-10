@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { CaretRight as ChevronRight, Spinner as Loader2 } from "@phosphor-icons/react";
 import { useSmartMedicationSuggestions } from "@/hooks/useSmartMedicationSuggestions";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { motion } from "framer-motion";

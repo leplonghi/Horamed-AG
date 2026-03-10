@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Calendar, Stethoscope, FileText, Syringe, Clock } from "lucide-react";
+import { CalendarBlank as Calendar, Stethoscope, FileText, Syringe, Clock } from "@phosphor-icons/react";
 import SmartInsightsBase, { Insight } from "@/components/shared/SmartInsightsBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format, differenceInDays, addMonths } from "date-fns";

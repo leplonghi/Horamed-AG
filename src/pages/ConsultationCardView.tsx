@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Pill, Activity, FileText, Clock, AlertCircle } from 'lucide-react';
+import { Pill, Heartbeat as Activity, FileText, Clock, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { useConsultationCard } from '@/hooks/useConsultationCard';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 

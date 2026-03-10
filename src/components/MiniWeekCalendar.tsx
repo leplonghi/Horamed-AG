@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { IconChevronLeft as ChevronLeft, IconChevronRight as ChevronRight, IconCheck as Check, IconAlertCircle as AlertCircle } from "@/components/icons/HoramedIcons";
+import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, Check, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, isBefore, startOfDay } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -214,23 +214,24 @@ export default function MiniWeekCalendar({
                   >
                     {/* Progress ring */}
                     {status !== "empty" && !isSelected && (
-                      <svg className="absolute inset-0 w-8 h-8 transform -rotate-90">
+                      <svg className="absolute inset-0 w-8 h-8 transform -rotate-90 drop-shadow-[0_0_2px_rgba(0,0,0,0.1)]">
                         <circle
-                          cx="16" cy="16" r="14"
+                          cx="16" cy="16" r="13"
                           stroke="currentColor"
-                          strokeWidth="2"
+                          strokeWidth="2.5"
                           fill="none"
-                          className="text-muted/40"
+                          className="text-muted/10"
                         />
                         <motion.circle
-                          cx="16" cy="16" r="14"
-                          strokeWidth="2"
+                          cx="16" cy="16" r="13"
+                          strokeWidth="2.5"
                           fill="none"
                           strokeLinecap="round"
-                          initial={{ strokeDasharray: "0 88" }}
-                          animate={{ strokeDasharray: `${(progress / 100) * 88} 88` }}
-                          transition={{ duration: 0.5, delay: i * 0.04, ease: "easeOut" }}
+                          initial={{ strokeDasharray: "0 82" }}
+                          animate={{ strokeDasharray: `${(progress / 100) * 82} 82` }}
+                          transition={{ duration: 0.8, delay: i * 0.05, ease: "circOut" }}
                           className={cn(
+                            "transition-colors duration-500",
                             status === "complete" && "stroke-emerald-500",
                             status === "partial" && "stroke-amber-500",
                             status === "pending" && "stroke-primary",

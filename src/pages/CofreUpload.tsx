@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, FileText, ArrowLeft, Loader2, Camera, Edit3 } from "lucide-react";
+import { Upload, FileText, ArrowLeft, Spinner as Loader2, Camera, PencilSimple as Edit3 } from "@phosphor-icons/react";
 import { auth, storage, functions, addDocument, fetchCollection } from "@/integrations/firebase";
 import { ref, uploadBytes, deleteObject } from "firebase/storage";
 import { httpsCallable } from "firebase/functions";

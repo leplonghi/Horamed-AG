@@ -1,4 +1,4 @@
-import { Pill, Leaf, Heart, Package, Zap, Moon, Shield, Dumbbell, Droplets } from "lucide-react";
+import { Pill, Leaf, Heart, Package, Lightning as Zap, Moon, Shield, Barbell as Dumbbell, Drop as Droplets } from "@phosphor-icons/react";
 
 export type MedicationCategory = "medicamento" | "vitamina" | "suplemento" | "outro" | string;
 export type SupplementCategory = "energy" | "sleep" | "immunity" | "performance" | "hydration" | string;

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, MoreHorizontal } from "lucide-react";
+import { CheckCircle as CheckCircle2, Clock, DotsThree as MoreHorizontal } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 

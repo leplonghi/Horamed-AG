@@ -4,16 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Trophy, 
-  Target, 
-  Flame,
-  Star,
-  Gift,
-  Lock,
-  CheckCircle2,
-  Clock
-} from "lucide-react";
+import { Trophy, Target, Flame, Star, Gift, Lock, CheckCircle as CheckCircle2, Clock } from "@phosphor-icons/react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";

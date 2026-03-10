@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Calendar, MapPin, Syringe, FileText, Trash2, Edit } from "lucide-react";
+import { CalendarBlank as Calendar, MapPin, Syringe, FileText, Trash as Trash2, PencilSimple as Edit } from "@phosphor-icons/react";
 import { VaccinationRecord } from "@/hooks/useVaccinationRecords";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";

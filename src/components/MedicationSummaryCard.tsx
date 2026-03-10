@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Pill, TrendingUp, Clock } from "lucide-react";
+import { Pill, TrendUp as TrendingUp, Clock } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { Link } from "react-router-dom";

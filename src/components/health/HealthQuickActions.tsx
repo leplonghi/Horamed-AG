@@ -1,4 +1,10 @@
-import { Calendar, FileText, Stethoscope, Syringe, Activity, Plus } from "lucide-react";
+import {
+  IconCalendar as Calendar,
+  IconFile as FileText,
+  IconHealth as Stethoscope,
+  IconPlus as Plus,
+  IconSparkles as Vaccine
+} from "@/components/icons/HoramedIcons";
 import QuickActionsBase, { QuickAction } from "@/components/shared/QuickActionsBase";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -34,7 +40,7 @@ export default function HealthQuickActions({
     },
     {
       id: "vaccine",
-      icon: <Syringe className="h-5 w-5 text-teal-500" />,
+      icon: <Vaccine className="h-5 w-5 text-teal-500" />,
       label: language === 'pt' ? 'Vacina' : 'Vaccine',
       color: "bg-teal-500/10",
       onClick: onAddVaccine
@@ -42,7 +48,7 @@ export default function HealthQuickActions({
     {
       id: "timeline",
       icon: <Calendar className="h-5 w-5 text-orange-500" />,
-      label: language === 'pt' ? 'Timeline' : 'Timeline',
+      label: language === 'pt' ? 'Linha do Tempo' : 'Timeline',
       color: "bg-orange-500/10",
       onClick: onViewTimeline
     }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ChevronDown, ChevronUp, Sunrise, Sun, Sunset, Moon } from "lucide-react";
+import { CaretDown as ChevronDown, CaretUp as ChevronUp, SunHorizon as Sunrise, Sun, SunDim as Sunset, Moon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import DoseCard from "./DoseCard";
 

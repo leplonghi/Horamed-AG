@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Activity, BookHeart, TrendingUp, Download, Lock, FileText, Zap, Moon, Thermometer, Smile } from "lucide-react";
+import { ArrowLeft, Plus, Heartbeat as Activity, BookOpen as BookHeart, TrendUp as TrendingUp, Download, Lock, FileText, Lightning as Zap, Moon, Thermometer, Smiley as Smile } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

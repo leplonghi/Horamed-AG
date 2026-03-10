@@ -4,7 +4,7 @@ import Navigation from "@/components/Navigation";
 import HealthCalendar from "@/components/HealthCalendar";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Plus } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Agenda() {

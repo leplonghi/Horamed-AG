@@ -1,4 +1,4 @@
-import { Heart, Plus, Upload, Pill, Calendar, TrendingUp, Package, ChevronRight, Sparkles } from "lucide-react";
+import { Heart, Plus, Upload, Pill, CalendarBlank as Calendar, TrendUp as TrendingUp, Package, CaretRight as ChevronRight, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

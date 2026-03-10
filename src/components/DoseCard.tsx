@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Clock, XCircle, SkipForward, AlertCircle, Info, Utensils } from "lucide-react";
+import { CheckCircle as CheckCircle2, Clock, XCircle, SkipForward, WarningCircle as AlertCircle, Info, ForkKnife as Utensils } from "@phosphor-icons/react";
 import { format, formatDistanceToNow } from "date-fns";
 import { safeDateParse } from "@/lib/safeDateUtils";
 import { ptBR, enUS } from "date-fns/locale";

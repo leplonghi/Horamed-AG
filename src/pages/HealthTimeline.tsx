@@ -7,20 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import HelpTooltip from "@/components/HelpTooltip";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Calendar,
-  FileText,
-  Pill,
-  Activity,
-  Stethoscope,
-  Clock,
-  ChevronRight,
-  Sparkles,
-  MapPin,
-  FlaskConical,
-  Heart,
-  Syringe
-} from "lucide-react";
+import { CalendarBlank as Calendar, FileText, Pill, Heartbeat as Activity, Stethoscope, Clock, CaretRight as ChevronRight, Sparkle as Sparkles, MapPin, Flask as FlaskConical, Heart, Syringe } from "@phosphor-icons/react";
 import { format, isThisMonth, isToday, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";

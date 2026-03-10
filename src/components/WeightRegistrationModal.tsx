@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { auth, addDocument, fetchCollection, orderBy, limit, where } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { Scale, CalendarIcon } from "lucide-react";
+import { Scales as Scale, CalendarBlank as CalendarIcon } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";

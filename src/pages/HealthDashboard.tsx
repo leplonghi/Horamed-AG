@@ -11,24 +11,7 @@ import HealthToolsGrid from "@/components/health/HealthToolsGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Activity,
-  TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  Pill,
-  Target,
-  Calendar,
-  FileText,
-  CheckCircle2,
-  Clock,
-  Heart,
-  Footprints,
-  Moon,
-  Gauge,
-  Plus,
-  Share2
-} from "lucide-react";
+import { Heartbeat as Activity, TrendUp as TrendingUp, TrendDown as TrendingDown, WarningCircle as AlertCircle, Pill, Target, CalendarBlank as Calendar, FileText, CheckCircle as CheckCircle2, Clock, Heart, Footprints, Moon, Gauge, Plus, ShareNetwork as Share2 } from "@phosphor-icons/react";
 import { format, subMonths, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
@@ -65,27 +48,37 @@ interface PeriodComparison {
 }
 
 // Circular Progress Component
-function CircularProgress({ value, size = 120, strokeWidth = 10, color = "hsl(var(--primary))" }: {
-  value: number; size?: number; strokeWidth?: number; color?: string;
+function CircularProgress({ value, size = 120, strokeWidth = 10 }: {
+  value: number; size?: number; strokeWidth?: number;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (value / 100) * circumference;
+  const id = "grad-" + Math.round(value);
+
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90 drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]">
+        <defs>
+          <linearGradient id={id} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" />
+            <stop offset="100%" stopColor="hsl(var(--primary) / 0.6)" />
+          </linearGradient>
+        </defs>
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke="hsl(var(--muted))" strokeWidth={strokeWidth} opacity={0.3} />
-        <motion.circle cx={size / 2} cy={size / 2} r={radius} fill="none"
-          stroke={color} strokeWidth={strokeWidth} strokeLinecap="round"
+          stroke="currentColor" strokeWidth={strokeWidth} className="text-muted/10" />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke={`url(#${id})`} strokeWidth={strokeWidth} strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease: "easeOut" }}
-          strokeDasharray={circumference} />
+          transition={{ duration: 1.5, ease: "circOut" }}
+          strokeLinecap="round"
+        />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-bold">{value}%</span>
-        <span className="text-[10px] text-muted-foreground">Progresso</span>
+        <span className="text-3xl font-black tracking-tighter" style={{ color: "hsl(var(--primary))" }}>{Math.round(value)}%</span>
+        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">Adesão</span>
       </div>
     </div>
   );

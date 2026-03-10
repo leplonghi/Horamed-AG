@@ -48,6 +48,8 @@ export const IconMedications = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconPill = IconMedications;
+
 export const IconHealth = (props: IconProps) => (
     <BaseIcon {...props}>
         <rect x="3" y="10" width="18" height="10" rx="2" strokeOpacity="0.3" />
@@ -104,6 +106,8 @@ export const IconHistory = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconClock = IconHistory;
+
 export const IconAI = (props: IconProps) => (
     <BaseIcon {...props}>
         <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
@@ -132,9 +136,17 @@ export const IconChevronRight = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconArrowRight = IconChevronRight;
+
 export const IconChevronLeft = (props: IconProps) => (
     <BaseIcon {...props}>
         <path d="M15 18l-6-6 6-6" />
+    </BaseIcon>
+);
+
+export const IconChevronUp = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M18 15l-6-6-6 6" />
     </BaseIcon>
 );
 
@@ -178,6 +190,28 @@ export const IconSparkles = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconPlansPremium = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M3 7h18" strokeOpacity="0.3" />
+        <path d="M3 12h18" strokeOpacity="0.5" />
+        <path d="M3 17h12" />
+        <rect x="2" y="4" width="20" height="16" rx="3" strokeWidth="1" strokeOpacity="0.2" />
+        <circle cx="18" cy="17" r="3" stroke="currentColor" fill="currentColor" fillOpacity="0.1" />
+        <path d="M18 15.5v3M16.5 17h3" strokeWidth="1.2" />
+        <path d="M7 11l2 2 4-4" stroke="currentColor" strokeWidth="1.2" strokeOpacity="0.8" />
+    </BaseIcon>
+);
+
+export const IconPlansFree = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <rect x="3" y="4" width="18" height="16" rx="3" strokeOpacity="0.4" />
+        <path d="M7 8h10M7 12h10M7 16h6" strokeWidth="1.2" strokeOpacity="0.6" />
+        <path d="M16 16c.5 0 1 .5 1 1s-.5 1-1 1s-1-.5-1-1s.5-1 1-1" fill="currentColor" />
+    </BaseIcon>
+);
+
+export const IconPlans = IconPlansPremium;
+
 export const IconSearch = (props: IconProps) => (
     <BaseIcon {...props}>
         <circle cx="11" cy="11" r="8" />
@@ -198,6 +232,8 @@ export const IconTrash = (props: IconProps) => (
         <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6" />
     </BaseIcon>
 );
+
+export const IconTrash2 = IconTrash;
 
 export const IconRefresh = (props: IconProps) => (
     <BaseIcon {...props}>
@@ -235,6 +271,25 @@ export const IconActivity = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconTestTube = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5c-1.4 0-2.5-1.1-2.5-2.5V2" />
+        <path d="M8.5 2h7" />
+        <path d="M14.5 16h-5" strokeOpacity="0.4" strokeWidth="1.2" />
+    </BaseIcon>
+);
+
+export const IconSyringe = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="m18 2 4 4" strokeOpacity="0.3" />
+        <path d="m17 7 3-3" />
+        <path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5" />
+        <path d="m9 11 4 4" strokeOpacity="0.5" strokeWidth="1.2" />
+        <path d="m5 19-3 3" />
+        <path d="m14 4 6 6" strokeOpacity="0.3" strokeWidth="1" />
+    </BaseIcon>
+);
+
 export const IconMic = (props: IconProps) => (
     <BaseIcon {...props}>
         <rect x="9" y="1" width="6" height="12" rx="3" />
@@ -264,6 +319,23 @@ export const IconSettings = (props: IconProps) => (
         <circle cx="12" cy="12" r="3" />
     </BaseIcon>
 );
+
+export const IconGear = IconSettings;
+
+export const IconSignOut = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+    </BaseIcon>
+);
+
+export const IconQuestion = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" />
+    </BaseIcon>
+);
+
+export const IconUser = IconProfile;
 
 export const IconShield = (props: IconProps) => (
     <BaseIcon {...props}>
@@ -300,13 +372,65 @@ export const IconChart = (props: IconProps) => (
         <line x1="6" y1="20" x2="6" y2="14" />
     </BaseIcon>
 );
-
 export const IconFile = (props: IconProps) => (
     <BaseIcon {...props}>
         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
         <polyline points="14 2 14 8 20 8" />
     </BaseIcon>
 );
+
+export const IconFileText = IconFile;
+
+export const IconShare = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M4 12V20a2 2 0 0 0 2 2H18a2 2 0 0 0 2-2V12" strokeOpacity="0.3" />
+        <path d="M16 6l-4-4-4 4" />
+        <path d="M12 2v13" />
+    </BaseIcon>
+);
+
+export const IconShareNetwork = IconShare;
+
+export const IconDownload = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" strokeOpacity="0.3" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
+    </BaseIcon>
+);
+
+export const IconExternalLink = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" strokeOpacity="0.3" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" y1="14" x2="21" y2="3" />
+    </BaseIcon>
+);
+
+export const IconSquareOut = IconExternalLink;
+
+export const IconPencil = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+    </BaseIcon>
+);
+
+export const IconArchive = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <polyline points="21 8 21 21 3 21 3 8" />
+        <rect x="1" y="3" width="22" height="5" />
+        <line x1="10" y1="12" x2="14" y2="12" />
+    </BaseIcon>
+);
+
+export const IconTrendingUp = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+        <polyline points="17 6 23 6 23 12" />
+    </BaseIcon>
+);
+
+export const IconEdit = IconPencil;
 
 export const IconCheckCircle = (props: IconProps) => (
     <BaseIcon {...props}>

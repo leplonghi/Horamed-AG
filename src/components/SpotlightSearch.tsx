@@ -1,10 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Search, Pill, FileText, Zap, ArrowRight, X, Home,
-  LayoutDashboard, Activity, Briefcase, History, User,
-  CreditCard, Map, BarChart, Heart, Settings, Sun, Moon,
-  LogOut, Plus, Calendar, Image, Shield
-} from "lucide-react";
+import { MagnifyingGlass as Search, Pill, FileText, Lightning as Zap, ArrowRight, X, House as Home, SquaresFour as LayoutDashboard, Heartbeat as Activity, Briefcase, ClockCounterClockwise as History, User, CreditCard, MapPin as Map, ChartBar as BarChart, Heart, Gear as Settings, Sun, Moon, SignOut as LogOut, Plus, CalendarBlank as Calendar, Image, Shield } from "@phosphor-icons/react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

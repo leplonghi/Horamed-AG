@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pill, Users, FileText, Crown, Calendar, Activity, Sparkles, TrendingUp, Trophy } from "lucide-react";
+import { Pill, Users, FileText, Crown, CalendarBlank as Calendar, Heartbeat as Activity, Sparkle as Sparkles, TrendUp as TrendingUp, Trophy } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";

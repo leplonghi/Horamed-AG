@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Package, Plus, ChevronRight, AlertTriangle } from "lucide-react";
+import { Package, Plus, CaretRight as ChevronRight, Warning as AlertTriangle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useStockProjection } from "@/hooks/useStockProjection";
 import { useLanguage } from "@/contexts/LanguageContext";

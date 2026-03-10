@@ -19,7 +19,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Trash2, Pill, Package, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash as Trash2, Pill, Package, Check } from "@phosphor-icons/react";
 import Navigation from "@/components/Navigation";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
 import HealthProfileSetup from "@/components/HealthProfileSetup";

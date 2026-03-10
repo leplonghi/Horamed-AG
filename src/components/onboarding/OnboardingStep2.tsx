@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Pill, AlertCircle, Crown, Check } from "lucide-react";
+import { Pill, WarningCircle as AlertCircle, Crown, Check } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";

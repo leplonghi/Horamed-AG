@@ -2,15 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertTriangle,
-  TrendingUp,
-  Shield,
-  X,
-  RefreshCw,
-  Sparkles,
-  AlertCircle
-} from 'lucide-react';
+import { Warning as AlertTriangle, TrendUp as TrendingUp, Shield, X, ArrowsClockwise as RefreshCw, Sparkle as Sparkles, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { useAuth, fetchCollection, updateDocument, orderBy, limit, where } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';

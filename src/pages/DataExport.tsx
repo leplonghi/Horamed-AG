@@ -7,7 +7,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Download, FileText, Shield, Database, ArrowLeft, FileDown } from 'lucide-react';
+import { Spinner as Loader2, Download, FileText, Shield, Database, ArrowLeft, FileArrowDown as FileDown } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { jsPDF } from 'jspdf';

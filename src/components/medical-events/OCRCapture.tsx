@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, RefreshCw, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { Camera, Upload, ArrowsClockwise as RefreshCw, CheckCircle as CheckCircle2, Warning as AlertTriangle, FileText } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Copy, Rocket, ArrowRight, ArrowLeft, MessageCircle, Instagram, TrendingUp, Users, Target, BarChart3, Calendar, Trash2, Video, Image as ImageIcon, FileText, Search, Filter, Save, CheckCircle2, AlertCircle, Pencil, X, Check, Palette, ArrowDownToLine, GitGraph, PlusCircle } from "lucide-react";
+import { Copy, Rocket, ArrowRight, ArrowLeft, ChatCircle as MessageCircle, InstagramLogo as Instagram, TrendUp as TrendingUp, Users, Target, ChartBar as BarChart3, CalendarBlank as Calendar, Trash as Trash2, VideoCamera as Video, Image as ImageIcon, FileText, MagnifyingGlass as Search, Funnel as Filter, FloppyDisk as Save, CheckCircle as CheckCircle2, WarningCircle as AlertCircle, PencilSimple as Pencil, X, Check, PaintBucket as Palette, ArrowLineDown as ArrowDownToLine, GitBranch as GitGraph, PlusCircle } from "@phosphor-icons/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";

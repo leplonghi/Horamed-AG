@@ -3,11 +3,8 @@ import { fetchDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  FileText, Users, Settings, Crown, LogOut,
-  ChevronRight, HelpCircle, Shield, Bell, QrCode, Package,
-  FolderHeart, History, BookOpen, Plane, Activity, Gift
-} from "lucide-react";
+import { IconPlans, IconCrown as Crown, IconChevronRight as ChevronRight, IconHistory as History, IconFile as FileText, IconUsers as Users, IconGear as Settings, IconSignOut as LogOut, IconQuestion as HelpCircle, IconShield as Shield, IconBell as Bell, IconMedications as Pill, IconActivity as Activity, IconGift as Gift } from "@/components/icons/HoramedIcons";
+import { BookOpen, Airplane as Plane, QrCode, Package, Folder as FolderHeart } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
@@ -202,7 +199,7 @@ export default function More() {
                     className="w-full mt-4 bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-lg shadow-teal-500/20 hover:opacity-90"
                     size="lg"
                   >
-                    <Crown className="h-4 w-4 mr-2" />
+                    <IconPlans className="h-4 w-4 mr-2" />
                     {t('more.upgradePremium')}
                   </Button>
                 </motion.div>

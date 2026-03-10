@@ -1,4 +1,4 @@
-import { Star, Sparkles, Gift, TrendingUp } from "lucide-react";
+import { Star, Sparkle as Sparkles, Gift, TrendUp as TrendingUp } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useReferralSystem } from "@/hooks/useReferralSystem";

@@ -24,6 +24,7 @@ import {
   IconBan as Ban,
   IconHeartPulse as HeartPulse,
   IconClose as X,
+  IconPlans
 } from "@/components/icons/HoramedIcons";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { auth } from "@/integrations/firebase";
@@ -365,7 +366,7 @@ export default function Plans() {
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center">
-                  <HeartPulse className="h-6 w-6 text-muted-foreground" />
+                  <IconPlans className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{t('plans.freePlan')}</h3>

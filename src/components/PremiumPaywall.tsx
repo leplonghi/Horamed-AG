@@ -2,17 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-    IconCrown as Crown,
-    IconClose as X,
-    IconSparkles as Sparkles,
-    IconCheck as Check,
-    IconMedications as Pill,
-    IconAI as Bot,
-    IconCamera as Camera,
-    IconChart as BarChart3,
-    IconUsers as Users,
-} from "@/components/icons/HoramedIcons";
+import { Crown, X, Sparkle as Sparkles, Check, Pill, Robot as Bot, Camera, ChartBar as BarChart3, Users } from "@phosphor-icons/react";
 
 interface PremiumPaywallProps {
     isOpen: boolean;

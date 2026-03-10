@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Download, Share2, QrCode, Copy, Check, Loader2 } from "lucide-react";
+import { FileText, Download, ShareNetwork as Share2, QrCode, Copy, Check, Spinner as Loader2 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {

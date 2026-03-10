@@ -7,15 +7,7 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { toast } from "sonner";
-import { 
-  Bell, 
-  CheckCircle, 
-  XCircle, 
-  AlertTriangle, 
-  Smartphone,
-  RefreshCw,
-  TestTube
-} from "lucide-react";
+import { Bell, CheckCircle, XCircle, Warning as AlertTriangle, DeviceMobile as Smartphone, ArrowsClockwise as RefreshCw, TestTube } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 

@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
+﻿import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LucideIcon } from "lucide-react";
+import { Icon } from "@phosphor-icons/react";
 
 interface EmptyStateAnimatedProps {
-  icon: LucideIcon;
+  icon: Icon;
   title: string;
   description: string;
   actionLabel?: string;

@@ -7,7 +7,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Pill, Leaf, Heart, Package, Check, ChevronsUpDown, Search, Zap, Moon, Shield, Droplets, Dumbbell, Bell, Sparkles } from "lucide-react";
+import { Pill, Leaf, Heart, Package, Check, CaretUpDown as ChevronsUpDown, MagnifyingGlass as Search, Lightning as Zap, Moon, Shield, Drop as Droplets, Barbell as Dumbbell, Bell, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";

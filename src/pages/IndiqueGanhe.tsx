@@ -4,7 +4,7 @@ import { useAuth, fetchDocument, fetchCollection, setDocument, orderBy } from "@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Copy, Share2, Gift, Crown, Users, Sparkles, ArrowLeft } from "lucide-react";
+import { Copy, ShareNetwork as Share2, Gift, Crown, Users, Sparkle as Sparkles, ArrowLeft } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { getReferralDiscountForUser, getFreeExtraSlotsForUser, generateReferralCode } from "@/lib/referrals";
 import { useSubscription } from "@/contexts/SubscriptionContext";

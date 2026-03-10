@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Rocket, X, ExternalLink } from "lucide-react";
+import { Rocket, X, ArrowSquareOut as ExternalLink } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminService } from "@/services/AdminService";

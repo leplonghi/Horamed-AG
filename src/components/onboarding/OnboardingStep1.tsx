@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { User, Users, Heart, Baby, Check } from "lucide-react";
+import { User, Users, Heart, Baby, Check } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { useLanguage } from "@/contexts/LanguageContext";

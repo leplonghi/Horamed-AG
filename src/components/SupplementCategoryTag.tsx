@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Zap, Moon, Dumbbell, Brain, Heart, Leaf, Sparkles } from "lucide-react";
+import { Lightning as Zap, Moon, Barbell as Dumbbell, Brain, Heart, Leaf, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 export type SupplementCategory = 

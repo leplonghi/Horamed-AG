@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { IconSparkles as Sparkles, IconCheckCircle as CheckCircle2 } from "@/components/icons/HoramedIcons";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -27,9 +27,9 @@ export default function UpgradeModal({ open, onOpenChange, feature }: UpgradeMod
             {t('upgrade.title')}
           </DialogTitle>
           <DialogDescription>
-            {feature === 'ai_agent' ? t('upgrade.aiLimit') : 
-             feature ? t('upgrade.forFeature', { feature: getFeatureText(feature) }) : 
-             t('upgrade.description')}
+            {feature === 'ai_agent' ? t('upgrade.aiLimit') :
+              feature ? t('upgrade.forFeature', { feature: getFeatureText(feature) }) :
+                t('upgrade.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -78,8 +78,8 @@ export default function UpgradeModal({ open, onOpenChange, feature }: UpgradeMod
               <p className="text-xs text-muted-foreground">{t('upgrade.priceDaily')}</p>
               <p className="text-xs text-accent-foreground font-medium mt-1">{t('upgrade.freeTrial')}</p>
             </div>
-            
-            <Button 
+
+            <Button
               onClick={() => {
                 onOpenChange(false);
                 navigate('/planos');
@@ -90,8 +90,8 @@ export default function UpgradeModal({ open, onOpenChange, feature }: UpgradeMod
               <Sparkles className="h-4 w-4 mr-2" />
               {t('upgrade.subscribe')}
             </Button>
-            
-            <Button 
+
+            <Button
               onClick={() => {
                 onOpenChange(false);
                 navigate('/perfil');

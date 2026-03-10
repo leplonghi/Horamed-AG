@@ -6,16 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Flame, 
-  Star, 
-  Trophy, 
-  TrendingUp,
-  Sparkles,
-  ChevronRight,
-  Crown,
-  Lock
-} from "lucide-react";
+import { Flame, Star, Trophy, TrendUp as TrendingUp, Sparkle as Sparkles, CaretRight as ChevronRight, Crown, Lock } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { WeeklyLeaderboard } from "./WeeklyLeaderboard";
 import { DailyChallenges } from "./DailyChallenges";

@@ -4,15 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  FileText,
-  Stethoscope,
-  Download,
-  Share2,
-  Calendar,
-  Pill,
-  TrendingUp
-} from "lucide-react";
+import { FileText, Stethoscope, Download, ShareNetwork as Share2, CalendarBlank as Calendar, Pill, TrendUp as TrendingUp } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { functions } from "@/integrations/firebase/client"; // Firebase import

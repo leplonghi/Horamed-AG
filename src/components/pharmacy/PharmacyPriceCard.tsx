@@ -4,16 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ShoppingCart,
-  ExternalLink,
-  Truck,
-  MapPin,
-  TrendingDown,
-  RefreshCw,
-  ChevronDown,
-  ChevronUp
-} from "lucide-react";
+import { ShoppingCart, ArrowSquareOut as ExternalLink, Truck, MapPin, TrendDown as TrendingDown, ArrowsClockwise as RefreshCw, CaretDown as ChevronDown, CaretUp as ChevronUp } from "@phosphor-icons/react";
 import { functions, httpsCallable } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";

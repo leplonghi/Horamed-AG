@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Upload, Info, ExternalLink, Syringe } from "lucide-react";
+import { Plus, Upload, Info, ArrowSquareOut as ExternalLink, Syringe } from "@phosphor-icons/react";
 import { useVaccinationRecordsByType, useDeleteVaccinationRecord } from "@/hooks/useVaccinationRecords";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import HelpTooltip from "@/components/HelpTooltip";

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { CheckCircle2, Pill, AlertCircle, Sparkles } from "lucide-react";
+import { CheckCircle as CheckCircle2, Pill, WarningCircle as AlertCircle, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useMedicationLimits } from "@/hooks/useMedicationLimits";

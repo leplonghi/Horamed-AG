@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { IconBell as Bell, IconLoader as Loader2, IconCheckCircle as CheckCircle, IconAlertTriangle as AlertTriangle } from "@/components/icons/HoramedIcons";
+import { Bell, Spinner as Loader2, CheckCircle, Warning as AlertTriangle, Pill, DeviceMobile } from "@phosphor-icons/react";
 import { differenceInSeconds } from "date-fns";
 import { Button } from "@/components/ui/button";
 import notificationService from "@/services/NotificationService";
@@ -234,8 +234,9 @@ export default function OnboardingWaiting({
         className="bg-muted/50 rounded-xl p-4"
       >
         <p className="text-sm text-muted-foreground">Seu lembrete:</p>
-        <p className="text-lg font-semibold text-foreground mt-1">
-          💊 {itemName}
+        <p className="text-lg font-semibold text-foreground mt-1 flex items-center justify-center gap-2">
+          <Pill className="w-5 h-5 text-primary" weight="duotone" />
+          {itemName}
         </p>
       </motion.div>
 
@@ -246,8 +247,9 @@ export default function OnboardingWaiting({
         transition={{ delay: 0.6 }}
         className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/20"
       >
-        <p className="text-sm text-amber-700 dark:text-amber-400 font-medium">
-          📱 Feche o app agora
+        <p className="text-sm text-amber-700 dark:text-amber-400 font-medium flex items-center justify-center gap-2">
+          <DeviceMobile className="w-4 h-4" />
+          Feche o app agora
         </p>
         <p className="text-sm text-muted-foreground mt-1">
           O alarme deve tocar mesmo com o app fechado e a tela bloqueada.

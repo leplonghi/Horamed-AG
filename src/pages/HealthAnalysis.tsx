@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Brain, AlertTriangle, Info, CheckCircle2, RefreshCw, ArrowLeft } from 'lucide-react';
+import { Spinner as Loader2, Brain, Warning as AlertTriangle, Info, CheckCircle as CheckCircle2, ArrowsClockwise as RefreshCw, ArrowLeft } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 

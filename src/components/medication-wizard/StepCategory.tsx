@@ -1,4 +1,4 @@
-import { Pill, Leaf, FlaskConical, Package, HelpCircle } from "lucide-react";
+import { Pill, Leaf, Flask as FlaskConical, Package, Question as HelpCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import StepTooltip from "./StepTooltip";

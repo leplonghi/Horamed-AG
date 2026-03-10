@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Achievement } from "@/hooks/useAchievements";
-import { Lock } from "lucide-react";
+import { Lock } from "@phosphor-icons/react";
 
 interface AchievementCardProps {
   achievement: Achievement;

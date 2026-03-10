@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, Sparkles, Clock, ArrowRight } from 'lucide-react';
+import { Crown, Sparkle as Sparkles, Clock, ArrowRight } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

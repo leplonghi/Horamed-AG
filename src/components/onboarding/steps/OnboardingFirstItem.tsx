@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, ArrowLeft, Pill } from "lucide-react";
+import { ArrowRight, ArrowLeft, Pill } from "@phosphor-icons/react";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 interface Props {

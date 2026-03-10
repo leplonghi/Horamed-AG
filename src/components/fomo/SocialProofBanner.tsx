@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, TrendingUp, Clock, Star } from "lucide-react";
+import { Users, TrendUp as TrendingUp, Clock, Star } from "@phosphor-icons/react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSubscription } from "@/contexts/SubscriptionContext";

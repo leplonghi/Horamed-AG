@@ -3,7 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X, Clock, Sun, Moon, Sunrise, Sunset, Bell, BellOff, Volume2, HelpCircle } from "lucide-react";
+import { Plus, X, Clock, Sun, Moon, SunHorizon as Sunrise, SunDim as Sunset, Bell, BellSlash as BellOff, SpeakerHigh as Volume2, Question as HelpCircle } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";

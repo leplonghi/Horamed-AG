@@ -1,6 +1,6 @@
 
 import { useNavigate } from "react-router-dom";
-import { Shield, MapPin, Plus } from "lucide-react";
+import { Shield, MapPin, Plus } from "@phosphor-icons/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useUserProfiles } from "@/hooks/useUserProfiles";

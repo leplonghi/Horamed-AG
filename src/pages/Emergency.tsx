@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { functions, httpsCallable } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { AlertTriangle, Phone, MapPin, Clock, Activity, Lock } from "lucide-react";
+import { Warning as AlertTriangle, Phone, MapPin, Clock, Heartbeat as Activity, Lock } from "@phosphor-icons/react";
 import { useFeatureFlags } from "@/hooks/useFeatureFlags";
 import { useLanguage } from "@/contexts/LanguageContext";
 
