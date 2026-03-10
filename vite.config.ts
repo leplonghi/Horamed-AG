@@ -170,25 +170,9 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         output: {
-          manualChunks: (id) => {
-            if (id.includes('node_modules')) {
-              // PDF.js — heavy, isolated
-              if (id.includes('pdfjs-dist')) return 'pdf-viewer';
-
-              // Firebase — isolated
-              if (id.includes('firebase')) return 'firebase';
-
-              // Charts — recharts + d3
-              if (id.includes('recharts') || id.includes('d3-')) return 'charts';
-
-              // Animations — framer-motion
-              if (id.includes('framer-motion')) return 'animations';
-
-              // Core UI & Framework — Keep together for stability 
-              // (React, Radix, Lucide, TanStack, etc. should stay in vendor)
-              return 'vendor';
-            }
-          },
+          // Removed fragile manualChunks config that forced react into a generic vendor chunk.
+          // Vite's default chunking strategy safely splits imports and respects execution order,
+          // preventing "Cannot read properties of undefined (reading 'useState')" errors.
           // Optimize chunk file names
           chunkFileNames: 'assets/[name]-[hash].js',
           entryFileNames: 'assets/[name]-[hash].js',

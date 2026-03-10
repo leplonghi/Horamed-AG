@@ -1,129 +1,298 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, useInView, AnimatePresence, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
 import logo from "@/assets/logo_HoraMed.png";
-import heroBg from "@/assets/landing-hero-bg.jpg";
-import appMockupGen from "@/assets/landing-app-mockup-gen.png";
-import elderlyCare from "@/assets/landing-elderly-care.png";
-import familyHealth from "@/assets/landing-family-health.png";
-import appMockup from "@/assets/horamed-app-mockup.png";
+import heroBg from "@/assets/landing-hero-bg-new.png";
+import appScreenHoje from "@/assets/app-screen-hoje.png";
+import appScreenRotina from "@/assets/app-screen-rotina.png";
+import appScreenPerfil from "@/assets/app-screen-perfil.png";
 import {
   Bell, FileText, Users, Shield, Brain, Smartphone,
-  Star, Check, ArrowRight, Camera, MessageCircle,
-  HeartPulse, Trophy, Zap, Pill, ChevronDown,
-  ClipboardList, Lock, Clock, Stethoscope, Activity,
-  CalendarCheck, Sparkles, Heart
+  Star, Check, ArrowRight, Camera, HeartPulse,
+  Trophy, Pill, ChevronDown, Lock, Clock,
+  Activity, CalendarCheck, Sparkles, CheckCircle2, TrendingUp,
+  Stethoscope, MessageCircle,
 } from "lucide-react";
 import { getAuthRedirectUrl } from "@/lib/domainConfig";
 import SEOHead from "@/components/SEOHead";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PRICING, BRL_COUNTRIES } from "@/lib/stripeConfig";
 
-/* ─── Animated Counter ──────────────────────────────────────────── */
+/* ─── Design tokens — azul real do app ───────────────────────────── */
+const C = {
+  // Azul primário exato do app (nav bar ativa, botões principais)
+  primary: "hsl(199 89% 48%)",
+  primaryDark: "hsl(199 89% 38%)",
+  primaryLight: "hsl(199 89% 94%)",
+  grad: "linear-gradient(135deg, hsl(199 89% 48%), hsl(207 89% 58%))",
+  // BG da landing = gradiente levíssimo azul celeste → branco (igual à tela de login)
+  bg: "linear-gradient(160deg, hsl(204 80% 96%) 0%, hsl(210 60% 99%) 50%, hsl(204 80% 97%) 100%)",
+  bgFlat: "hsl(204 80% 97%)",
+  card: "#ffffff",
+  text: "hsl(222 47% 18%)",
+  muted: "hsl(215 16% 47%)",
+  border: "hsl(210 40% 90%)",
+  success: "hsl(142 69% 45%)",
+};
+
+/* ─── Scroll progress bar ────────────────────────────────────────── */
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
+  return (
+    <motion.div
+      style={{ scaleX, transformOrigin: "left", background: C.grad }}
+      className="fixed top-0 left-0 right-0 h-[3px] z-[60]"
+    />
+  );
+}
+
+/* ─── Floating ambient particles ─────────────────────────────────── */
+const PARTICLES = [
+  { icon: "💊", x: "8%", y: "18%", delay: 0, dur: 6 },
+  { icon: "🫀", x: "85%", y: "15%", delay: 1.2, dur: 7 },
+  { icon: "⏰", x: "75%", y: "70%", delay: 0.5, dur: 5 },
+  { icon: "🩺", x: "12%", y: "75%", delay: 2, dur: 8 },
+  { icon: "✨", x: "50%", y: "8%", delay: 0.8, dur: 6.5 },
+  { icon: "💉", x: "92%", y: "45%", delay: 1.5, dur: 7.5 },
+];
+function FloatingParticles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+      {PARTICLES.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute text-xl select-none"
+          style={{ left: p.x, top: p.y, opacity: 0.18 }}
+          animate={{ y: [-12, 12, -12], rotate: [-8, 8, -8], opacity: [0.12, 0.22, 0.12] }}
+          transition={{ duration: p.dur, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+        >
+          {p.icon}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Cursor glow ─────────────────────────────────────────────────── */
+function CursorGlow() {
+  const x = useMotionValue(-400);
+  const y = useMotionValue(-400);
+  const sx = useSpring(x, { damping: 22, stiffness: 130 });
+  const sy = useSpring(y, { damping: 22, stiffness: 130 });
+  useEffect(() => {
+    const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY); };
+    window.addEventListener("mousemove", move, { passive: true });
+    return () => window.removeEventListener("mousemove", move);
+  }, [x, y]);
+  return (
+    <motion.div
+      style={{
+        left: sx, top: sy,
+        translateX: "-50%", translateY: "-50%",
+        background: "radial-gradient(circle, hsl(199 89% 48% / 0.08) 0%, transparent 70%)",
+      }}
+      className="pointer-events-none fixed z-30 w-72 h-72 rounded-full"
+    />
+  );
+}
+
+/* ─── Section reveal ─────────────────────────────────────────────── */
+function Reveal({ children, delay = 0, className = "" }: {
+  children: React.ReactNode; delay?: number; className?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 28 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ─── Animated Counter ───────────────────────────────────────────── */
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true });
   const [count, setCount] = useState(0);
-
   useEffect(() => {
     if (!inView) return;
-    let start = 0;
-    const step = Math.ceil(to / 60);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= to) { setCount(to); clearInterval(timer); }
-      else setCount(start);
+    let v = 0;
+    const step = Math.max(1, Math.ceil(to / 60));
+    const t = setInterval(() => {
+      v += step;
+      if (v >= to) { setCount(to); clearInterval(t); } else setCount(v);
     }, 16);
-    return () => clearInterval(timer);
+    return () => clearInterval(t);
   }, [inView, to]);
-
-  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>;
+  return <span ref={ref}>{count.toLocaleString("pt-BR")}{suffix}</span>;
 }
 
-/* ─── Parallax floating card ──────────────────────────────────── */
-function FloatCard({ children, delay = 0, className = "", style = {} }: { children: React.ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
+/* ─── Phone Carousel — telas reais do app ───────────────────────── */
+const APP_SCREENS = [
+  { src: appScreenHoje, label: "Hoje" },
+  { src: appScreenRotina, label: "Rotina" },
+  { src: appScreenPerfil, label: "Perfil" },
+];
+
+function PhoneCarousel() {
+  const [current, setCurrent] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setCurrent(p => (p + 1) % APP_SCREENS.length), 3200);
+    return () => clearInterval(t);
+  }, []);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-      className={className}
-      style={{ animation: `float ${3 + delay}s ease-in-out infinite`, ...style }}
-    >
-      {children}
-    </motion.div>
+    <div className="relative flex flex-col items-center">
+      {/* Phone shell */}
+      <div
+        className="relative rounded-[2.8rem] overflow-hidden border-[6px] border-white shadow-2xl w-[240px] sm:w-[270px]"
+        style={{ boxShadow: "0 40px 100px rgba(41,171,226,0.25), 0 8px 24px rgba(0,0,0,0.12)" }}
+      >
+        {/* Status bar imitation */}
+        <div className="flex items-center justify-between px-5 py-2 bg-white">
+          <span className="text-[10px] font-semibold text-slate-400">09:41</span>
+          <div className="w-14 h-4 rounded-full bg-slate-900" />
+          <span className="text-[10px] text-slate-400">100%</span>
+        </div>
+        {/* Actual app screenshot — animated carousel */}
+        <div className="relative overflow-hidden" style={{ aspectRatio: "9/19" }}>
+          <AnimatePresence mode="wait">
+            <motion.img
+              key={current}
+              src={APP_SCREENS[current].src}
+              alt={APP_SCREENS[current].label}
+              className="absolute inset-0 w-full h-full object-cover object-top"
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </AnimatePresence>
+        </div>
+        {/* Home indicator */}
+        <div className="flex justify-center items-center py-2 bg-white">
+          <div className="w-24 h-1 rounded-full bg-slate-300" />
+        </div>
+      </div>
+      {/* Dots */}
+      <div className="flex gap-1.5 mt-4">
+        {APP_SCREENS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className="h-1.5 rounded-full transition-all duration-300"
+            style={{
+              width: i === current ? "24px" : "6px",
+              background: i === current ? "hsl(199 89% 48%)" : "hsl(215 16% 78%)"
+            }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
-/* ─── Section reveal ────────────────────────────────────────────── */
-function Reveal({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+function PhoneFrame({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
   return (
-    <motion.div
+    <div
+      className={`relative rounded-[2.8rem] overflow-hidden border-4 border-white shadow-2xl ${className}`}
+      style={{
+        boxShadow: "0 40px 100px rgba(41,171,226,0.22), 0 8px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(41,171,226,0.1)",
+      }}
+    >
+      <img src={src} alt={alt} className="w-full h-full object-cover" />
+    </div>
+  );
+}
+
+/* ─── Magnetic button ────────────────────────────────────────────── */
+function MagneticBtn({ children, onClick, className = "", style = {} }: {
+  children: React.ReactNode; onClick: () => void; className?: string; style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLButtonElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 250, damping: 20 });
+  const sy = useSpring(y, { stiffness: 250, damping: 20 });
+  const onMove = useCallback((e: React.MouseEvent) => {
+    const r = ref.current?.getBoundingClientRect();
+    if (!r) return;
+    x.set((e.clientX - r.left - r.width / 2) * 0.35);
+    y.set((e.clientY - r.top - r.height / 2) * 0.35);
+  }, [x, y]);
+  const onLeave = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
+  return (
+    <motion.button
       ref={ref}
-      initial={{ opacity: 0, y: 32 }}
-      animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.65, delay, ease: [0.22, 1, 0.36, 1] }}
+      style={{ ...style, x: sx, y: sy }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      onClick={onClick}
+      whileTap={{ scale: 0.96 }}
       className={className}
     >
       {children}
-    </motion.div>
+    </motion.button>
   );
 }
 
-/* ════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════ */
 const Landing = () => {
   const authUrl = getAuthRedirectUrl();
-  const { t, language, country } = useLanguage();
+  const { language, country } = useLanguage();
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+  // Mouse parallax for hero phone
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const phoneX = useSpring(useTransform(mouseX, [-1, 1], [-14, 14]), { stiffness: 80, damping: 18 });
+  const phoneY = useSpring(useTransform(mouseY, [-1, 1], [-8, 8]), { stiffness: 80, damping: 18 });
+  const heroRef = useRef<HTMLElement>(null);
+  const onHeroMouseMove = useCallback((e: React.MouseEvent) => {
+    const r = heroRef.current?.getBoundingClientRect();
+    if (!r) return;
+    mouseX.set(((e.clientX - r.left) / r.width) * 2 - 1);
+    mouseY.set(((e.clientY - r.top) / r.height) * 2 - 1);
+  }, [mouseX, mouseY]);
 
   const isBrazil = BRL_COUNTRIES.includes(country.code);
   const pricing = isBrazil ? PRICING.brl : PRICING.usd;
   const priceDisplay = `${pricing.symbol}${pricing.monthly.toFixed(2)}`;
-  const priceLabel = language === "pt" ? "/mês" : "/month";
   const isPt = language === "pt";
 
-  const { scrollY } = useScroll();
-  const headerBg = useTransform(scrollY, [0, 80], ["rgba(5,10,25,0)", "rgba(5,10,25,0.92)"]);
-  const heroPara = useTransform(scrollY, [0, 600], ["0%", "30%"]);
-
-  /* Mouse parallax for hero */
-  useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      setMousePos({ x: (e.clientX / window.innerWidth - 0.5) * 20, y: (e.clientY / window.innerHeight - 0.5) * 20 });
-    };
-    window.addEventListener("mousemove", handle);
-    return () => window.removeEventListener("mousemove", handle);
-  }, []);
-
+  /* testimonials */
   const testimonials = isPt ? [
-    { name: "Lucas M.", role: "Usa para si mesmo", avatar: "L", content: "Tomo 3 medicamentos diários para tireoide e pressão. Antes esquecia direto — às vezes dias seguidos. Com o HoraMed, minha adesão chegou a 100%. É literalmente transformador.", rating: 5 },
-    { name: "Maria Helena", role: "Cuida dos pais idosos", avatar: "M", content: "Minha mãe tem 78 anos e toma 6 medicamentos com horários diferentes. Agora tenho paz de saber que ela está cuidada. Não preciso mais ligar 3 vezes por dia para lembrar.", rating: 5 },
-    { name: "Roberto S.", role: "Paciente cardíaco", avatar: "R", content: "Depois do infarto, perder uma dose pode custar a vida. O HoraMed me dá essa segurança todo dia. É como ter um enfermeiro 24h no bolso.", rating: 5 },
-    { name: "Dra. Fernanda", role: "Cardiologista", avatar: "F", content: "Recomendo para todos os meus pacientes. A adesão ao tratamento melhora visivelmente. Já vi casos em que o HoraMed evitou internações.", rating: 5 },
+    { name: "Lucas M.", role: "Usa para si mesmo", avatar: "L", bg: C.primary, content: "Tomo 3 medicamentos diários para tireoide e pressão. Antes esquecia direto. Com o HoraMed, minha adesão chegou a 100%. É literalmente transformador.", rating: 5 },
+    { name: "Maria Helena", role: "Cuida dos pais idosos", avatar: "M", bg: "hsl(152 60% 42%)", content: "Minha mãe tem 78 anos e toma 6 medicamentos com horários diferentes. Agora tenho paz de saber que ela está cuidada, sem ligar 3 vezes por dia.", rating: 5 },
+    { name: "Roberto S.", role: "Paciente cardíaco", avatar: "R", bg: "hsl(0 65% 52%)", content: "Depois do infarto, perder uma dose pode custar a vida. O HoraMed me dá essa segurança todo dia. É como ter um enfermeiro 24h no bolso.", rating: 5 },
+    { name: "Dra. Fernanda", role: "Cardiologista", avatar: "F", bg: "hsl(38 92% 50%)", content: "Recomendo para todos os meus pacientes. A adesão ao tratamento melhora visivelmente. Já vi casos em que o HoraMed evitou internações.", rating: 5 },
   ] : [
-    { name: "Lucas M.", role: "Uses for himself", avatar: "L", content: "I take 3 daily medications for thyroid and blood pressure. I used to forget constantly. With HoraMed, my adherence reached 100%. It's literally life-changing.", rating: 5 },
-    { name: "Mary H.", role: "Cares for elderly parents", avatar: "M", content: "My mom is 78 and takes 6 medications at different times. Now I have peace of mind knowing she's taken care of, without calling 3 times a day.", rating: 5 },
-    { name: "Robert S.", role: "Heart patient", avatar: "R", content: "After my heart attack, missing a dose can cost your life. HoraMed gives me that security every day. It's like having a nurse 24/7 in my pocket.", rating: 5 },
-    { name: "Dr. Fernanda", role: "Cardiologist", avatar: "F", content: "I recommend it to all my patients. Medication adherence improves visibly. I've seen cases where HoraMed prevented hospitalizations.", rating: 5 },
+    { name: "Lucas M.", role: "Uses for himself", avatar: "L", bg: C.primary, content: "I take 3 daily meds for thyroid and blood pressure. I used to forget constantly. With HoraMed, my adherence reached 100%. It's life-changing.", rating: 5 },
+    { name: "Mary H.", role: "Cares for elderly parents", avatar: "M", bg: "hsl(152 60% 42%)", content: "My mom is 78 and takes 6 medications at different times. Now I have peace of mind without calling 3 times a day.", rating: 5 },
+    { name: "Robert S.", role: "Heart patient", avatar: "R", bg: "hsl(0 65% 52%)", content: "After my heart attack, missing a dose can cost your life. HoraMed gives me that security every day. It's like having a nurse 24/7 in my pocket.", rating: 5 },
+    { name: "Dr. Fernanda", role: "Cardiologist", avatar: "F", bg: "hsl(38 92% 50%)", content: "I recommend it to all my patients. Medication adherence improves visibly. I've seen cases where HoraMed prevented hospitalizations.", rating: 5 },
   ];
 
   useEffect(() => {
-    const timer = setInterval(() => setActiveTestimonial(p => (p + 1) % testimonials.length), 5000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setActiveTestimonial(p => (p + 1) % testimonials.length), 5000);
+    return () => clearInterval(t);
   }, [testimonials.length]);
 
   const features = [
-    { icon: Bell, title: isPt ? "Lembretes que chegam na hora" : "Reminders that arrive on time", desc: isPt ? "Notificações precisas. Push, som ou vibração — você decide." : "Precise notifications. Push, sound or vibration — you decide." },
-    { icon: Users, title: isPt ? "Toda a família protegida" : "The whole family protected", desc: isPt ? "Até 5 perfis. Gerencie pais, filhos e cônjuge num só app." : "Up to 5 profiles. Manage parents, children and spouse in one app." },
-    { icon: Brain, title: isPt ? "Clara — sua IA de saúde" : "Clara — your health AI", desc: isPt ? "Tira dúvidas, explica bulas e organiza sua saúde com IA." : "Answers questions, explains prescriptions and organizes your health with AI." },
-    { icon: Camera, title: isPt ? "Scan de receita em segundos" : "Prescription scan in seconds", desc: isPt ? "Fotografe a receita. A IA extrai o medicamento e a dose." : "Photograph the prescription. AI extracts the drug and dosage." },
-    { icon: FileText, title: isPt ? "Carteira de Saúde digital" : "Digital Health Wallet", desc: isPt ? "Exames, vacinas e receitas guardados com segurança." : "Exams, vaccines and prescriptions stored securely." },
-    { icon: Activity, title: isPt ? "Dashboard de adesão" : "Adherence dashboard", desc: isPt ? "Veja sua evolução, sequências e histórico completo." : "See your progress, streaks and complete history." },
-    { icon: Shield, title: isPt ? "Alerta de interações" : "Drug interaction alerts", desc: isPt ? "Combinações perigosas detectadas automaticamente." : "Dangerous combinations detected automatically." },
-    { icon: CalendarCheck, title: isPt ? "Modo viagem" : "Travel mode", desc: isPt ? "Ajuste horários por fuso automaticamente ao viajar." : "Automatically adjust schedules by timezone when traveling." },
+    { icon: Bell, title: isPt ? "Lembretes precisos" : "Precise reminders", desc: isPt ? "Push, som ou vibração na hora certa. Nunca mais esqueça." : "Push, sound or vibration on time. Never forget again." },
+    { icon: Users, title: isPt ? "Família inteira" : "Whole family", desc: isPt ? "Até 5 perfis. Pais, filhos e cônjuge num só app." : "Up to 5 profiles. All family in one app." },
+    { icon: Brain, title: isPt ? "IA Clara" : "Clara AI", desc: isPt ? "Tira dúvidas, explica bulas e organiza sua saúde." : "Answers questions and explains prescriptions." },
+    { icon: Camera, title: isPt ? "Scan de receita" : "Prescription scan", desc: isPt ? "Fotografe a receita — a IA extrai o remédio e a dose." : "Photograph it — AI extracts drug and dosage." },
+    { icon: FileText, title: isPt ? "Carteira de Saúde" : "Health Wallet", desc: isPt ? "Exames, vacinas e receitas guardados com segurança." : "Exams, vaccines, and prescriptions stored securely." },
+    { icon: Activity, title: isPt ? "Dashboard de adesão" : "Adherence dashboard", desc: isPt ? "Sequências, histórico e evolução visual da sua saúde." : "Streaks, history and visual health progress." },
+    { icon: Shield, title: isPt ? "Alerta de interações" : "Interaction alerts", desc: isPt ? "Combinações perigosas detectadas automaticamente." : "Dangerous combinations detected automatically." },
+    { icon: CalendarCheck, title: isPt ? "Modo viagem" : "Travel mode", desc: isPt ? "Ajuste horários por fuso automaticamente ao viajar." : "Auto-adjust schedules by timezone when traveling." },
   ];
 
   const freeFeatures = isPt
@@ -131,576 +300,526 @@ const Landing = () => {
     : ["1 medication", "Basic reminders", "1 profile", "Limited history"];
 
   const premiumFeatures = isPt
-    ? ["Medicamentos ilimitados", "Lembretes inteligentes", "Até 5 perfis familiares", "Histórico completo", "Assistente IA Clara", "Scan de receitas", "Carteira de Saúde", "Verificação de interações", "Dashboard completo", "Modo viagem", "Gamificação", "Suporte prioritário"]
-    : ["Unlimited medications", "Smart reminders", "Up to 5 family profiles", "Full history", "AI assistant Clara", "Prescription scanner", "Health Wallet", "Drug interactions check", "Complete dashboard", "Travel mode", "Gamification", "Priority support"];
+    ? ["Medicamentos ilimitados", "Lembretes inteligentes", "Até 5 perfis", "Histórico completo", "IA Clara", "Scan de receitas", "Carteira de Saúde", "Alerta de interações", "Dashboard completo", "Modo viagem", "Gamificação", "Suporte prioritário"]
+    : ["Unlimited medications", "Smart reminders", "Up to 5 profiles", "Full history", "Clara AI", "Prescription scanner", "Health Wallet", "Interactions check", "Complete dashboard", "Travel mode", "Gamification", "Priority support"];
 
   const stats = [
-    { value: 50000, suffix: "+", label: isPt ? "doses lembradas todo mês" : "doses remembered monthly" },
-    { value: 5000, suffix: "+", label: isPt ? "famílias com saúde organizada" : "families with organized health" },
-    { value: 98, suffix: "%", label: isPt ? "de adesão média dos usuários" : "average user adherence" },
-    { value: 4.9, suffix: "★", label: isPt ? "avaliação na App Store" : "App Store rating" },
+    { value: 50000, suffix: "+", label: isPt ? "doses lembradas/mês" : "doses/month reminded" },
+    { value: 5000, suffix: "+", label: isPt ? "famílias protegidas" : "families protected" },
+    { value: 98, suffix: "%", label: isPt ? "adesão média" : "avg. adherence" },
+    { value: "4.9", suffix: "★", label: isPt ? "avaliação" : "rating" },
   ];
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{ background: "#060c1a" }}>
+    <div className="min-h-screen overflow-x-hidden" style={{ background: C.bgFlat }}>
+      <ScrollProgress />
+      <CursorGlow />
       <SEOHead
-        title={isPt ? "HoraMed — O Guardião da Sua Saúde" : "HoraMed — The Guardian of Your Health"}
+        title={isPt ? "HoraMed — Gestão Completa da Sua Saúde" : "HoraMed — Complete Health Management"}
         description={isPt
-          ? "Pare de arriscar sua saúde esquecendo medicamentos. HoraMed é o assistente inteligente que cuida de você e da sua família — 24 horas por dia, todos os dias."
-          : "Stop risking your health by forgetting medications. HoraMed is the intelligent assistant that takes care of you and your family — 24 hours a day, every day."}
+          ? "Pare de esquecer medicamentos. HoraMed cuida de você e da sua família com lembretes inteligentes, IA e histórico médico digital."
+          : "Stop forgetting medications. HoraMed takes care of you and your family with smart reminders, AI, and digital medical history."}
       />
 
-      {/* ── HEADER ──────────────────────────────────────────── */}
-      <motion.header
-        className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl"
-        style={{ backgroundColor: headerBg, borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <header
+        className="fixed top-0 left-0 right-0 z-50 border-b"
+        style={{ background: "rgba(240,248,255,0.92)", backdropFilter: "blur(16px)", borderColor: C.border }}
       >
         <div className="container mx-auto px-4 sm:px-6 h-16 flex items-center justify-between max-w-7xl">
-          {/* Logo proeminente */}
-          <div className="flex items-center gap-3">
-            <img
-              src={logo}
-              alt="HoraMed"
-              className="h-10 w-auto drop-shadow-lg"
-              style={{ filter: "brightness(1.15) drop-shadow(0 0 8px rgba(56,189,248,0.4))" }}
-            />
-          </div>
+          <img src={logo} alt="HoraMed" className="h-9 w-auto" />
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-white/60 hover:text-white hover:bg-white/10"
+            <button
               onClick={() => window.location.href = authUrl}
+              className="hidden sm:block h-9 px-4 text-sm font-medium rounded-xl border transition-all hover:bg-slate-50"
+              style={{ color: C.muted, borderColor: C.border }}
             >
               {isPt ? "Entrar" : "Login"}
-            </Button>
+            </button>
             <button
               onClick={() => window.location.href = authUrl}
               className="h-9 px-5 text-sm font-bold text-white rounded-xl transition-all hover:scale-105 active:scale-95"
-              style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)", boxShadow: "0 4px 20px rgba(37,99,235,0.5)" }}
+              style={{ background: C.grad, boxShadow: "0 4px 14px hsl(199 89% 48% / 0.4)" }}
             >
               {isPt ? "Começar Grátis" : "Start Free"}
             </button>
           </div>
         </div>
-      </motion.header>
+      </header>
 
-      {/* ═══════════════════════════════════════════════
-          HERO — Full bleed cinematic background
-      ═══════════════════════════════════════════════ */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden">
-
-        {/* Background: imagem cinematográfica com parallax */}
-        <motion.div
-          className="absolute inset-0 z-0"
-          style={{ y: heroPara }}
-        >
+      {/* ═══════════════════════════════════════════════════════
+          HERO — fundo foto desfocada + paleta azul real do app
+      ═══════════════════════════════════════════════════════ */}
+      <section ref={heroRef} onMouseMove={onHeroMouseMove} className="relative min-h-screen flex items-center overflow-hidden pt-16">
+        {/* Foto de fundo desfocada */}
+        <div className="absolute inset-0">
           <img
             src={heroBg}
-            alt="HoraMed background"
+            alt=""
+            aria-hidden
             className="w-full h-full object-cover"
-            style={{ transform: `translate(${mousePos.x * 0.3}px, ${mousePos.y * 0.3}px) scale(1.06)`, transition: "transform 0.08s linear" }}
+            style={{ filter: "blur(4px) brightness(1.05) saturate(0.8)" }}
           />
-          {/* Overlay gradiente multicamada */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(6,12,26,0.55) 0%, rgba(6,12,26,0.35) 40%, rgba(6,12,26,0.80) 80%, rgba(6,12,26,1) 100%)" }} />
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 30% 50%, rgba(37,99,235,0.18) 0%, transparent 60%)" }} />
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 70% 30%, rgba(14,165,233,0.12) 0%, transparent 50%)" }} />
-        </motion.div>
-
-        {/* Partículas/brilhos animados */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-          {[...Array(18)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                width: `${2 + (i % 4)}px`,
-                height: `${2 + (i % 4)}px`,
-                background: i % 3 === 0 ? "#38bdf8" : i % 3 === 1 ? "#818cf8" : "#34d399",
-                left: `${(i * 19 + 5) % 95}%`,
-                top: `${(i * 13 + 8) % 90}%`,
-                opacity: 0.35 + (i % 5) * 0.1,
-              }}
-              animate={{ y: [-10, 10, -10], opacity: [0.2, 0.6, 0.2] }}
-              transition={{ duration: 3 + (i % 4), repeat: Infinity, delay: i * 0.3, ease: "easeInOut" }}
-            />
-          ))}
+          {/* Overlay gradiente com azul do app */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "linear-gradient(135deg, hsl(204 90% 95% / 0.90) 0%, hsl(199 89% 48% / 0.08) 40%, hsl(210 60% 98% / 0.88) 100%)",
+            }}
+          />
         </div>
+        <FloatingParticles />
 
-        <div className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-24 pb-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
+        {/* Animated gradient orbs — depth & immersion */}
+        <motion.div
+          className="absolute pointer-events-none rounded-full"
+          style={{
+            width: 600, height: 600, top: "-20%", left: "-10%",
+            background: "radial-gradient(circle, hsl(199 89% 72% / 0.18) 0%, transparent 65%)"
+          }}
+          animate={{ scale: [1, 1.12, 1], x: [0, 30, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute pointer-events-none rounded-full"
+          style={{
+            width: 400, height: 400, bottom: "5%", right: "-5%",
+            background: "radial-gradient(circle, hsl(207 89% 68% / 0.14) 0%, transparent 65%)"
+          }}
+          animate={{ scale: [1, 1.08, 1], y: [0, -20, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
 
-            {/* ── COLUNA ESQUERDA: Copy ── */}
+        <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-28">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+            {/* LEFT: copy */}
             <div className="text-center lg:text-left">
-              {/* Badge */}
               <motion.div
-                initial={{ opacity: 0, y: -16 }}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.45 }}
                 className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold mb-6"
-                style={{ background: "rgba(37,99,235,0.18)", border: "1px solid rgba(56,189,248,0.3)", color: "#7dd3fc" }}
+                style={{ background: "hsl(199 89% 48% / 0.12)", color: C.primary, border: `1px solid hsl(199 89% 48% / 0.25)` }}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                {isPt ? "7 dias Premium grátis · Sem cartão de crédito" : "7 days Premium free · No credit card"}
+                {isPt ? "7 dias Premium grátis · Sem cartão" : "7 days Premium free · No card"}
               </motion.div>
 
-              {/* H1 — Audacioso, emocional */}
-              <motion.div
-                initial={{ opacity: 0, y: 28 }}
+              <motion.h1
+                initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="text-4xl sm:text-5xl lg:text-[3.6rem] font-black tracking-tight leading-[1.07] mb-5"
+                style={{ color: C.text }}
               >
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.06] mb-6 text-white">
-                  {isPt ? (
-                    <>
-                      O guardião{" "}
-                      <span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4, #10b981)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        invisível
-                      </span>
-                      {" "}da sua{" "}
-                      <span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        saúde.
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      The{" "}
-                      <span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4, #10b981)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        invisible
-                      </span>
-                      {" "}guardian of your{" "}
-                      <span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                        health.
-                      </span>
-                    </>
-                  )}
-                </h1>
+                {isPt ? (
+                  <>
+                    O app que cuida da{" "}
+                    <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                      sua saúde
+                    </span>{" "}
+                    com você.
+                  </>
+                ) : (
+                  <>
+                    The app that cares for{" "}
+                    <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                      your health
+                    </span>{" "}
+                    with you.
+                  </>
+                )}
+              </motion.h1>
 
-                <p className="text-lg sm:text-xl font-medium leading-relaxed mb-8" style={{ color: "rgba(203,213,225,0.85)" }}>
-                  {isPt
-                    ? "Cada dose conta. HoraMed garante que você e todos que você ama nunca percam um medicamento — com inteligência, cuidado e zero esforço."
-                    : "Every dose counts. HoraMed ensures you and everyone you love never miss a medication — with intelligence, care and zero effort."}
-                </p>
+              <motion.p
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-lg leading-relaxed mb-8"
+                style={{ color: C.muted }}
+              >
+                {isPt
+                  ? "Lembretes inteligentes, assistente IA, histórico médico e família inteira num único app. Feito para quem leva a saúde a sério."
+                  : "Smart reminders, AI assistant, medical history and the whole family in one app. Built for those who take health seriously."}
+              </motion.p>
 
-                {/* CTAs */}
-                <div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4">
-                  <button
-                    onClick={() => window.location.href = authUrl}
-                    className="group relative h-14 px-8 text-base font-bold text-white rounded-2xl overflow-hidden transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl active:scale-[0.97] w-full sm:w-auto"
-                    style={{ background: "linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%)", boxShadow: "0 8px 32px rgba(37,99,235,0.5), 0 0 0 1px rgba(56,189,248,0.2)" }}
-                  >
-                    <span className="relative flex items-center justify-center gap-2">
-                      {isPt ? "Proteja sua saúde agora" : "Protect your health now"}
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => window.location.href = authUrl}
-                    className="h-14 px-8 text-base font-medium rounded-2xl border transition-all duration-300 hover:bg-white/10 w-full sm:w-auto"
-                    style={{ color: "rgba(148,163,184,1)", borderColor: "rgba(148,163,184,0.25)" }}
-                  >
-                    {isPt ? "Já tenho conta" : "I already have an account"}
-                  </button>
-                </div>
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.3 }}
+                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
+              >
+                <MagneticBtn
+                  onClick={() => window.location.href = authUrl}
+                  className="group h-14 px-8 text-base font-bold text-white rounded-2xl flex items-center justify-center gap-2 shadow-xl"
+                  style={{ background: C.grad, boxShadow: "0 8px 28px hsl(199 89% 48% / 0.40)" }}
+                >
+                  {isPt ? "Começar agora, grátis" : "Start now, for free"}
+                  <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}>
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.span>
+                </MagneticBtn>
+                <MagneticBtn
+                  onClick={() => window.location.href = authUrl}
+                  className="h-14 px-8 text-base font-semibold rounded-2xl border-2 backdrop-blur-sm"
+                  style={{ color: C.primary, borderColor: C.primary + "55", background: "rgba(255,255,255,0.5)" }}
+                >
+                  {isPt ? "Já tenho conta" : "I have an account"}
+                </MagneticBtn>
+              </motion.div>
 
-                {/* Social proof under CTAs */}
-                <div className="flex items-center gap-3 mt-6 justify-center lg:justify-start">
-                  <div className="flex -space-x-2">
-                    {["#3b82f6", "#10b981", "#f59e0b", "#ec4899"].map((c, i) => (
-                      <div key={i} className="w-7 h-7 rounded-full border-2 border-[#060c1a] flex items-center justify-center text-white text-xs font-bold" style={{ background: c }}>
-                        {["L", "M", "R", "F"][i]}
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <div className="flex gap-0.5">
-                      {[...Array(5)].map(i => <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />)}
+              {/* Social proof avatars */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className="flex items-center gap-3 mt-7 justify-center lg:justify-start"
+              >
+                <div className="flex -space-x-2">
+                  {[C.primary, C.success, "hsl(38 92% 50%)", "hsl(0 65% 52%)"].map((bg, i) => (
+                    <div key={i} className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold"
+                      style={{ background: bg }}>
+                      {["L", "M", "R", "F"][i]}
                     </div>
-                    <p className="text-xs" style={{ color: "rgba(148,163,184,0.8)" }}>
-                      {isPt ? "5.000+ famílias protegidas" : "5,000+ families protected"}
-                    </p>
+                  ))}
+                </div>
+                <div>
+                  <div className="flex gap-0.5">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />)}
                   </div>
+                  <p className="text-xs mt-0.5" style={{ color: C.muted }}>
+                    {isPt ? "5.000+ famílias protegidas" : "5,000+ families protected"}
+                  </p>
                 </div>
               </motion.div>
             </div>
 
-            {/* ── COLUNA DIREITA: Mockup do App ── */}
-            <div className="relative flex items-center justify-center lg:justify-end">
-              {/* Glow atrás do mockup */}
-              <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(37,99,235,0.25) 0%, transparent 70%)", filter: "blur(40px)" }} />
+            {/* RIGHT: carrossel com screenshots reais do app */}
+            <div className="flex items-center justify-center lg:justify-end relative">
+              {/* glow */}
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: "radial-gradient(ellipse at center, hsl(199 89% 48% / 0.18) 0%, transparent 70%)", filter: "blur(50px)" }} />
 
-              {/* Mockup principal */}
               <motion.div
-                initial={{ opacity: 0, x: 40, scale: 0.92 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                initial={{ opacity: 0, y: 36, scale: 0.92 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.9, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                style={{ x: phoneX, y: phoneY }}
                 className="relative z-10"
-                style={{ filter: "drop-shadow(0 32px 64px rgba(37,99,235,0.4))" }}
               >
-                <img
-                  src={appMockupGen}
-                  alt="HoraMed App"
-                  className="w-full max-w-xs sm:max-w-sm mx-auto"
-                  style={{ borderRadius: "2.5rem" }}
-                />
+                {/* Floating badge: lembrete */}
+                <motion.div
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.1, duration: 0.5 }}
+                  className="absolute -left-8 top-10 z-20 flex items-center gap-2.5 rounded-2xl px-3 py-2.5 border shadow-lg"
+                  style={{ background: C.card, borderColor: C.border, minWidth: "160px" }}
+                >
+                  <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: C.grad }}>
+                    <Bell className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: C.text }}>⏰ {isPt ? "Hora do remédio!" : "Time for meds!"}</p>
+                    <p className="text-[10px]" style={{ color: C.muted }}>Omeprazol · 20:00</p>
+                  </div>
+                </motion.div>
+
+                {/* Carrossel com telas reais */}
+                <PhoneCarousel />
+
+                {/* Floating badge: streak */}
+                <motion.div
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 1.3, duration: 0.5 }}
+                  className="absolute -right-8 bottom-16 z-20 flex items-center gap-2.5 rounded-2xl px-3 py-2.5 border shadow-lg"
+                  style={{ background: C.card, borderColor: C.border }}
+                >
+                  <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "linear-gradient(135deg, hsl(38 92% 50%), hsl(28 92% 52%))" }}>
+                    <Trophy className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold" style={{ color: C.text }}>30 {isPt ? "dias" : "days"} 🔥</p>
+                    <p className="text-[10px]" style={{ color: C.muted }}>{isPt ? "Sequência perfeita!" : "Perfect streak!"}</p>
+                  </div>
+                </motion.div>
               </motion.div>
-
-              {/* Floating UI cards */}
-              <FloatCard delay={0.8}
-                className="absolute -left-4 top-12 z-20 rounded-xl px-3 py-2.5 flex items-center gap-2.5"
-                style={{ background: "rgba(15,23,42,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(56,189,248,0.25)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", minWidth: "170px" }}
-              >
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)" }}>
-                  <Bell className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-white">⏰ {isPt ? "Hora do remédio!" : "Time for meds!"}</p>
-                  <p className="text-[10px]" style={{ color: "#94a3b8" }}>Omeprazol · 20:00</p>
-                </div>
-              </FloatCard>
-
-              <FloatCard delay={1.1}
-                className="absolute -right-4 bottom-20 z-20 rounded-xl px-3 py-2.5 flex items-center gap-2.5"
-                style={{ background: "rgba(15,23,42,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(52,211,153,0.25)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
-              >
-                <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}>
-                  <Trophy className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-white">30 {isPt ? "dias" : "days"} 🔥</p>
-                  <p className="text-[10px]" style={{ color: "#94a3b8" }}>{isPt ? "Sequência perfeita!" : "Perfect streak!"}</p>
-                </div>
-              </FloatCard>
-
-              <FloatCard delay={1.3}
-                className="absolute left-2 bottom-8 z-20 rounded-xl px-3 py-2 flex items-center gap-2"
-                style={{ background: "rgba(15,23,42,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(45,212,191,0.25)", boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
-              >
-                <HeartPulse className="h-4 w-4" style={{ color: "#2dd4bf" }} />
-                <p className="text-xs font-semibold text-white">98% {isPt ? "de adesão" : "adherence"}</p>
-              </FloatCard>
             </div>
           </div>
 
-          {/* Scroll indicator */}
+          {/* Scroll cue */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 2 }}
+            transition={{ delay: 1.8 }}
             className="flex justify-center mt-16 cursor-pointer"
-            onClick={() => window.scrollBy({ top: window.innerHeight, behavior: "smooth" })}
+            onClick={() => window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" })}
           >
-            <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ repeat: Infinity, duration: 1.8 }}
-              className="flex flex-col items-center gap-2"
-            >
-              <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "rgba(148,163,184,0.5)" }}>
-                {isPt ? "descobrir mais" : "discover more"}
+            <motion.div animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 1.8 }}
+              className="flex flex-col items-center gap-1.5">
+              <span className="text-xs font-medium uppercase tracking-widest" style={{ color: C.muted }}>
+                {isPt ? "ver mais" : "see more"}
               </span>
-              <ChevronDown className="h-5 w-5" style={{ color: "rgba(148,163,184,0.5)" }} />
+              <ChevronDown className="h-4 w-4" style={{ color: C.muted }} />
             </motion.div>
           </motion.div>
         </div>
-      </section>
+      </section >
 
       {/* ═══════════════════════════════════════════════
           STATS BAR
       ═══════════════════════════════════════════════ */}
-      <section className="py-14 px-4 relative" style={{ background: "rgba(10,18,40,0.95)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+      < section className="py-14 px-4 border-y" style={{ background: C.card, borderColor: C.border }}>
         <div className="container mx-auto max-w-5xl">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
             {stats.map((s, i) => (
-              <Reveal key={i} delay={i * 0.1} className="text-center">
-                <p className="text-3xl sm:text-4xl font-black mb-1.5">
-                  <span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    {typeof s.value === "number" && s.value > 100 ? <Counter to={s.value} suffix={s.suffix} /> : `${s.value}${s.suffix}`}
-                  </span>
+              <Reveal key={i} delay={i * 0.08} className="text-center">
+                <p className="text-3xl sm:text-4xl font-black mb-1" style={{ color: C.primary }}>
+                  {typeof s.value === "number" && s.value > 100
+                    ? <Counter to={s.value} suffix={s.suffix} />
+                    : `${s.value}${s.suffix}`}
                 </p>
-                <p className="text-sm font-medium" style={{ color: "rgba(148,163,184,0.7)" }}>{s.label}</p>
+                <p className="text-sm" style={{ color: C.muted }}>{s.label}</p>
               </Reveal>
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* ═══════════════════════════════════════════════
-          EMOTIONAL HOOK — Full-bleed imagem
+          PROBLEM HOOK
       ═══════════════════════════════════════════════ */}
-      <section className="relative py-0 overflow-hidden" style={{ minHeight: "520px" }}>
-        <img
-          src={familyHealth}
-          alt={isPt ? "Família cuidando da saúde juntos" : "Family taking care of health together"}
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: "center 30%" }}
-        />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(6,12,26,0.92) 0%, rgba(6,12,26,0.70) 50%, rgba(6,12,26,0.85) 100%)" }} />
-        <div className="relative z-10 container mx-auto max-w-4xl px-4 py-24 flex items-center min-h-[520px]">
-          <Reveal>
-            <p className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: "#38bdf8" }}>
+      < section className="py-24 px-4" style={{ background: C.bgFlat }}>
+        <div className="container mx-auto max-w-4xl">
+          <Reveal className="text-center">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6"
+              style={{ background: "hsl(0 65% 52% / 0.1)" }}>
+              <HeartPulse className="h-7 w-7" style={{ color: "hsl(0 65% 52%)" }} />
+            </div>
+            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: C.primary }}>
               {isPt ? "Por que o HoraMed existe" : "Why HoraMed exists"}
             </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight text-white mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight mb-6" style={{ color: C.text }}>
               {isPt ? (
-                <>
-                  "Eu esqueci o remédio."<br />
-                  <span style={{ color: "#f87171" }}>Três palavras que podem mudar tudo.</span>
-                </>
+                <>"Esqueci o remédio."<br /><span style={{ color: "hsl(0 65% 52%)" }}>Três palavras que mudam tudo.</span></>
               ) : (
-                <>
-                  "I forgot my medication."<br />
-                  <span style={{ color: "#f87171" }}>Three words that can change everything.</span>
-                </>
+                <>"I forgot my medication."<br /><span style={{ color: "hsl(0 65% 52%)" }}>Three words that change everything.</span></>
               )}
             </h2>
-            <p className="text-lg sm:text-xl max-w-2xl leading-relaxed" style={{ color: "rgba(203,213,225,0.85)" }}>
+            <p className="text-lg max-w-2xl mx-auto leading-relaxed mb-8" style={{ color: C.muted }}>
               {isPt
-                ? "Metade dos pacientes crônicos não toma os medicamentos corretamente. O resultado? Hospitalizações, piora de doenças, e mortes evitáveis. O HoraMed é a solução — simples, humana e inteligente."
-                : "Half of chronic patients don't take their medications correctly. The result? Hospitalizations, worsening conditions, and preventable deaths. HoraMed is the solution — simple, human and intelligent."}
+                ? "Metade dos pacientes crônicos não toma os medicamentos corretamente. O resultado? Internações evitáveis e piora de doenças. O HoraMed é a solução simples e humana."
+                : "Half of chronic patients don't take their medications correctly. The result? Preventable hospitalizations. HoraMed is the simple, human solution."}
             </p>
-            <div className="flex items-center gap-4 mt-8">
-              <button
-                onClick={() => window.location.href = authUrl}
-                className="h-13 px-8 font-bold text-white rounded-xl transition-all hover:scale-105"
-                style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)", boxShadow: "0 6px 24px rgba(37,99,235,0.5)", paddingTop: "0.75rem", paddingBottom: "0.75rem" }}
-              >
-                {isPt ? "Começar agora, de graça" : "Start now, for free"}
-              </button>
-            </div>
+            <button
+              onClick={() => window.location.href = authUrl}
+              className="h-12 px-8 font-bold text-white rounded-2xl inline-flex items-center gap-2 transition-all hover:scale-105"
+              style={{ background: C.grad, boxShadow: "0 6px 20px hsl(199 89% 48% / 0.35)" }}
+            >
+              {isPt ? "Começar agora, de graça" : "Start now, for free"}
+            </button>
           </Reveal>
         </div>
-      </section>
+      </section >
 
       {/* ═══════════════════════════════════════════════
-          FEATURES GRID — Dark premium
+          FEATURES
       ═══════════════════════════════════════════════ */}
-      <section className="py-24 px-4" style={{ background: "#080f22" }}>
+      < section className="py-24 px-4 border-t" style={{ background: C.card, borderColor: C.border }}>
         <div className="container mx-auto max-w-6xl">
-          <Reveal className="text-center mb-16">
-            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "#38bdf8" }}>
+          <Reveal className="text-center mb-14">
+            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: C.primary }}>
               {isPt ? "Recursos" : "Features"}
             </p>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-4">
-              {isPt ? "Feito para quem levou a sério" : "Built for those who take it seriously"}
+            <h2 className="text-3xl sm:text-4xl font-black mb-4" style={{ color: C.text }}>
+              {isPt ? "Feito para quem leva a sério" : "Built for those who take it seriously"}
             </h2>
-            <p className="text-lg max-w-xl mx-auto" style={{ color: "rgba(148,163,184,0.8)" }}>
-              {isPt ? "Não é um alarme. É um ecossistema completo de cuidado com sua saúde." : "It's not an alarm. It's a complete health care ecosystem."}
+            <p className="text-lg max-w-xl mx-auto" style={{ color: C.muted }}>
+              {isPt ? "Não é um alarme. É um ecossistema completo de cuidado." : "Not just an alarm. A complete care ecosystem."}
             </p>
           </Reveal>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {features.map((f, i) => (
-              <Reveal key={i} delay={i * 0.06}>
+              <Reveal key={i} delay={i * 0.05}>
                 <div
-                  className="group p-5 rounded-2xl cursor-default transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
-                  style={{
-                    background: "rgba(15,23,42,0.7)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    backdropFilter: "blur(8px)",
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(56,189,248,0.3)"}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"}
+                  className="group p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                  style={{ background: C.bgFlat, borderColor: C.border }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = "hsl(199 89% 48% / 0.35)")}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = C.border)}
                 >
-                  <div
-                    className="h-10 w-10 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-110"
-                    style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.2), rgba(6,182,212,0.2))", border: "1px solid rgba(56,189,248,0.2)" }}
-                  >
-                    <f.icon className="h-5 w-5" style={{ color: "#38bdf8" }} />
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
+                    style={{ background: "hsl(199 89% 48% / 0.1)" }}>
+                    <f.icon className="h-5 w-5" style={{ color: C.primary }} />
                   </div>
-                  <h3 className="font-bold text-sm mb-2 text-white">{f.title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: "rgba(148,163,184,0.7)" }}>{f.desc}</p>
+                  <h3 className="font-bold text-sm mb-2" style={{ color: C.text }}>{f.title}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: C.muted }}>{f.desc}</p>
                 </div>
               </Reveal>
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* ═══════════════════════════════════════════════
-          APP SHOWCASE — Screenshots reais + pessoas
+          HOW IT WORKS
       ═══════════════════════════════════════════════ */}
-      <section className="py-24 px-4 relative overflow-hidden" style={{ background: "#060c1a" }}>
-        <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 60% 50%, rgba(37,99,235,0.08) 0%, transparent 60%)" }} />
-        <div className="container mx-auto max-w-6xl relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <Reveal>
-                <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "#38bdf8" }}>
-                  {isPt ? "Como funciona" : "How it works"}
-                </p>
-                <h2 className="text-3xl sm:text-4xl font-black text-white mb-6">
-                  {isPt ? "Pronto em 2 minutos.\nEfetivo para sempre." : "Ready in 2 minutes.\nEffective forever."}
-                </h2>
-                {[
-                  { n: "01", icon: Camera, title: isPt ? "Adicione ou fotografe" : "Add or photograph", desc: isPt ? "Busque o nome, fotografe a receita ou escreva. A IA faz o resto." : "Search the name, photograph the prescription or type it. AI does the rest." },
-                  { n: "02", icon: Bell, title: isPt ? "Configure em segundos" : "Set up in seconds", desc: isPt ? "Escolha horários, frequência e modo de alerta. Simples assim." : "Choose times, frequency and alert mode. That simple." },
-                  { n: "03", icon: HeartPulse, title: isPt ? "Confirme e evolua" : "Confirm and evolve", desc: isPt ? "Um toque confirma a dose. Acompanhe sua adesão crescer todo dia." : "One tap confirms the dose. Watch your adherence grow every day." },
-                ].map((s, i) => (
-                  <Reveal key={i} delay={i * 0.12}>
-                    <div className="flex gap-4 mb-6">
-                      <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center relative" style={{ background: "rgba(37,99,235,0.15)", border: "1px solid rgba(56,189,248,0.2)" }}>
-                        <s.icon className="h-5 w-5" style={{ color: "#38bdf8" }} />
-                        <span className="absolute -top-2 -right-2 text-[9px] font-black px-1.5 rounded-full text-white" style={{ background: "#2563eb" }}>{s.n}</span>
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-white mb-0.5">{s.title}</h3>
-                        <p className="text-sm" style={{ color: "rgba(148,163,184,0.75)" }}>{s.desc}</p>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
-              </Reveal>
-            </div>
-
-            {/* Screenshot real do app */}
-            <Reveal delay={0.2}>
-              <div className="relative flex justify-center">
-                <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at center, rgba(37,99,235,0.2) 0%, transparent 70%)", filter: "blur(30px)" }} />
-                <img
-                  src={appMockup}
-                  alt="HoraMed App Screenshot"
-                  className="relative z-10 max-w-[300px] w-full mx-auto"
-                  style={{ borderRadius: "2.5rem", filter: "drop-shadow(0 24px 48px rgba(37,99,235,0.4))" }}
-                />
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════
-          ELDERLY / SOCIAL PROOF — Foto + Depoimentos
-      ═══════════════════════════════════════════════ */}
-      <section className="py-24 px-4 relative overflow-hidden" style={{ background: "#080f22" }}>
+      < section className="py-24 px-4" style={{ background: C.bgFlat }}>
         <div className="container mx-auto max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-16 items-center mb-20">
-            {/* Foto real de uso */}
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <Reveal>
-              <div className="relative rounded-3xl overflow-hidden" style={{ aspectRatio: "4/3", boxShadow: "0 24px 60px rgba(0,0,0,0.5)" }}>
-                <img src={elderlyCare} alt={isPt ? "Idosa usando o HoraMed" : "Elderly woman using HoraMed"} className="w-full h-full object-cover" />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(6,12,26,0.8) 0%, transparent 50%)" }} />
-                <div className="absolute bottom-5 left-5 right-5">
-                  <div
-                    className="rounded-2xl px-4 py-3 flex items-center gap-3"
-                    style={{ background: "rgba(6,12,26,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.1)" }}
-                  >
-                    <div className="h-10 w-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)" }}>
-                      <Heart className="h-5 w-5 text-white" />
+              <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: C.primary }}>
+                {isPt ? "Como funciona" : "How it works"}
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-black mb-8" style={{ color: C.text }}>
+                {isPt ? "Pronto em 2 minutos.\nEfetivo para sempre." : "Ready in 2 minutes.\nEffective forever."}
+              </h2>
+              {[
+                { n: "01", icon: Camera, title: isPt ? "Adicione ou fotografe" : "Add or photograph", desc: isPt ? "Busque o nome, fotografe a receita ou escreva. A IA faz o resto." : "Search, photograph or type. AI does the rest." },
+                { n: "02", icon: Bell, title: isPt ? "Configure em segundos" : "Set up in seconds", desc: isPt ? "Escolha horários, frequência e modo de alerta. Simples assim." : "Choose times, frequency and alert mode. That simple." },
+                { n: "03", icon: TrendingUp, title: isPt ? "Evolua todo dia" : "Improve every day", desc: isPt ? "Um toque confirma a dose. Veja sua adesão crescer." : "One tap confirms the dose. Watch your adherence grow." },
+              ].map((s, i) => (
+                <Reveal key={i} delay={i * 0.1}>
+                  <div className="flex gap-4 mb-6">
+                    <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center relative border"
+                      style={{ background: "hsl(199 89% 48% / 0.08)", borderColor: "hsl(199 89% 48% / 0.2)" }}>
+                      <s.icon className="h-5 w-5" style={{ color: C.primary }} />
+                      <span className="absolute -top-2 -right-2 text-[9px] font-black px-1.5 rounded-full text-white"
+                        style={{ background: C.primary }}>{s.n}</span>
                     </div>
                     <div>
-                      <p className="text-white font-bold text-sm">{isPt ? "Maria, 78 anos" : "Maria, 78 years old"}</p>
-                      <p className="text-xs" style={{ color: "rgba(148,163,184,0.8)" }}>
-                        {isPt ? "12 meses com 100% de adesão" : "12 months with 100% adherence"}
-                      </p>
+                      <h3 className="font-bold mb-0.5" style={{ color: C.text }}>{s.title}</h3>
+                      <p className="text-sm" style={{ color: C.muted }}>{s.desc}</p>
                     </div>
-                    <div className="ml-auto flex gap-0.5">
-                      {[...Array(5)].map(i => <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />)}
-                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </Reveal>
+
+            {/* Segunda tela real — Rotina */}
+            <Reveal delay={0.2} className="flex justify-center relative">
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: "radial-gradient(ellipse at center, hsl(199 89% 48% / 0.15) 0%, transparent 70%)", filter: "blur(30px)" }} />
+              <div className="relative z-10">
+                <div
+                  className="rounded-[2.8rem] overflow-hidden border-[6px] border-white shadow-2xl w-[230px] sm:w-[260px]"
+                  style={{ boxShadow: "0 40px 100px rgba(41,171,226,0.22), 0 8px 24px rgba(0,0,0,0.10)" }}
+                >
+                  <div className="flex items-center justify-between px-5 py-2 bg-white">
+                    <span className="text-[10px] font-semibold text-slate-400">09:41</span>
+                    <div className="w-14 h-4 rounded-full bg-slate-900" />
+                    <span className="text-[10px] text-slate-400">100%</span>
+                  </div>
+                  <img
+                    src={appScreenRotina}
+                    alt="HoraMed - Tela Rotina"
+                    className="w-full object-cover object-top"
+                    style={{ aspectRatio: "9/19" }}
+                  />
+                  <div className="flex justify-center items-center py-2 bg-white">
+                    <div className="w-24 h-1 rounded-full bg-slate-300" />
                   </div>
                 </div>
               </div>
             </Reveal>
-
-            {/* Coluna de depoimentos */}
-            <div>
-              <Reveal>
-                <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "#38bdf8" }}>
-                  {isPt ? "O que dizem" : "What they say"}
-                </p>
-                <h2 className="text-3xl sm:text-4xl font-black text-white mb-8">
-                  {isPt ? "Vidas transformadas.\nFamílias protegidas." : "Transformed lives.\nProtected families."}
-                </h2>
-              </Reveal>
-              <div className="relative" style={{ minHeight: "220px" }}>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTestimonial}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="absolute inset-0"
-                  >
-                    <div
-                      className="rounded-2xl p-6 h-full"
-                      style={{ background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.08)", backdropFilter: "blur(8px)" }}
-                    >
-                      <div className="flex gap-1 mb-4">
-                        {[...Array(5)].map(i => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-                      </div>
-                      <p className="text-base leading-relaxed text-white/90 mb-5 italic">
-                        "{testimonials[activeTestimonial].content}"
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
-                          style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)" }}>
-                          {testimonials[activeTestimonial].avatar}
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-white">{testimonials[activeTestimonial].name}</p>
-                          <p className="text-xs" style={{ color: "rgba(148,163,184,0.7)" }}>{testimonials[activeTestimonial].role}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-              {/* Dots */}
-              <div className="flex gap-2 mt-56">
-                {testimonials.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveTestimonial(i)}
-                    className="h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: i === activeTestimonial ? "28px" : "8px", background: i === activeTestimonial ? "#38bdf8" : "rgba(148,163,184,0.3)" }}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
         </div>
-      </section>
+      </section >
+
+      {/* ═══════════════════════════════════════════════
+          TESTIMONIALS
+      ═══════════════════════════════════════════════ */}
+      < section className="py-24 px-4 border-t" style={{ background: C.card, borderColor: C.border }}>
+        <div className="container mx-auto max-w-4xl">
+          <Reveal className="text-center mb-12">
+            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: C.primary }}>
+              {isPt ? "O que dizem" : "What they say"}
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-black" style={{ color: C.text }}>
+              {isPt ? "Vidas transformadas." : "Transformed lives."}
+            </h2>
+          </Reveal>
+
+          <div className="relative" style={{ minHeight: "230px" }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTestimonial}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0"
+              >
+                <div className="rounded-2xl p-8 border h-full" style={{ background: C.bgFlat, borderColor: C.border }}>
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonials[activeTestimonial].rating)].map((_, i) =>
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
+                  </div>
+                  <p className="text-base leading-relaxed mb-6 italic" style={{ color: C.text }}>
+                    "{testimonials[activeTestimonial].content}"
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+                      style={{ background: testimonials[activeTestimonial].bg }}>
+                      {testimonials[activeTestimonial].avatar}
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm" style={{ color: C.text }}>{testimonials[activeTestimonial].name}</p>
+                      <p className="text-xs" style={{ color: C.muted }}>{testimonials[activeTestimonial].role}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          <div className="flex gap-2 mt-60 justify-center">
+            {testimonials.map((_, i) => (
+              <button key={i} onClick={() => setActiveTestimonial(i)}
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{ width: i === activeTestimonial ? "28px" : "8px", background: i === activeTestimonial ? C.primary : "hsl(215 16% 80%)" }}
+              />
+            ))}
+          </div>
+        </div>
+      </section >
 
       {/* ═══════════════════════════════════════════════
           PRICING
       ═══════════════════════════════════════════════ */}
-      <section className="py-24 px-4" style={{ background: "#060c1a" }}>
+      < section className="py-24 px-4" style={{ background: C.bgFlat }}>
         <div className="container mx-auto max-w-4xl">
-          <Reveal className="text-center mb-14">
-            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: "#38bdf8" }}>
+          <Reveal className="text-center mb-12">
+            <p className="text-sm font-bold uppercase tracking-widest mb-3" style={{ color: C.primary }}>
               {isPt ? "Planos" : "Pricing"}
             </p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white mb-3">
-              {isPt ? "Sua saúde vale mais do que a maioria das assinaturas." : "Your health is worth more than most subscriptions."}
+            <h2 className="text-3xl sm:text-4xl font-black mb-3" style={{ color: C.text }}>
+              {isPt ? "Sua saúde não tem preço.\nMas cabe no bolso." : "Your health is priceless.\nBut affordable."}
             </h2>
-            <p className="text-lg" style={{ color: "rgba(148,163,184,0.75)" }}>
-              {isPt ? "Comece grátis. Faça upgrade quando quiser." : "Start free. Upgrade whenever you want."}
-            </p>
           </Reveal>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {/* Gratuito */}
+            {/* Free */}
             <Reveal delay={0.1}>
-              <div className="p-8 rounded-3xl h-full" style={{ background: "rgba(15,23,42,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <h3 className="text-xl font-bold text-white mb-1">{isPt ? "Gratuito" : "Free"}</h3>
-                <p className="text-sm mb-6" style={{ color: "rgba(148,163,184,0.7)" }}>{isPt ? "Para começar hoje" : "To start today"}</p>
+              <div className="p-8 rounded-3xl border h-full" style={{ background: C.card, borderColor: C.border }}>
+                <h3 className="text-xl font-bold mb-1" style={{ color: C.text }}>{isPt ? "Gratuito" : "Free"}</h3>
+                <p className="text-sm mb-6" style={{ color: C.muted }}>{isPt ? "Para começar hoje" : "To start today"}</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-black text-white">{pricing.symbol}0</span>
-                  <span className="text-sm" style={{ color: "rgba(148,163,184,0.7)" }}>{priceLabel}</span>
+                  <span className="text-4xl font-black" style={{ color: C.text }}>{pricing.symbol}0</span>
+                  <span className="text-sm ml-1" style={{ color: C.muted }}>{isPt ? "/mês" : "/month"}</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   {freeFeatures.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: "rgba(203,213,225,0.8)" }}>
-                      <Check className="h-4 w-4 shrink-0" style={{ color: "#38bdf8" }} />
-                      {f}
+                    <li key={i} className="flex items-center gap-2.5 text-sm" style={{ color: C.muted }}>
+                      <Check className="h-4 w-4 shrink-0" style={{ color: C.primary }} />{f}
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={() => window.location.href = authUrl}
-                  className="w-full h-12 rounded-xl font-semibold text-sm transition-all hover:bg-white/10"
-                  style={{ border: "1px solid rgba(255,255,255,0.15)", color: "rgba(203,213,225,0.9)" }}
-                >
+                <button onClick={() => window.location.href = authUrl}
+                  className="w-full h-12 rounded-xl font-semibold text-sm border-2 transition-all hover:bg-slate-50"
+                  style={{ color: C.primary, borderColor: C.primary + "55" }}>
                   {isPt ? "Começar grátis" : "Start free"}
                 </button>
               </div>
@@ -708,136 +827,124 @@ const Landing = () => {
 
             {/* Premium */}
             <Reveal delay={0.2}>
-              <div className="p-8 rounded-3xl h-full relative overflow-hidden"
-                style={{ background: "linear-gradient(145deg, #1d4ed8 0%, #0369a1 50%, #0e7490 100%)", boxShadow: "0 20px 60px rgba(37,99,235,0.4)" }}>
-                {/* Shimmer overlay */}
-                <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, transparent 50%)" }} />
-                <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-black" style={{ background: "rgba(255,255,255,0.2)", color: "white" }}>
+              <div className="p-8 rounded-3xl h-full relative overflow-hidden text-white"
+                style={{ background: C.grad, boxShadow: "0 20px 60px hsl(199 89% 48% / 0.40)" }}>
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 50%)" }} />
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-black"
+                  style={{ background: "rgba(255,255,255,0.2)" }}>
                   ✦ {isPt ? "Recomendado" : "Recommended"}
                 </div>
-                <h3 className="text-xl font-black text-white mb-1">Premium</h3>
+                <h3 className="text-xl font-black mb-1">Premium</h3>
                 <p className="text-sm mb-6 text-white/70">{isPt ? "Cuidado sem limites" : "Unlimited care"}</p>
                 <div className="mb-1">
-                  <span className="text-4xl font-black text-white">{priceDisplay}</span>
-                  <span className="text-sm text-white/70">{priceLabel}</span>
+                  <span className="text-4xl font-black">{priceDisplay}</span>
+                  <span className="text-sm text-white/70 ml-1">{isPt ? "/mês" : "/month"}</span>
                 </div>
                 <p className="text-xs text-white/60 mb-8">{isPt ? "7 dias gratuitos para experimentar" : "7 free days to try"}</p>
                 <ul className="space-y-2.5 mb-8">
                   {premiumFeatures.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2.5 text-sm text-white">
-                      <Check className="h-4 w-4 shrink-0 text-white/80" />
-                      {f}
+                    <li key={i} className="flex items-center gap-2.5 text-sm">
+                      <Check className="h-4 w-4 shrink-0 text-white/80" />{f}
                     </li>
                   ))}
                 </ul>
-                <button
-                  onClick={() => window.location.href = authUrl}
-                  className="w-full h-12 rounded-xl font-black text-sm transition-all hover:scale-[1.02] hover:shadow-2xl active:scale-[0.98]"
-                  style={{ background: "white", color: "#1e40af" }}
-                >
+                <button onClick={() => window.location.href = authUrl}
+                  className="w-full h-12 rounded-xl font-black text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  style={{ background: "white", color: C.primary }}>
                   {isPt ? "Testar 7 dias grátis" : "Try 7 days free"}
                 </button>
                 <p className="text-xs text-center text-white/50 mt-3">
-                  {isPt ? "Cancele quando quiser, sem burocracia" : "Cancel anytime, no hassle"}
+                  {isPt ? "Cancele quando quiser" : "Cancel anytime"}
                 </p>
               </div>
             </Reveal>
           </div>
         </div>
-      </section>
+      </section >
 
-      {/* ═══════════════════════════════════════════════
-          TRUST BADGES
-      ═══════════════════════════════════════════════ */}
-      <section className="py-10 px-4" style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#080f22" }}>
+      {/* TRUST BADGES */}
+      < section className="py-10 px-4 border-t" style={{ background: C.card, borderColor: C.border }}>
         <div className="container mx-auto max-w-4xl">
           <div className="flex flex-wrap justify-center items-center gap-8">
             {[
-              { icon: Shield, label: isPt ? "Seus dados nunca são vendidos" : "Your data is never sold" },
-              { icon: Lock, label: isPt ? "Criptografia de ponta a ponta" : "End-to-end encryption" },
+              { icon: Shield, label: isPt ? "Dados nunca vendidos" : "Data never sold" },
+              { icon: Lock, label: isPt ? "Criptografia ponta a ponta" : "End-to-end encryption" },
               { icon: Smartphone, label: "iOS & Android" },
               { icon: MessageCircle, label: isPt ? "Suporte em português" : "Support in English" },
               { icon: Stethoscope, label: isPt ? "Aprovado por médicos" : "Doctor-approved" },
             ].map((t, i) => (
-              <div key={i} className="flex items-center gap-2.5">
-                <t.icon className="h-4 w-4" style={{ color: "#38bdf8" }} />
-                <span className="text-sm font-medium" style={{ color: "rgba(148,163,184,0.7)" }}>{t.label}</span>
+              <div key={i} className="flex items-center gap-2">
+                <t.icon className="h-4 w-4" style={{ color: C.primary }} />
+                <span className="text-sm font-medium" style={{ color: C.muted }}>{t.label}</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
-      {/* ═══════════════════════════════════════════════
-          FINAL CTA — Poderoso e emocional
-      ═══════════════════════════════════════════════ */}
-      <section className="relative py-32 px-4 overflow-hidden" style={{ background: "#060c1a" }}>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, rgba(37,99,235,0.12) 0%, transparent 65%)" }} />
-          <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(6,182,212,0.08) 0%, transparent 50%)" }} />
-        </div>
+      {/* FINAL CTA */}
+      < section className="relative py-28 px-4 overflow-hidden" style={{ background: C.bgFlat }}>
+        <div className="absolute inset-0 pointer-events-none"
+          style={{ background: "radial-gradient(ellipse at center, hsl(199 89% 48% / 0.08) 0%, transparent 65%)" }} />
         <div className="container mx-auto max-w-3xl text-center relative z-10">
           <Reveal>
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-8"
-              style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)", boxShadow: "0 8px 32px rgba(37,99,235,0.4)" }}>
+              style={{ background: C.grad, boxShadow: "0 8px 24px hsl(199 89% 48% / 0.40)" }}>
               <HeartPulse className="h-8 w-8 text-white" />
             </div>
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+            <h2 className="text-4xl sm:text-5xl font-black mb-5 leading-tight" style={{ color: C.text }}>
               {isPt ? (
-                <>Sua saúde merece<br /><span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>o melhor cuidado.</span></>
+                <>Sua saúde merece{" "}
+                  <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    o melhor cuidado.
+                  </span>
+                </>
               ) : (
-                <>Your health deserves<br /><span style={{ background: "linear-gradient(135deg, #3b82f6, #06b6d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>the best care.</span></>
+                <>Your health deserves{" "}
+                  <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    the best care.
+                  </span>
+                </>
               )}
             </h2>
-            <p className="text-xl mb-10 leading-relaxed" style={{ color: "rgba(203,213,225,0.8)" }}>
+            <p className="text-xl mb-10 leading-relaxed" style={{ color: C.muted }}>
               {isPt
-                ? "Não deixe para amanhã o que pode salvar vidas hoje. Comece agora — é grátis, é simples, e pode mudar tudo."
-                : "Don't leave for tomorrow what can save lives today. Start now — it's free, it's simple, and it can change everything."}
+                ? "Não deixe para amanhã. Comece agora — é grátis e simples."
+                : "Don't leave for tomorrow. Start now — it's free and simple."}
             </p>
             <button
               onClick={() => window.location.href = authUrl}
-              className="group h-16 px-14 text-lg font-black text-white rounded-2xl transition-all duration-300 hover:scale-[1.04] hover:shadow-2xl active:scale-[0.97] inline-flex items-center gap-2"
-              style={{ background: "linear-gradient(135deg, #2563eb, #0ea5e9)", boxShadow: "0 12px 40px rgba(37,99,235,0.5), 0 0 0 1px rgba(56,189,248,0.2)" }}
+              className="group h-16 px-14 text-lg font-black text-white rounded-2xl inline-flex items-center gap-2 transition-all hover:scale-[1.04] hover:shadow-2xl active:scale-[0.97]"
+              style={{ background: C.grad, boxShadow: "0 12px 40px hsl(199 89% 48% / 0.45)" }}
             >
               {isPt ? "Criar conta grátis agora" : "Create free account now"}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
-            <p className="mt-5 text-sm" style={{ color: "rgba(100,116,139,0.8)" }}>
-              {isPt ? "Sem cartão de crédito · 7 dias Premium incluso · Cancele quando quiser" : "No credit card · 7 days Premium included · Cancel anytime"}
+            <p className="mt-4 text-sm" style={{ color: C.muted }}>
+              {isPt ? "Sem cartão · 7 dias Premium incluso · Cancele quando quiser" : "No card · 7 days Premium included · Cancel anytime"}
             </p>
           </Reveal>
         </div>
-      </section>
+      </section >
 
-      {/* ── FOOTER ───────────────────────────────────────────── */}
-      <footer className="py-10 px-4" style={{ background: "#030712", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      {/* FOOTER */}
+      < footer className="py-10 px-4 border-t" style={{ background: C.card, borderColor: C.border }}>
         <div className="container mx-auto max-w-6xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <img
-              src={logo}
-              alt="HoraMed"
-              className="h-10 w-auto"
-              style={{ filter: "brightness(1.1) drop-shadow(0 0 6px rgba(56,189,248,0.3))" }}
-            />
-            <div className="flex gap-6 text-sm" style={{ color: "rgba(100,116,139,0.8)" }}>
-              <a href="/termos" className="hover:text-white transition-colors">{isPt ? "Termos de Uso" : "Terms of Use"}</a>
-              <a href="/privacidade" className="hover:text-white transition-colors">{isPt ? "Privacidade" : "Privacy"}</a>
-              <button onClick={() => window.location.href = authUrl} className="hover:text-white transition-colors">{isPt ? "Entrar" : "Login"}</button>
+            <img src={logo} alt="HoraMed" className="h-8 w-auto" />
+            <div className="flex gap-6 text-sm" style={{ color: C.muted }}>
+              <a href="/termos" className="hover:underline">{isPt ? "Termos de Uso" : "Terms of Use"}</a>
+              <a href="/privacidade" className="hover:underline">{isPt ? "Privacidade" : "Privacy"}</a>
+              <button onClick={() => window.location.href = authUrl} className="hover:underline">{isPt ? "Entrar" : "Login"}</button>
             </div>
           </div>
-          <div className="mt-8 pt-6 text-center text-sm" style={{ borderTop: "1px solid rgba(255,255,255,0.04)", color: "rgba(100,116,139,0.5)" }}>
+          <div className="mt-6 pt-6 text-center text-sm border-t" style={{ borderColor: C.border, color: C.muted }}>
             © {new Date().getFullYear()} HoraMed. {isPt ? "Todos os direitos reservados." : "All rights reserved."}
           </div>
         </div>
-      </footer>
-
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-        }
-      `}</style>
-    </div>
+      </footer >
+    </div >
   );
 };
 
