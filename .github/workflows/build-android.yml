@@ -1,19 +1,10 @@
 name: Build Android AAB
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      version_code:
-        description: 'Android versionCode (ex: 19)'
-        required: true
-        default: '19'
-      version_name:
-        description: 'Android versionName (ex: 1.0.19)'
-        required: true
-        default: '1.0.19'
 
 jobs:
   build:
@@ -21,58 +12,47 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v3
 
-      - name: Install dependencies
-        run: npm ci
+      - run: npm ci
 
-      - name: Create .env file
+      - name: Create .env
         run: |
-          cat > .env << EOF
-          VITE_FIREBASE_API_KEY="${{ secrets.VITE_FIREBASE_API_KEY }}"
-          VITE_FIREBASE_AUTH_DOMAIN="${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}"
-          VITE_FIREBASE_PROJECT_ID="${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
-          VITE_FIREBASE_STORAGE_BUCKET="${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}"
-          VITE_FIREBASE_MESSAGING_SENDER_ID="${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}"
-          VITE_FIREBASE_APP_ID="${{ secrets.VITE_FIREBASE_APP_ID }}"
-          VITE_FIREBASE_MEASUREMENT_ID="${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}"
+          cat > .env << 'EOF'
+          VITE_FIREBASE_API_KEY="AIzaSyAeEHqEKubTYTZboROg71VOYq_1WqoRjck"
+          VITE_FIREBASE_AUTH_DOMAIN="horamed-firebase.firebaseapp.com"
+          VITE_FIREBASE_PROJECT_ID="horamed-firebase"
+          VITE_FIREBASE_STORAGE_BUCKET="horamed-firebase.firebasestorage.app"
+          VITE_FIREBASE_MESSAGING_SENDER_ID="299174581868"
+          VITE_FIREBASE_APP_ID="1:299174581868:web:8f12e40d915f5d9e956a49"
+          VITE_FIREBASE_MEASUREMENT_ID="G-4JLQ2SGXSE"
           EOF
 
-      - name: Build web (production)
-        run: npm run build
+      - run: npm run build
 
-      - name: Sync web assets to Android
-        run: npx cap sync android
+      - run: npx cap sync android
 
-      - name: Decode keystore
-        run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/keystore/horamed-release.keystore
-
-      - name: Build Android AAB (release)
+      - name: Build AAB
         working-directory: android
         env:
-          HORAMED_KEYSTORE_PASSWORD: ${{ secrets.HORAMED_KEYSTORE_PASSWORD }}
+          HORAMED_KEYSTORE_PASSWORD: "Gringo08!"
         run: ./gradlew bundleRelease --no-daemon
 
-      - name: Upload AAB artifact
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: horamed-release-${{ github.run_number }}
+          name: app-release.aab
           path: android/app/build/outputs/bundle/release/app-release.aab
-          retention-days: 30
+          retention-days: 7
