@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner, toast } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -352,13 +352,13 @@ const App = () => {
               <TooltipProvider>
                 <ProfileCacheProvider>
                   <SubscriptionProvider>
-                    <BrowserRouter>
+                    <HashRouter>
                       <AuthProvider>
                         <ScrollToTop />
                         {showSplash && <SplashScreen onComplete={handleSplashComplete} />}
                         <AppContent />
                       </AuthProvider>
-                    </BrowserRouter>
+                    </HashRouter>
                   </SubscriptionProvider>
                 </ProfileCacheProvider>
               </TooltipProvider>
