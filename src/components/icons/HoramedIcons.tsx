@@ -483,3 +483,13 @@ export function IconVolume(props: IconProps) {
         </BaseIcon>
     );
 }
+
+export function IconSilverware(props: IconProps) {
+    return (
+        <BaseIcon {...props}>
+            <path d="M3 2v7c0 1.1.9 2 2 2 1.1 0 2-.9 2-2V2" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M7 2v20" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        </BaseIcon>
+    );
+}

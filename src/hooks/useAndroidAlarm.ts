@@ -240,7 +240,7 @@ export const useAndroidAlarm = () => {
               allowWhileIdle: true, // CRITICAL: Works in Doze mode
             },
             channelId: ALARM_CHANNEL_ID,
-            smallIcon: "ic_stat_icon",
+            smallIcon: "ic_stat_pill",
             largeIcon: "ic_launcher",
             sound: config.sound || "notification.wav",
             actionTypeId: "MEDICATION_ALARM",

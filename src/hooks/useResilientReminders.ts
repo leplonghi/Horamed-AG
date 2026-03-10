@@ -108,6 +108,7 @@ export const useResilientReminders = () => {
               id: generateNotificationId(data.doseId),
               schedule: { at: data.scheduledAt },
               sound: undefined,
+              smallIcon: "ic_stat_pill",
               actionTypeId: "MEDICATION_REMINDER",
               extra: {
                 doseId: data.doseId,
