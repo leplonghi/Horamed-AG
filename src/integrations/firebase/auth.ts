@@ -28,6 +28,20 @@ setPersistence(auth, isNativePlatform ? indexedDBLocalPersistence : browserLocal
     console.error('Failed to set auth persistence:', err);
 });
 
+function isNoCredentialAvailableError(error: unknown) {
+    if (!error || typeof error !== 'object') return false
+
+    const message = 'message' in error && typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : ''
+
+    return (
+        message.includes('nocredentialexception') ||
+        message.includes('no credential available') ||
+        message.includes('no credentials available')
+    )
+}
+
 export interface AuthState {
     user: User | null
     loading: boolean
@@ -121,9 +135,24 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             if (options?.prompt) customParameters.push({ key: 'prompt', value: options.prompt })
             if (options?.login_hint) customParameters.push({ key: 'login_hint', value: options.login_hint })
 
-            const nativeResult = await FirebaseAuthentication.signInWithGoogle(
-                customParameters.length > 0 ? { customParameters } : undefined
-            )
+            const nativeOptions = customParameters.length > 0 ? { customParameters } : {}
+            let nativeResult
+
+            try {
+                nativeResult = await FirebaseAuthentication.signInWithGoogle(nativeOptions)
+            } catch (error) {
+                const shouldFallbackToLegacyGoogleSignIn =
+                    Capacitor.getPlatform() === 'android' && isNoCredentialAvailableError(error)
+
+                if (!shouldFallbackToLegacyGoogleSignIn) {
+                    throw error
+                }
+
+                nativeResult = await FirebaseAuthentication.signInWithGoogle({
+                    ...nativeOptions,
+                    useCredentialManager: false,
+                })
+            }
 
             const idToken = nativeResult.credential?.idToken
             if (!idToken) {
