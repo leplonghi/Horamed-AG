@@ -9,6 +9,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "migrate:export": "tsx scripts/export-supabase-data.ts",
     "migrate:import": "tsx scripts/import-to-firebase.ts",

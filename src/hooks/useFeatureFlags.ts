@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
-import { fetchCollection } from "@/integrations/firebase";
+import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FeatureFlag {
-  id: string;
   key: string;
   enabled: boolean;
-  config: Record<string, unknown>;
+  config: Record<string, unknown> | null;
 }
 
 interface FeatureFlags {
@@ -17,6 +16,7 @@ interface FeatureFlags {
   aiStreaming: boolean;
   caregiverHandshake: boolean;
   consultationQR: boolean;
+  affiliate: boolean;
   interactionsLite: boolean;
 }
 
@@ -29,49 +29,50 @@ const DEFAULT_FLAGS: FeatureFlags = {
   aiStreaming: false,
   caregiverHandshake: false,
   consultationQR: false,
+  affiliate: false,
   interactionsLite: false,
 };
+
+const FEATURE_FLAG_KEYS = new Set<keyof FeatureFlags>(
+  Object.keys(DEFAULT_FLAGS) as Array<keyof FeatureFlags>,
+);
 
 export function useFeatureFlags() {
   const [flags, setFlags] = useState<FeatureFlags>(DEFAULT_FLAGS);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadFeatureFlags();
-  }, []);
-
-  const loadFeatureFlags = async () => {
+  const loadFeatureFlags = useCallback(async () => {
     try {
-      // Trying to fetch from Firestore 'featureFlags' collection
-      // Ensure this collection exists and is readable in Firestore Security Rules
-      // If collection doesn't exist, it will return empty array
-      const { data } = await fetchCollection<FeatureFlag>("featureFlags");
+      const { data, error } = await supabase
+        .from("feature_flags")
+        .select("key, enabled, config");
 
-      if (data && data.length > 0) {
-        // Flatten array to object
-        const flagsMap = data.reduce((acc, flag) => {
-          // Assume document has 'key' and 'enabled' fields
-          // Or document ID is the key? 
-          // Supabase version had 'key' column. Let's assume documents have 'key' field or use doc ID as key.
-          const flagKey = flag.key || flag.id;
-          if (flagKey) {
-            acc[flagKey as keyof FeatureFlags] = flag.enabled;
+      if (error) {
+        throw error;
+      }
+
+      if (data) {
+        const flagsMap = (data as FeatureFlag[]).reduce<FeatureFlags>((acc, flag) => {
+          if (FEATURE_FLAG_KEYS.has(flag.key as keyof FeatureFlags)) {
+            const key = flag.key as keyof FeatureFlags;
+            acc[key] = Boolean(flag.enabled);
           }
+
           return acc;
         }, { ...DEFAULT_FLAGS });
 
         setFlags(flagsMap);
-      } else {
-        // Fallback or use defaults if no data found (e.g. migration not run yet)
-        console.warn("No feature flags found in Firestore. Using defaults.");
-        setFlags(DEFAULT_FLAGS);
       }
     } catch (error) {
       console.error("Error loading feature flags:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void loadFeatureFlags();
+  }, [loadFeatureFlags]);
 
   const isEnabled = (feature: keyof FeatureFlags): boolean => {
     return flags[feature] || false;
