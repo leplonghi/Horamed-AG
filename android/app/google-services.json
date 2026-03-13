@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "299174581868-s7mi66tm6cnrol24atgfq9pd5be74ir4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.horamed.app",
+            "certificate_hash": "c5fd343bfc95f30833ee2d9075ae2e788533866c"
+          }
+        },
+        {
           "client_id": "299174581868-a82msjkl0jfioh9813kjdao82tgnm64d.apps.googleusercontent.com",
           "client_type": 3
         }

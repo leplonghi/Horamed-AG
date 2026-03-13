@@ -23,6 +23,10 @@ const config: CapacitorConfig = {
       style: "DARK",
       resizeOnFullScreen: true,
     },
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ["google.com"],
+    },
   },
   android: {
     buildOptions: {

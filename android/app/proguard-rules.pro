@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Suppress missing class warnings for optional auth providers in @capacitor-firebase/authentication
+# These providers (Facebook, Microsoft, etc.) are included in the plugin AAR but not used by this app
+-dontwarn com.facebook.**
+-dontwarn com.microsoft.**
+-dontwarn com.github.microsoftgraph.**

@@ -4,4 +4,5 @@
     <string name="title_activity_main">HoraMed</string>
     <string name="package_name">com.horamed.app</string>
     <string name="custom_url_scheme">com.horamed.app</string>
+    <string name="default_web_client_id">299174581868-a82msjkl0jfioh9813kjdao82tgnm64d.apps.googleusercontent.com</string>
 </resources>

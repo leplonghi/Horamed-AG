@@ -5,6 +5,7 @@ import { getStorage, connectStorageEmulator } from 'firebase/storage'
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions'
 import { getAnalytics } from 'firebase/analytics'
 import { getMessaging } from 'firebase/messaging'
+import { Capacitor } from '@capacitor/core'
 
 // Firebase configuration from environment variables
 const firebaseConfig = {
@@ -60,11 +61,15 @@ export const db = getFirestore(app)
 export const storage = getStorage(app)
 export const functions = getFunctions(app) // Default region: us-central1
 
-// Initialize Analytics (only in production)
-export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null
+// Initialize Analytics (only in browser, not in Capacitor native WebView)
+export const analytics = typeof window !== 'undefined' && !Capacitor.isNativePlatform()
+  ? (() => { try { return getAnalytics(app) } catch (e) { console.warn('Analytics init failed:', e); return null } })()
+  : null
 
-// Initialize Messaging (only in browser environment)
-export const messaging = typeof window !== 'undefined' ? getMessaging(app) : null
+// Initialize Messaging (only in browser with service worker support, not in Capacitor native WebView)
+export const messaging = typeof window !== 'undefined' && !Capacitor.isNativePlatform()
+  ? (() => { try { return getMessaging(app) } catch (e) { console.warn('Messaging init failed:', e); return null } })()
+  : null
 
 // Connect to emulators in development
 if (import.meta.env.DEV) {
