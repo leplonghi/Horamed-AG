@@ -299,7 +299,6 @@ const Landing = () => {
 
   const stats = [
     { value: 50000, suffix: "+", label: isPt ? "doses lembradas/mês" : "doses/month reminded" },
-    { value: 5000, suffix: "+", label: isPt ? "famílias protegidas" : "families protected" },
     { value: 98, suffix: "%", label: isPt ? "adesão média" : "avg. adherence" },
     { value: "4.9", suffix: "★", label: isPt ? "avaliação" : "rating" },
   ];
@@ -433,8 +432,8 @@ const Landing = () => {
                 style={{ color: C.muted }}
               >
                 {isPt
-                  ? "Lembretes inteligentes, assistente IA, histórico médico e família inteira num único app. Feito para quem leva a saúde a sério."
-                  : "Smart reminders, AI assistant, medical history and the whole family in one app. Built for those who take health seriously."}
+                  ? "Lembretes de medicamentos inteligentes, assistente IA de saúde, histórico médico e gerenciamento da família inteira — tudo num só app."
+                  : "Smart medication reminders, AI health assistant, medical history, and your whole family — all in one app."}
               </motion.p>
 
               <motion.div
@@ -482,7 +481,7 @@ const Landing = () => {
                     {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />)}
                   </div>
                   <p className="text-xs mt-0.5" style={{ color: C.muted }}>
-                    {isPt ? "5.000+ famílias protegidas" : "5,000+ families protected"}
+                    {isPt ? "Gratuito para começar" : "Free to get started"}
                   </p>
                 </div>
               </motion.div>

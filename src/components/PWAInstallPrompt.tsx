@@ -22,7 +22,7 @@ export default function PWAInstallPrompt() {
 
   const [iosStep, setIosStep] = useState(1);
 
-  // Auto-show prompt after short delay for first-time visitors
+  // Auto-show prompt after user has had time to read the page
   useEffect(() => {
     // Don't show if already installed or in standalone mode
     if (isInstalled || isStandalone) return;
@@ -31,7 +31,7 @@ export default function PWAInstallPrompt() {
       if (isIOS || canInstall) {
         requestShowPrompt();
       }
-    }, 1500);
+    }, 30000);
 
     return () => clearTimeout(timer);
   }, [canInstall, isIOS, isInstalled, isStandalone, requestShowPrompt]);
@@ -44,7 +44,7 @@ export default function PWAInstallPrompt() {
       if ((canInstall || isIOS) && !showPrompt) {
         requestShowPrompt();
       }
-    }, 4000);
+    }, 60000);
 
     return () => clearTimeout(timer);
   }, [canInstall, isIOS, isInstalled, isStandalone, showPrompt, requestShowPrompt]);
@@ -85,7 +85,7 @@ export default function PWAInstallPrompt() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
-            onClick={hidePrompt}
+            onClick={dismissPrompt}
           />
 
           {/* Modal */}
@@ -105,7 +105,7 @@ export default function PWAInstallPrompt() {
               {/* Header with close button */}
               <div className="relative px-6 pt-2 md:pt-4">
                 <button
-                  onClick={hidePrompt}
+                  onClick={dismissPrompt}
                   className="absolute top-2 right-4 md:top-3 md:right-4 p-2 rounded-full hover:bg-muted transition-colors"
                   aria-label={t('common.close')}
                 >
