@@ -243,7 +243,7 @@ Se não conseguir identificar, retorne um JSON com campos vazios.`
     );
   } catch (error) {
     console.error("Error in extract-exam function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Internal server error";
+    const errorMessage = "Erro interno. Tente novamente.";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

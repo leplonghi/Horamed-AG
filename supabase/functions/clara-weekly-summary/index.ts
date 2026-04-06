@@ -210,7 +210,7 @@ REGRAS:
   } catch (error) {
     console.error("Weekly summary error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro ao gerar resumo" }),
+      JSON.stringify({ error: "Erro ao gerar resumo. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

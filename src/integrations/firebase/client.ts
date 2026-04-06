@@ -22,13 +22,10 @@ const firebaseConfig = {
 if (import.meta.env.DEV) {
     console.log('🔥 Firebase Client Initialization', {
         mode: import.meta.env.MODE,
-        isDev: import.meta.env.DEV,
-        isProd: import.meta.env.PROD,
         hasApiKey: !!firebaseConfig.apiKey,
         hasAuthDomain: !!firebaseConfig.authDomain,
         hasProjectId: !!firebaseConfig.projectId,
         hasAppId: !!firebaseConfig.appId,
-        projectId: firebaseConfig.projectId,
     });
 }
 

@@ -152,7 +152,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in voice-to-text:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = 'Erro interno. Tente novamente.';
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {

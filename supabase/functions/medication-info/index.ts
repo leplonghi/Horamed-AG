@@ -33,7 +33,7 @@ serve(async (req) => {
     if (!parseResult.success) {
       console.error("[MEDICATION-INFO] Validation error:", parseResult.error.message);
       return new Response(
-        JSON.stringify({ error: "Invalid request", details: parseResult.error.issues }),
+        JSON.stringify({ error: "Invalid request" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -176,7 +176,7 @@ Responda de forma concisa e objetiva.`;
 
   } catch (error) {
     console.error("[MEDICATION-INFO] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = "Erro interno. Tente novamente.";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -235,7 +235,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = 'Erro interno. Tente novamente.';
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

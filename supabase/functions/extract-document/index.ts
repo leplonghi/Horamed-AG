@@ -263,8 +263,8 @@ serve(async (req) => {
       });
       
       return new Response(
-        JSON.stringify({ error: "Erro ao processar documento com Gemini", details: errorText }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Erro ao processar documento. Tente novamente ou use outro arquivo." }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

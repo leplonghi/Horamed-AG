@@ -254,7 +254,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[SCHEDULE] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown' }),
+      JSON.stringify({ error: 'Internal server error', message: 'Erro interno.' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

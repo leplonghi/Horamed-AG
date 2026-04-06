@@ -60,7 +60,7 @@ serve(async (req) => {
     if (!parseResult.success) {
       console.error('[CAREGIVER-INVITE] Validation error:', parseResult.error.message);
       return new Response(
-        JSON.stringify({ error: 'Invalid request data', details: parseResult.error.issues }),
+        JSON.stringify({ error: 'Invalid request data' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -176,10 +176,12 @@ serve(async (req) => {
     throw new Error('Invalid action');
 
   } catch (error) {
-    console.error('Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
+    console.error('[CAREGIVER-INVITE] Error:', error);
+    // Return generic message — do not expose internal error details to the client
+    const isKnownError = error instanceof Error && ['Invalid action', 'Unauthorized', 'Invalid request'].some(m => error.message.includes(m));
+    const clientMessage = isKnownError ? (error as Error).message : 'Erro ao processar solicitação. Tente novamente.';
+    return new Response(JSON.stringify({ error: clientMessage }), {
+      status: isKnownError ? 400 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
