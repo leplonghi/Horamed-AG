@@ -3,6 +3,7 @@ import { fetchDocument } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { isFeatureNew } from "@/lib/featureAge";
 import { IconPlans, IconCrown as Crown, IconChevronRight as ChevronRight, IconHistory as History, IconFile as FileText, IconUsers as Users, IconGear as Settings, IconSignOut as LogOut, IconQuestion as HelpCircle, IconShield as Shield, IconBell as Bell, IconMedications as Pill, IconActivity as Activity, IconGift as Gift } from "@/components/icons/HoramedIcons";
 import { BookOpen, Airplane as Plane, QrCode, Package, Folder as FolderHeart } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
@@ -103,14 +104,14 @@ export default function More() {
           description: t('more.sideEffectsDiaryDesc'),
           icon: Activity,
           path: "/diario-efeitos",
-          badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
+          badge: isFeatureNew('side_effects_diary') ? <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge> : null,
         },
         {
           title: t('more.travelMode'),
           description: t('more.travelModeDesc'),
           icon: Plane,
           path: "/viagem",
-          badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
+          badge: isFeatureNew('travel_mode') ? <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge> : null,
         },
         {
           title: t('more.doseHistory'),

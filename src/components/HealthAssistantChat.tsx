@@ -10,9 +10,9 @@ import { toast } from "sonner";
 import { useAILimits } from "@/hooks/useAILimits";
 import { PremiumPaywall } from "./PremiumPaywall";
 import { Alert, AlertDescription } from "./ui/alert";
-
 import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { auth, fetchCollection, where } from "@/integrations/firebase";
 
 interface Message {
   role: "user" | "assistant";
@@ -66,6 +66,21 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
     try {
       const { data: { session } } = await supabase.auth.getSession();
 
+      // Build medication context to personalise Clara's responses
+      let userMedications = '';
+      const user = auth.currentUser;
+      if (user) {
+        const { data: meds } = await fetchCollection<{ name: string; doseText?: string; dose_text?: string }>(
+          `users/${user.uid}/medications`,
+          [where('isActive', '==', true)]
+        );
+        if (meds && meds.length > 0) {
+          userMedications = meds
+            .map(m => `${m.name}${m.doseText || m.dose_text ? ` (${m.doseText || m.dose_text})` : ''}`)
+            .join(', ');
+        }
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/health-assistant`,
         {
@@ -79,6 +94,7 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
               role: m.role,
               content: m.content,
             })),
+            userMedications,
           }),
         }
       );

@@ -98,7 +98,21 @@ export default function MiniWeekCalendar({
     if (!data || data.total === 0) return "empty";
     if (data.completed === data.total) return "complete";
     if (data.completed > 0) return "partial";
-    if (isPast && !isDayToday) return "missed";
+    if (isPast && !isDayToday) {
+      // Holiday forgiveness: check 7-day window around this day
+      let windowCompleted = 0, windowTotal = 0;
+      for (let w = -3; w <= 3; w++) {
+        const wKey = format(addDays(day, w), "yyyy-MM-dd");
+        const wData = doseCounts[wKey];
+        if (wData && wData.total > 0) {
+          windowCompleted += wData.completed;
+          windowTotal += wData.total;
+        }
+      }
+      const weeklyAdherence = windowTotal > 0 ? windowCompleted / windowTotal : 0;
+      if (weeklyAdherence >= 0.8) return "forgiven";
+      return "missed";
+    }
     return "pending";
   };
 
@@ -222,22 +236,34 @@ export default function MiniWeekCalendar({
                           fill="none"
                           className="text-muted/10"
                         />
-                        <motion.circle
-                          cx="16" cy="16" r="13"
-                          strokeWidth="2.5"
-                          fill="none"
-                          strokeLinecap="round"
-                          initial={{ strokeDasharray: "0 82" }}
-                          animate={{ strokeDasharray: `${(progress / 100) * 82} 82` }}
-                          transition={{ duration: 0.8, delay: i * 0.05, ease: "circOut" }}
-                          className={cn(
-                            "transition-colors duration-500",
-                            status === "complete" && "stroke-emerald-500",
-                            status === "partial" && "stroke-amber-500",
-                            status === "pending" && "stroke-primary",
-                            status === "missed" && "stroke-destructive"
-                          )}
-                        />
+                        {status === "forgiven" ? (
+                          // Dashed grey ring for forgiven days
+                          <circle
+                            cx="16" cy="16" r="13"
+                            strokeWidth="2.5"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeDasharray="4 3"
+                            className="stroke-slate-400"
+                          />
+                        ) : (
+                          <motion.circle
+                            cx="16" cy="16" r="13"
+                            strokeWidth="2.5"
+                            fill="none"
+                            strokeLinecap="round"
+                            initial={{ strokeDasharray: "0 82" }}
+                            animate={{ strokeDasharray: `${(progress / 100) * 82} 82` }}
+                            transition={{ duration: 0.8, delay: i * 0.05, ease: "circOut" }}
+                            className={cn(
+                              "transition-colors duration-500",
+                              status === "complete" && "stroke-emerald-500",
+                              status === "partial" && "stroke-amber-500",
+                              status === "pending" && "stroke-primary",
+                              status === "missed" && "stroke-destructive"
+                            )}
+                          />
+                        )}
                       </svg>
                     )}
 
@@ -250,6 +276,8 @@ export default function MiniWeekCalendar({
                       >
                         <Check className="w-4 h-4 text-emerald-500" />
                       </motion.div>
+                    ) : status === "forgiven" && !isSelected ? (
+                      <Check className="w-3.5 h-3.5 text-slate-400" />
                     ) : status === "missed" && !isSelected ? (
                       <AlertCircle className="w-4 h-4 text-destructive" />
                     ) : (
@@ -269,7 +297,8 @@ export default function MiniWeekCalendar({
                       status === "complete" && "bg-emerald-500/15 text-emerald-600",
                       status === "partial" && "bg-amber-500/15 text-amber-600",
                       status === "pending" && "bg-primary/15 text-primary",
-                      status === "missed" && "bg-destructive/15 text-destructive"
+                      status === "missed" && "bg-destructive/15 text-destructive",
+                      status === "forgiven" && "bg-slate-100 text-slate-400"
                     )}
                   >
                     {data.completed}/{data.total}

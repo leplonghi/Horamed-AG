@@ -53,7 +53,7 @@ export default function GoogleAd({
   responsive = true,
   className = ''
 }: GoogleAdProps) {
-  const { hasFeature } = useSubscription();
+  const { hasFeature, isOnTrial } = useSubscription();
   const adRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [adLoaded, setAdLoaded] = useState(false);
@@ -61,7 +61,7 @@ export default function GoogleAd({
 
   // Intersection Observer for lazy loading
   useEffect(() => {
-    if (hasFeature('no_ads')) return;
+    if (hasFeature('no_ads') || isOnTrial) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -114,7 +114,7 @@ export default function GoogleAd({
     };
   }, [isVisible, adLoaded, hasFeature]);
 
-  if (hasFeature('no_ads')) return null;
+  if (hasFeature('no_ads') || isOnTrial) return null;
 
   return (
     <div ref={adRef} className={`google-ad-container ${className}`}>

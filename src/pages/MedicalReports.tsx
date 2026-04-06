@@ -8,7 +8,8 @@ import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { useSubscription } from "@/hooks/useSubscription";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import { FileText, Download, CalendarBlank as Calendar, Heartbeat as Activity, Pill, CaretLeft as ChevronLeft, Clock, FileText as FileCheck } from "@phosphor-icons/react";
+import { FileText, Download, CalendarBlank as Calendar, Heartbeat as Activity, Pill, CaretLeft as ChevronLeft, Clock, FileText as FileCheck, ShareNetwork as Share2 } from "@phosphor-icons/react";
+import { shareTextViaWhatsApp } from "@/lib/shareUtils";
 import {
   Select,
   SelectContent,
@@ -234,10 +235,21 @@ export default function MedicalReports() {
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
-            <div>
+            <div className="flex-1">
               <h1 className="text-2xl font-bold text-foreground">Relatórios Médicos</h1>
               <p className="text-sm text-muted-foreground">Gere relatórios profissionais em PDF</p>
             </div>
+            {isPremium && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => shareTextViaWhatsApp('Acompanhe meu tratamento pelo HoraMed — relatórios profissionais de medicamentos e aderência.')}
+                className="gap-1.5 shrink-0"
+              >
+                <Share2 className="h-4 w-4" />
+                Compartilhar
+              </Button>
+            )}
           </div>
 
           {/* Premium Notice */}

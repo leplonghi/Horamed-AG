@@ -10,16 +10,12 @@ import notificationService from "@/services/NotificationService";
 
 // Step components
 import OnboardingWelcomeNew from "./steps/OnboardingWelcomeNew";
-import OnboardingHowItWorks from "./steps/OnboardingHowItWorks";
 import OnboardingFirstItem from "./steps/OnboardingFirstItem";
 import OnboardingSetTime from "./steps/OnboardingSetTime";
-import OnboardingPermissions from "./steps/OnboardingPermissions";
 import OnboardingWaiting from "./steps/OnboardingWaiting";
-import OnboardingFirstDose from "./steps/OnboardingFirstDose";
 import OnboardingCelebration from "./steps/OnboardingCelebration";
-import OnboardingClara from "./steps/OnboardingClara";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 5;
 
 export interface OnboardingData {
   itemName: string;
@@ -41,6 +37,10 @@ export default function OnboardingFlow() {
     notificationPermission: false,
   });
 
+  const updateData = useCallback((updates: Partial<OnboardingData>) => {
+    setData(prev => ({ ...prev, ...updates }));
+  }, []);
+
   const handleNext = useCallback(() => {
     if (currentStep < TOTAL_STEPS - 1) {
       triggerLight();
@@ -55,9 +55,16 @@ export default function OnboardingFlow() {
     }
   }, [currentStep, triggerLight]);
 
-  const updateData = useCallback((updates: Partial<OnboardingData>) => {
-    setData(prev => ({ ...prev, ...updates }));
-  }, []);
+  // Inline permission request when leaving SetTime step (step 2)
+  const handleSetTimeNext = useCallback(async () => {
+    try {
+      const result = await Notification.requestPermission();
+      updateData({ notificationPermission: result === 'granted' });
+    } catch {
+      // Browser doesn't support notifications or already denied — continue anyway
+    }
+    handleNext();
+  }, [handleNext, updateData]);
 
   const createFirstItem = async () => {
     try {
@@ -288,9 +295,6 @@ export default function OnboardingFlow() {
                 <OnboardingWelcomeNew onNext={handleNext} onSkip={handleSkip} />
               )}
               {currentStep === 1 && (
-                <OnboardingHowItWorks onNext={handleNext} onBack={handleBack} />
-              )}
-              {currentStep === 2 && (
                 <OnboardingFirstItem
                   value={data.itemName}
                   onChange={(name) => updateData({ itemName: name })}
@@ -298,44 +302,26 @@ export default function OnboardingFlow() {
                   onBack={handleBack}
                 />
               )}
-              {currentStep === 3 && (
+              {currentStep === 2 && (
                 <OnboardingSetTime
                   value={data.scheduledTime}
                   onChange={(time) => updateData({ scheduledTime: time })}
-                  onNext={handleNext}
+                  onNext={handleSetTimeNext}
                   onBack={handleBack}
                 />
               )}
-              {currentStep === 4 && (
-                <OnboardingPermissions
-                  onGranted={() => {
-                    updateData({ notificationPermission: true });
-                    handleNext();
-                  }}
-                  onSkip={handleNext}
-                  onBack={handleBack}
-                />
-              )}
-              {currentStep === 5 && (
+              {currentStep === 3 && (
                 <OnboardingWaiting
                   scheduledTime={data.scheduledTime}
                   itemName={data.itemName}
                   onCreateItem={createFirstItem}
                   onNotificationReceived={handleNext}
+                  onDoseTaken={handleDoseTaken}
+                  onDoseSnooze={handleDoseSnooze}
                 />
               )}
-              {currentStep === 6 && (
-                <OnboardingFirstDose
-                  itemName={data.itemName}
-                  onTaken={handleDoseTaken}
-                  onSnooze={handleDoseSnooze}
-                />
-              )}
-              {currentStep === 7 && (
-                <OnboardingCelebration onNext={handleNext} />
-              )}
-              {currentStep === 8 && (
-                <OnboardingClara onComplete={completeOnboarding} />
+              {currentStep === 4 && (
+                <OnboardingCelebration onComplete={completeOnboarding} />
               )}
             </motion.div>
           </AnimatePresence>
