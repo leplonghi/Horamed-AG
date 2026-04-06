@@ -1,5 +1,12 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// Lazy-load jsPDF and autotable — they are only needed when a PDF is actually generated,
+// keeping them out of the main bundle (~25 KB saved for users who never export).
+async function getJsPDF() {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+  return { jsPDF, autoTable };
+}
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -62,6 +69,7 @@ const COLORS = {
 };
 
 export async function generateCompletePDF(data: ExportData, logoImage?: string) {
+  const { jsPDF, autoTable } = await getJsPDF();
   const doc = new jsPDF();
   let yPos = 20;
 
@@ -365,6 +373,7 @@ export async function generateCompletePDF(data: ExportData, logoImage?: string) 
 }
 
 export async function generateMedicationReport(data: ExportData, logoImage?: string) {
+  const { jsPDF, autoTable } = await getJsPDF();
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak, getCategoryLabels, getFrequencyLabels } = await import('./pdfReportTypes');
 
@@ -478,6 +487,7 @@ export async function generateMedicationReport(data: ExportData, logoImage?: str
 }
 
 export async function generateProgressReport(data: ExportData, logoImage?: string) {
+  const { jsPDF, autoTable } = await getJsPDF();
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak } = await import('./pdfReportTypes');
 
@@ -598,6 +608,7 @@ export async function generateProgressReport(data: ExportData, logoImage?: strin
 }
 
 export async function generateHealthReport(data: ExportData, logoImage?: string) {
+  const { jsPDF, autoTable } = await getJsPDF();
   const doc = new jsPDF();
   const { addHeader, addSectionHeader, addFooter, checkPageBreak, calculateAge, getBMIStatus } = await import('./pdfReportTypes');
 

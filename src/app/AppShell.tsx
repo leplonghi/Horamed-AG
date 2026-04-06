@@ -53,8 +53,6 @@ const Privacy = lazy(() => import("@/pages/Privacy"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const Tutorial = lazy(() => import("@/pages/Tutorial"));
 const OnboardingFlow = lazy(() => import("@/components/onboarding/OnboardingFlow"));
-const QuickOnboarding = lazy(() => import("@/components/onboarding/QuickOnboarding"));
-const SimpleOnboarding = lazy(() => import("@/components/onboarding/SimpleOnboarding"));
 const Welcome = lazy(() => import("@/pages/Welcome"));
 const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
 const AlarmSettings = lazy(() => import("@/pages/AlarmSettings"));
@@ -550,9 +548,9 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
-          <Route path="/onboarding" element={<SimpleOnboarding />} />
-          <Route path="/onboarding-completo" element={<OnboardingFlow />} />
-          <Route path="/onboarding-rapido" element={<QuickOnboarding />} />
+          <Route path="/onboarding" element={<OnboardingFlow />} />
+          <Route path="/onboarding-completo" element={<Navigate to="/onboarding" replace />} />
+          <Route path="/onboarding-rapido" element={<Navigate to="/onboarding" replace />} />
           <Route path="/bem-vindo" element={<Welcome />} />
           <Route
             path="/ajuda"

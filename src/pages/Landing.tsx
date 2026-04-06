@@ -709,6 +709,7 @@ const Landing = () => {
                     alt="HoraMed - Tela Rotina"
                     className="w-full object-cover object-top"
                     style={{ aspectRatio: "9/19" }}
+                    loading="lazy"
                   />
                   <div className="flex justify-center items-center py-2 bg-white">
                     <div className="w-24 h-1 rounded-full bg-slate-300" />

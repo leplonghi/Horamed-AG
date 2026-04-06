@@ -1,8 +1,15 @@
-import * as pdfjsLib from 'pdfjs-dist';
+// Worker URL is a tiny string — keep static so Vite resolves the asset path correctly.
+// The heavy pdfjs-dist library itself is loaded lazily inside each function.
 import pdfjsWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
-// Configure worker using bundled worker file (Vite will serve this from the same origin)
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc as string;
+let _pdfjsLib: typeof import('pdfjs-dist') | null = null;
+async function getPdfjsLib() {
+  if (!_pdfjsLib) {
+    _pdfjsLib = await import('pdfjs-dist');
+    _pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc as string;
+  }
+  return _pdfjsLib;
+}
 
 export interface PDFPageData {
   pageNumber: number;
@@ -20,6 +27,7 @@ export async function convertPDFToImages(
   maxPages: number = 10
 ): Promise<PDFPageData[]> {
   try {
+    const pdfjsLib = await getPdfjsLib();
     // Ler arquivo como ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
 

@@ -1,145 +1,161 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // ===================================
     // Helper Functions
     // ===================================
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
+
+    // Uses Firebase Auth custom claims — set via admin SDK when promoting admins.
+    // Fallback: never grants admin if claim is absent.
     function isAdmin() {
-      return isAuthenticated() && 
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return isAuthenticated() && request.auth.token.admin == true;
     }
-    
+
     // ===================================
     // Users Collection
     // ===================================
-    
+
     match /users/{userId} {
       // Users can read and write their own data
       allow read: if isOwner(userId);
       allow write: if isOwner(userId);
-      
+
       // Family Profiles (subcollection)
       match /familyProfiles/{profileId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // User Profiles (New subcollection)
       match /profiles/{profileId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Medications (subcollection)
       match /medications/{medicationId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Doses (subcollection)
       match /doses/{doseId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Medical Documents (subcollection)
       match /documents/{documentId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Medical Reports (subcollection)
       match /reports/{reportId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Weight History (subcollection)
       match /weightHistory/{entryId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Vaccination Records (subcollection)
       match /vaccinations/{vaccinationId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // XP Transactions (subcollection)
       match /xpTransactions/{transactionId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Achievements (subcollection)
       match /achievements/{achievementId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Referrals (subcollection)
       match /referrals/{referralId} {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId);
       }
-      
-      // Subscriptions (subcollection)
+
+      // Subscriptions (subcollection) — READ ONLY for clients.
+      // Writes are exclusively performed by Cloud Functions via the Admin SDK.
+      // This prevents users from self-promoting to Premium by writing their own plan.
       match /subscription/{subscriptionId} {
         allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
       }
-      
+
       // Push Subscriptions (subcollection)
       match /pushSubscriptions/{subscriptionId} {
         allow read, write: if isOwner(userId);
       }
-      
+
       // Notification Metrics (subcollection)
       match /notificationMetrics/{metricId} {
         allow read, write: if isOwner(userId);
+      }
+
+      // App Metrics (subcollection)
+      match /appMetrics/{metricId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId);
+      }
+
+      // Referral Rewards (subcollection) — read-only for clients
+      match /referralRewards/{rewardId} {
+        allow read: if isOwner(userId);
+      }
+
+      // Rewards (subcollection) — read-only for clients
+      match /rewards/{rewardId} {
+        allow read: if isOwner(userId);
       }
     }
 
     // ===================================
     // Campaigns & Marketing
     // ===================================
-    
+
     match /campaigns/{campaignId} {
       // Allow read for everyone (needed for applying codes on landing pages)
       allow read: if true;
-      
-      // Developer Note: Ideally restrict write to isAdmin() in production
-      // Allowing authenticated write for now to enable:
-      // 1. Campaign Generator usage
-      // 2. Redemption counter increments (client-side transaction)
-      allow write: if isAuthenticated();
+
+      // Write restricted to admins only — Campaign Generator and redemption
+      // counters must be incremented via Cloud Functions, not client-side.
+      allow write: if isAdmin();
     }
-    
+
     // ===================================
     // Global Collections (Read-Only)
     // ===================================
-    
+
     // Medication Interactions (global reference data)
     match /medicationInteractions/{interactionId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin(); // Only admins can modify
+      allow write: if isAdmin();
     }
-    
+
     // Feature Flags (global configuration)
     match /featureFlags/{flagId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
-    
+
     // ===================================
     // Admin Collections
     // ===================================
-    
+
     match /admin/{document=**} {
       allow read, write: if isAdmin();
     }
-    
+
     // Referral Fraud Logs (admin only)
     match /referralFraudLogs/{logId} {
       allow read: if isAdmin();

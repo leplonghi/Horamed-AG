@@ -34,22 +34,22 @@ service firebase.storage {
       allow delete: if isAuthenticated() && isOwner(userId);
     }
     
-    // Profile Avatars (Legacy)
+    // Profile Avatars (Legacy) — owner-only read to protect family member photos
     match /profile-avatars/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && 
-                      isOwner(userId) && 
-                      isValidImageType() && 
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      isValidImageType() &&
                       request.resource.size < 5 * 1024 * 1024; // 5MB max
       allow delete: if isAuthenticated() && isOwner(userId);
     }
-    
-    // User Profiles Avatars (New Structure)
+
+    // User Profiles Avatars (New Structure) — owner-only read
     match /users/{userId}/profiles/{profileId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && 
-                      isOwner(userId) && 
-                      isValidImageType() && 
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      isValidImageType() &&
                       request.resource.size < 5 * 1024 * 1024;
       allow delete: if isAuthenticated() && isOwner(userId);
     }

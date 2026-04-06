@@ -87,71 +87,86 @@ export default function More() {
     }
   };
 
-  const menuItems = [
+  const menuSections = [
     {
-      title: t('more.rewards') || 'Recompensas & Séries',
-      description: t('more.rewardsDesc') || 'Conquistas, cashback e proteção de série',
-      icon: Gift,
-      path: "/recompensas",
-      badge: <Badge className="ml-2 bg-amber-500 hover:bg-amber-600 border-none text-white">{t('common.hot') || "HOT"}</Badge>,
+      title: t('more.sectionHealth') || 'Saúde & Medicamentos',
+      items: [
+        {
+          title: t('more.rewards') || 'Recompensas & Séries',
+          description: t('more.rewardsDesc') || 'Conquistas, cashback e proteção de série',
+          icon: Gift,
+          path: "/recompensas",
+          badge: <Badge className="ml-2 bg-amber-500 hover:bg-amber-600 border-none text-white">{t('common.hot') || "HOT"}</Badge>,
+        },
+        {
+          title: t('more.sideEffectsDiary'),
+          description: t('more.sideEffectsDiaryDesc'),
+          icon: Activity,
+          path: "/diario-efeitos",
+          badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
+        },
+        {
+          title: t('more.travelMode'),
+          description: t('more.travelModeDesc'),
+          icon: Plane,
+          path: "/viagem",
+          badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
+        },
+        {
+          title: t('more.doseHistory'),
+          description: t('more.doseHistoryDesc'),
+          icon: History,
+          path: "/historico",
+          badge: null,
+        },
+        {
+          title: t('more.stockControl'),
+          description: t('more.stockControlDesc'),
+          icon: Package,
+          path: "/estoque",
+          badge: null,
+        },
+      ],
     },
     {
-      title: t('more.sideEffectsDiary'),
-      description: t('more.sideEffectsDiaryDesc'),
-      icon: Activity,
-      path: "/diario-efeitos",
-      badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
+      title: t('more.sectionDocuments') || 'Documentos & Relatórios',
+      items: [
+        {
+          title: t('more.medicalReports'),
+          description: t('more.medicalReportsDesc'),
+          icon: FileText,
+          path: "/relatorios",
+          badge: isPremium ? null : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
+        },
+        {
+          title: t('more.scanDocuments'),
+          description: t('more.scanDocumentsDesc'),
+          icon: QrCode,
+          path: "/digitalizar",
+          badge: null,
+        },
+        {
+          title: t('more.healthWallet'),
+          description: t('more.healthWalletDesc'),
+          icon: FolderHeart,
+          path: "/carteira",
+          badge: null,
+        },
+      ],
     },
     {
-      title: t('more.travelMode'),
-      description: t('more.travelModeDesc'),
-      icon: Plane,
-      path: "/viagem",
-      badge: <Badge variant="secondary" className="ml-2">{t('common.new')}</Badge>,
-    },
-    {
-      title: t('more.healthWallet'),
-      description: t('more.healthWalletDesc'),
-      icon: FolderHeart,
-      path: "/carteira",
-      badge: null,
-    },
-    {
-      title: t('more.doseHistory'),
-      description: t('more.doseHistoryDesc'),
-      icon: History,
-      path: "/historico",
-      badge: null,
-    },
-    {
-      title: t('more.stockControl'),
-      description: t('more.stockControlDesc'),
-      icon: Package,
-      path: "/estoque",
-      badge: null,
-    },
-    {
-      title: t('more.medicalReports'),
-      description: t('more.medicalReportsDesc'),
-      icon: FileText,
-      path: "/relatorios",
-      badge: isPremium ? null : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
-    },
-    {
-      title: t('more.scanDocuments'),
-      description: t('more.scanDocumentsDesc'),
-      icon: QrCode,
-      path: "/digitalizar",
-      badge: null,
-    },
-    {
-      title: t('more.familyCaregivers'),
-      description: t('more.familyCaregiversDesc'),
-      icon: Users,
-      path: "/perfil",
-      badge: isPremium
-        ? <Badge className="ml-2">{profiles.length} {t('more.profiles')}</Badge>
-        : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
+      title: t('more.sectionFamily') || 'Família & Social',
+      items: [
+        {
+          title: t('more.familyCaregivers'),
+          description: t('more.familyCaregiversDesc'),
+          icon: Users,
+          path: "/perfil",
+          badge: isPremium
+            ? <Badge className="ml-2">{profiles.length} {t('more.profiles')}</Badge>
+            : <Badge variant="secondary" className="ml-2">{t('common.premium')}</Badge>,
+        },
+      ],
     },
   ];
 
@@ -208,46 +223,48 @@ export default function More() {
           </Card>
         </motion.div>
 
-        {/* Main Features */}
-        <div className="space-y-2 mb-6">
-          <h3 className="text-xs font-semibold text-muted-foreground px-1 uppercase tracking-wider mb-3">{t('more.tools')}</h3>
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            className="space-y-2"
-          >
-            {menuItems.map((item) => {
-              const colors = ICON_COLORS[item.path] || { bg: "bg-primary/10", icon: "text-primary" };
-              return (
-                <motion.div key={item.path} variants={itemVariants}>
-                  <Card
-                    className="hover:shadow-md transition-all cursor-pointer active:scale-[0.99] border-border/60"
-                    onClick={() => navigate(item.path)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0", colors.bg)}>
-                            <item.icon className={cn("h-5 w-5", colors.icon)} />
-                          </div>
-                          <div>
-                            <div className="flex items-center flex-wrap gap-1">
-                              <h4 className="font-semibold text-sm">{item.title}</h4>
-                              {item.badge}
+        {/* Main Features — grouped sections */}
+        {menuSections.map((section) => (
+          <div key={section.title} className="space-y-2 mb-6">
+            <h3 className="text-xs font-semibold text-muted-foreground px-1 uppercase tracking-wider mb-3">{section.title}</h3>
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-2"
+            >
+              {section.items.map((item) => {
+                const colors = ICON_COLORS[item.path] || { bg: "bg-primary/10", icon: "text-primary" };
+                return (
+                  <motion.div key={item.path} variants={itemVariants}>
+                    <Card
+                      className="hover:shadow-md transition-all cursor-pointer active:scale-[0.99] border-border/60"
+                      onClick={() => navigate(item.path)}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0", colors.bg)}>
+                              <item.icon className={cn("h-5 w-5", colors.icon)} />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                            <div>
+                              <div className="flex items-center flex-wrap gap-1">
+                                <h4 className="font-semibold text-sm">{item.title}</h4>
+                                {item.badge}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                            </div>
                           </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                         </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+          </div>
+        ))}
 
         {/* Settings */}
         <div className="space-y-2 mb-6">

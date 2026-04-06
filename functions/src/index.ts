@@ -53,6 +53,48 @@ const getGenAI = () => {
     return genAIInstance;
 };
 
+/**
+ * ==================================================================
+ * RATE LIMITING UTILITY
+ * Protects expensive AI/OCR functions from abuse.
+ * Uses Firestore to track call counts per user per hour.
+ * ==================================================================
+ */
+const RATE_LIMITS = {
+    healthAssistant: { maxCalls: 30, windowMinutes: 60 },
+    ocr: { maxCalls: 15, windowMinutes: 60 },
+};
+
+async function checkRateLimit(
+    userId: string,
+    functionKey: keyof typeof RATE_LIMITS
+): Promise<void> {
+    const { maxCalls, windowMinutes } = RATE_LIMITS[functionKey];
+    const windowMs = windowMinutes * 60 * 1000;
+    const now = Date.now();
+
+    const ref = db.doc(`users/${userId}/rateLimits/${functionKey}`);
+
+    await db.runTransaction(async (tx) => {
+        const doc = await tx.get(ref);
+        const data = doc.data();
+        const windowStart: number = data?.windowStart ?? 0;
+        const count: number = data?.count ?? 0;
+
+        if (now - windowStart > windowMs) {
+            // Reset window
+            tx.set(ref, { count: 1, windowStart: now });
+        } else if (count >= maxCalls) {
+            throw new functions.https.HttpsError(
+                'resource-exhausted',
+                `Limite de ${maxCalls} chamadas por hora atingido. Tente novamente mais tarde.`
+            );
+        } else {
+            tx.update(ref, { count: admin.firestore.FieldValue.increment(1) });
+        }
+    });
+}
+
 // Price Configuration (Updated 2026-01-30)
 const PRICES = {
     BRL: {
@@ -484,6 +526,7 @@ async function updateUserSubscription(uid: string, subId: string, custId: string
 
 export const healthAssistant = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    await checkRateLimit(context.auth.uid, 'healthAssistant');
 
     const { messages } = data;
     if (!messages || !Array.isArray(messages)) {
@@ -663,6 +706,7 @@ async function processImage(image: string, prompt: string) {
 
 export const extractMedication = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    await checkRateLimit(context.auth.uid, 'ocr');
 
     const { image } = data;
     if (!image) throw new functions.https.HttpsError('invalid-argument', 'Image data required');
@@ -693,6 +737,7 @@ export const extractMedication = functions.https.onCall(async (data, context) =>
 
 export const extractExam = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    await checkRateLimit(context.auth.uid, 'ocr');
 
     const { image } = data;
     if (!image) throw new functions.https.HttpsError('invalid-argument', 'Image data required');
@@ -713,6 +758,7 @@ export const extractExam = functions.https.onCall(async (data, context) => {
 
 export const extractDocument = functions.https.onCall(async (data, context) => {
     if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    await checkRateLimit(context.auth.uid, 'ocr');
 
     const { image } = data;
     if (!image) throw new functions.https.HttpsError('invalid-argument', 'Image data required');
