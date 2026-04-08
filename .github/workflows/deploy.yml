@@ -17,6 +17,7 @@ jobs:
     name: Firebase Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    continue-on-error: true  # skips gracefully until FIREBASE_TOKEN secret is configured
 
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +52,17 @@ jobs:
       - name: Build Functions
         run: npm run build
         working-directory: functions
+
+      - name: Check FIREBASE_TOKEN secret
+        run: |
+          if [ -z "$FIREBASE_TOKEN" ]; then
+            echo "⚠️  FIREBASE_TOKEN secret not set."
+            echo "Add it at: https://github.com/leplonghi/Horamed-AG/settings/secrets/actions"
+            echo "Run on your machine: npx firebase-tools login:ci"
+            exit 1
+          fi
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
       - name: Deploy to Firebase
         run: npx firebase-tools deploy --only hosting,functions --non-interactive --token "$FIREBASE_TOKEN"
