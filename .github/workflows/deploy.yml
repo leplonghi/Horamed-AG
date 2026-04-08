@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - 'claude/plan-app-improvements-u3lXt'
     tags:
       - 'v*'
 
@@ -17,7 +16,6 @@ jobs:
     name: Firebase Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true  # skips gracefully until FIREBASE_TOKEN secret is configured
 
     steps:
       - uses: actions/checkout@v4
