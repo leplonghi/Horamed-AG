@@ -1246,3 +1246,250 @@ export {
     syncProtectionAvailable
 };
 
+/**
+ * ==================================================================
+ * 8. MIGRATED FROM SUPABASE — get/update payment method, monthly
+ *    report, pharmacy prices, whatsapp reminder, google calendar sync
+ * ==================================================================
+ */
+
+export const getPaymentMethod = functions.https.onCall(async (_data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const uid = context.auth.uid;
+    try {
+        const stripe = getStripe();
+        const subSnap = await db.collection('subscriptions').where('user_id', '==', uid).limit(1).get();
+        if (subSnap.empty) return { paymentMethod: null };
+        const customerId = subSnap.docs[0].data().stripe_customer_id as string | undefined;
+        if (!customerId) return { paymentMethod: null };
+
+        const customer = await stripe.customers.retrieve(customerId);
+        if ((customer as any).deleted) return { paymentMethod: null };
+
+        const defaultPmId = (customer as any).invoice_settings?.default_payment_method as string | null;
+        let pmId = defaultPmId;
+        if (!pmId) {
+            const subs = await stripe.subscriptions.list({ customer: customerId, status: 'active', limit: 1 });
+            pmId = subs.data[0]?.default_payment_method as string | null;
+        }
+        if (!pmId) return { paymentMethod: null };
+
+        const pm = await stripe.paymentMethods.retrieve(pmId);
+        if (!pm.card) return { paymentMethod: null };
+        return {
+            paymentMethod: {
+                last4: pm.card.last4,
+                brand: pm.card.brand,
+                expMonth: pm.card.exp_month,
+                expYear: pm.card.exp_year,
+            }
+        };
+    } catch (error: any) {
+        functions.logger.error('getPaymentMethod error:', error);
+        throw new functions.https.HttpsError('internal', 'Erro interno. Tente novamente.');
+    }
+});
+
+export const updatePaymentMethod = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const uid = context.auth.uid;
+    try {
+        const stripe = getStripe();
+        const subSnap = await db.collection('subscriptions').where('user_id', '==', uid).limit(1).get();
+        if (subSnap.empty) throw new functions.https.HttpsError('not-found', 'No subscription found');
+        const { stripe_customer_id, stripe_subscription_id } = subSnap.docs[0].data() as any;
+        if (!stripe_customer_id) throw new functions.https.HttpsError('not-found', 'No Stripe customer found');
+
+        const origin = data.origin || 'https://app.horamed.net';
+        const session = await stripe.checkout.sessions.create({
+            customer: stripe_customer_id,
+            mode: 'setup',
+            payment_method_types: ['card'],
+            success_url: `${origin}/assinatura?payment_updated=true`,
+            cancel_url: `${origin}/assinatura`,
+            metadata: { user_id: uid, subscription_id: stripe_subscription_id || '' },
+        });
+        return { url: session.url };
+    } catch (error: any) {
+        if (error instanceof functions.https.HttpsError) throw error;
+        functions.logger.error('updatePaymentMethod error:', error);
+        throw new functions.https.HttpsError('internal', 'Erro interno. Tente novamente.');
+    }
+});
+
+export const generateMonthlyReport = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const uid = context.auth.uid;
+    const { month, year } = data as { month: number; year: number };
+
+    try {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0, 23, 59, 59);
+        const prevStartDate = new Date(year, month - 2, 1);
+        const prevEndDate = new Date(year, month - 1, 0, 23, 59, 59);
+
+        const dosesSnap = await db.collectionGroup('dose_instances')
+            .where('user_id', '==', uid)
+            .where('due_at', '>=', admin.firestore.Timestamp.fromDate(startDate))
+            .where('due_at', '<=', admin.firestore.Timestamp.fromDate(endDate))
+            .get();
+
+        if (dosesSnap.empty) return { message: 'Nenhum dado disponível para este mês', report: null };
+
+        const doses = dosesSnap.docs.map(d => d.data() as any);
+        const totalDoses = doses.length;
+        const takenDoses = doses.filter(d => d.status === 'taken').length;
+        const skippedDoses = doses.filter(d => d.status === 'skipped').length;
+        const adherenceRate = Math.round((takenDoses / totalDoses) * 100);
+
+        const delays = doses.filter(d => d.status === 'taken' && d.delay_minutes).map(d => d.delay_minutes);
+        const avgDelayMinutes = delays.length > 0 ? Math.round(delays.reduce((a: number, b: number) => a + b, 0) / delays.length) : 0;
+
+        const prevSnap = await db.collectionGroup('dose_instances')
+            .where('user_id', '==', uid)
+            .where('due_at', '>=', admin.firestore.Timestamp.fromDate(prevStartDate))
+            .where('due_at', '<=', admin.firestore.Timestamp.fromDate(prevEndDate))
+            .get();
+        const prevDoses = prevSnap.docs.map(d => d.data() as any);
+        const previousAdherence = prevDoses.length > 0
+            ? Math.round((prevDoses.filter(d => d.status === 'taken').length / prevDoses.length) * 100)
+            : 0;
+
+        const medStats: Record<string, { total: number; taken: number }> = {};
+        for (const d of doses) {
+            const name = d.medication_name || d.item_name || 'Medicamento';
+            if (!medStats[name]) medStats[name] = { total: 0, taken: 0 };
+            medStats[name].total++;
+            if (d.status === 'taken') medStats[name].taken++;
+        }
+
+        return {
+            message: 'Relatório gerado com sucesso',
+            report: {
+                month, year, totalDoses, takenDoses, skippedDoses, adherenceRate,
+                previousAdherence, improvementPercent: adherenceRate - previousAdherence,
+                avgDelayMinutes,
+                medicationBreakdown: Object.entries(medStats).map(([name, s]) => ({
+                    name, adherence: Math.round((s.taken / s.total) * 100), total: s.total, taken: s.taken,
+                })),
+                generatedAt: new Date().toISOString(),
+            }
+        };
+    } catch (error: any) {
+        functions.logger.error('generateMonthlyReport error:', error);
+        throw new functions.https.HttpsError('internal', 'Erro interno. Tente novamente.');
+    }
+});
+
+export const pharmacyPrices = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const { medicationName } = data as { medicationName: string };
+    if (!medicationName) throw new functions.https.HttpsError('invalid-argument', 'medicationName is required');
+
+    const pharmacies = [
+        { name: 'Drogasil', price: Math.random() * 50 + 10, link: `https://www.drogasil.com.br/search?w=${encodeURIComponent(medicationName)}`, delivery: true, distance: Math.random() * 5 },
+        { name: 'Droga Raia', price: Math.random() * 50 + 10, link: `https://www.drogaraia.com.br/search?w=${encodeURIComponent(medicationName)}`, delivery: true, distance: Math.random() * 5 },
+        { name: 'Pacheco', price: Math.random() * 50 + 10, link: `https://www.drogariaspacheco.com.br/search?w=${encodeURIComponent(medicationName)}`, delivery: true, distance: Math.random() * 5 },
+        { name: 'Pague Menos', price: Math.random() * 50 + 10, link: `https://www.paguemenos.com.br/busca?q=${encodeURIComponent(medicationName)}`, delivery: true, distance: Math.random() * 5 },
+        { name: 'Onofre', price: Math.random() * 50 + 10, link: `https://www.onofre.com.br/busca?q=${encodeURIComponent(medicationName)}`, delivery: false, distance: Math.random() * 5 },
+    ].sort((a, b) => a.price - b.price).map(p => ({
+        ...p, price: parseFloat(p.price.toFixed(2)), distance: parseFloat(p.distance.toFixed(1)),
+    }));
+
+    return {
+        medication: medicationName,
+        pharmacies,
+        lowestPrice: pharmacies[0].price,
+        highestPrice: pharmacies[pharmacies.length - 1].price,
+        savings: parseFloat((pharmacies[pharmacies.length - 1].price - pharmacies[0].price).toFixed(2)),
+    };
+});
+
+export const sendWhatsappReminder = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const { phoneNumber, message, instanceId, apiToken } = data as {
+        phoneNumber: string; message: string; instanceId?: string; apiToken?: string;
+    };
+
+    try {
+        const evolutionApiUrl = process.env.EVOLUTION_API_URL || functions.config().evolution?.api_url;
+        const evolutionApiKey = apiToken || process.env.EVOLUTION_API_KEY || functions.config().evolution?.api_key;
+        const instance = instanceId || process.env.EVOLUTION_INSTANCE || functions.config().evolution?.instance || 'horamed';
+
+        if (!evolutionApiUrl || !evolutionApiKey) {
+            throw new functions.https.HttpsError('failed-precondition', 'WhatsApp API not configured');
+        }
+
+        const res = await fetch(`${evolutionApiUrl}/message/sendText/${instance}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': evolutionApiKey },
+            body: JSON.stringify({ number: phoneNumber, textMessage: { text: message } }),
+        });
+
+        if (!res.ok) throw new Error(`WhatsApp API error: ${res.status}`);
+        const result = await res.json();
+        return { success: true, messageId: result.key?.id };
+    } catch (error: any) {
+        if (error instanceof functions.https.HttpsError) throw error;
+        functions.logger.error('sendWhatsappReminder error:', error);
+        throw new functions.https.HttpsError('internal', 'Erro interno. Tente novamente.');
+    }
+});
+
+export const googleCalendarSync = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    const uid = context.auth.uid;
+    const { accessToken, action } = data as { accessToken: string; action: 'sync' | 'remove'; eventId?: string };
+
+    try {
+        if (action === 'remove' && data.eventId) {
+            const res = await fetch(
+                `https://www.googleapis.com/calendar/v3/calendars/primary/events/${data.eventId}`,
+                { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } }
+            );
+            if (!res.ok && res.status !== 404) throw new Error(`Calendar API error: ${res.status}`);
+            return { success: true };
+        }
+
+        // Sync: fetch user medications and create calendar events
+        const medsSnap = await db.collection('users').doc(uid).collection('medications')
+            .where('isActive', '==', true).get();
+
+        const events = [];
+        for (const medDoc of medsSnap.docs) {
+            const med = medDoc.data() as any;
+            if (!med.scheduledTimes?.length) continue;
+
+            for (const time of med.scheduledTimes) {
+                const [hours, minutes] = time.split(':').map(Number);
+                const start = new Date();
+                start.setHours(hours, minutes, 0, 0);
+                const end = new Date(start.getTime() + 15 * 60 * 1000);
+
+                const eventBody = {
+                    summary: `💊 ${med.name}`,
+                    description: `Horamed: ${med.name}${med.doseText ? ` — ${med.doseText}` : ''}`,
+                    start: { dateTime: start.toISOString(), timeZone: 'America/Sao_Paulo' },
+                    end: { dateTime: end.toISOString(), timeZone: 'America/Sao_Paulo' },
+                    recurrence: ['RRULE:FREQ=DAILY'],
+                };
+
+                const res = await fetch(
+                    'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+                    {
+                        method: 'POST',
+                        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(eventBody),
+                    }
+                );
+                if (res.ok) events.push(await res.json());
+            }
+        }
+
+        return { success: true, eventsCreated: events.length };
+    } catch (error: any) {
+        functions.logger.error('googleCalendarSync error:', error);
+        throw new functions.https.HttpsError('internal', 'Erro interno. Tente novamente.');
+    }
+});
+

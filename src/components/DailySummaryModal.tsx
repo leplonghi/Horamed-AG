@@ -8,10 +8,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
-import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeDateParse } from "@/lib/safeDateUtils";
+import { auth, db } from "@/integrations/firebase/client";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  writeBatch,
+  Timestamp,
+} from "firebase/firestore";
 
 interface PendingDose {
   id: string;
@@ -24,110 +33,83 @@ export default function DailySummaryModal() {
   const { t, language } = useLanguage();
 
   useEffect(() => {
-    // Check at 10 PM (22:00)
     const now = new Date();
-    const currentHour = now.getHours();
-    
-    // Only check between 22:00 and 23:59
-    if (currentHour === 22) {
+    if (now.getHours() === 22) {
       checkPendingDoses();
     }
   }, []);
 
   const checkPendingDoses = async () => {
     try {
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-      );
-      
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
       const tomorrow = safeDateParse(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const { data: doses, error: dosesError } = await supabase
-        .from("dose_instances")
-        .select("id, item_id")
-        .eq("user_id", user.id)
-        .gte("due_at", today.toISOString())
-        .lt("due_at", tomorrow.toISOString())
-        .eq("status", "pending");
+      const dosesSnap = await getDocs(
+        query(
+          collection(db, "dose_instances"),
+          where("user_id", "==", user.uid),
+          where("due_at", ">=", Timestamp.fromDate(today)),
+          where("due_at", "<", Timestamp.fromDate(tomorrow)),
+          where("status", "==", "pending")
+        )
+      );
 
-      if (dosesError) throw dosesError;
+      if (dosesSnap.empty) return;
 
-      if (doses && doses.length > 0) {
-        // Fetch item names
-        const itemIds = doses.map(d => d.item_id);
-        const { data: items, error: itemsError } = await supabase
-          .from("items")
-          .select("id, name")
-          .in("id", itemIds);
+      const doses = dosesSnap.docs.map(d => ({ id: d.id, ...d.data() as { item_id: string } }));
+      const itemIds = [...new Set(doses.map(d => d.item_id))];
 
-        if (itemsError) throw itemsError;
+      const itemsSnap = await getDocs(
+        query(collection(db, "items"), where("__name__", "in", itemIds.slice(0, 30)))
+      );
+      const itemMap = new Map(itemsSnap.docs.map(d => [d.id, (d.data() as { name: string }).name]));
 
-        const itemMap = new Map(items?.map(i => [i.id, i.name]));
-
-        setPendingDoses(
-          doses.map(d => ({
-            id: d.id,
-            name: itemMap.get(d.item_id) || (language === 'pt' ? "Medicamento" : "Medication")
-          }))
-        );
-        setIsOpen(true);
-      }
+      setPendingDoses(
+        doses.map(d => ({
+          id: d.id,
+          name: itemMap.get(d.item_id) ?? (language === 'pt' ? "Medicamento" : "Medication"),
+        }))
+      );
+      setIsOpen(true);
     } catch (error) {
       console.error("Error checking pending doses:", error);
     }
   };
 
+  const updateDosesStatus = async (status: string, extra?: Record<string, unknown>) => {
+    try {
+      const batch = writeBatch(db);
+      for (const dose of pendingDoses) {
+        batch.update(doc(db, "dose_instances", dose.id), { status, ...extra });
+      }
+      await batch.commit();
+    } catch (error) {
+      console.error("Error updating doses:", error);
+      throw error;
+    }
+  };
+
   const handleMarkAllTaken = async () => {
     try {
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-      );
-      
-      const { error } = await supabase
-        .from("dose_instances")
-        .update({ 
-          status: "taken",
-          taken_at: new Date().toISOString()
-        })
-        .in("id", pendingDoses.map(d => d.id));
-
-      if (error) throw error;
-
+      await updateDosesStatus("taken", { taken_at: new Date().toISOString() });
       toast.success(t('dailySummary.allMarkedTaken'));
       setIsOpen(false);
-    } catch (error) {
-      console.error("Error marking doses as taken:", error);
+    } catch {
       toast.error(t('dailySummary.errorMarking'));
     }
   };
 
   const handleMarkAllMissed = async () => {
     try {
-      const supabase = createClient(
-        import.meta.env.VITE_SUPABASE_URL,
-        import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-      );
-      
-      const { error } = await supabase
-        .from("dose_instances")
-        .update({ status: "missed" })
-        .in("id", pendingDoses.map(d => d.id));
-
-      if (error) throw error;
-
+      await updateDosesStatus("missed");
       toast(t('dailySummary.markedMissed'));
       setIsOpen(false);
-    } catch (error) {
-      console.error("Error marking doses as missed:", error);
+    } catch {
       toast.error(t('dailySummary.errorMarking'));
     }
   };
@@ -140,7 +122,7 @@ export default function DailySummaryModal() {
         <DialogHeader>
           <DialogTitle>{t('dailySummary.title')}</DialogTitle>
           <DialogDescription className="pt-2">
-            {t('dailySummary.description', { 
+            {t('dailySummary.description', {
               count: String(pendingDoses.length),
               plural: pendingDoses.length > 1 ? 's' : ''
             })}
@@ -149,10 +131,7 @@ export default function DailySummaryModal() {
 
         <div className="space-y-2 py-4">
           {pendingDoses.slice(0, 3).map(dose => (
-            <div 
-              key={dose.id} 
-              className="p-2 bg-muted rounded-lg text-sm"
-            >
+            <div key={dose.id} className="p-2 bg-muted rounded-lg text-sm">
               • {dose.name}
             </div>
           ))}
@@ -167,18 +146,10 @@ export default function DailySummaryModal() {
           <Button onClick={handleMarkAllTaken} className="w-full">
             {t('dailySummary.tookAll')}
           </Button>
-          <Button 
-            onClick={handleMarkAllMissed} 
-            variant="outline"
-            className="w-full"
-          >
+          <Button onClick={handleMarkAllMissed} variant="outline" className="w-full">
             {t('dailySummary.didNotTake')}
           </Button>
-          <Button 
-            onClick={() => setIsOpen(false)} 
-            variant="ghost"
-            className="w-full"
-          >
+          <Button onClick={() => setIsOpen(false)} variant="ghost" className="w-full">
             {t('dailySummary.leaveAsIs')}
           </Button>
         </DialogFooter>
