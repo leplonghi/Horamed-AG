@@ -68,7 +68,6 @@ def main():
     
     for relative_path, replacements in FILES_TO_FIX.items():
         # Tenta achar o arquivo recursivamente se o path for curto, ou usa full path
-        found = False
         target_path = None
         
         # Check direct path

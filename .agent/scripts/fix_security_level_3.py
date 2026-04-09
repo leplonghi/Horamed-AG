@@ -45,7 +45,6 @@ def main():
     fixed_count = 0
     
     for relative_path, replacements in FILES_TO_FIX.items():
-        found = False
         target_path = None
         
         # Search file

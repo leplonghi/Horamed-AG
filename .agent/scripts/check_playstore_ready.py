@@ -7,9 +7,8 @@ Verifica se o projeto está pronto para publicação na Google Play Store
 import os
 import sys
 import json
-import subprocess
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List
 
 class Colors:
     """Cores para output no terminal"""
@@ -69,7 +68,7 @@ class PlayStoreChecker:
             content = f.read()
             
         # Verificar se server.url está comentado
-        if 'server: {' in content and not '// server: {' in content:
+        if 'server: {' in content and '// server: {' not in content:
             self.print_error("server.url NÃO está comentado - DEVE estar comentado para produção!")
         else:
             self.print_success("server.url está comentado (produção)")

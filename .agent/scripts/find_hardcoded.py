@@ -38,7 +38,7 @@ def check_file(file_path: Path):
             for line_num, text in found:
                 print(f"  Line {line_num}: {text}")
                 
-    except Exception as e:
+    except Exception:
         pass
 
 def main():

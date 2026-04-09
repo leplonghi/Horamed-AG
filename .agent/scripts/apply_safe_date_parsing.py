@@ -4,7 +4,7 @@ Substitui new Date(dose.xxx) por parsing seguro
 """
 import re
 from pathlib import Path
-from typing import List, Tuple
+from typing import Tuple
 
 # Arquivos críticos para refatorar
 CRITICAL_FILES = [
@@ -62,7 +62,7 @@ def replace_unsafe_date_parsing(content: str) -> Tuple[str, int]:
     def replace_fn(match):
         nonlocal replacements
         replacements += 1
-        return f'(safeParseDoseDate(dose) || new Date())'
+        return '(safeParseDoseDate(dose) || new Date())'
     
     content = re.sub(pattern1, replace_fn, content)
     
@@ -118,11 +118,11 @@ def main():
         elif success:
             print(f"  - {full_path.name}: já protegido")
     
-    print(f"\n✅ Blindagem concluída!")
+    print("\n✅ Blindagem concluída!")
     print(f"   Arquivos modificados: {total_files}")
     print(f"   Substituições: {total_replacements}")
-    print(f"\n⚠️  ATENÇÃO: Revise manualmente os arquivos modificados")
-    print(f"   Alguns casos podem precisar de ajuste manual.")
+    print("\n⚠️  ATENÇÃO: Revise manualmente os arquivos modificados")
+    print("   Alguns casos podem precisar de ajuste manual.")
 
 if __name__ == "__main__":
     main()

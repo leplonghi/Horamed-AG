@@ -2,7 +2,6 @@
 Script para remover console.log de debug em produção
 Mantém apenas console.error e console.warn
 """
-import os
 import re
 from pathlib import Path
 
@@ -109,7 +108,7 @@ def main():
                     total_files += 1
                     print(f"  ✓ {file_path.name}: {removed} logs removidos")
     
-    print(f"\n✅ Limpeza concluída!")
+    print("\n✅ Limpeza concluída!")
     print(f"   Arquivos modificados: {total_files}")
     print(f"   Logs removidos: {total_removed}")
 

@@ -4,7 +4,6 @@
 Baixa automaticamente do Firebase ou guia o usuário para fazer download manual
 """
 
-import os
 import sys
 import json
 import subprocess
@@ -78,7 +77,7 @@ def try_firebase_cli_download():
         print_success(f"Firebase CLI encontrado: {result.stdout.strip()}")
         
         # Tentar baixar o arquivo
-        project_root = get_project_root()
+        get_project_root()
         project_id = get_firebase_project_id()
         
         if not project_id:
@@ -111,35 +110,35 @@ def show_manual_instructions():
     if project_id:
         print(f"   https://console.firebase.google.com/project/{project_id}/settings/general")
     else:
-        print(f"   https://console.firebase.google.com")
+        print("   https://console.firebase.google.com")
     
     print(f"\n{Colors.BOLD}2. Navegue até as configurações:{Colors.END}")
-    print(f"   - Clique no ícone de engrenagem ⚙️ (Project Settings)")
-    print(f"   - Vá para a aba 'General'")
+    print("   - Clique no ícone de engrenagem ⚙️ (Project Settings)")
+    print("   - Vá para a aba 'General'")
     
     print(f"\n{Colors.BOLD}3. Encontre o app Android:{Colors.END}")
-    print(f"   - Role até a seção 'Your apps'")
+    print("   - Role até a seção 'Your apps'")
     print(f"   - Procure pelo app Android com package name: {Colors.GREEN}com.horamed.app{Colors.END}")
-    print(f"   - Se não existir, clique em 'Add app' > Android")
+    print("   - Se não existir, clique em 'Add app' > Android")
     
     print(f"\n{Colors.BOLD}4. Baixe o arquivo:{Colors.END}")
-    print(f"   - Clique em 'Download google-services.json'")
-    print(f"   - Salve o arquivo")
+    print("   - Clique em 'Download google-services.json'")
+    print("   - Salve o arquivo")
     
     print(f"\n{Colors.BOLD}5. Copie para o projeto:{Colors.END}")
     project_root = get_project_root()
     target_path = project_root / "android" / "app" / "google-services.json"
-    print(f"   - Copie o arquivo baixado para:")
+    print("   - Copie o arquivo baixado para:")
     print(f"   {Colors.GREEN}{target_path}{Colors.END}")
     
     print(f"\n{Colors.BOLD}6. Verifique:{Colors.END}")
-    print(f"   - Execute novamente este script para confirmar")
-    print(f"   - Ou execute: python .agent\\scripts\\check_playstore_ready.py")
+    print("   - Execute novamente este script para confirmar")
+    print("   - Ou execute: python .agent\\scripts\\check_playstore_ready.py")
     
     print(f"\n{Colors.YELLOW}⚠️  IMPORTANTE:{Colors.END}")
-    print(f"   - NÃO commite este arquivo no Git (já está no .gitignore)")
-    print(f"   - Guarde uma cópia de backup em local seguro")
-    print(f"   - Este arquivo contém credenciais do Firebase")
+    print("   - NÃO commite este arquivo no Git (já está no .gitignore)")
+    print("   - Guarde uma cópia de backup em local seguro")
+    print("   - Este arquivo contém credenciais do Firebase")
 
 def create_app_in_firebase():
     """Mostra instruções para criar app Android no Firebase"""
@@ -153,20 +152,20 @@ def create_app_in_firebase():
     if project_id:
         print(f"   https://console.firebase.google.com/project/{project_id}/settings/general")
     else:
-        print(f"   https://console.firebase.google.com")
+        print("   https://console.firebase.google.com")
     
     print(f"\n{Colors.BOLD}2. Adicione o app Android:{Colors.END}")
-    print(f"   - Clique em 'Add app' > Android (ícone do Android)")
+    print("   - Clique em 'Add app' > Android (ícone do Android)")
     
     print(f"\n{Colors.BOLD}3. Preencha as informações:{Colors.END}")
     print(f"   - Android package name: {Colors.GREEN}com.horamed.app{Colors.END}")
-    print(f"   - App nickname (opcional): HoraMed")
-    print(f"   - Debug signing certificate SHA-1 (opcional): deixe em branco por enquanto")
+    print("   - App nickname (opcional): HoraMed")
+    print("   - Debug signing certificate SHA-1 (opcional): deixe em branco por enquanto")
     
     print(f"\n{Colors.BOLD}4. Clique em 'Register app'{Colors.END}")
     
     print(f"\n{Colors.BOLD}5. Baixe o google-services.json:{Colors.END}")
-    print(f"   - Na próxima tela, clique em 'Download google-services.json'")
+    print("   - Na próxima tela, clique em 'Download google-services.json'")
     
     print(f"\n{Colors.BOLD}6. Continue com as instruções acima{Colors.END}")
 
@@ -201,7 +200,7 @@ def verify_file_content():
         
         if package_name != 'com.horamed.app':
             print_warning(f"Package name no arquivo: {package_name}")
-            print_warning(f"Package name esperado: com.horamed.app")
+            print_warning("Package name esperado: com.horamed.app")
             print_warning("Certifique-se de que baixou o arquivo correto!")
         else:
             print_success(f"Package name correto: {package_name}")
