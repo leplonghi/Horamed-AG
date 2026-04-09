@@ -22,8 +22,8 @@ const STORAGE_KEYS = {
   LAST_VISIT: 'horamed_pwa_last_visit',
 };
 
-const DISMISS_DURATION_DAYS = 3;
-const MIN_VISITS_BEFORE_PROMPT = 1;
+const DISMISS_DURATION_DAYS = 7;
+const MIN_VISITS_BEFORE_PROMPT = 3;
 
 export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);

@@ -55,6 +55,7 @@ export default function Auth() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [isLogin, setIsLogin] = useState(true);
+  const [isFirstVisit] = useState(() => !localStorage.getItem('horamed_has_visited'));
   const {
     isAvailable,
     isLoading: biometricLoading,
@@ -156,6 +157,7 @@ export default function Auth() {
 
       if (firebaseUser) {
         toast.success(t('auth.accountCreated'));
+        localStorage.setItem('horamed_has_visited', 'true');
         navigate("/bem-vindo");
         return;
       }
@@ -182,6 +184,7 @@ export default function Auth() {
       if (error) throw error;
 
       toast.success(t('auth.loginSuccess'));
+      localStorage.setItem('horamed_has_visited', 'true');
       if (isAvailable && !isBiometricEnabled) {
         setTimeout(() => {
           if (window.confirm(t('auth.enableBiometric'))) {
@@ -191,7 +194,27 @@ export default function Auth() {
       }
       navigate("/");
     } catch (error: any) {
-      toast.error(error.message || t('auth.loginError'));
+      console.error('🔥 Auth page error:', error);
+      
+      let errorMessage = error.message || t('auth.loginError');
+      
+      // Friendly messages for common Firebase errors
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        errorMessage = t('auth.invalidCredentials') || 'Email ou senha incorretos.';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Erro de conexão. Verifique sua internet.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Muitas tentativas. Tente novamente mais tarde.';
+      } else if (error.code === 'auth/user-disabled') {
+        errorMessage = 'Esta conta foi desativada.';
+      } else if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'Este email já está sendo usado.';
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+        id: 'auth-error' // Previne duplicatas
+      });
     } finally {
       setLoading(false);
     }
@@ -347,10 +370,10 @@ export default function Auth() {
           </motion.div>
 
           <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground mb-1">
-            {isLogin ? "Bem-vindo de volta!" : "Crie sua conta"}
+            {!isLogin ? "Crie sua conta" : isFirstVisit ? "Bem-vindo ao HoraMed!" : "Bem-vindo de volta!"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {isLogin ? "Entre para continuar cuidando da sua saúde" : "Comece a organizar seus medicamentos hoje"}
+            {!isLogin ? "Comece a organizar seus medicamentos hoje" : isFirstVisit ? "Crie sua conta ou entre para começar" : "Entre para continuar cuidando da sua saúde"}
           </p>
         </div>
 

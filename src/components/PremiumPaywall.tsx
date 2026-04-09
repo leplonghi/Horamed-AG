@@ -15,8 +15,8 @@ interface PremiumPaywallProps {
 
 const TRIGGER_COPY = {
     medication_limit: {
-        title: "Você usa mais de 1 medicamento?",
-        subtitle: "O plano gratuito permite apenas 1 medicamento. Desbloqueie todos os seus tratamentos com o Premium.",
+        title: "Você usa mais de 2 medicamentos?",
+        subtitle: "O plano gratuito permite apenas 2 medicamentos. Desbloqueie todos os seus tratamentos com o Premium.",
         icon: <Pill className="h-8 w-8 text-white" />,
         gradient: "from-blue-500 via-primary to-cyan-500",
     },

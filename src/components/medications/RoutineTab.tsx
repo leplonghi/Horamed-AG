@@ -12,8 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { MedicationItemCard, MedicationItem } from "./MedicationItemCard";
-import UsageLimitWarning from "@/components/fomo/UsageLimitWarning";
-import PremiumTeaser from "@/components/fomo/PremiumTeaser";
 
 interface RoutineTabProps {
     items: MedicationItem[];
@@ -221,16 +219,7 @@ export function RoutineTab({
                 </TabsContent>
             </Tabs>
 
-            {/* FOMO Sections */}
-            <div className="mt-8 space-y-4 px-1">
-                <UsageLimitWarning
-                    current={items.length}
-                    max={1}
-                    type="medications"
-                    className="rounded-[2rem] border border-white/5 overflow-hidden shadow-glass"
-                />
-                <PremiumTeaser feature="reports" compact className="rounded-[2.5rem] p-6" />
-            </div>
+
         </div>
     );
 }

@@ -39,9 +39,7 @@ import ClaraProactiveCard from "@/components/ClaraProactiveCard";
 import { useOverdueDoses } from "@/hooks/useOverdueDoses";
 import DrugInteractionAlert from "@/components/health/DrugInteractionAlert";
 import OceanBackground from "@/components/ui/OceanBackground";
-import SocialProofBanner from "@/components/fomo/SocialProofBanner";
-import StreakRiskAlert from "@/components/fomo/StreakRiskAlert";
-import PremiumBenefitsMini from "@/components/fomo/PremiumBenefitsMini";
+
 import AdSupportCard from "@/components/AdSupportCard";
 import GoogleAd from "@/components/GoogleAd";
 import VitalsGlanceWidget from "@/components/VitalsGlanceWidget";
@@ -916,14 +914,7 @@ export default function TodayRedesign() {
             <VaccineRemindersWidget />
             <MonthlyReportWidget />
 
-            {/* 🎯 FOMO - Streak risk alert */}
-            <StreakRiskAlert
-              currentStreak={currentStreak}
-              hasPendingDoses={todayStats.total > todayStats.taken}
-            />
 
-            {/* 🎯 FOMO - Premium benefits teaser */}
-            <PremiumBenefitsMini variant="vertical" />
             <AdSupportCard />
             <GoogleAd placement="today_secondary" />
 

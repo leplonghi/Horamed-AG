@@ -68,13 +68,13 @@ export const messaging = typeof window !== 'undefined' && !Capacitor.isNativePla
   ? (() => { try { return getMessaging(app) } catch (e) { console.warn('Messaging init failed:', e); return null } })()
   : null
 
-// Connect to emulators in development
-if (import.meta.env.DEV) {
-    // Uncomment to use emulators
-    // connectAuthEmulator(auth, 'http://localhost:9099')
-    // connectFirestoreEmulator(db, 'localhost', 8080)
-    // connectStorageEmulator(storage, 'localhost', 9199)
-    // connectFunctionsEmulator(functions, 'localhost', 5001)
+// Connect to emulators in development only if explicitly requested
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATOR === 'true') {
+    console.log('🔌 Connecting to Firebase Emulators...');
+    connectAuthEmulator(auth, 'http://localhost:9099')
+    connectFirestoreEmulator(db, 'localhost', 8080)
+    connectStorageEmulator(storage, 'localhost', 9199)
+    connectFunctionsEmulator(functions, 'localhost', 5001)
 }
 
 export default app

@@ -9,7 +9,7 @@ import { ref, uploadBytes } from "firebase/storage";
 import { isPDF, convertPDFToImages } from "@/lib/pdfProcessor";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useDocumentLimits } from "@/hooks/useDocumentLimits";
-import PaywallDialog from "@/components/PaywallDialog";
+import UpgradeModal from "@/components/UpgradeModal";
 import PrescriptionBulkAddWizard from "./PrescriptionBulkAddWizard";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -404,8 +404,8 @@ export default function AddHealthDocumentModal({ open, onOpenChange, onSuccess }
         </DialogContent>
       </Dialog>
 
-      {/* Paywall Dialog */}
-      <PaywallDialog
+      {/* Upgrade Modal */}
+      <UpgradeModal
         open={showPaywall}
         onOpenChange={setShowPaywall}
         feature="documents"

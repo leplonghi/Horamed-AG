@@ -38,10 +38,26 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handleReferralPremiumConversion = exports.handleReferralFirstWeek = exports.handleReferralSignup = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
+const stripe_1 = __importDefault(require("stripe"));
+// Lazy Stripe init — uses same config as index.ts
+let _stripe = null;
+function getStripe() {
+    var _a;
+    if (!_stripe) {
+        const key = process.env.STRIPE_SECRET_KEY || ((_a = functions.config().stripe) === null || _a === void 0 ? void 0 : _a.secret_key);
+        if (!key)
+            throw new Error('STRIPE_SECRET_KEY missing');
+        _stripe = new stripe_1.default(key, { apiVersion: '2025-01-27.acacia' });
+    }
+    return _stripe;
+}
 // Recompensas de indicação
 const REFERRAL_REWARDS = {
     signup: {
@@ -230,8 +246,9 @@ exports.handleReferralPremiumConversion = functions.firestore
  * Adiciona recompensa de indicação
  */
 async function addReferralReward(userId, isPremium, reward, description, type) {
+    var _a;
     if (isPremium) {
-        // Premium: Adiciona créditos
+        // Premium: Adiciona créditos no Firestore
         const creditsRef = admin.firestore().doc(`users/${userId}/rewards/credits`);
         await creditsRef.set({
             balance: admin.firestore.FieldValue.increment(reward.premium),
@@ -247,6 +264,25 @@ async function addReferralReward(userId, isPremium, reward, description, type) {
             }),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+        // Apply negative balance credit to Stripe customer so it deducts on next invoice.
+        // Amount is in centavos (negative = credit for customer).
+        const userDoc = await admin.firestore().doc(`users/${userId}`).get();
+        const stripeCustomerId = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.stripeCustomerId;
+        if (stripeCustomerId) {
+            try {
+                await getStripe().customers.createBalanceTransaction(stripeCustomerId, {
+                    amount: -(reward.premium * 100), // convert BRL to centavos, negative = credit
+                    currency: 'brl',
+                    description: `Recompensa de indicação: ${description}`,
+                    metadata: { source: `referral_${type}`, userId },
+                });
+                console.log(`✅ Crédito de R$${reward.premium} aplicado no Stripe para cliente ${stripeCustomerId}`);
+            }
+            catch (stripeErr) {
+                // Log but don't fail — Firestore credit is already saved
+                console.error(`⚠️ Erro ao aplicar crédito Stripe para ${stripeCustomerId}:`, stripeErr.message);
+            }
+        }
         console.log(`✅ Adicionados R$ ${reward.premium} em créditos`);
     }
     else {

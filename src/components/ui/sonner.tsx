@@ -13,14 +13,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-background/98 group-[.toaster]:to-background/92 group-[.toaster]:backdrop-blur-xl group-[.toaster]:text-foreground group-[.toaster]:border-border/30 group-[.toaster]:shadow-[var(--shadow-glass)] group-[.toaster]:rounded-xl",
-          description: "group-[.toast]:text-muted-foreground",
-          actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground group-[.toast]:rounded-lg",
-          cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:rounded-lg",
-          success: "group-[.toaster]:border-success/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-success/10 group-[.toaster]:to-success/5",
-          error: "group-[.toaster]:border-destructive/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-destructive/10 group-[.toaster]:to-destructive/5",
-          warning: "group-[.toaster]:border-warning/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-warning/10 group-[.toaster]:to-warning/5",
-          info: "group-[.toaster]:border-primary/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-primary/10 group-[.toaster]:to-primary/5",
+            "group toast bg-background/95 backdrop-blur-md text-foreground border-border/50 shadow-2xl rounded-2xl p-4 flex gap-3 items-center ring-1 ring-border/20",
+          description: "text-muted-foreground text-sm leading-relaxed",
+          actionButton:
+            "bg-primary text-primary-foreground font-semibold rounded-xl h-10 px-5 transition-all hover:scale-105 active:scale-95",
+          cancelButton:
+            "bg-secondary text-secondary-foreground font-semibold rounded-xl h-10 px-5 transition-all hover:bg-secondary/80",
+          success: "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/5",
+          error: "border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/5",
         },
       }}
       {...props}

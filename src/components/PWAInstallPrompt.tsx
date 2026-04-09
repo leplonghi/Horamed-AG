@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { X, Download, ShareNetwork as Share, Plus, DeviceMobile as Smartphone, CaretUp as ChevronUp } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/** Paths where PWA prompt should NEVER auto-show */
+const SUPPRESSED_PATHS = ['/', '/auth'];
+
 export default function PWAInstallPrompt() {
   const { t } = useLanguage();
+  const location = useLocation();
   const {
     canInstall,
     isInstalled,
@@ -21,33 +26,20 @@ export default function PWAInstallPrompt() {
   } = usePWAInstall();
 
   const [iosStep, setIosStep] = useState(1);
+  const isOnSuppressedPath = SUPPRESSED_PATHS.includes(location.pathname);
 
-  // Auto-show prompt after user has had time to read the page
+  // Auto-show prompt — only inside the app, never on landing/auth
   useEffect(() => {
-    // Don't show if already installed or in standalone mode
-    if (isInstalled || isStandalone) return;
+    if (isInstalled || isStandalone || isOnSuppressedPath) return;
 
     const timer = setTimeout(() => {
       if (isIOS || canInstall) {
         requestShowPrompt();
       }
-    }, 30000);
+    }, 120000); // 2 min — give user time to use the app first
 
     return () => clearTimeout(timer);
-  }, [canInstall, isIOS, isInstalled, isStandalone, requestShowPrompt]);
-
-  // Retry after longer delay if beforeinstallprompt fires late
-  useEffect(() => {
-    if (isInstalled || isStandalone) return;
-
-    const timer = setTimeout(() => {
-      if ((canInstall || isIOS) && !showPrompt) {
-        requestShowPrompt();
-      }
-    }, 60000);
-
-    return () => clearTimeout(timer);
-  }, [canInstall, isIOS, isInstalled, isStandalone, showPrompt, requestShowPrompt]);
+  }, [canInstall, isIOS, isInstalled, isStandalone, isOnSuppressedPath, requestShowPrompt]);
 
   // Don't render if installed, standalone mode, or shouldn't show
   if (isInstalled || isStandalone || !showPrompt) {

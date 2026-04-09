@@ -40,55 +40,9 @@ function ScrollProgress() {
   );
 }
 
-/* ─── Floating ambient particles ─────────────────────────────────── */
-const PARTICLES = [
-  { icon: Pill, x: "8%", y: "18%", delay: 0, dur: 6 },
-  { icon: Heart, x: "85%", y: "15%", delay: 1.2, dur: 7 },
-  { icon: Alarm, x: "75%", y: "70%", delay: 0.5, dur: 5 },
-  { icon: Stethoscope, x: "12%", y: "75%", delay: 2, dur: 8 },
-  { icon: Sparkles, x: "50%", y: "8%", delay: 0.8, dur: 6.5 },
-  { icon: Syringe, x: "92%", y: "45%", delay: 1.5, dur: 7.5 },
-];
-function FloatingParticles() {
-  return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
-      {PARTICLES.map((p, i) => (
-        <motion.div
-          key={i}
-          className="absolute text-xl select-none"
-          style={{ left: p.x, top: p.y, opacity: 0.18 }}
-          animate={{ y: [-12, 12, -12], rotate: [-8, 8, -8], opacity: [0.12, 0.22, 0.12] }}
-          transition={{ duration: p.dur, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <p.icon className="w-6 h-6" />
-        </motion.div>
-      ))}
-    </div>
-  );
-}
 
-/* ─── Cursor glow ─────────────────────────────────────────────────── */
-function CursorGlow() {
-  const x = useMotionValue(-400);
-  const y = useMotionValue(-400);
-  const sx = useSpring(x, { damping: 22, stiffness: 130 });
-  const sy = useSpring(y, { damping: 22, stiffness: 130 });
-  useEffect(() => {
-    const move = (e: MouseEvent) => { x.set(e.clientX); y.set(e.clientY); };
-    window.addEventListener("mousemove", move, { passive: true });
-    return () => window.removeEventListener("mousemove", move);
-  }, [x, y]);
-  return (
-    <motion.div
-      style={{
-        left: sx, top: sy,
-        translateX: "-50%", translateY: "-50%",
-        background: "radial-gradient(circle, hsl(199 89% 48% / 0.08) 0%, transparent 70%)",
-      }}
-      className="pointer-events-none fixed z-30 w-72 h-72 rounded-full"
-    />
-  );
-}
+
+
 
 /* ─── Section reveal ─────────────────────────────────────────────── */
 function Reveal({ children, delay = 0, className = "" }: {
@@ -290,23 +244,23 @@ const Landing = () => {
   ];
 
   const freeFeatures = isPt
-    ? ["1 medicamento", "Lembretes básicos", "1 perfil", "Histórico limitado"]
-    : ["1 medication", "Basic reminders", "1 profile", "Limited history"];
+    ? ["2 medicamentos", "Lembretes básicos", "1 perfil", "Histórico limitado"]
+    : ["2 medications", "Basic reminders", "1 profile", "Limited history"];
 
   const premiumFeatures = isPt
     ? ["Medicamentos ilimitados", "Lembretes inteligentes", "Até 5 perfis", "Histórico completo", "IA Clara", "Scan de receitas", "Carteira de Saúde", "Alerta de interações", "Dashboard completo", "Modo viagem", "Gamificação", "Suporte prioritário"]
     : ["Unlimited medications", "Smart reminders", "Up to 5 profiles", "Full history", "Clara AI", "Prescription scanner", "Health Wallet", "Interactions check", "Complete dashboard", "Travel mode", "Gamification", "Priority support"];
 
-  const stats = [
-    { value: 50000, suffix: "+", label: isPt ? "doses lembradas/mês" : "doses/month reminded" },
-    { value: 98, suffix: "%", label: isPt ? "adesão média" : "avg. adherence" },
-    { value: "4.9", suffix: "★", label: isPt ? "avaliação" : "rating" },
+  const highlights = [
+    { icon: Bell, text: isPt ? "Lembretes inteligentes" : "Smart reminders" },
+    { icon: Users, text: isPt ? "Até 5 perfis familiares" : "Up to 5 family profiles" },
+    { icon: Brain, text: isPt ? "Assistente IA de saúde" : "AI health assistant" },
+    { icon: Shield, text: isPt ? "Seus dados protegidos" : "Your data protected" },
   ];
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: C.bgFlat }}>
       <ScrollProgress />
-      <CursorGlow />
       <SEOHead
         title={isPt ? "HoraMed — Gestão Completa da Sua Saúde" : "HoraMed — Complete Health Management"}
         description={isPt
@@ -360,27 +314,7 @@ const Landing = () => {
             }}
           />
         </div>
-        <FloatingParticles />
 
-        {/* Animated gradient orbs — depth & immersion */}
-        <motion.div
-          className="absolute pointer-events-none rounded-full"
-          style={{
-            width: 600, height: 600, top: "-20%", left: "-10%",
-            background: "radial-gradient(circle, hsl(199 89% 72% / 0.18) 0%, transparent 65%)"
-          }}
-          animate={{ scale: [1, 1.12, 1], x: [0, 30, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute pointer-events-none rounded-full"
-          style={{
-            width: 400, height: 400, bottom: "5%", right: "-5%",
-            background: "radial-gradient(circle, hsl(207 89% 68% / 0.14) 0%, transparent 65%)"
-          }}
-          animate={{ scale: [1, 1.08, 1], y: [0, -20, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        />
 
         <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-28">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -429,7 +363,7 @@ const Landing = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="text-lg leading-relaxed mb-8"
-                style={{ color: C.muted }}
+                style={{ color: C.text, opacity: 0.75 }}
               >
                 {isPt
                   ? "Lembretes de medicamentos inteligentes, assistente IA de saúde, histórico médico e gerenciamento da família inteira — tudo num só app."
@@ -477,11 +411,8 @@ const Landing = () => {
                   ))}
                 </div>
                 <div>
-                  <div className="flex gap-0.5">
-                    {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />)}
-                  </div>
-                  <p className="text-xs mt-0.5" style={{ color: C.muted }}>
-                    {isPt ? "Gratuito para começar" : "Free to get started"}
+                  <p className="text-xs" style={{ color: C.muted }}>
+                    {isPt ? "✓ Gratuito para começar" : "✓ Free to get started"}
                   </p>
                 </div>
               </motion.div>
@@ -561,24 +492,23 @@ const Landing = () => {
       </section >
 
       {/* ═══════════════════════════════════════════════
-          STATS BAR
+          BENEFIT HIGHLIGHTS
       ═══════════════════════════════════════════════ */}
-      < section className="py-14 px-4 border-y" style={{ background: C.card, borderColor: C.border }}>
+      <section className="py-12 px-4 border-y" style={{ background: C.card, borderColor: C.border }}>
         <div className="container mx-auto max-w-5xl">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
-            {stats.map((s, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            {highlights.map((item, i) => (
               <Reveal key={i} delay={i * 0.08} className="text-center">
-                <p className="text-3xl sm:text-4xl font-black mb-1" style={{ color: C.primary }}>
-                  {typeof s.value === "number" && s.value > 100
-                    ? <Counter to={s.value} suffix={s.suffix} />
-                    : `${s.value}${s.suffix}`}
-                </p>
-                <p className="text-sm" style={{ color: C.muted }}>{s.label}</p>
+                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl mb-3"
+                  style={{ background: "hsl(199 89% 48% / 0.1)" }}>
+                  <item.icon className="h-5 w-5" style={{ color: C.primary }} />
+                </div>
+                <p className="text-sm font-semibold" style={{ color: C.text }}>{item.text}</p>
               </Reveal>
             ))}
           </div>
         </div>
-      </section >
+      </section>
 
       {/* ═══════════════════════════════════════════════
           PROBLEM HOOK
@@ -865,7 +795,7 @@ const Landing = () => {
               { icon: Lock, label: isPt ? "Criptografia ponta a ponta" : "End-to-end encryption" },
               { icon: Smartphone, label: "iOS & Android" },
               { icon: MessageCircle, label: isPt ? "Suporte em português" : "Support in English" },
-              { icon: Stethoscope, label: isPt ? "Aprovado por médicos" : "Doctor-approved" },
+              { icon: Clock, label: isPt ? "Funciona offline" : "Works offline" },
             ].map((t, i) => (
               <div key={i} className="flex items-center gap-2">
                 <t.icon className="h-4 w-4" style={{ color: C.primary }} />

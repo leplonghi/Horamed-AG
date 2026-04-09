@@ -8,7 +8,7 @@ import { CheckCircle as CheckCircle2, Pill, WarningCircle as AlertCircle, Sparkl
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useMedicationLimits } from "@/hooks/useMedicationLimits";
-import PaywallDialog from "@/components/PaywallDialog";
+import UpgradeModal from "@/components/UpgradeModal";
 
 interface ExtractedMedication {
   drug_name: string;
@@ -206,7 +206,7 @@ export default function PrescriptionBulkAddWizard({
         </DialogContent>
       </Dialog>
 
-      <PaywallDialog
+      <UpgradeModal
         open={showPaywall}
         onOpenChange={setShowPaywall}
         feature="active_items"

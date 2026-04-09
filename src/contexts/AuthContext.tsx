@@ -35,10 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('🔐 Auth State Changed:', user ? `Logged in as ${user.email}` : 'Logged out');
       setUser(user);
       setLoading(false);
 
       if (user && window.location.pathname === '/auth') {
+        console.log('🚀 Authenticated user on /auth, redirecting to /');
         navigateRef.current('/');
       }
     });
