@@ -38,12 +38,25 @@ serve(async (req) => {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.supabase_user_id;
         const planType = session.metadata?.plan_type || 'monthly';
-        
+        const stripeSubscriptionId = session.subscription as string;
+
         if (!userId) {
           throw new Error('No user ID in session metadata');
         }
 
         console.log(`[STRIPE-WEBHOOK] Processing checkout for user ${userId}, plan: ${planType}`);
+
+        // Idempotency: skip if this subscription was already activated
+        const { data: existingSub } = await supabaseAdmin
+          .from('subscriptions')
+          .select('stripe_subscription_id, plan_type')
+          .eq('user_id', userId)
+          .single();
+
+        if (existingSub?.stripe_subscription_id === stripeSubscriptionId && existingSub?.plan_type === 'premium') {
+          console.log(`[STRIPE-WEBHOOK] Duplicate event for subscription ${stripeSubscriptionId} — skipping`);
+          break;
+        }
 
         // Update subscription to premium
         await supabaseAdmin
@@ -51,7 +64,7 @@ serve(async (req) => {
           .update({
             plan_type: 'premium',
             status: 'active',
-            stripe_subscription_id: session.subscription as string,
+            stripe_subscription_id: stripeSubscriptionId,
             stripe_customer_id: session.customer as string,
             expires_at: null,
           })

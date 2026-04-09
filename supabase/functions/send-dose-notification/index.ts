@@ -202,7 +202,7 @@ serve(async (req) => {
 
     } catch (error) {
       console.error('Error sending FCM notification:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = 'Erro interno. Tente novamente.';
       
       // Update log with error
       await supabaseAdmin.from('notification_logs').update({

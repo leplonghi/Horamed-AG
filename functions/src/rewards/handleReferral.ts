@@ -7,6 +7,18 @@
 
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import Stripe from 'stripe';
+
+// Lazy Stripe init — uses same config as index.ts
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+    if (!_stripe) {
+        const key = process.env.STRIPE_SECRET_KEY || functions.config().stripe?.secret_key;
+        if (!key) throw new Error('STRIPE_SECRET_KEY missing');
+        _stripe = new Stripe(key, { apiVersion: '2025-01-27.acacia' as any });
+    }
+    return _stripe;
+}
 
 // Recompensas de indicação
 const REFERRAL_REWARDS = {
@@ -275,7 +287,7 @@ async function addReferralReward(
     type: string
 ): Promise<void> {
     if (isPremium) {
-        // Premium: Adiciona créditos
+        // Premium: Adiciona créditos no Firestore
         const creditsRef = admin.firestore().doc(`users/${userId}/rewards/credits`);
         await creditsRef.set({
             balance: admin.firestore.FieldValue.increment(reward.premium),
@@ -291,6 +303,25 @@ async function addReferralReward(
             }),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
+
+        // Apply negative balance credit to Stripe customer so it deducts on next invoice.
+        // Amount is in centavos (negative = credit for customer).
+        const userDoc = await admin.firestore().doc(`users/${userId}`).get();
+        const stripeCustomerId = userDoc.data()?.stripeCustomerId;
+        if (stripeCustomerId) {
+            try {
+                await getStripe().customers.createBalanceTransaction(stripeCustomerId, {
+                    amount: -(reward.premium * 100), // convert BRL to centavos, negative = credit
+                    currency: 'brl',
+                    description: `Recompensa de indicação: ${description}`,
+                    metadata: { source: `referral_${type}`, userId },
+                });
+                console.log(`✅ Crédito de R$${reward.premium} aplicado no Stripe para cliente ${stripeCustomerId}`);
+            } catch (stripeErr: any) {
+                // Log but don't fail — Firestore credit is already saved
+                console.error(`⚠️ Erro ao aplicar crédito Stripe para ${stripeCustomerId}:`, stripeErr.message);
+            }
+        }
 
         console.log(`✅ Adicionados R$ ${reward.premium} em créditos`);
     } else {

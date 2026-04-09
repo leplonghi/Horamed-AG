@@ -9,9 +9,9 @@ export default function AdBanner() {
   const { t } = useTranslation();
   const [dismissed, setDismissed] = useState(false);
   const navigate = useNavigate();
-  const { hasFeature } = useSubscription();
+  const { hasFeature, isOnTrial } = useSubscription();
 
-  if (hasFeature('no_ads') || dismissed) return null;
+  if (hasFeature('no_ads') || isOnTrial || dismissed) return null;
 
   return (
     <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-primary/10 border border-primary/20 rounded-lg p-4 mb-4 relative">

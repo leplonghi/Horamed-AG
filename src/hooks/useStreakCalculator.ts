@@ -65,8 +65,11 @@ export function useStreakCalculator() {
       });
 
       // Calculate current streak (working backwards from today)
+      // Holiday forgiveness: 1 bad day per 7-day window is forgiven if
+      // the 7-day rolling average is still >= 80%.
       let currentStreak = 0;
       let checkDate = startOfDay(new Date());
+      let forgiveUsed = false;
 
       while (true) {
         const dayKey = checkDate.toISOString();
@@ -77,7 +80,25 @@ export function useStreakCalculator() {
         const adherence = dayData.taken / dayData.total;
         if (adherence >= 0.8) {
           currentStreak++;
+          forgiveUsed = false; // reset forgiveness window each good day
           checkDate = subDays(checkDate, 1);
+        } else if (!forgiveUsed) {
+          // Check if the 7-day rolling average (around this bad day) is >= 80%
+          let windowTaken = 0, windowTotal = 0;
+          for (let w = 0; w < 7; w++) {
+            const wKey = subDays(checkDate, w).toISOString();
+            const wData = dayMap.get(wKey);
+            if (wData) { windowTaken += wData.taken; windowTotal += wData.total; }
+          }
+          const weeklyAvg = windowTotal > 0 ? windowTaken / windowTotal : 0;
+          if (weeklyAvg >= 0.8) {
+            // Forgive this day — streak continues
+            forgiveUsed = true;
+            currentStreak++;
+            checkDate = subDays(checkDate, 1);
+          } else {
+            break;
+          }
         } else {
           break;
         }

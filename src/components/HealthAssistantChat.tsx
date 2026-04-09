@@ -5,14 +5,13 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Heart, PaperPlaneRight as Send, X, Spinner as Loader2, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAILimits } from "@/hooks/useAILimits";
 import { PremiumPaywall } from "./PremiumPaywall";
 import { Alert, AlertDescription } from "./ui/alert";
-
 import { Badge } from "./ui/badge";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { auth, fetchCollection, where, functions, httpsCallable } from "@/integrations/firebase";
 
 interface Message {
   role: "user" | "assistant";
@@ -64,41 +63,39 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/health-assistant`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            messages: [...messages, userMsg].map((m) => ({
-              role: m.role,
-              content: m.content,
-            })),
-          }),
+      // Build medication context to personalise Clara's responses
+      let userMedications = '';
+      const user = auth.currentUser;
+      if (user) {
+        const { data: meds } = await fetchCollection<{ name: string; doseText?: string; dose_text?: string }>(
+          `users/${user.uid}/medications`,
+          [where('isActive', '==', true)]
+        );
+        if (meds && meds.length > 0) {
+          userMedications = meds
+            .map(m => `${m.name}${m.doseText || m.dose_text ? ` (${m.doseText || m.dose_text})` : ''}`)
+            .join(', ');
         }
-      );
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          toast.error(t('chat.rateLimitError'));
-          setIsLoading(false);
-          return;
-        }
-        if (response.status === 402) {
-          toast.error(t('chat.creditsError'));
-          setIsLoading(false);
-          return;
-        }
-        throw new Error(t('chat.processingError'));
       }
 
-      const data = await response.json();
-      const assistantContent = data.response || t('chat.fallbackResponse');
+      const callHealthAssistant = httpsCallable<object, { response: string; rateLimitExceeded?: boolean }>(
+        functions, 'healthAssistant'
+      );
+      const result = await callHealthAssistant({
+        messages: [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        userMedications,
+      });
+
+      if (result.data.rateLimitExceeded) {
+        toast.error(t('chat.rateLimitError'));
+        setIsLoading(false);
+        return;
+      }
+
+      const assistantContent = result.data.response || t('chat.fallbackResponse');
 
       setMessages((prev) => [...prev, { role: "assistant", content: assistantContent }]);
 

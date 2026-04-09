@@ -15,10 +15,10 @@ interface PaywallDialogProps {
 
 // Social proof messages that rotate
 const SOCIAL_PROOF_PT = [
-  "127 pessoas assinaram hoje",
-  "94% de adesão média dos Premium",
-  "5.234 famílias confiam no HoraMed",
-  "Avaliação 4.9★ dos usuários",
+  "94% de adesão média dos usuários Premium",
+  "Avaliação 4.9★ na App Store",
+  "Comece com 7 dias grátis, sem cartão",
+  "Cancele quando quiser, sem fidelidade",
 ];
 
 export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDialogProps) {
@@ -72,11 +72,11 @@ export default function PaywallDialog({ open, onOpenChange, feature }: PaywallDi
         };
       case "active_items":
         return {
-          title: "Você precisa de mais medicamentos",
-          desc: "Usuários Premium gerenciam em média 5 medicamentos e ganham 2x mais XP com os desafios semanais.",
-          stat: "5x",
-          statLabel: "mais organização",
-          urgency: "Não perca suas doses"
+          title: "Você atingiu o limite do plano grátis",
+          desc: "Com Premium você adiciona medicamentos ilimitados, gerencia perfis familiares e nunca perde uma dose.",
+          stat: "∞",
+          statLabel: "medicamentos",
+          urgency: "Experimente 7 dias grátis"
         };
       case "documents":
         return {

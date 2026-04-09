@@ -1,5 +1,10 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
+async function getJsPDF() {
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+  return { jsPDF, autoTable };
+}
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -59,6 +64,7 @@ export async function generateMedicalReport(
   language: 'pt' | 'en' = 'pt'
 ): Promise<Blob> {
   const data = await fetchReportData();
+  const { jsPDF, autoTable } = await getJsPDF();
   const doc = new jsPDF();
   let yPos = 15;
 

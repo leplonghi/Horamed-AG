@@ -10,7 +10,7 @@ const SOCIAL_PROOF_MESSAGES_PT = [
   { icon: TrendingUp, text: "Adesão média dos Premium: 94%", color: "text-blue-500" },
   { icon: Star, text: "4.9★ avaliação dos usuários Premium", color: "text-yellow-500" },
   { icon: Clock, text: "Economize 15min/dia com relatórios automáticos", color: "text-teal-500" },
-  { icon: Users, text: "5.234 famílias confiam no HoraMed", color: "text-primary" },
+  { icon: Users, text: "Comece grátis — sem cartão de crédito", color: "text-primary" },
 ];
 
 const SOCIAL_PROOF_MESSAGES_EN = [
@@ -18,7 +18,7 @@ const SOCIAL_PROOF_MESSAGES_EN = [
   { icon: TrendingUp, text: "Premium average adherence: 94%", color: "text-blue-500" },
   { icon: Star, text: "4.9★ rating from Premium users", color: "text-yellow-500" },
   { icon: Clock, text: "Save 15min/day with auto reports", color: "text-teal-500" },
-  { icon: Users, text: "5,234 families trust HoraMed", color: "text-primary" },
+  { icon: Users, text: "Start for free — no credit card needed", color: "text-primary" },
 ];
 
 interface SocialProofBannerProps {
@@ -28,18 +28,27 @@ interface SocialProofBannerProps {
 
 export default function SocialProofBanner({ className, onClick }: SocialProofBannerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [rotationStarted, setRotationStarted] = useState(false);
   const navigate = useNavigate();
   const { isPremium } = useSubscription();
   const { language } = useLanguage();
-  
+
   const messages = language === 'pt' ? SOCIAL_PROOF_MESSAGES_PT : SOCIAL_PROOF_MESSAGES_EN;
 
   useEffect(() => {
+    const startDelay = setTimeout(() => {
+      setRotationStarted(true);
+    }, 10000);
+    return () => clearTimeout(startDelay);
+  }, []);
+
+  useEffect(() => {
+    if (!rotationStarted) return;
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % messages.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, [messages.length]);
+  }, [rotationStarted, messages.length]);
 
   // Don't show for premium users
   if (isPremium) return null;

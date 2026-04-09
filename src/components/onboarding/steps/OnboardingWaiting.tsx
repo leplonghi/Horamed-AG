@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Bell, Spinner as Loader2, CheckCircle, Warning as AlertTriangle, Pill, DeviceMobile } from "@phosphor-icons/react";
+import { Bell, Spinner as Loader2, CheckCircle, Warning as AlertTriangle, Pill, DeviceMobile, CheckCircle as CheckCircle2, Clock } from "@phosphor-icons/react";
 import { differenceInSeconds } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import notificationService from "@/services/NotificationService";
 
 interface Props {
@@ -10,18 +11,25 @@ interface Props {
   itemName: string;
   onCreateItem: () => Promise<boolean>;
   onNotificationReceived: () => void;
+  /** When provided, alarm shows inline dose card instead of auto-advancing */
+  onDoseTaken?: () => void;
+  onDoseSnooze?: () => void;
 }
 
 export default function OnboardingWaiting({
   scheduledTime,
   itemName,
   onCreateItem,
-  onNotificationReceived
+  onNotificationReceived,
+  onDoseTaken,
+  onDoseSnooze,
 }: Props) {
+  const { triggerSuccess, triggerLight } = useHapticFeedback();
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [creating, setCreating] = useState(true);
   const [created, setCreated] = useState(false);
   const [alarmReceived, setAlarmReceived] = useState(false);
+  const [showDoseCard, setShowDoseCard] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -63,35 +71,37 @@ export default function OnboardingWaiting({
 
   // Listen for alarm events
   useEffect(() => {
-    const handleAlarm = (event: CustomEvent) => {
-      setAlarmReceived(true);
-
-      // Wait a moment to show the checkmark, then proceed
-      setTimeout(() => {
-        onNotificationReceived();
-      }, 1500);
+    const handleAlarm = () => {
+      if (onDoseTaken) {
+        setShowDoseCard(true);
+      } else {
+        setAlarmReceived(true);
+        setTimeout(() => {
+          onNotificationReceived();
+        }, 1500);
+      }
     };
 
     window.addEventListener("horamed-alarm", handleAlarm as EventListener);
-
-    return () => {
-      window.removeEventListener("horamed-alarm", handleAlarm as EventListener);
-    };
-  }, [onNotificationReceived]);
+    return () => window.removeEventListener("horamed-alarm", handleAlarm as EventListener);
+  }, [onNotificationReceived, onDoseTaken]);
 
   // Auto-advance if countdown reaches 0 and alarm hasn't triggered
   useEffect(() => {
-    if (secondsLeft === 0 && created && !alarmReceived) {
-      // Give 10 extra seconds for the alarm to fire
+    if (secondsLeft === 0 && created && !alarmReceived && !showDoseCard) {
       const timeout = setTimeout(() => {
-        if (!alarmReceived) {
-          onNotificationReceived();
+        if (!alarmReceived && !showDoseCard) {
+          if (onDoseTaken) {
+            setShowDoseCard(true);
+          } else {
+            onNotificationReceived();
+          }
         }
       }, 10000);
 
       return () => clearTimeout(timeout);
     }
-  }, [secondsLeft, created, alarmReceived, onNotificationReceived]);
+  }, [secondsLeft, created, alarmReceived, showDoseCard, onNotificationReceived, onDoseTaken]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -132,7 +142,74 @@ export default function OnboardingWaiting({
     );
   }
 
-  // Alarm received - show success
+  // Inline dose card (absorbs OnboardingFirstDose)
+  if (showDoseCard) {
+    return (
+      <div className="space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-2"
+        >
+          <h1 className="text-2xl font-bold text-foreground">
+            🔔 Hora do remédio!
+          </h1>
+          <p className="text-muted-foreground">
+            Esse é o lembrete que você configurou
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+          className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-6 border border-primary/20"
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-16 h-16 bg-primary/20 rounded-xl flex items-center justify-center">
+              <Pill className="w-8 h-8 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-foreground">{itemName}</h3>
+              <p className="text-muted-foreground">1 dose</p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Button
+              size="lg"
+              onClick={() => { triggerSuccess(); onDoseTaken?.(); }}
+              className="w-full h-16 text-lg font-semibold bg-primary hover:bg-primary/90"
+            >
+              <CheckCircle2 className="w-6 h-6 mr-3" />
+              ✓ Tomado
+            </Button>
+
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => { triggerLight(); onDoseSnooze?.(); setShowDoseCard(false); }}
+              className="w-full h-14 text-lg"
+            >
+              <Clock className="w-5 h-5 mr-2" />
+              ⏰ Adiar 10 min
+            </Button>
+          </div>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-center text-sm text-muted-foreground"
+        >
+          Para esse teste, você pode clicar em "Tomado" agora
+        </motion.p>
+      </div>
+    );
+  }
+
+  // Alarm received without dose card (legacy fallback)
   if (alarmReceived) {
     return (
       <div className="text-center space-y-8">
@@ -186,7 +263,6 @@ export default function OnboardingWaiting({
         className="py-8"
       >
         <div className="relative w-40 h-40 mx-auto">
-          {/* Animated ring */}
           <svg className="w-full h-full transform -rotate-90">
             <circle
               cx="80"
@@ -211,7 +287,6 @@ export default function OnboardingWaiting({
             />
           </svg>
 
-          {/* Center content */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <motion.div
               animate={secondsLeft <= 10 ? { scale: [1, 1.2, 1] } : {}}
@@ -265,7 +340,7 @@ export default function OnboardingWaiting({
         <Button
           variant="ghost"
           size="sm"
-          onClick={onNotificationReceived}
+          onClick={() => onDoseTaken ? setShowDoseCard(true) : onNotificationReceived()}
           className="text-muted-foreground"
         >
           Pular teste

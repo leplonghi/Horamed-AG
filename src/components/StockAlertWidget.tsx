@@ -1,9 +1,10 @@
 import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Package, Warning as AlertTriangle, ShoppingCart } from "@phosphor-icons/react";
+import { Package, Warning as AlertTriangle, Bell, Tag } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { useStockProjection, StockProjection } from "@/hooks/useStockProjection";
+import { useStockRefillReminder } from "@/hooks/useStockRefillReminder";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -11,6 +12,7 @@ function StockAlertWidget() {
   const navigate = useNavigate();
   const { data: stockData, isLoading } = useStockProjection();
   const { language } = useLanguage();
+  const { scheduleReminder, isReminderSet } = useStockRefillReminder();
 
   // Filter items that are low on stock (7 days or less)
   const criticalItems = (stockData || []).filter(
@@ -76,14 +78,37 @@ function StockAlertWidget() {
               </p>
             </div>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/estoque')}
-              className="shrink-0 text-[10px] h-7 px-2 font-black uppercase text-blue-600 hover:bg-blue-50"
-            >
-              {language === 'pt' ? 'Ver' : 'View'}
-            </Button>
+            <div className="flex gap-1 shrink-0">
+              {mostUrgent.daysRemaining !== null && mostUrgent.daysRemaining <= 5 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scheduleReminder(mostUrgent.itemId, mostUrgent.itemName)}
+                  disabled={isReminderSet(mostUrgent.itemId)}
+                  className="text-[10px] h-7 px-2 font-black uppercase text-amber-600 hover:bg-amber-50"
+                  title={language === 'pt' ? 'Lembrar de comprar' : 'Remind to buy'}
+                >
+                  <Bell className="h-3 w-3" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/farmacia?busca=${encodeURIComponent(mostUrgent.itemName)}`)}
+                className="text-[10px] h-7 px-2 font-black uppercase text-green-600 hover:bg-green-50"
+                title={language === 'pt' ? 'Ver preço' : 'See price'}
+              >
+                <Tag className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/estoque')}
+                className="text-[10px] h-7 px-2 font-black uppercase text-blue-600 hover:bg-blue-50"
+              >
+                {language === 'pt' ? 'Ver' : 'View'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -120,7 +120,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('[PROCESS-REFERRAL] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Erro interno. Tente novamente.' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

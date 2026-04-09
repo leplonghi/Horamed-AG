@@ -79,9 +79,17 @@ serve(async (req) => {
     // Get or create Stripe customer
     const { data: subscription } = await supabaseClient
       .from('subscriptions')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, status, plan_type, stripe_subscription_id')
       .eq('user_id', user.id)
       .single();
+
+    // Guard: if user already has an active premium subscription, do not create another checkout
+    if (subscription?.plan_type === 'premium' && subscription?.status === 'active' && subscription?.stripe_subscription_id) {
+      return new Response(
+        JSON.stringify({ error: 'Você já possui uma assinatura ativa.' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let customerId = subscription?.stripe_customer_id;
 
@@ -116,6 +124,9 @@ serve(async (req) => {
     // Production domain configuration
     const appDomain = Deno.env.get('APP_DOMAIN') || req.headers.get('origin') || 'https://app.horamed.net';
     
+    // Idempotency key: one checkout attempt per user+plan+currency per hour
+    const idempotencyKey = `checkout_${user.id}_${planType}_${currency}_${Math.floor(Date.now() / 3_600_000)}`;
+
     // Create checkout session with 7-day trial
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -142,7 +153,7 @@ serve(async (req) => {
         country: countryCode,
         currency: currency,
       },
-    });
+    }, { idempotencyKey });
 
     console.log(`[CREATE-CHECKOUT] Session created: ${session.id}`);
 
@@ -154,9 +165,9 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('[CREATE-CHECKOUT] Unhandled error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Erro ao iniciar checkout. Tente novamente.' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

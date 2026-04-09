@@ -13,10 +13,10 @@ interface MedicationLimitsStats {
 
 /**
  * Hook to manage medication limits
- * 
- * FREE users: Max 1 active medication
+ *
+ * FREE users: Max 3 active medications (enough to experience real value before upgrading)
  * PREMIUM users: Unlimited medications
- * 
+ *
  * Enforces limits on medications collection where isActive = true
  */
 export function useMedicationLimits() {
@@ -24,7 +24,7 @@ export function useMedicationLimits() {
   const { activeProfile } = useUserProfiles();
   const [stats, setStats] = useState<MedicationLimitsStats>({
     activeCount: 0,
-    maxActive: 1,
+    maxActive: 3,
     canAddMedication: false,
     isPremium: false,
     remaining: 0,
@@ -76,7 +76,7 @@ export function useMedicationLimits() {
       if (error) throw error;
 
       const activeCount = medsData?.length || 0;
-      const maxActive = 1;
+      const maxActive = 3; // Free tier allows up to 3 medications
       const remaining = Math.max(0, maxActive - activeCount);
 
       setStats({

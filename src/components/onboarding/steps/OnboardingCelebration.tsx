@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Sparkle as Sparkles, ArrowRight } from "@phosphor-icons/react";
+import { CheckCircle, Sparkle as Sparkles, ArrowRight, ChatCircle as MessageCircle } from "@phosphor-icons/react";
 import Confetti from "react-confetti";
 
 interface Props {
-  onNext: () => void;
+  onComplete: () => void;
 }
 
-export default function OnboardingCelebration({ onNext }: Props) {
+const claraAvatarUrl = "/images/clara.jpg";
+
+export default function OnboardingCelebration({ onComplete }: Props) {
   const [showConfetti, setShowConfetti] = useState(true);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     setWindowSize({ width: window.innerWidth, height: window.innerHeight });
-    
+
     const timer = setTimeout(() => setShowConfetti(false), 4000);
     return () => clearTimeout(timer);
   }, []);
@@ -73,19 +75,42 @@ export default function OnboardingCelebration({ onNext }: Props) {
         ))}
       </motion.div>
 
+      {/* Clara intro card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8 }}
-        className="pt-4"
+        className="bg-muted/50 rounded-2xl p-4 text-left flex items-start gap-4"
+      >
+        <div className="relative shrink-0">
+          <img
+            src={claraAvatarUrl}
+            alt="Clara"
+            className="w-14 h-14 rounded-full object-cover border-2 border-primary/20"
+          />
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+            <MessageCircle className="w-3 h-3 text-primary-foreground" />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="font-semibold text-foreground">Prazer, eu sou a Clara! 👋</p>
+          <p className="text-sm text-muted-foreground">Sua assistente de saúde. Posso te ajudar com dúvidas sobre medicamentos, interações, ajustes de rotina e muito mais.</p>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0 }}
+        className="pt-2"
       >
         <Button
           size="lg"
-          onClick={onNext}
+          onClick={onComplete}
           className="w-full h-14 text-lg font-semibold"
         >
           <Sparkles className="w-5 h-5 mr-2" />
-          Continuar
+          Ver minha rotina
           <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </motion.div>

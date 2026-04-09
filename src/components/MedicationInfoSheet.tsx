@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Warning as AlertTriangle, Pill, Tag, FileText, Info, ShieldWarning as ShieldAlert, Heartbeat as Activity, Lightning as Zap, Prohibit as Ban, BookOpen } from "@phosphor-icons/react";
+import { Warning as AlertTriangle, Pill, Tag, FileText, Info, ShieldWarning as ShieldAlert, Heartbeat as Activity, Lightning as Zap, Prohibit as Ban, BookOpen, Globe } from "@phosphor-icons/react";
 import { MedicationInfo } from "@/hooks/useMedicationInfo";
+import { useAnvisaLookup } from "@/hooks/useAnvisaLookup";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -25,6 +27,11 @@ export default function MedicationInfoSheet({
   error,
 }: MedicationInfoSheetProps) {
   const { t, language } = useLanguage();
+  const { info: anvisaInfo, isLoading: anvisaLoading, lookup } = useAnvisaLookup();
+
+  useEffect(() => {
+    if (open && medicationName) lookup(medicationName);
+  }, [open, medicationName, lookup]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -207,6 +214,68 @@ export default function MedicationInfoSheet({
                   </AccordionItem>
                 )}
               </Accordion>
+            )}
+
+            {/* OpenFDA / ANVISA Section */}
+            {(anvisaLoading || anvisaInfo) && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b">
+                  <Globe className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-semibold text-blue-700 dark:text-blue-400">
+                    {language === 'pt' ? 'Informações do Bulário (OpenFDA)' : 'Drug Label Info (OpenFDA)'}
+                  </span>
+                  <Badge variant="outline" className="ml-auto text-[10px] border-blue-300 text-blue-600">EN</Badge>
+                </div>
+                {anvisaLoading ? (
+                  <div className="p-4 space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ) : anvisaInfo && (
+                  <Accordion type="multiple" className="px-2 py-1">
+                    {anvisaInfo.genericName && (
+                      <AccordionItem value="fda-generic" className="border-0">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          {language === 'pt' ? 'Nome genérico' : 'Generic name'}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-xs text-muted-foreground pb-3">
+                          {anvisaInfo.genericName} {anvisaInfo.manufacturer ? `— ${anvisaInfo.manufacturer}` : ''}
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                    {anvisaInfo.drugClass && (
+                      <AccordionItem value="fda-class" className="border-0">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          {language === 'pt' ? 'Classe farmacológica' : 'Pharmacological class'}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-xs text-muted-foreground pb-3">
+                          {anvisaInfo.drugClass}
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                    {anvisaInfo.warnings && (
+                      <AccordionItem value="fda-warnings" className="border-0">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          {language === 'pt' ? 'Avisos (FDA)' : 'Warnings (FDA)'}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-xs text-muted-foreground pb-3 leading-relaxed">
+                          {anvisaInfo.warnings}
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                    {anvisaInfo.contraindications && (
+                      <AccordionItem value="fda-contra" className="border-0">
+                        <AccordionTrigger className="py-2 text-sm hover:no-underline">
+                          {language === 'pt' ? 'Contraindicações (FDA)' : 'Contraindications (FDA)'}
+                        </AccordionTrigger>
+                        <AccordionContent className="text-xs text-muted-foreground pb-3 leading-relaxed">
+                          {anvisaInfo.contraindications}
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
+                  </Accordion>
+                )}
+              </div>
             )}
 
             {/* Disclaimer */}

@@ -1,7 +1,10 @@
 import { fetchCollection, fetchDocument, where } from "@/integrations/firebase";
-import jsPDF from 'jspdf';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
-import 'jspdf-autotable';
+
+async function getJsPDF() {
+  const { default: jsPDF } = await import('jspdf');
+  return { jsPDF };
+}
 
 interface ProfileDoc {
   fullName?: string;
@@ -61,7 +64,7 @@ interface MonthlyReportData {
 
 export async function generateMonthlyReport(userId: string, month: Date): Promise<Blob> {
   const data = await getMonthlyReportData(userId, month);
-  return createReportPDF(data);
+  return await createReportPDF(data);
 }
 
 async function getMonthlyReportData(userId: string, month: Date): Promise<MonthlyReportData> {
@@ -170,7 +173,8 @@ function generateInsights(adherenceRate: number, punctualityRate: number, missed
   return insights;
 }
 
-function createReportPDF(data: MonthlyReportData): Blob {
+async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
+  const { jsPDF } = await getJsPDF();
   const doc = new jsPDF();
   const monthName = data.month.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 

@@ -196,7 +196,7 @@ FORMATO: Texto profissional, objetivo, sem jargão técnico excessivo. Máximo 4
   } catch (error) {
     console.error("Consultation prep error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Erro ao gerar relatório" }),
+      JSON.stringify({ error: "Erro ao gerar relatório. Tente novamente." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

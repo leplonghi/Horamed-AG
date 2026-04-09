@@ -380,9 +380,21 @@ export default function SubscriptionManagement() {
               </Button>
               {isExpired && (
                 <Card className="p-4 bg-destructive/10 border-destructive/20">
-                  <p className="text-sm text-destructive">
-                    Seu período de teste expirou. Faça upgrade para continuar usando todos os recursos.
+                  <p className="text-sm text-destructive font-medium mb-2">
+                    Seu período de teste expirou.
                   </p>
+                  <p className="text-xs text-destructive/80 mb-3">
+                    Seus dados ficam salvos por 30 dias. Reative agora e continue de onde parou — sem perder nada.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="w-full"
+                    onClick={handleReactivate}
+                  >
+                    <Crown className="h-3 w-3 mr-1" />
+                    Reativar Premium
+                  </Button>
                 </Card>
               )}
             </>

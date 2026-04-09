@@ -32,6 +32,18 @@ export interface Subscription {
   discountType?: string;
 }
 
+export type PremiumFeature =
+  | 'ocr'
+  | 'charts'
+  | 'unlimited_meds'
+  | 'no_ads'
+  | 'ai_assistant'
+  | 'family_profiles'
+  | 'medical_reports'
+  | 'travel_mode'
+  | 'drug_interactions'
+  | 'advanced_analytics';
+
 interface SubscriptionContextType {
   subscription: Subscription | null;
   loading: boolean;
@@ -42,7 +54,7 @@ interface SubscriptionContextType {
   trialDaysLeft: number | null;
   daysLeft: number | null;
   canAddMedication: boolean;
-  hasFeature: (feature: 'ocr' | 'charts' | 'unlimited_meds' | 'no_ads') => boolean;
+  hasFeature: (feature: PremiumFeature) => boolean;
   refresh: () => Promise<void>;
   syncWithStripe: () => Promise<void>;
 }
@@ -164,8 +176,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   // Users can add medications if premium, on trial, or within free tier limits
   const canAddMedication = isPremium || isOnTrial || (isFree && !isExpired);
 
-  // Trial users get ALL premium features
-  const hasFeature = (feature: 'ocr' | 'charts' | 'unlimited_meds' | 'no_ads') => {
+  // All premium features — trial users get full access.
+  // Use hasFeature() instead of raw isPremium checks for consistent gating.
+  const hasFeature = (_feature: PremiumFeature) => {
     if (isPremium || isOnTrial) return true;
     if (isExpired) return false;
     return false;

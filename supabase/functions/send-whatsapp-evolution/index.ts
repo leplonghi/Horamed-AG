@@ -115,7 +115,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error sending WhatsApp:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = 'Erro interno. Tente novamente.';
     
     // Try to log error metric
     try {

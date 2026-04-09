@@ -53,6 +53,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AdminFloatingButton from "@/components/AdminFloatingButton";
 import { DailyCheckInWidget } from "@/components/symptoms/DailyCheckInWidget";
 import { symptomService } from "@/lib/symptomService";
+import TrialReminderBanner from "@/components/TrialReminderBanner";
 
 interface TimelineItem {
   id: string;
@@ -751,6 +752,18 @@ export default function TodayRedesign() {
     [todayStats.total, todayStats.taken]
   );
 
+  // Memoize todayDoses (pending items) to avoid re-filtering on every render
+  const pendingTimelineItems = useMemo(() =>
+    timelineItems.filter(item => item.status === 'pending'),
+    [timelineItems]
+  );
+
+  // Memoize progress percentage to avoid recomputing on every render
+  const progressPercent = useMemo(() =>
+    todayStats.total > 0 ? Math.round((todayStats.taken / todayStats.total) * 100) : 0,
+    [todayStats.taken, todayStats.total]
+  );
+
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
       {showConfetti && (
@@ -766,6 +779,7 @@ export default function TodayRedesign() {
       )}
       <OceanBackground variant="page" />
       <Header />
+      <TrialReminderBanner />
 
       <main className="page-container container mx-auto max-w-2xl px-4 space-y-4 relative z-10">
 
