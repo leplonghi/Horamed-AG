@@ -296,6 +296,3 @@ const MedicalEventsHub = () => {
 };
 
 export default MedicalEventsHub;
-
-
-export default MedicalEventsHub;

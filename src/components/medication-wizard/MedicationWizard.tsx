@@ -836,7 +836,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           </div>
 
           {currentStep > 0 && (
-            <div className="grid grid-cols-2 gap-4 p-4 pb-6 sm:px-6 sm:pb-5 border-t border-white/10 bg-background/50 backdrop-blur-md shrink-0 safe-area-inset-bottom z-10">
+            <div className="grid grid-cols-2 gap-4 border-t border-white/10 bg-background/50 p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur-md shrink-0 sm:px-6 sm:pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-10">
               <Button
                 variant="ghost"
                 onClick={currentStep === 1 ? () => setCurrentStep(0) : handleBack}
@@ -870,7 +870,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           )}
 
           {currentStep === 0 && !processingOCR && (
-            <div className="p-4 pb-6 sm:px-6 sm:pb-4 border-t border-white/5 bg-background/30 backdrop-blur-sm shrink-0 safe-area-inset-bottom">
+            <div className="border-t border-white/5 bg-background/30 p-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] backdrop-blur-sm shrink-0 sm:px-6 sm:pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <Button
                 variant="ghost"
                 onClick={() => onOpenChange(false)}

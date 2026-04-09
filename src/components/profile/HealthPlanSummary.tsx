@@ -20,6 +20,7 @@ export default function HealthPlanSummary() {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [showFinder, setShowFinder] = useState(false);
+    const editProfilePath = activeProfile?.id ? `/perfil/editar/${activeProfile.id}` : '/perfis/gerenciar';
 
     const plans = activeProfile?.healthPlans || [];
 
@@ -34,7 +35,7 @@ export default function HealthPlanSummary() {
                         <h3 className="text-sm font-medium">{t('profile.healthPlans') || "Planos de Saúde"}</h3>
                         <p className="text-xs text-muted-foreground">{t('profile.noHealthPlans') || "Cadastre para encontrar redes credenciadas."}</p>
                     </div>
-                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1 mt-1" onClick={() => navigate('/perfil/editar')}>
+                    <Button variant="outline" size="sm" className="h-8 text-xs gap-1 mt-1" onClick={() => navigate(editProfilePath)}>
                         <Plus className="h-3 w-3" /> {t('common.add')}
                     </Button>
                 </div>
@@ -49,7 +50,7 @@ export default function HealthPlanSummary() {
                     <Shield className="h-4 w-4" />
                     {t('profile.healthPlans')}
                 </h3>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate('/perfil/editar')}>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => navigate(editProfilePath)}>
                     <span className="text-xs text-muted-foreground">Edit</span>
                 </Button>
             </div>

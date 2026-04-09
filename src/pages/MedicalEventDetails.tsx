@@ -1,6 +1,7 @@
 
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMedicalEvent, useMedicalEvents } from '@/hooks/useMedicalEvents';
+import { updateEventStatus } from '@/lib/medicalEvents';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, CalendarBlank as Calendar, FileText, MapPin, User, Clock, Check, Trash as Trash2, Bell, Warning as AlertTriangle } from "@phosphor-icons/react";
@@ -19,7 +20,7 @@ const MedicalEventDetails = () => {
     const { t } = useLanguage();
 
     const { event, isLoading } = useMedicalEvent(id);
-    const { deleteEvent, updateEvent } = useMedicalEvents();
+    const { deleteEvent } = useMedicalEvents();
 
     if (isLoading) {
         return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
@@ -43,13 +44,10 @@ const MedicalEventDetails = () => {
     };
 
     const handleComplete = async () => {
-        // Simple completion for now
-        if (confirm(t('common.areYouSure'))) {
-            // We would need an update function exposed specifically for status or modify the type
-            // leveraging updateEvent that uses updateMedicalEvent under the hood
-            await updateEvent({ id: id!, data: {} }); // Need to fix this in lib to accept status update via updateEvent or expose updateStatus
-            // For now just toast
-            toast.info("Funcionalidade de conclusão em desenvolvimento");
+        if (id && confirm(t('common.areYouSure'))) {
+            await updateEventStatus(id, 'completed');
+            toast.success("Evento marcado como realizado");
+            navigate('/eventos-medicos');
         }
     };
 

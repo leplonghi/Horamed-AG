@@ -563,7 +563,7 @@ export default function AddItem() {
         }}
       />
 
-      <div className="min-h-screen bg-background p-6 pb-24">
+      <div className="min-h-screen bg-background p-6 pb-[calc(8rem+env(safe-area-inset-bottom))]">
         <div className="max-w-4xl mx-auto space-y-6">
           <div className="flex items-center gap-3">
             <img src={logo} alt="HoraMed" className="h-10 w-auto" />
@@ -1290,13 +1290,15 @@ export default function AddItem() {
               </div>
             </Card>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 text-lg"
-            >
-              {loading ? "Salvando..." : isEditing ? "Atualizar item" : "Salvar item"}
-            </Button>
+            <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 bg-background/95 pb-2 pt-2 backdrop-blur-sm">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-12 w-full text-lg"
+              >
+                {loading ? "Salvando..." : isEditing ? "Atualizar item" : "Salvar item"}
+              </Button>
+            </div>
           </form>
         </div>
       </div>

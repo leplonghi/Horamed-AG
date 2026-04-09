@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 import Header from "@/components/Header";
-import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import { useMilestoneDetector } from "@/hooks/useMilestoneDetector";
@@ -43,6 +42,8 @@ import OceanBackground from "@/components/ui/OceanBackground";
 import SocialProofBanner from "@/components/fomo/SocialProofBanner";
 import StreakRiskAlert from "@/components/fomo/StreakRiskAlert";
 import PremiumBenefitsMini from "@/components/fomo/PremiumBenefitsMini";
+import AdSupportCard from "@/components/AdSupportCard";
+import GoogleAd from "@/components/GoogleAd";
 import VitalsGlanceWidget from "@/components/VitalsGlanceWidget";
 // 10/10 Polish: Import externalized components and confetti
 import { TodayStatusCard } from "@/components/today/TodayStatusCard";
@@ -148,10 +149,7 @@ const safeDate = (value: unknown): Date => {
 export default function TodayRedesign() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
-  const {
-    scheduleNotificationsForNextDay
-  } = useMedicationAlarm();
-  usePushNotifications();
+  const { scheduleNext48Hours } = usePushNotifications();
   const { currentStreak, refresh: refreshStreak } = useStreakCalculator();
   const {
     milestone,
@@ -687,8 +685,8 @@ export default function TodayRedesign() {
 
   // Agendar notificações apenas uma vez
   useEffect(() => {
-    scheduleNotificationsForNextDay();
-  }, [scheduleNotificationsForNextDay]);
+    void scheduleNext48Hours();
+  }, [scheduleNext48Hours]);
 
   // Single shared debounce ref — used by all 3 onSnapshot listeners
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -926,6 +924,8 @@ export default function TodayRedesign() {
 
             {/* 🎯 FOMO - Premium benefits teaser */}
             <PremiumBenefitsMini variant="vertical" />
+            <AdSupportCard />
+            <GoogleAd placement="today_secondary" />
 
             {/* Milestone Reward Modal */}
             {milestone && (

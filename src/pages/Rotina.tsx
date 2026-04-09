@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import MedicationOCRWrapper from "@/components/MedicationOCRWrapper";
-import AdBanner from "@/components/AdBanner";
+import AdSupportCard from "@/components/AdSupportCard";
+import GoogleAd from "@/components/GoogleAd";
 import { useSubscription } from "@/hooks/useSubscription";
 import UpgradeModal from "@/components/UpgradeModal";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
@@ -250,7 +251,8 @@ export default function Rotina() {
               : "Here you register all your medications, vitamins and supplements. Set times, doses and durations. Use the + button to add manually or 📷 to take a photo of the box/prescription. Simple and fast!"}
           />
 
-          <AdBanner />
+          <AdSupportCard />
+          <GoogleAd placement="routine_feed" className="mt-1" />
 
           {/* Search and Sort */}
           <div className="flex gap-3">

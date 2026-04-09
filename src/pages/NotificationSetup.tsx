@@ -13,6 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const isNative = Capacitor.isNativePlatform();
 const platform = Capacitor.getPlatform();
+const CHANNEL_ID = "horamed-medicamentos";
 
 interface PermissionStatus {
   push: 'granted' | 'denied' | 'prompt' | 'unknown';
@@ -34,6 +35,21 @@ export default function NotificationSetup() {
   useEffect(() => {
     checkPermissions();
   }, []);
+
+  const ensureAndroidChannel = async () => {
+    if (!isNative || platform !== "android") return;
+
+    await LocalNotifications.createChannel({
+      id: CHANNEL_ID,
+      name: "Lembretes de Medicamentos",
+      description: "Notificações para lembrar de tomar medicamentos",
+      importance: 5,
+      visibility: 1,
+      sound: "default",
+      vibration: true,
+      lights: true,
+    });
+  };
 
   const checkPermissions = async () => {
     setLoading(true);
@@ -71,7 +87,9 @@ export default function NotificationSetup() {
         const localResult = await LocalNotifications.requestPermissions();
 
         if (pushResult.receive === 'granted' && localResult.display === 'granted') {
+          await ensureAndroidChannel();
           await PushNotifications.register();
+          window.dispatchEvent(new CustomEvent("horamed-reschedule-notifications"));
           toast.success(t('notifSetup.notifEnabled'));
           await checkPermissions();
         } else {
@@ -93,6 +111,7 @@ export default function NotificationSetup() {
   const sendTestNotification = async () => {
     try {
       if (isNative) {
+        await ensureAndroidChannel();
         await LocalNotifications.schedule({
           notifications: [
             {
@@ -100,7 +119,7 @@ export default function NotificationSetup() {
               title: '🔔 ' + t('notifSetup.testNotif'),
               body: t('notifSetup.testDesc'),
               schedule: { at: new Date(Date.now() + 3000) },
-              channelId: 'horamed-medicamentos'
+              channelId: CHANNEL_ID
             }
           ]
         });

@@ -11,7 +11,6 @@ import { auth, fetchDocument, setDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
-import { useMedicationAlarm } from "@/hooks/useMedicationAlarm";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
@@ -53,7 +52,6 @@ const scheduleToMinutes = (schedules: NotificationSchedule[]): number[] => {
 export default function NotificationSettings() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { scheduleNotificationsForNextDay } = useMedicationAlarm();
   const [settings, setSettings] = useState({
     pushEnabled: true,
     localEnabled: true,
@@ -159,16 +157,15 @@ export default function NotificationSettings() {
         }
       );
 
-      // Sync with localStorage for useMedicationAlarm hook
+      // Keep local settings in sync for the foreground reminder helper
       localStorage.setItem("alarmSettings", JSON.stringify({
         enabled: true, // Master switch implied
         sound: settings.sound,
         duration: 30, // Default or add to settings UI later
-        alertMinutes: settings.alertMinutes[0] || 5, // Use first alert as primary for the hook
+        alertMinutes: settings.alertMinutes,
       }));
 
-      // Schedule notifications for next 24 hours
-      await scheduleNotificationsForNextDay();
+      window.dispatchEvent(new CustomEvent("horamed-reschedule-notifications"));
 
       toast.success(t("toast.notifications.settingsSaved"));
     } catch (error) {
@@ -186,7 +183,7 @@ export default function NotificationSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-24">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-[calc(8rem+env(safe-area-inset-bottom))]">
       <Header />
       <div className="container max-w-2xl mx-auto px-4 pt-24 pb-6">
         <div className="flex items-start gap-4 mb-8">
@@ -423,7 +420,7 @@ export default function NotificationSettings() {
               </CardContent>
             </Card>
 
-            <div className="sticky bottom-20 z-10 mt-6">
+            <div className="sticky bottom-[calc(5rem+env(safe-area-inset-bottom))] z-10 mt-6">
               <Button
                 onClick={handleSaveSettings}
                 className="w-full shadow-lg"

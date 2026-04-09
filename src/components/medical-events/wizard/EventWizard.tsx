@@ -5,7 +5,7 @@ import { createMedicalEvent } from '@/lib/medicalEvents';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from "@phosphor-icons/react";
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext'; // Assuming AuthContext exists
+import { useAuth } from '@/contexts/AuthContext';
 
 // Steps
 import StepTypeSelection from './steps/StepTypeSelection';
@@ -17,22 +17,14 @@ import OCRCapture from './OCRCapture';
 const EventWizard = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
-    // const { user } = useAuth(); // Implement if AuthContext is available
-    const user = { uid: 'current_user_id' }; // Placeholder
+    const { user } = useAuth();
 
     const [step, setStep] = useState(0); // 0 = Mode Selection, 1 = Type, 2 = Basic, 3 = Details, 4 = Review
     const [captureMode, setCaptureMode] = useState<'manual' | 'ocr' | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Initial State
-    const [formData, setFormData] = useState<Partial<MedicalEventFormData>>({
-        enableNotifications: true,
-        type: 'consultation',
-        // Initialize other fields safely
-        preparation: { fasting: false, instructions: [] },
-        doctor: { name: '', crm: '', specialty: '' },
-        location: { name: '', address: '' }
-    });
+    const [formData, setFormData] = useState<Partial<MedicalEventFormData>>(defaultEventFormData);
 
     const updateFormData = (data: Partial<MedicalEventFormData>) => {
         setFormData(prev => ({ ...prev, ...data }));
@@ -78,7 +70,11 @@ const EventWizard = () => {
     };
 
     const handleSave = async () => {
-        if (!user) return;
+        if (!user) {
+            toast({ title: "Sessão expirada", description: "Faça login novamente para salvar o evento.", variant: "destructive" });
+            navigate('/auth');
+            return;
+        }
         setIsSaving(true);
         try {
             // Validate required fields

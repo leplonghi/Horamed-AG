@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     IconPlus,
     IconSearch,
@@ -20,6 +22,8 @@ import Header from "@/components/Header";
 import Navigation from "@/components/Navigation";
 import OceanBackground from "@/components/ui/OceanBackground";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
+import AdSupportCard from "@/components/AdSupportCard";
+import GoogleAd from "@/components/GoogleAd";
 import { useDocumentos, HealthDocument } from "@/hooks/useCofre";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
@@ -136,6 +140,9 @@ export default function Cofre() {
                     })}
                 </motion.div>
 
+                <AdSupportCard />
+                <GoogleAd placement="wallet_feed" />
+
                 {/* Document List */}
                 {isLoading ? (
                     <div className="space-y-4">
@@ -172,7 +179,7 @@ export default function Cofre() {
                                             <IconUpload className="h-5 w-5" /> Digitalizar
                                         </Button>
                                         <Button variant="outline" className="rounded-2xl h-12 gap-2 flex-1 bg-white/20 border-white/20 backdrop-blur-sm"
-                                            onClick={() => navigate("/carteira/criar")}>
+                                            onClick={() => navigate("/carteira/criar-manual")}>
                                             <IconPlus className="h-5 w-5" /> Manual
                                         </Button>
                                     </div>

@@ -28,6 +28,10 @@ const MedicationHistory = lazy(() => import("@/pages/MedicationHistory"));
 const AnalyticsDetails = lazy(() => import("@/pages/AnalyticsDetails"));
 const Agenda = lazy(() => import("@/pages/Agenda"));
 const MedicalAppointments = lazy(() => import("@/pages/MedicalAppointments"));
+const MedicalEventsHub = lazy(() => import("@/pages/MedicalEventsHub"));
+const MedicalEventAdd = lazy(() => import("@/pages/MedicalEventAdd"));
+const MedicalEventsCalendar = lazy(() => import("@/pages/MedicalEventsCalendar"));
+const MedicalEventDetails = lazy(() => import("@/pages/MedicalEventDetails"));
 const TravelMode = lazy(() => import("@/pages/TravelMode"));
 const SideEffectsDiary = lazy(() => import("@/pages/SideEffectsDiary"));
 const CarteiraVacina = lazy(() => import("@/pages/CarteiraVacina"));
@@ -87,6 +91,45 @@ const HIDE_NAVIGATION_PATHS = [
   "/",
 ];
 
+const HIDE_NAVIGATION_PREFIXES = [
+  "/medicamentos",
+  "/rotina",
+  "/estoque",
+  "/historico-medicamentos",
+  "/carteira",
+  "/carteira-vacina",
+  "/vacinas",
+  "/consultas",
+  "/eventos-medicos",
+  "/saude/agenda",
+  "/dashboard-saude",
+  "/linha-do-tempo",
+  "/perfil",
+  "/perfis",
+  "/recompensas",
+  "/notificacoes-config",
+  "/configurar-notificacoes",
+  "/alarmes",
+  "/alarme",
+  "/ajuda",
+  "/help-support",
+  "/mais",
+  "/sinais-vitais",
+  "/exportar",
+  "/assinatura",
+  "/tutorial",
+  "/privacidade",
+  "/privacy",
+  "/termos",
+  "/terms",
+  "/sobre",
+  "/about",
+  "/graficos",
+  "/exames",
+  "/relatorios",
+  "/relatorios-medicos",
+];
+
 const PageLoader = () => (
   <div className="flex min-h-screen items-center justify-center bg-background">
     <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/20 border-t-primary" />
@@ -129,7 +172,9 @@ export default function AppShell() {
   }, []);
 
   const location = useLocation();
-  const showNavigation = !HIDE_NAVIGATION_PATHS.includes(location.pathname);
+  const showNavigation =
+    !HIDE_NAVIGATION_PATHS.includes(location.pathname) &&
+    !HIDE_NAVIGATION_PREFIXES.some((path) => location.pathname.startsWith(path));
 
   return (
     <>
@@ -154,6 +199,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/today" element={<Navigate to="/hoje" replace />} />
           <Route
             path="/rotina"
             element={
@@ -194,6 +240,8 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/wallet" element={<Navigate to="/carteira" replace />} />
+          <Route path="/cofre" element={<Navigate to="/carteira" replace />} />
           <Route
             path="/perfil"
             element={
@@ -202,6 +250,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/profile" element={<Navigate to="/perfil" replace />} />
           <Route
             path="/medicamentos"
             element={
@@ -210,6 +259,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/medications" element={<Navigate to="/medicamentos" replace />} />
           <Route path="/saude" element={<Navigate to="/medicamentos" replace />} />
 
           <Route
@@ -281,11 +331,46 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/agenda" element={<Navigate to="/saude/agenda" replace />} />
           <Route
             path="/consultas"
             element={
               <ProtectedRoute>
                 <MedicalAppointments />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/eventos-medicos"
+            element={
+              <ProtectedRoute>
+                <MedicalEventsHub />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/events" element={<Navigate to="/eventos-medicos" replace />} />
+          <Route
+            path="/eventos-medicos/adicionar"
+            element={
+              <ProtectedRoute>
+                <MedicalEventAdd />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/eventos-medicos/calendario"
+            element={
+              <ProtectedRoute>
+                <MedicalEventsCalendar />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/eventos-medicos/list" element={<Navigate to="/eventos-medicos" replace />} />
+          <Route
+            path="/eventos-medicos/:id"
+            element={
+              <ProtectedRoute>
+                <MedicalEventDetails />
               </ProtectedRoute>
             }
           />
@@ -337,6 +422,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/reports" element={<Navigate to="/relatorios" replace />} />
           <Route
             path="/relatorios-medicos"
             element={
@@ -361,6 +447,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/health" element={<Navigate to="/dashboard-saude" replace />} />
           <Route
             path="/linha-do-tempo"
             element={
@@ -427,6 +514,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/perfil/editar" element={<Navigate to="/perfis/gerenciar" replace />} />
           <Route
             path="/profile/edit"
             element={
@@ -452,6 +540,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/meu-progresso" element={<Navigate to="/progresso" replace />} />
           <Route
             path="/peso"
             element={
@@ -508,6 +597,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/notifications" element={<Navigate to="/notificacoes-config" replace />} />
           <Route path="/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
           <Route path="/notificacoes/config" element={<Navigate to="/notificacoes-config" replace />} />
           <Route path="/notificacoes/configurar" element={<Navigate to="/notificacoes-config" replace />} />
@@ -560,6 +650,7 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
+          <Route path="/support" element={<Navigate to="/ajuda" replace />} />
           <Route
             path="/help-support"
             element={
@@ -626,6 +717,10 @@ export default function AppShell() {
                 <CofreManualCreate />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/carteira/criar"
+            element={<Navigate to="/carteira/criar-manual" replace />}
           />
           <Route
             path="/carteira/:id/review"

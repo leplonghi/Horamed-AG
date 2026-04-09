@@ -1,9 +1,10 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { PushNotifications, ActionPerformed } from "@capacitor/push-notifications";
 import { LocalNotifications, LocalNotificationSchema, ScheduleEvery } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
 import {
+  useAuth,
   auth,
   functions,
   httpsCallable,
@@ -18,7 +19,7 @@ import {
 } from "@/integrations/firebase";
 import { safeDateParse } from "@/lib/safeDateUtils";
 import { useNavigate } from "react-router-dom";
-import { addMinutes, addHours } from "date-fns";
+import { addMinutes, addHours, subMinutes } from "date-fns";
 import { useNotificationTypes } from "./useNotificationTypes";
 
 // Check if running on native platform
@@ -68,14 +69,40 @@ interface DoseActionResponse {
 // Notification channel ID for Android
 const CHANNEL_ID = "horamed-medicamentos";
 
+function normalizeAlertMinutes(minutes: unknown): number[] {
+  if (!Array.isArray(minutes)) return [15, 5, 0];
+
+  const normalized = minutes
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value >= 0);
+
+  const unique = Array.from(new Set(normalized));
+  if (!unique.includes(0)) unique.push(0);
+
+  return unique.sort((a, b) => b - a);
+}
+
+function createNotificationId(key: string) {
+  let hash = 0;
+
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) | 0;
+  }
+
+  return Math.abs(hash) % 2147483647;
+}
+
 export const usePushNotifications = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { getNotificationType } = useNotificationTypes();
   const [quietHours, setQuietHours] = useState<QuietHours>({
     enabled: false,
     startTime: "22:00",
     endTime: "06:00"
   });
+  const listenerHandlesRef = useRef<Array<{ remove: () => Promise<void> }>>([]);
+  const webTimeoutsRef = useRef<number[]>([]);
 
 
 
@@ -273,6 +300,39 @@ export const usePushNotifications = () => {
     }
   };
 
+  const clearScheduledWebNotifications = useCallback(() => {
+    webTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    webTimeoutsRef.current = [];
+  }, []);
+
+  const loadAlertMinutes = useCallback(async (): Promise<number[]> => {
+    const localAlarmSettings = localStorage.getItem("alarmSettings");
+    if (localAlarmSettings) {
+      try {
+        const parsed = JSON.parse(localAlarmSettings);
+        if (Array.isArray(parsed?.alertMinutes)) {
+          return normalizeAlertMinutes(parsed.alertMinutes);
+        }
+
+        if (typeof parsed?.alertMinutes === "number") {
+          return normalizeAlertMinutes([parsed.alertMinutes, 0]);
+        }
+      } catch (error) {
+        console.error("Error reading local alarm settings:", error);
+      }
+    }
+
+    const currentUser = auth.currentUser;
+    if (!currentUser) return [15, 5, 0];
+
+    const { data: preferences } = await fetchDocument<{ alertMinutes?: number[] }>(
+      `users/${currentUser.uid}/notificationPreferences`,
+      "current",
+    );
+
+    return normalizeAlertMinutes(preferences?.alertMinutes);
+  }, []);
+
   // Initialize Web Push notifications
   const initializeWebPushNotifications = async () => {
     try {
@@ -314,13 +374,13 @@ export const usePushNotifications = () => {
         if (permission === 'granted') {
           toast.success("Notificações ativadas!");
 
-          // Register for Push if Service Worker is ready
           if ('serviceWorker' in navigator) {
             const registration = await navigator.serviceWorker.ready;
-            // Here you could subscribe to push manager if you have a VAPID key
-            // const subscription = await registration.pushManager.subscribe(...)
             console.log('[Web] Service Worker ready for notifications:', registration);
           }
+
+          await subscribeToWebPush();
+          await scheduleWebNotifications();
 
           return true;
         } else {
@@ -340,6 +400,7 @@ export const usePushNotifications = () => {
       if (result.receive === "granted") {
         await PushNotifications.register();
         await setupNotificationChannels();
+        await scheduleNext48Hours();
         return true;
       } else {
         toast.error("Permissão de notificação necessária");
@@ -385,6 +446,8 @@ export const usePushNotifications = () => {
 
   // Schedule web notifications using the browser API with time-based types
   const scheduleWebNotifications = async () => {
+    clearScheduledWebNotifications();
+
     if (!('Notification' in window) || Notification.permission !== 'granted') {
       return;
     }
@@ -401,35 +464,49 @@ export const usePushNotifications = () => {
 
       if (!doses || doses.length === 0) return;
 
-      // Schedule notifications using setTimeout (simple approach for web)
+      const alertMinutes = await loadAlertMinutes();
+
+      // Schedule notifications using setTimeout
       doses.forEach((dose: DoseWithItem) => {
         const itemData = dose.item;
         const dueDate = safeDateParse(dose.dueAt);
-        const timeUntilDue = dueDate.getTime() - now.getTime();
+        const notificationConfig = getNotificationType(dueDate, {
+          category: itemData.category,
+          notes: itemData.notes,
+          notification_type: itemData.notificationType,
+        });
 
-        // Only schedule if in the future and not in quiet hours
-        if (timeUntilDue > 0 && !isInQuietHours(dueDate)) {
+        const hour = dueDate.getHours();
+        const timeEmoji = hour >= 5 && hour < 12 ? '🌅' :
+          hour >= 12 && hour < 18 ? '☀️' :
+            hour >= 18 && hour < 21 ? '🌆' : '🌙';
 
-          // Get notification type based on time and medication
-          const notificationConfig = getNotificationType(dueDate, {
-            category: itemData.category,
-            notes: itemData.notes,
-            notification_type: itemData.notificationType,
-          });
+        alertMinutes.forEach((minutesBefore) => {
+          const scheduledAt = minutesBefore > 0 ? subMinutes(dueDate, minutesBefore) : dueDate;
+          const timeUntilNotification = scheduledAt.getTime() - now.getTime();
 
-          const hour = dueDate.getHours();
-          const timeEmoji = hour >= 5 && hour < 12 ? '🌅' :
-            hour >= 12 && hour < 18 ? '☀️' :
-              hour >= 18 && hour < 21 ? '🌆' : '🌙';
+          if (timeUntilNotification <= 0 || isInQuietHours(scheduledAt)) {
+            return;
+          }
 
-          setTimeout(() => {
+          const title = minutesBefore === 0
+            ? `${timeEmoji} ${notificationConfig.title}`
+            : `⏰ ${itemData.name} em ${minutesBefore} min`;
+
+          const body = minutesBefore === 0
+            ? `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`
+            : `${itemData.doseText || 'Prepare sua próxima dose.'}`;
+
+          const timeoutId = window.setTimeout(() => {
             if (Notification.permission === 'granted' && !isInQuietHours(new Date())) {
-              const notification = new Notification(`${timeEmoji} ${notificationConfig.title}`, {
-                body: `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`,
+              const notification = new Notification(title, {
+                body,
                 icon: '/favicon.png',
-                tag: `dose-${dose.id}`,
-                requireInteraction: notificationConfig.type === 'urgent' || notificationConfig.type === 'critical',
-                silent: notificationConfig.type === 'gentle',
+                tag: `dose-${dose.id}-${minutesBefore}`,
+                requireInteraction:
+                  minutesBefore === 0 &&
+                  (notificationConfig.type === 'urgent' || notificationConfig.type === 'critical'),
+                silent: minutesBefore > 0 || notificationConfig.type === 'gentle',
               });
 
               notification.onclick = () => {
@@ -438,16 +515,18 @@ export const usePushNotifications = () => {
                 notification.close();
               };
 
-              // For critical/urgent notifications, show a follow-up reminder
-              if (notificationConfig.repeatInterval) {
-                setTimeout(() => {
-                  // Check if dose is still pending before repeating
+              if (minutesBefore === 0 && notificationConfig.repeatInterval) {
+                const repeatTimeoutId = window.setTimeout(() => {
                   checkAndRepeatNotification(dose.id, itemData.name, notificationConfig);
                 }, notificationConfig.repeatInterval * 60 * 1000);
+
+                webTimeoutsRef.current.push(repeatTimeoutId);
               }
             }
-          }, timeUntilDue);
-        }
+          }, timeUntilNotification);
+
+          webTimeoutsRef.current.push(timeoutId);
+        });
       });
 
     } catch (error) {
@@ -552,18 +631,19 @@ export const usePushNotifications = () => {
         }
       }
 
-      // Handle registration success
-      await PushNotifications.addListener("registration", async (token) => {
+      const registrationHandle = await PushNotifications.addListener("registration", async (token) => {
         await savePushToken(token.value);
         await scheduleNext48Hours();
       });
+      listenerHandlesRef.current.push(registrationHandle);
 
-      await PushNotifications.addListener("registrationError", (error) => {
+      const registrationErrorHandle = await PushNotifications.addListener("registrationError", (error) => {
         console.error("[Push] Registration error:", error);
       });
+      listenerHandlesRef.current.push(registrationErrorHandle);
 
       // Handle push notifications received (foreground)
-      await PushNotifications.addListener(
+      const receivedHandle = await PushNotifications.addListener(
         "pushNotificationReceived",
         (notification) => {
           if (!isInQuietHours(new Date())) {
@@ -574,17 +654,19 @@ export const usePushNotifications = () => {
           }
         }
       );
+      listenerHandlesRef.current.push(receivedHandle);
 
       // Handle notification action
-      await PushNotifications.addListener(
+      const actionHandle = await PushNotifications.addListener(
         "pushNotificationActionPerformed",
         async (action: ActionPerformed) => {
           handleNotificationAction(action);
         }
       );
+      listenerHandlesRef.current.push(actionHandle);
 
       // Handle local notification actions
-      await LocalNotifications.addListener(
+      const localActionHandle = await LocalNotifications.addListener(
         "localNotificationActionPerformed",
         async (action) => {
           // Adapt local notification action to push ActionPerformed shape
@@ -599,6 +681,7 @@ export const usePushNotifications = () => {
           handleNotificationAction(adapted);
         }
       );
+      listenerHandlesRef.current.push(localActionHandle);
 
     } catch (error) {
       console.error("[Push] Error initializing:", error);
@@ -734,6 +817,8 @@ export const usePushNotifications = () => {
 
       if (!doses || doses.length === 0) return;
 
+      const alertMinutes = await loadAlertMinutes();
+
       // Cancel all pending local notifications first
       const pending = await LocalNotifications.getPending();
       if (pending.notifications && pending.notifications.length > 0) {
@@ -741,14 +826,9 @@ export const usePushNotifications = () => {
       }
 
       // Schedule new notifications with time-based types
-      const notifications = doses.map((dose: DoseWithItem, index: number) => {
+      const notifications = doses.flatMap((dose: DoseWithItem) => {
         const dueDate = safeDateParse(dose.dueAt);
         const itemData = dose.item;
-
-        // Skip if in quiet hours or no item data
-        if (isInQuietHours(dueDate) || !itemData) {
-          return null;
-        }
 
         // Get notification type based on time and medication
         const notificationConfig = getNotificationType(dueDate, {
@@ -762,33 +842,55 @@ export const usePushNotifications = () => {
           hour >= 12 && hour < 18 ? '☀️' :
             hour >= 18 && hour < 21 ? '🌆' : '🌙';
 
-        return {
-          id: index + 1,
-          title: `${timeEmoji} ${notificationConfig.title}`,
-          body: `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`,
-          largeBody: `Está na hora de tomar ${itemData.name}.${itemData.doseText ? `\nDose: ${itemData.doseText}` : ''}`,
-          summaryText: "HoraMed",
-          schedule: { at: dueDate },
-          channelId: CHANNEL_ID,
-          actionTypeId: "DOSE_REMINDER",
-          extra: {
-            doseId: dose.id,
-            itemName: itemData.name,
-            type: "dose_reminder",
-            notificationType: notificationConfig.type,
-          },
-          smallIcon: "ic_stat_pill",
-          largeIcon: "ic_launcher",
-          iconColor: notificationConfig.color,
-          sound: notificationConfig.sound === 'default' ? 'default' : notificationConfig.sound,
-          ongoing: notificationConfig.type === 'critical',
-          autoCancel: notificationConfig.type !== 'critical',
-          group: "dose-reminders",
-        };
-      }).filter(Boolean);
+        return alertMinutes
+          .map((minutesBefore) => {
+            const scheduledAt = minutesBefore > 0 ? subMinutes(dueDate, minutesBefore) : dueDate;
+
+            if (!itemData || scheduledAt <= now || isInQuietHours(scheduledAt)) {
+              return null;
+            }
+
+            const isExactTime = minutesBefore === 0;
+            const title = isExactTime
+              ? `${timeEmoji} ${notificationConfig.title}`
+              : `⏰ ${itemData.name} em ${minutesBefore} min`;
+
+            const body = isExactTime
+              ? `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`
+              : `${itemData.doseText || 'Prepare sua próxima dose.'}`;
+
+            return {
+              id: createNotificationId(`${dose.id}-${minutesBefore}`),
+              title,
+              body,
+              largeBody: isExactTime
+                ? `Está na hora de tomar ${itemData.name}.${itemData.doseText ? `\nDose: ${itemData.doseText}` : ''}`
+                : `Seu lembrete de ${itemData.name} será em ${minutesBefore} minutos.`,
+              summaryText: "HoraMed",
+              schedule: { at: scheduledAt },
+              channelId: CHANNEL_ID,
+              actionTypeId: "DOSE_REMINDER",
+              extra: {
+                doseId: dose.id,
+                itemName: itemData.name,
+                type: isExactTime ? "dose_reminder" : "dose_reminder_early",
+                notificationType: notificationConfig.type,
+                minutesBefore,
+              },
+              smallIcon: "ic_stat_pill",
+              largeIcon: "ic_launcher",
+              iconColor: notificationConfig.color,
+              sound: notificationConfig.sound === 'default' ? 'default' : notificationConfig.sound,
+              ongoing: isExactTime && notificationConfig.type === 'critical',
+              autoCancel: !isExactTime || notificationConfig.type !== 'critical',
+              group: "dose-reminders",
+            } satisfies LocalNotificationSchema;
+          })
+          .filter((notification): notification is LocalNotificationSchema => notification !== null);
+      });
 
       if (notifications.length > 0) {
-        await LocalNotifications.schedule({ notifications: notifications as LocalNotificationSchema[] });
+        await LocalNotifications.schedule({ notifications });
       }
     } catch (error) {
       console.error("Error scheduling notifications:", error);
@@ -948,7 +1050,6 @@ export const usePushNotifications = () => {
   useEffect(() => {
     const initializeNotifications = async () => {
       // Only initialize scheduling for authenticated users
-      const user = auth.currentUser;
       if (!user) {
         return;
       }
@@ -966,23 +1067,35 @@ export const usePushNotifications = () => {
       await scheduleNext48Hours();
     };
 
-    initializeNotifications();
+    void initializeNotifications();
+
+    const handleReschedule = () => {
+      void scheduleNext48Hours();
+    };
+    window.addEventListener("horamed-reschedule-notifications", handleReschedule);
 
     // Reschedule every 30 minutes
     const scheduleInterval = setInterval(() => {
-      scheduleNext48Hours();
+      void scheduleNext48Hours();
     }, 30 * 60 * 1000);
 
     // Sync offline actions every 2 minutes
     const syncInterval = setInterval(() => {
-      syncOfflineActions();
+      void syncOfflineActions();
     }, 2 * 60 * 1000);
 
     return () => {
       clearInterval(scheduleInterval);
       clearInterval(syncInterval);
+      clearScheduledWebNotifications();
+      window.removeEventListener("horamed-reschedule-notifications", handleReschedule);
+      const handles = listenerHandlesRef.current;
+      listenerHandlesRef.current = [];
+      handles.forEach((handle) => {
+        void handle.remove();
+      });
     };
-  }, []);
+  }, [clearScheduledWebNotifications, scheduleNext48Hours, syncOfflineActions, user]);
 
   return {
     checkPermissions,
