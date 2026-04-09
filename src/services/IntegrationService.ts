@@ -1,7 +1,6 @@
 
 import { IntegrationProvider, IntegrationProviderId, DailyHealthSummary } from '@/types/integration-types';
 import { Capacitor } from '@capacitor/core';
-import { Health } from '@capgo/capacitor-health';
 
 // Mock data service for integrations
 class IntegrationService {
@@ -76,18 +75,9 @@ class IntegrationService {
     async connectProvider(providerId: IntegrationProviderId): Promise<boolean> {
         return new Promise(async (resolve, reject) => {
             try {
-                if ((providerId === 'apple_health' || providerId === 'google_fit') && Capacitor.isNativePlatform()) {
-                    const availability = await Health.isAvailable();
-                    if (availability.available) {
-                         await Health.requestAuthorization({
-                             read: ['steps', 'calories', 'heartRate', 'distance']
-                         });
-                    } else {
-                         console.warn('Health API is not available on this device:', availability.reason);
-                         // Continues to fallback or generic mock if wanted
-                    }
-                }
-
+                // Feature removida: não integramos mais o '@capgo/capacitor-health' nativamente
+                // para evitar requerimentos de declaração de health tags na Play Store.
+                
                 setTimeout(() => {
                     // Update local storage
                     const stored = localStorage.getItem('horamed_integrations');
@@ -135,36 +125,9 @@ class IntegrationService {
                 let calories = Math.floor(Math.random() * 300) + 200;
                 let heartRate = 60 + Math.floor(Math.random() * 10);
                 
-                if ((providerId === 'apple_health' || providerId === 'google_fit') && Capacitor.isNativePlatform()) {
-                    const availability = await Health.isAvailable();
-                    if (availability.available) {
-                         const today = new Date();
-                         today.setHours(0, 0, 0, 0);
-                         const startDate = today.toISOString();
-                         const endDate = new Date().toISOString();
-                         
-                         try {
-                             const stepsData = await Health.readSamples({ dataType: 'steps', startDate, endDate, limit: 1000 });
-                             steps = stepsData.samples.reduce((sum, sample) => sum + sample.value, 0);
-                         } catch (e) {
-                             console.warn('Failed to read steps', e);
-                         }
-                         
-                         try {
-                             const caloriesData = await Health.readSamples({ dataType: 'calories', startDate, endDate, limit: 1000 });
-                             calories = caloriesData.samples.reduce((sum, sample) => sum + sample.value, 0);
-                         } catch (e) {
-                             console.warn('Failed to read calories', e);
-                         }
-                         
-                         try {
-                             const distanceData = await Health.readSamples({ dataType: 'distance', startDate, endDate, limit: 1000 });
-                             distance = distanceData.samples.reduce((sum, sample) => sum + sample.value, 0);
-                         } catch (e) {
-                             console.warn('Failed to read distance', e);
-                         }
-                    }
-                }
+                // Mocks are locally generated for now as the @capgo/capacitor-health integration 
+                // was removed to comply with standard Play Store policies without Health Declarations.
+
 
                 setTimeout(() => {
                     // Update last sync
