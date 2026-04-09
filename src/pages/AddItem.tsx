@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFeedbackToast } from "@/hooks/useFeedbackToast";
 import { auth, addDocument, updateDocument, deleteDocument, fetchDocument, fetchCollection, where } from "@/integrations/firebase";
+import { eventBus, AppEvents } from "@/domain/services/EventBus";
+import { Dose } from "@/types/dose";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -510,12 +512,22 @@ export default function AddItem() {
           }
         }
 
+        const scheduledDoses: Dose[] = [];
         if (doseInstances.length > 0) {
           // Batch insert not supported by helper, loop addDocument
           // Parallelize?
-          await Promise.all(doseInstances.map(dose => addDocument(`users/${user.uid}/doses`, dose)));
+          await Promise.all(doseInstances.map(dose => 
+            addDocument(`users/${user.uid}/doses`, dose).then(({ data }) => {
+                if (data && data.id) {
+                    scheduledDoses.push({
+                        id: data.id,
+                        itemName: formData.name,
+                        dueAt: dose.dueAt
+                    } as Partial<Dose> as Dose);
+                }
+            })
+          ));
         }
-      }
 
       // Update stock
       // First delete existing stock record for this item (if any)
@@ -541,8 +553,11 @@ export default function AddItem() {
       showFeedback("medication-added", { medicationName: formData.name });
 
       // Emit event for real-time updates
-      const { eventBus, EVENTS } = await import('@/lib/eventBus');
-      eventBus.emit(EVENTS.MEDICATION_UPDATED);
+      const { eventBus: legacyEventBus, EVENTS } = await import('@/lib/eventBus');
+      legacyEventBus.emit(EVENTS.MEDICATION_UPDATED);
+      
+      // Emit event for AppBootstrapper native notifications
+      eventBus.emit(AppEvents.MEDICATION_CREATED, { doses: scheduledDoses });
 
       navigate("/medicamentos");
     } catch (error) {

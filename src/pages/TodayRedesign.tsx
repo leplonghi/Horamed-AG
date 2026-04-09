@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { auth, fetchCollection, fetchDocument, updateDocument, where, orderBy, query, limit, serverTimestamp } from "@/integrations/firebase";
-import { onSnapshot, collection, doc, query as firestoreQuery } from "firebase/firestore";
+import { collection, doc, query as firestoreQuery } from "firebase/firestore";
 import { db } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 import { format, startOfDay, endOfDay, addDays } from "date-fns";
@@ -39,7 +39,8 @@ import ClaraProactiveCard from "@/components/ClaraProactiveCard";
 import { useOverdueDoses } from "@/hooks/useOverdueDoses";
 import DrugInteractionAlert from "@/components/health/DrugInteractionAlert";
 import OceanBackground from "@/components/ui/OceanBackground";
-
+import { medicationRepository } from "@/infrastructure/firebase/MedicationRepository";
+import { eventBus, AppEvents } from "@/domain/services/EventBus";
 import AdSupportCard from "@/components/AdSupportCard";
 import GoogleAd from "@/components/GoogleAd";
 import VitalsGlanceWidget from "@/components/VitalsGlanceWidget";
@@ -356,15 +357,8 @@ export default function TodayRedesign() {
         return;
       }
 
-      // Update dose status
-      const dosePath = activeProfile?.id
-        ? `users/${userId}/profiles/${activeProfile.id}/doses`
-        : `users/${userId}/doses`;
-
-      await updateDocument(dosePath, doseId, {
-        status: "taken",
-        takenAt: serverTimestamp()
-      });
+      // Update dose status via Repository!
+      await medicationRepository.markDoseAsTaken(userId, activeProfile?.id, doseId, itemId, itemName);
 
       // Update stock if needed
       if (stockData && stockData.currentQty > 0) {
@@ -410,9 +404,7 @@ export default function TodayRedesign() {
         const newDueAt = safeDateParse(dose.dueAt);
         newDueAt.setMinutes(newDueAt.getMinutes() + 15);
 
-        await updateDocument(dosePath, doseId, {
-          dueAt: newDueAt.toISOString()
-        });
+        await medicationRepository.snoozeDose(userId, activeProfile?.id, doseId, newDueAt.toISOString(), itemName);
 
         toast.success(t('todayRedesign.snoozeSuccess', { name: itemName }));
         latestLoadRef.current();
@@ -705,42 +697,22 @@ export default function TodayRedesign() {
   });
 
 
+  // Refatorado Phase 1: Listener onSnapshot em Views removidos para evitar faturamento de Reads e duplicidade de Render. 
+  // O load data será alimentado de forma mais lazy ou por invalidation de React Query nas próximas iterações.
+  // Escutar eventos locais emitidos para forçar atualização instantânea da tela (quando necessário):
   useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const userId = user.uid;
-    const profileId = activeProfile?.id;
-
-    // Realtime changes using onSnapshot
-    const dosesPath = profileId ? `users/${userId}/profiles/${profileId}/doses` : `users/${userId}/doses`;
-    const appointmentsPath = profileId ? `users/${userId}/profiles/${profileId}/appointments` : `users/${userId}/appointments`;
-    const eventsPath = profileId ? `users/${userId}/profiles/${profileId}/healthEvents` : `users/${userId}/healthEvents`;
-
-    // All 3 listeners share one debounced reload — max 1 reload/sec total
-    const handleRemoteChange = () => {
-      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
-      realtimeDebounceRef.current = setTimeout(() => latestLoadRef.current(), 1000);
+    const handleLocalUpdate = () => {
+       latestLoadRef.current();
     };
 
-    const qDoses = firestoreQuery(collection(db, dosesPath));
-    const qApts = firestoreQuery(collection(db, appointmentsPath));
-    const qEvents = firestoreQuery(collection(db, eventsPath));
-
-    const unsubDoses = onSnapshot(qDoses, handleRemoteChange);
-    const unsubApts = onSnapshot(qApts, handleRemoteChange);
-    const unsubEvents = onSnapshot(qEvents, handleRemoteChange);
+    const unsubTaken = eventBus.on(AppEvents.DOSE_TAKEN, handleLocalUpdate);
+    const unsubSnoozed = eventBus.on(AppEvents.DOSE_SNOOZED, handleLocalUpdate);
 
     return () => {
-      unsubDoses();
-      unsubApts();
-      unsubEvents();
-      if (realtimeDebounceRef.current) {
-        window.clearTimeout(realtimeDebounceRef.current);
-      }
+      unsubTaken();
+      unsubSnoozed();
     };
-  }, [activeProfile?.id]);
-
+  }, []);
 
   // Memoize allDoneToday to avoid HeroNextDose re-render
   const allDoneToday = useMemo(() =>

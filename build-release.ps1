@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  HoraMed Release Builder v1.0.32" -ForegroundColor Cyan
+Write-Host "  HoraMed Release Builder v1.0.33" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 

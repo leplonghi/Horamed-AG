@@ -4,6 +4,8 @@ import { ArrowLeft, Pill, Sparkle as Sparkles, Check } from "@phosphor-icons/rea
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { auth, addDocument } from "@/integrations/firebase";
+import { eventBus, AppEvents } from "@/domain/services/EventBus";
+import { Dose } from "@/types/dose";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
@@ -211,6 +213,7 @@ export default function AddItemWizard() {
 
       // Generate dose instances for next 7 days
       const batchPromises = [];
+      const scheduledDoses: Dose[] = [];
       const now = new Date();
 
       for (let day = 0; day < 7; day++) {
@@ -228,18 +231,31 @@ export default function AddItemWizard() {
           dueAt.setHours(hours, minutes, 0, 0);
 
           if (dueAt > now) {
-            batchPromises.push(addDocument(`users/${user.uid}/doses`, {
-              scheduleId: schedule?.id || item.id,
-              itemId: item.id,
-              dueAt: dueAt.toISOString(),
-              status: "scheduled",
-            }));
+            const dueAtISO = dueAt.toISOString();
+            batchPromises.push(
+              addDocument(`users/${user.uid}/doses`, {
+                scheduleId: schedule?.id || item.id,
+                itemId: item.id,
+                dueAt: dueAtISO,
+                status: "scheduled",
+              }).then(({ data }) => {
+                if (data && data.id) {
+                    scheduledDoses.push({
+                        id: data.id,
+                        itemName: formData.name,
+                        dueAt: dueAtISO
+                    } as Partial<Dose> as Dose);
+                }
+              })
+            );
           }
         }
       }
 
       if (batchPromises.length > 0) {
         await Promise.all(batchPromises);
+        // Emite o evento local para o AppBootstrapper ativar as Notifications Nativas
+        eventBus.emit(AppEvents.MEDICATION_CREATED, { doses: scheduledDoses });
       }
 
       toast.success(`${formData.name} ${t('wizardStep.addedSuccess')}`);
