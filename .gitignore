@@ -36,3 +36,9 @@ migration-data/
 *.njsproj
 *.sln
 *.sw?
+
+# Release AAB files
+*.aab
+
+# Android build artifacts
+plugins/*/android/build/
