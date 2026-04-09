@@ -233,14 +233,14 @@ const Landing = () => {
   }, [testimonials.length]);
 
   const features = [
-    { icon: Bell, title: isPt ? "Lembretes precisos" : "Precise reminders", desc: isPt ? "Push, som ou vibração na hora certa. Nunca mais esqueça." : "Push, sound or vibration on time. Never forget again." },
-    { icon: Users, title: isPt ? "Família inteira" : "Whole family", desc: isPt ? "Até 5 perfis. Pais, filhos e cônjuge num só app." : "Up to 5 profiles. All family in one app." },
-    { icon: Brain, title: isPt ? "IA Clara" : "Clara AI", desc: isPt ? "Tira dúvidas, explica bulas e organiza sua saúde." : "Answers questions and explains prescriptions." },
-    { icon: Camera, title: isPt ? "Scan de receita" : "Prescription scan", desc: isPt ? "Fotografe a receita — a IA extrai o remédio e a dose." : "Photograph it — AI extracts drug and dosage." },
-    { icon: FileText, title: isPt ? "Carteira de Saúde" : "Health Wallet", desc: isPt ? "Exames, vacinas e receitas guardados com segurança." : "Exams, vaccines, and prescriptions stored securely." },
-    { icon: Activity, title: isPt ? "Dashboard de adesão" : "Adherence dashboard", desc: isPt ? "Sequências, histórico e evolução visual da sua saúde." : "Streaks, history and visual health progress." },
-    { icon: Shield, title: isPt ? "Alerta de interações" : "Interaction alerts", desc: isPt ? "Combinações perigosas detectadas automaticamente." : "Dangerous combinations detected automatically." },
-    { icon: CalendarCheck, title: isPt ? "Modo viagem" : "Travel mode", desc: isPt ? "Ajuste horários por fuso automaticamente ao viajar." : "Auto-adjust schedules by timezone when traveling." },
+    { icon: Brain, title: isPt ? "IA Clara" : "Clara AI", desc: isPt ? "Seu assistente pessoal de saúde 24h. Tira dúvidas, explica bulas e monitora sua evolução." : "Your 24/7 personal health assistant. Answers questions, explains prescriptions, tracks progress." },
+    { icon: Activity, title: isPt ? "Dashboard completo" : "Health dashboard", desc: isPt ? "Sinais vitais, adesão ao tratamento, histórico e evolução visual da sua saúde." : "Vital signs, treatment adherence, history and visual health evolution." },
+    { icon: Users, title: isPt ? "Família conectada" : "Connected family", desc: isPt ? "Até 5 perfis. Cuide de pais, filhos e cônjuge — tudo junto num só app." : "Up to 5 profiles. Care for parents, children, spouse — all in one app." },
+    { icon: FileText, title: isPt ? "Carteira de Saúde" : "Health Wallet", desc: isPt ? "Exames, vacinas, receitas e documentos guardados com segurança, acessíveis sempre." : "Exams, vaccines, prescriptions and documents stored securely, always accessible." },
+    { icon: Bell, title: isPt ? "Lembretes inteligentes" : "Smart reminders", desc: isPt ? "Push, som ou vibração no momento certo. Adapta ao seu ritmo." : "Push, sound or vibration at the right moment. Adapts to your rhythm." },
+    { icon: Camera, title: isPt ? "Scan de receita" : "Prescription scan", desc: isPt ? "Fotografe a receita — a IA extrai automaticamente remédio, dose e frequência." : "Photograph it — AI automatically extracts drug, dosage and frequency." },
+    { icon: Shield, title: isPt ? "Alerta de interações" : "Interaction alerts", desc: isPt ? "Combinações perigosas entre medicamentos detectadas automaticamente." : "Dangerous drug combinations detected automatically." },
+    { icon: CalendarCheck, title: isPt ? "Modo viagem" : "Travel mode", desc: isPt ? "Ajuste automático de fuso horário ao viajar, sem perder nenhuma dose." : "Automatic timezone adjustment when traveling, without missing a dose." },
   ];
 
   const freeFeatures = isPt
@@ -252,9 +252,9 @@ const Landing = () => {
     : ["Unlimited medications", "Smart reminders", "Up to 5 profiles", "Full history", "Clara AI", "Prescription scanner", "Health Wallet", "Interactions check", "Complete dashboard", "Travel mode", "Gamification", "Priority support"];
 
   const highlights = [
-    { icon: Bell, text: isPt ? "Lembretes inteligentes" : "Smart reminders" },
+    { icon: Brain, text: isPt ? "IA Clara disponível 24h" : "Clara AI available 24/7" },
     { icon: Users, text: isPt ? "Até 5 perfis familiares" : "Up to 5 family profiles" },
-    { icon: Brain, text: isPt ? "Assistente IA de saúde" : "AI health assistant" },
+    { icon: Activity, text: isPt ? "Sinais vitais e adesão" : "Vital signs & adherence" },
     { icon: Shield, text: isPt ? "Seus dados protegidos" : "Your data protected" },
   ];
 
@@ -262,10 +262,10 @@ const Landing = () => {
     <div className="min-h-screen overflow-x-hidden" style={{ background: C.bgFlat }}>
       <ScrollProgress />
       <SEOHead
-        title={isPt ? "HoraMed — Gestão Completa da Sua Saúde" : "HoraMed — Complete Health Management"}
+        title={isPt ? "HoraMed — Companheiro de Saúde Inteligente | IA + Família + Tratamento" : "HoraMed — Intelligent Health Companion | AI + Family + Treatment"}
         description={isPt
-          ? "Pare de esquecer medicamentos. HoraMed cuida de você e da sua família com lembretes inteligentes, IA e histórico médico digital."
-          : "Stop forgetting medications. HoraMed takes care of you and your family with smart reminders, AI, and digital medical history."}
+          ? "HoraMed é seu companheiro de saúde com IA Clara, sinais vitais, carteira de documentos médicos, família conectada e lembretes inteligentes. Tudo em um app."
+          : "HoraMed is your health companion with Clara AI, vital signs, medical wallet, connected family and smart reminders. All in one app."}
       />
 
       {/* ── HEADER ─────────────────────────────────────────────── */}
@@ -329,7 +329,7 @@ const Landing = () => {
                 style={{ background: "hsl(199 89% 48% / 0.12)", color: C.primary, border: `1px solid hsl(199 89% 48% / 0.25)` }}
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                {isPt ? "7 dias Premium grátis · Sem cartão" : "7 days Premium free · No card"}
+                {isPt ? "🏆 Companheiro de Saúde Inteligente" : "🏆 Intelligent Health Companion"}
               </motion.div>
 
               <motion.h1
@@ -341,19 +341,19 @@ const Landing = () => {
               >
                 {isPt ? (
                   <>
-                    O app que cuida da{" "}
+                    Sua saúde.{" "}
                     <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                      sua saúde
+                      Uma plataforma.
                     </span>{" "}
-                    com você.
+                    Tudo junto.
                   </>
                 ) : (
                   <>
-                    The app that cares for{" "}
+                    Your health.{" "}
                     <span style={{ background: C.grad, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                      your health
+                      One platform.
                     </span>{" "}
-                    with you.
+                    All together.
                   </>
                 )}
               </motion.h1>
@@ -366,8 +366,8 @@ const Landing = () => {
                 style={{ color: C.text, opacity: 0.75 }}
               >
                 {isPt
-                  ? "Lembretes de medicamentos inteligentes, assistente IA de saúde, histórico médico e gerenciamento da família inteira — tudo num só app."
-                  : "Smart medication reminders, AI health assistant, medical history, and your whole family — all in one app."}
+                  ? "IA Clara 24h, sinais vitais, carteira de documentos médicos, família conectada e lembretes inteligentes — tudo integrado, tudo seu."
+                  : "Clara AI 24/7, vital signs, medical wallet, connected family and smart reminders — all integrated, all yours."}
               </motion.p>
 
               <motion.div
@@ -439,12 +439,12 @@ const Landing = () => {
                   className="absolute -left-8 top-10 z-20 flex items-center gap-2.5 rounded-2xl px-3 py-2.5 border shadow-lg"
                   style={{ background: C.card, borderColor: C.border, minWidth: "160px" }}
                 >
-                  <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: C.grad }}>
-                    <Alarm className="h-4 w-4 text-white" />
+                  <div className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, hsl(199 89% 48%), hsl(152 60% 42%))" }}>
+                    <Brain className="h-4 w-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold" style={{ color: C.text }}>{isPt ? "Hora do remédio!" : "Time for meds!"}</p>
-                    <p className="text-[10px]" style={{ color: C.muted }}>Omeprazol · 20:00</p>
+                    <p className="text-xs font-semibold" style={{ color: C.text }}>{isPt ? "Clara: tudo OK hoje! 💚" : "Clara: all good today! 💚"}</p>
+                    <p className="text-[10px]" style={{ color: C.muted }}>{isPt ? "Seus sinais vitais estão ótimos" : "Your vital signs look great"}</p>
                   </div>
                 </motion.div>
 

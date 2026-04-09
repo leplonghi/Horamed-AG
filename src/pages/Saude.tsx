@@ -120,8 +120,8 @@ export default function Saude() {
       description: t('saude.healthDashboardDesc'),
       icon: TrendingUp,
       path: "/dashboard-saude",
-      gradient: "from-violet-600/20 to-blue-400/10",
-      iconColor: "text-violet-500",
+      gradient: "from-emerald-600/20 to-blue-400/10",
+      iconColor: "text-emerald-500",
     },
     {
       title: t('saude.timeline'),

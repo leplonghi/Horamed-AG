@@ -7,7 +7,7 @@ $ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  HoraMed Release Builder v1.0.29" -ForegroundColor Cyan
+Write-Host "  HoraMed Release Builder v1.0.32" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -66,7 +66,7 @@ Write-Host "      SDK encontrado em: $sdkDir" -ForegroundColor Green
 # Criar/atualizar local.properties com o caminho correto
 $sdkDirFormatted = $sdkDir -replace "\\", "/"
 $localProps = "android\local.properties"
-"sdk.dir=$sdkDirFormatted" | Set-Content $localProps -Encoding UTF8
+"sdk.dir=$sdkDirFormatted" | Set-Content $localProps -Encoding ASCII
 Write-Host "      android\local.properties atualizado." -ForegroundColor Green
 
 # ------------------------------------------------------------

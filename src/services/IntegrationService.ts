@@ -1,12 +1,14 @@
 
 import { IntegrationProvider, IntegrationProviderId, DailyHealthSummary } from '@/types/integration-types';
+import { Capacitor } from '@capacitor/core';
+import { Health } from '@capgo/capacitor-health';
 
 // Mock data service for integrations
 class IntegrationService {
     private _providers: IntegrationProvider[] = [
         {
             id: 'google_fit',
-            name: 'Google Fit',
+            name: 'Google Fit / Health Connect',
             description: 'Sincronize passos, distância e calorias do seu dispositivo Android.',
             icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Google_Fit_icon.svg/1024px-Google_Fit_icon.svg.png',
             color: '#EA4335',
@@ -72,25 +74,42 @@ class IntegrationService {
     }
 
     async connectProvider(providerId: IntegrationProviderId): Promise<boolean> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Update local storage
-                const stored = localStorage.getItem('horamed_integrations');
-                let currentStatus = stored ? JSON.parse(stored) : [];
+        return new Promise(async (resolve, reject) => {
+            try {
+                if ((providerId === 'apple_health' || providerId === 'google_fit') && Capacitor.isNativePlatform()) {
+                    const availability = await Health.isAvailable();
+                    if (availability.available) {
+                         await Health.requestAuthorization({
+                             read: ['steps', 'calories', 'heartRate', 'distance']
+                         });
+                    } else {
+                         console.warn('Health API is not available on this device:', availability.reason);
+                         // Continues to fallback or generic mock if wanted
+                    }
+                }
 
-                // Remove existing if any
-                currentStatus = currentStatus.filter((p: IntegrationProvider) => p.id !== providerId);
+                setTimeout(() => {
+                    // Update local storage
+                    const stored = localStorage.getItem('horamed_integrations');
+                    let currentStatus = stored ? JSON.parse(stored) : [];
 
-                // Add new connected state
-                currentStatus.push({
-                    id: providerId,
-                    status: 'connected',
-                    lastSync: new Date().toISOString()
-                });
+                    // Remove existing if any
+                    currentStatus = currentStatus.filter((p: IntegrationProvider) => p.id !== providerId);
 
-                localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
-                resolve(true);
-            }, 1500); // Simulate auth redirect/popup
+                    // Add new connected state
+                    currentStatus.push({
+                        id: providerId,
+                        status: 'connected',
+                        lastSync: new Date().toISOString()
+                    });
+
+                    localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
+                    resolve(true);
+                }, 800); // Simulate auth redirect/popup
+            } catch (err) {
+                console.error('Error connecting provider:', err);
+                reject(err);
+            }
         });
     }
 
@@ -104,34 +123,75 @@ class IntegrationService {
                     localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
                 }
                 resolve(true);
-            }, 800);
+            }, 500);
         });
     }
 
     async syncProvider(providerId: IntegrationProviderId): Promise<DailyHealthSummary> {
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Update last sync
-                const stored = localStorage.getItem('horamed_integrations');
-                if (stored) {
-                    const currentStatus = JSON.parse(stored);
-                    const index = currentStatus.findIndex((p: IntegrationProvider) => p.id === providerId);
-                    if (index >= 0) {
-                        currentStatus[index].lastSync = new Date().toISOString();
-                        localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
+        return new Promise(async (resolve, reject) => {
+            try {
+                let steps = Math.floor(Math.random() * 5000) + 3000;
+                let distance = Math.floor(Math.random() * 3000) + 1000;
+                let calories = Math.floor(Math.random() * 300) + 200;
+                let heartRate = 60 + Math.floor(Math.random() * 10);
+                
+                if ((providerId === 'apple_health' || providerId === 'google_fit') && Capacitor.isNativePlatform()) {
+                    const availability = await Health.isAvailable();
+                    if (availability.available) {
+                         const today = new Date();
+                         today.setHours(0, 0, 0, 0);
+                         const startDate = today.toISOString();
+                         const endDate = new Date().toISOString();
+                         
+                         try {
+                             const stepsData = await Health.readSamples({ dataType: 'steps', startDate, endDate, limit: 1000 });
+                             steps = stepsData.samples.reduce((sum, sample) => sum + sample.value, 0);
+                         } catch (e) {
+                             console.warn('Failed to read steps', e);
+                         }
+                         
+                         try {
+                             const caloriesData = await Health.readSamples({ dataType: 'calories', startDate, endDate, limit: 1000 });
+                             calories = caloriesData.samples.reduce((sum, sample) => sum + sample.value, 0);
+                         } catch (e) {
+                             console.warn('Failed to read calories', e);
+                         }
+                         
+                         try {
+                             const distanceData = await Health.readSamples({ dataType: 'distance', startDate, endDate, limit: 1000 });
+                             distance = distanceData.samples.reduce((sum, sample) => sum + sample.value, 0);
+                         } catch (e) {
+                             console.warn('Failed to read distance', e);
+                         }
                     }
                 }
 
-                resolve({
-                    date: new Date().toISOString().split('T')[0],
-                    steps: Math.floor(Math.random() * 5000) + 3000,
-                    distance_meters: Math.floor(Math.random() * 3000) + 1000,
-                    calories_burned: Math.floor(Math.random() * 300) + 200,
-                    sleep_minutes: 420 + Math.floor(Math.random() * 60),
-                    resting_heart_rate: 60 + Math.floor(Math.random() * 10),
-                    sources: [providerId]
-                });
-            }, 2000); // Simulate data fetching
+                setTimeout(() => {
+                    // Update last sync
+                    const stored = localStorage.getItem('horamed_integrations');
+                    if (stored) {
+                        const currentStatus = JSON.parse(stored);
+                        const index = currentStatus.findIndex((p: IntegrationProvider) => p.id === providerId);
+                        if (index >= 0) {
+                            currentStatus[index].lastSync = new Date().toISOString();
+                            localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
+                        }
+                    }
+
+                    resolve({
+                        date: new Date().toISOString().split('T')[0],
+                        steps: steps,
+                        distance_meters: distance,
+                        calories_burned: calories,
+                        sleep_minutes: 420 + Math.floor(Math.random() * 60), // Not natively requested in this scope to keep simple
+                        resting_heart_rate: heartRate,
+                        sources: [providerId]
+                    });
+                }, 1000); // Simulate processing
+            } catch (err) {
+                console.error('Failed to sync health data', err);
+                reject(err);
+            }
         });
     }
 }

@@ -316,26 +316,26 @@ export default function Rotina() {
             <TabsList className="w-full flex-wrap h-auto gap-2 p-1.5 rounded-2xl bg-muted/50">
               <TabsTrigger
                 value="todos"
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 transition-all"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
               >
                 <Pill className="h-4 w-4 mr-2" />
                 {language === 'pt' ? 'Todos' : 'All'} ({items?.length || 0})
               </TabsTrigger>
               <TabsTrigger
                 value="medicamento"
-                className="rounded-xl px-4 py-2.5 transition-all"
+                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
               >
                 💊 {language === 'pt' ? 'Medicamentos' : 'Medications'} ({getCategoryCount("medicamento")})
               </TabsTrigger>
               <TabsTrigger
                 value="vitamina"
-                className="rounded-xl px-4 py-2.5 transition-all"
+                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
               >
                 ❤️ {language === 'pt' ? 'Vitaminas' : 'Vitamins'} ({getCategoryCount("vitamina")})
               </TabsTrigger>
               <TabsTrigger
                 value="suplemento"
-                className="rounded-xl px-4 py-2.5 transition-all"
+                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
               >
                 ⚡ {language === 'pt' ? 'Suplementos' : 'Supplements'} ({getCategoryCount("suplemento")})
               </TabsTrigger>

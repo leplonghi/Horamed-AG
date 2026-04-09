@@ -55,10 +55,11 @@ All colors MUST be HSL.
     /* Rounded aesthetic */
 
     /* Fluid Gradient Colors - Soft Blue Theme */
-    --gradient-start: 221 83% 53%;
-    --gradient-mid: 210 100% 65%;
-    --gradient-end: 190 90% 60%;
-    --gradient-accent: 230 85% 65%;
+    /* Light values kept dark enough for white text (WCAG AA: min 4.5:1) */
+    --gradient-start: 221 83% 48%;
+    --gradient-mid: 210 100% 45%;
+    --gradient-end: 190 90% 40%;
+    --gradient-accent: 230 85% 55%;
 
     /* Modern shadows with depth - Softer blue-tinted shadows */
     --shadow-xs: 0px 1px 2px rgba(35, 55, 80, 0.05);
@@ -502,26 +503,47 @@ All colors MUST be HSL.
   }
 
   /* Button with fluid gradient */
+  /* Always uses dark enough gradient stops for white text (WCAG AA 4.5:1) */
   .btn-fluid {
-    @apply relative overflow-hidden rounded-xl text-white font-medium;
+    @apply relative overflow-hidden rounded-xl text-white font-medium whitespace-nowrap;
     background: linear-gradient(135deg,
         hsl(var(--gradient-start)) 0%,
         hsl(var(--gradient-mid)) 100%);
-    box-shadow: 0px 4px 6px -1px hsl(var(--gradient-start) / 0.1), 0px 2px 4px -1px hsl(var(--gradient-start) / 0.06);
+    box-shadow: 0px 4px 6px -1px hsl(var(--gradient-start) / 0.15), 0px 2px 4px -1px hsl(var(--gradient-start) / 0.08);
     transition: all 0.3s ease;
   }
 
   .btn-fluid:hover {
-    box-shadow: 0px 10px 15px -3px hsl(var(--gradient-start) / 0.1), 0px 4px 6px -2px hsl(var(--gradient-start) / 0.05);
+    box-shadow: 0px 10px 15px -3px hsl(var(--gradient-start) / 0.15), 0px 4px 6px -2px hsl(var(--gradient-start) / 0.08);
     transform: translateY(-2px);
   }
 
   /* Pill with fluid gradient */
   .pill-fluid {
-    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white;
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white whitespace-nowrap;
     background: linear-gradient(135deg,
-        hsl(var(--gradient-start) / 0.9) 0%,
-        hsl(var(--gradient-mid) / 0.9) 100%);
+        hsl(var(--gradient-start)) 0%,
+        hsl(var(--gradient-mid)) 100%);
+  }
+
+  /* ========== GRADIENT BUTTON CONTRACT ========== */
+  /*
+   * ACCESSIBILITY RULE: When using gradients on interactive elements with text:
+   *   - gradient lightness must be ≤ 50% for white text (WCAG AA 4.5:1 for small, 3:1 for large text)
+   *   - gradient lightness must be ≥ 60% for dark text
+   *   - Always use `whitespace-nowrap overflow-hidden` to prevent text overflow
+   *
+   * Approved dark-enough Tailwind stops for white text:
+   *   - teal-500/600, emerald-500/600, blue-500/600, indigo-500/600
+   *   - amber-500/600, orange-500/600 (warm side)
+   *   - from-primary (var --primary at 48% L in light mode)
+   *
+   * NEVER use: -100, -200, -300, -400 suffixes on light bg with text-white
+   */
+
+  /* Safe gradient button base — always legible, always clipped */
+  .btn-gradient-safe {
+    @apply relative overflow-hidden whitespace-nowrap text-white font-medium;
   }
 
   /* ========== UTILITY CLASSES ========== */

@@ -812,6 +812,9 @@ export default function TodayRedesign() {
               <h1 className="text-xl font-bold text-foreground">
                 {greeting}{userName ? `, ${userName}` : ''}
               </h1>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {language === 'pt' ? 'Meu Painel de Saúde' : 'My Health Dashboard'} · {format(selectedDate, language === 'pt' ? "EEEE, d 'de' MMMM" : 'EEEE, MMMM d', { locale: undefined })}
+              </p>
             </div>
 
             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -845,26 +848,9 @@ export default function TodayRedesign() {
               <OverdueDosesBanner />
             </div>
 
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* 📋 TIMELINE - Lista de Doses (Phase 1 Main Content) */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            <div className="mt-1 mb-4 px-1">
-              <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* 🏥 DAILY CHECK-IN WIDGET */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            <div className="mb-4">
-              <DailyCheckInWidget
-                hasLoggedToday={hasLoggedSymptomsToday}
-                onLogComplete={() => setHasLoggedSymptomsToday(true)}
-              />
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* 🤖 CLARA PROATIVA - Sugestões contextuais inteligentes */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* =============================================================== */}
+            {/* 🤖 CLARA PROATIVA - Destaque: exibida acima do timeline */}
+            {/* =============================================================== */}
             <ClaraProactiveCard
               overdueDoses={overdueDoses.length}
               lowStockItems={lowStockItems}
@@ -874,20 +860,37 @@ export default function TodayRedesign() {
               onActionClick={handleClaraAction}
             />
 
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* 📊 STATUS DO DIA - Memoizado */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
+            {/* =============================================================== */}
+            {/* 🏥 SINAIS VITAIS GLANCE - Acima da dobra */}
+            {/* =============================================================== */}
+            <VitalsGlanceWidget profileId={activeProfile?.id} />
+
+            {/* =============================================================== */}
+            {/* 📋 TIMELINE - Lista de Doses */}
+            {/* =============================================================== */}
+            <div className="mt-1 mb-4 px-1">
+              <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
+            </div>
+
+            {/* =============================================================== */}
+            {/* 🏥 DAILY CHECK-IN WIDGET */}
+            {/* =============================================================== */}
+            <div className="mb-4">
+              <DailyCheckInWidget
+                hasLoggedToday={hasLoggedSymptomsToday}
+                onLogComplete={() => setHasLoggedSymptomsToday(true)}
+              />
+            </div>
+
+            {/* =============================================================== */}
+            {/* 📊 STATUS DO DIA */}
+            {/* =============================================================== */}
             <TodayStatusCard
               streak={currentStreak}
               taken={todayStats.taken}
               total={todayStats.total}
               language={language}
             />
-
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            {/* 🏥 VITAL SIGNS GLANCE (Quick Stats) */}
-            {/* ═══════════════════════════════════════════════════════════════ */}
-            <VitalsGlanceWidget profileId={activeProfile?.id} />
 
             {/* ═══════════════════════════════════════════════════════════════ */}
             {/* ⚠️ ALERTAS (Compactos, não competem com ação principal) */}

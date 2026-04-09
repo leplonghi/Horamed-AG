@@ -30,6 +30,7 @@
     "@capacitor/ios": "^7.4.3",
     "@capacitor/local-notifications": "^7.0.3",
     "@capacitor/push-notifications": "^7.0.3",
+    "@capgo/capacitor-health": "^7.2.15",
     "@fingerprintjs/fingerprintjs": "^5.0.1",
     "@hookform/resolvers": "^3.10.0",
     "@horamed/android-permissions": "file:plugins/android-permissions",
