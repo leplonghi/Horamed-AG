@@ -121,7 +121,7 @@ export function safeParseDoseDate(dose: Dose): Date | null {
 
         // Se é string ou número
         // Timestamp is handled by the type guard above
-        const parsed = safeDateParse(dateValue);
+        const parsed = safeDateParse(dateValue, new Date(NaN));
         return isNaN(parsed.getTime()) ? null : parsed;
 
     } catch {

@@ -33,9 +33,10 @@ const TabsTrigger = React.forwardRef<
       "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium",
       "ring-offset-background transition-all duration-200",
       "hover:text-foreground/80",
-      "data-[state=active]:bg-gradient-to-br data-[state=active]:from-background/95 data-[state=active]:to-background/80",
-      "data-[state=active]:text-foreground data-[state=active]:shadow-[var(--shadow-glass)]",
-      "data-[state=active]:backdrop-blur-sm data-[state=active]:border data-[state=active]:border-border/20",
+      // Active fallback: neutral card bg — overridden per-usage with bg-primary etc.
+      "data-[state=active]:bg-card data-[state=active]:text-foreground",
+      "data-[state=active]:shadow-[var(--shadow-glass)] data-[state=active]:backdrop-blur-sm",
+      "data-[state=active]:border data-[state=active]:border-border/20",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       "disabled:pointer-events-none disabled:opacity-50",
       className,

@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Envelope as Mail, FileText, ArrowSquareOut as ExternalLink, BookOpen, Lightbulb, Play } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import Header from "@/components/Header";
 import {
   Accordion,
   AccordionContent,
@@ -22,7 +23,8 @@ export default function HelpSupport() {
 
   return (
     <>
-      <div className="min-h-screen bg-background p-6 pb-24">
+      <Header />
+      <div className="min-h-screen bg-background p-6 pb-24 page-container">
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => navigate(-1)}>
@@ -208,65 +210,17 @@ export default function HelpSupport() {
                 </div>
 
                 <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="faq-1">
-                    <AccordionTrigger>{t('help.faq1Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq1A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-2">
-                    <AccordionTrigger>{t('help.faq2Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq2A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-3">
-                    <AccordionTrigger>{t('help.faq3Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq3A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-4">
-                    <AccordionTrigger>{t('help.faq4Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq4A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-5">
-                    <AccordionTrigger>{t('help.faq5Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq5A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-6">
-                    <AccordionTrigger>{t('help.faq6Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq6A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-7">
-                    <AccordionTrigger>{t('help.faq7Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq7A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-8">
-                    <AccordionTrigger>{t('help.faq8Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq8A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-9">
-                    <AccordionTrigger>{t('help.faq9Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq9A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-10">
-                    <AccordionTrigger>{t('help.faq10Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq10A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-11">
-                    <AccordionTrigger>{t('help.faq11Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq11A')}</AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem value="faq-12">
-                    <AccordionTrigger>{t('help.faq12Q')}</AccordionTrigger>
-                    <AccordionContent>{t('help.faq12A')}</AccordionContent>
-                  </AccordionItem>
+                  {(Array.from({ length: 12 }, (_, i) => i + 1) as number[]).map((n) => {
+                    const q = t(`help.faq${n}Q` as any);
+                    const a = t(`help.faq${n}A` as any);
+                    if (!q) return null;
+                    return (
+                      <AccordionItem key={n} value={`faq-${n}`}>
+                        <AccordionTrigger>{q}</AccordionTrigger>
+                        <AccordionContent>{a}</AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
                 </Accordion>
               </Card>
             </TabsContent>
@@ -284,7 +238,7 @@ export default function HelpSupport() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">{t('help.needMoreHelp')}</p>
-                  <p className="text-sm text-muted-foreground">appmedhora@gmail.com</p>
+                  <p className="text-sm text-muted-foreground">duvidas@horamed.net</p>
                 </div>
               </div>
               <ExternalLink className="h-5 w-5 text-muted-foreground" />

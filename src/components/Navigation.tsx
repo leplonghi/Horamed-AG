@@ -32,6 +32,9 @@ const NavItem = memo(function NavItem({
     <Link
       to={path}
       onClick={onTap}
+      role="tab"
+      aria-current={isActive ? "page" : undefined}
+      aria-selected={isActive}
       className={cn(
         "flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group",
         isActive
@@ -41,6 +44,7 @@ const NavItem = memo(function NavItem({
     >
       {isActive && (
         <motion.div
+          aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl"
           layoutId="activeTab"
           transition={{ type: "spring", stiffness: 380, damping: 30 }}
@@ -48,6 +52,7 @@ const NavItem = memo(function NavItem({
       )}
       <div className="relative">
         <Icon
+          aria-hidden="true"
           className={cn(
             "h-6 w-6 transition-transform duration-200 relative z-10",
             isActive && "scale-110"
@@ -57,6 +62,7 @@ const NavItem = memo(function NavItem({
         {badge && badge > 0 && (
           <Badge
             variant="destructive"
+            aria-label={`${badge} notificações`}
             className="absolute -top-2 -right-2 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center z-20"
           >
             {badge}
@@ -108,10 +114,13 @@ function Navigation() {
   ], [expiringCount]);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)]">
-      <div className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/90 to-card/80 backdrop-blur-xl border-t border-border/40" />
+    <nav
+      aria-label="Navegação principal"
+      className="fixed bottom-0 left-0 right-0 z-[60] pb-[env(safe-area-inset-bottom)]"
+    >
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-card/95 via-card/90 to-card/80 backdrop-blur-xl border-t border-border/40" />
       <div className="relative max-w-4xl mx-auto px-2">
-        <div className="flex items-center justify-around h-16">
+        <div role="tablist" aria-label="Seções do app" className="flex items-center justify-around h-16">
           {navItems.map((item, index) => (
             <NavItem
               key={item.path}

@@ -17,6 +17,7 @@ import { PROMPTS_LIBRARY, PromoContent } from "./prompts-data";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn, pressable } from "@/lib/utils";
 
 // TYPES
 type NicheType = "saas" | "ecommerce" | "infoproduct" | "services" | "real_estate";
@@ -538,7 +539,11 @@ export default function CampaignGenerator() {
 
                                 <div className="space-y-3">
                                     {activeCampaigns.map(c => (
-                                        <div key={c.code} className="group flex flex-col md:flex-row justify-between items-center p-4 bg-white hover:bg-slate-50 border rounded-xl shadow-sm transition-all cursor-pointer" onClick={() => handleEditCampaign(c)}>
+                                        <div 
+                                            key={c.code} 
+                                            {...pressable(() => handleEditCampaign(c))}
+                                            className="group flex flex-col md:flex-row justify-between items-center p-4 bg-white hover:bg-slate-50 border rounded-xl shadow-sm transition-all cursor-pointer focus-visible:bg-slate-50 outline-none"
+                                        >
                                             <div className="flex items-center gap-4 w-full md:w-auto">
                                                 <div className="p-3 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
                                                     <FileText className="w-5 h-5 text-primary" />
@@ -649,21 +654,27 @@ export default function CampaignGenerator() {
                                             {/* NICHE SELECTOR */}
                                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
                                                 {Object.entries(NICHES).map(([key, item]) => (
-                                                    <div key={key} onClick={() => {
-                                                        setWizard({ ...wizard, niche: key as NicheType });
-                                                        // Magic Autofill Logic
-                                                        if (!businessId.productName) {
-                                                            const suggestions: Record<string, Partial<BusinessIdentity>> = {
-                                                                saas: { productName: "App de Gestão", painPoint: "Falta de organização", benefit: "Mais tempo livre", targetAudience: "Pequenos empresários" },
-                                                                ecommerce: { productName: "Coleção Verão", painPoint: "Roupas sem estilo", benefit: "Elegância e conforto", targetAudience: "Mulheres modernas" },
-                                                                infoproduct: { productName: "Curso de Marketing", painPoint: "Não sabe vender", benefit: "Vendas diárias", targetAudience: "Empreendedores" },
-                                                                services: { productName: "Consultoria Financeira", painPoint: "Dívidas acumuladas", benefit: "Liberdade financeira", targetAudience: "Famílias" },
-                                                                real_estate: { productName: "Apartamento Centro", painPoint: "Aluguel caro", benefit: "Casa própria", targetAudience: "Casais jovens" }
-                                                            };
-                                                            setBusinessId({ ...businessId, ...suggestions[key] });
-                                                        }
-                                                    }}
-                                                        className={`p-3 rounded-xl border cursor-pointer text-center transition-all ${wizard.niche === key ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'}`}>
+                                                    <div 
+                                                        key={key} 
+                                                        {...pressable(() => {
+                                                            setWizard({ ...wizard, niche: key as NicheType });
+                                                            // Magic Autofill Logic
+                                                            if (!businessId.productName) {
+                                                                const suggestions: Record<string, Partial<BusinessIdentity>> = {
+                                                                    saas: { productName: "App de Gestão", painPoint: "Falta de organização", benefit: "Mais tempo livre", targetAudience: "Pequenos empresários" },
+                                                                    ecommerce: { productName: "Coleção Verão", painPoint: "Roupas sem estilo", benefit: "Elegância e conforto", targetAudience: "Mulheres modernas" },
+                                                                    infoproduct: { productName: "Curso de Marketing", painPoint: "Não sabe vender", benefit: "Vendas diárias", targetAudience: "Empreendedores" },
+                                                                    services: { productName: "Consultoria Financeira", painPoint: "Dívidas acumuladas", benefit: "Liberdade financeira", targetAudience: "Famílias" },
+                                                                    real_estate: { productName: "Apartamento Centro", painPoint: "Aluguel caro", benefit: "Casa própria", targetAudience: "Casais jovens" }
+                                                                };
+                                                                setBusinessId({ ...businessId, ...suggestions[key] });
+                                                            }
+                                                        })}
+                                                        className={cn(
+                                                            "p-3 rounded-xl border cursor-pointer text-center transition-all focus-visible:bg-muted outline-none",
+                                                            wizard.niche === key ? 'border-primary bg-primary/10 ring-2 ring-primary/20' : 'hover:bg-muted'
+                                                        )}
+                                                    >
                                                         <div className="text-2xl mb-1">{item.emoji}</div>
                                                         <div className="text-[10px] font-bold uppercase tracking-wide">{item.label}</div>
                                                     </div>
@@ -708,8 +719,11 @@ export default function CampaignGenerator() {
                                                     whileHover={{ scale: 1.03, y: -5 }}
                                                     whileTap={{ scale: 0.98 }}
                                                     key={key}
-                                                    onClick={() => setCampaignGoal(key as CampaignGoal)}
-                                                    className={`relative p-6 rounded-2xl border-2 cursor-pointer transition-all ${campaignGoal === key ? 'border-primary bg-primary/5 shadow-lg ring-1 ring-primary' : 'bg-white/60 border-transparent hover:bg-white hover:shadow-md'}`}
+                                                    {...pressable(() => setCampaignGoal(key as CampaignGoal))}
+                                                    className={cn(
+                                                        "relative p-6 rounded-2xl border-2 cursor-pointer transition-all focus-visible:bg-primary/10 outline-none",
+                                                        campaignGoal === key ? 'border-primary bg-primary/5 shadow-lg ring-1 ring-primary' : 'bg-white/60 border-transparent hover:bg-white hover:shadow-md'
+                                                    )}
                                                 >
                                                     <div className="flex items-center justify-between mb-4">
                                                         <div className="text-3xl p-3 bg-white rounded-full shadow-sm">{item.emoji}</div>
@@ -758,9 +772,12 @@ export default function CampaignGenerator() {
                                             {Object.entries(TONES).map(([key, item]) => (
                                                 <motion.div
                                                     whileHover={{ scale: 1.03 }}
-                                                    onClick={() => setWizard({ ...wizard, tone: key as ToneType })}
+                                                    {...pressable(() => setWizard({ ...wizard, tone: key as ToneType }))}
                                                     key={key}
-                                                    className={`p-6 rounded-xl border-2 cursor-pointer text-center space-y-3 transition-all ${wizard.tone === key ? 'border-primary bg-primary/10' : 'bg-white hover:border-slate-300'}`}
+                                                    className={cn(
+                                                        "p-6 rounded-xl border-2 cursor-pointer text-center space-y-3 transition-all focus-visible:bg-primary/10 outline-none",
+                                                        wizard.tone === key ? 'border-primary bg-primary/10' : 'bg-white hover:border-slate-300'
+                                                    )}
                                                 >
                                                     <div className="text-4xl">{item.emoji}</div>
                                                     <div className="font-bold">{item.label}</div>

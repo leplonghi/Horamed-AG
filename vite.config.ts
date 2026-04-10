@@ -3,6 +3,10 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { readFileSync } from "fs";
+
+// Read version from package.json at build time
+const { version } = JSON.parse(readFileSync("./package.json", "utf-8"));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -18,6 +22,9 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: false,
       },
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(version),
     },
     plugins: [
       react(),

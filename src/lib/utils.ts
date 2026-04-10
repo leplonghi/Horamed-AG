@@ -1,9 +1,22 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
+}
+
+export function pressable(onClick: () => void) {
+  return {
+    onClick,
+    onKeyDown: (e: any) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick();
+      }
+    },
+    tabIndex: 0,
+    role: "button"
+  };
 }
 
 export const createImage = (url: string): Promise<HTMLImageElement> =>
@@ -58,4 +71,3 @@ export async function getCroppedImg(
     return null;
   }
 }
-

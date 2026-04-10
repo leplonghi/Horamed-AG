@@ -161,28 +161,64 @@ export default function Cofre() {
                 ) : !filteredDocuments || filteredDocuments.length === 0 ? (
                     <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                         <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass">
-                            <CardContent className="py-20 text-center">
-                                <div className="bg-primary/10 rounded-[2rem] w-24 h-24 flex items-center justify-center mx-auto mb-6 shadow-inner-light">
-                                    <FileText className="h-12 w-12 text-primary" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">
-                                    {searchTerm ? t("common.none") || "Nenhum resultado" : t("wallet.noDocuments") || "Nenhum documento"}
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto">
+                            <CardContent className="py-16 text-center space-y-5 px-6">
+                                {/* Animated icon */}
+                                <motion.div
+                                    animate={{ scale: [1, 1.06, 1] }}
+                                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                                    className="bg-primary/10 rounded-[2rem] w-20 h-20 flex items-center justify-center mx-auto shadow-inner-light"
+                                >
                                     {searchTerm
-                                        ? "Tente buscar por outro termo ou limpe os filtros"
-                                        : "Adicione receitas, exames e vacinas para organizar sua saúde com segurança"}
-                                </p>
+                                        ? <IconSearch className="h-10 w-10 text-primary/70" />
+                                        : activeTab !== "all"
+                                            ? <FileText className="h-10 w-10 text-primary/70" />
+                                            : <ShieldCheck className="h-10 w-10 text-primary" />
+                                    }
+                                </motion.div>
+
+                                {/* Headline */}
+                                <div className="space-y-1.5">
+                                    <h3 className="text-lg font-bold text-foreground">
+                                        {searchTerm
+                                            ? (language === "pt" ? "Nenhum resultado" : "No results found")
+                                            : activeTab !== "all"
+                                                ? (language === "pt" ? `Nenhum${activeTab === "exame" ? " exame" : activeTab === "receita" ? "a receita" : activeTab === "vacinacao" ? "a vacina" : "a consulta"} ainda` : `No ${activeTab}s yet`)
+                                                : (language === "pt" ? "Sua carteira está vazia" : "Your wallet is empty")}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
+                                        {searchTerm
+                                            ? (language === "pt" ? "Tente outro termo ou limpe os filtros." : "Try a different term or clear filters.")
+                                            : (language === "pt"
+                                                ? "Guarde receitas, exames e vacinas em um só lugar — seguro e sempre à mão."
+                                                : "Store prescriptions, exams and vaccines in one place — safe and always accessible.")}
+                                    </p>
+                                </div>
+
+                                {/* Security badge */}
                                 {!searchTerm && (
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-xs mx-auto">
+                                    <div className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/70 bg-muted/30 px-3 py-1.5 rounded-full">
+                                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
+                                        {language === "pt" ? "Criptografado e privado" : "Encrypted and private"}
+                                    </div>
+                                )}
+
+                                {/* CTAs */}
+                                {!searchTerm ? (
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-xs mx-auto pt-1">
                                         <Button className="rounded-2xl h-12 gap-2 flex-1 shadow-glow" onClick={() => navigate("/carteira/upload")}>
-                                            <IconUpload className="h-5 w-5" /> Digitalizar
+                                            <IconUpload className="h-5 w-5" />
+                                            {language === "pt" ? "Digitalizar" : "Scan"}
                                         </Button>
-                                        <Button variant="outline" className="rounded-2xl h-12 gap-2 flex-1 bg-white/20 border-white/20 backdrop-blur-sm"
+                                        <Button variant="outline" className="rounded-2xl h-12 gap-2 flex-1"
                                             onClick={() => navigate("/carteira/criar-manual")}>
-                                            <IconPlus className="h-5 w-5" /> Manual
+                                            <IconPlus className="h-5 w-5" />
+                                            {language === "pt" ? "Manual" : "Manual"}
                                         </Button>
                                     </div>
+                                ) : (
+                                    <Button variant="ghost" className="rounded-2xl gap-2" onClick={() => setSearchTerm("")}>
+                                        {language === "pt" ? "Limpar busca" : "Clear search"}
+                                    </Button>
                                 )}
                             </CardContent>
                         </Card>
@@ -240,19 +276,20 @@ export default function Cofre() {
                     </motion.div>
                 )}
 
-                {/* Mobile FAB */}
+                {/* FAB - Upload button, always visible above nav */}
                 <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.3, type: "spring" }}
-                    className="fixed bottom-24 right-4 z-20 sm:hidden"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
+                    className="fixed bottom-28 right-4 z-30"
                 >
                     <Button
                         size="lg"
-                        className="h-16 w-16 rounded-2xl shadow-glow-primary active:scale-95 transition-all duration-200 bg-primary"
+                        className="h-14 pl-4 pr-5 gap-2 rounded-2xl shadow-lg shadow-primary/25 active:scale-95 transition-all duration-200 bg-primary hover:bg-primary/90"
                         onClick={() => navigate("/carteira/upload")}
                     >
-                        <IconPlus className="h-7 w-7" />
+                        <IconPlus className="h-5 w-5" />
+                        <span className="text-sm font-bold">{t("common.add") || "Adicionar"}</span>
                     </Button>
                 </motion.div>
             </main>

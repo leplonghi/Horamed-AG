@@ -829,7 +829,97 @@ All colors MUST be HSL.
     transform: scale(1.05);
   }
 
-  /* ========== SHIMMER EFFECT ========== */
+  /* ========== FLUID TYPOGRAPHY (clamp) — Phase 1 ========== */
+  /* Replace breakpoint jumps with smooth viewport scaling */
+
+  .text-fluid-xs    { font-size: clamp(0.65rem, 1.8vw, 0.75rem); }
+  .text-fluid-sm    { font-size: clamp(0.78rem, 2.2vw, 0.875rem); }
+  .text-fluid-base  { font-size: clamp(0.875rem, 2.5vw, 1rem); }
+  .text-fluid-lg    { font-size: clamp(1rem, 3vw, 1.125rem); }
+  .text-fluid-xl    { font-size: clamp(1.125rem, 3.5vw, 1.25rem); }
+  .text-fluid-2xl   { font-size: clamp(1.25rem, 4.5vw, 1.5rem); }
+  .text-fluid-3xl   { font-size: clamp(1.4rem, 5.5vw, 1.875rem); }
+  .text-fluid-4xl   { font-size: clamp(1.6rem, 7vw, 2.25rem); }
+
+  /* Page heading — replaces hardcoded `text-xl font-bold` on TodayRedesign */
+  .heading-page-fluid {
+    font-size: clamp(1.2rem, 5vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  /* Stat numbers — replaces `text-3xl sm:text-4xl` */
+  .stat-number-fluid {
+    font-size: clamp(1.75rem, 6vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  /* ========== GLASS TIER SYSTEM — Phase 1 ========== */
+  /*
+   * Tier 1 = Hero/Primary element (1 per screen)  — strongest glass, glow
+   * Tier 2 = Secondary cards (status, vitals)     — standard glass
+   * Tier 3 = Tertiary/supporting (alerts, widgets) — almost flat, subtle border
+   */
+
+  /* Tier 1 — dominant hero card with strong glow */
+  .card-tier-1 {
+    @apply relative rounded-3xl border-0 overflow-hidden;
+    background: linear-gradient(145deg,
+        hsl(var(--card) / 0.92) 0%,
+        hsl(var(--card) / 0.78) 100%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    box-shadow:
+      var(--shadow-xl),
+      var(--shadow-inner-glow),
+      0 0 0 1px hsl(var(--primary) / 0.08);
+    transition: var(--transition-spring);
+  }
+
+  .card-tier-1:hover {
+    box-shadow:
+      var(--shadow-xl),
+      var(--shadow-inner-glow),
+      var(--shadow-glow),
+      0 0 0 1px hsl(var(--primary) / 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Tier 2 — secondary context cards */
+  .card-tier-2 {
+    @apply relative rounded-2xl border-0 overflow-hidden;
+    background: linear-gradient(135deg,
+        hsl(var(--card) / 0.82) 0%,
+        hsl(var(--card) / 0.68) 100%);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    box-shadow: var(--shadow-md), var(--shadow-inner-glow);
+    transition: var(--transition-smooth);
+  }
+
+  .card-tier-2:hover {
+    box-shadow: var(--shadow-lg), var(--shadow-inner-glow);
+    transform: translateY(-1px);
+  }
+
+  /* Tier 3 — lightweight supporting cards (no blur) */
+  .card-tier-3 {
+    @apply relative rounded-xl border-0 overflow-hidden;
+    background: hsl(var(--card) / 0.95);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid hsl(var(--border) / 0.5);
+    transition: var(--transition-fast);
+  }
+
+  .card-tier-3:hover {
+    box-shadow: var(--shadow-md);
+    border-color: hsl(var(--border) / 0.8);
+  }
+
+  /* ========== SHIMMER EFFECT =========  =*/
 
   @keyframes shimmer {
     0% {

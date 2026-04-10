@@ -1,5 +1,5 @@
 import { db } from '@/integrations/firebase/client';
-import { collection, addDoc, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore';
 
 export type GeneralFeeling = 'great' | 'okay' | 'poor';
 export type SymptomSeverity = 'mild' | 'moderate' | 'severe';
@@ -69,4 +69,28 @@ export const symptomService = {
             throw error;
         }
     },
+
+    /**
+     * Check if user has already logged symptoms today
+     */
+    async hasLoggedToday(userId: string): Promise<boolean> {
+        try {
+            const now = new Date();
+            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            
+            const logsRef = collection(db, 'symptom_logs');
+            const q = query(
+                logsRef,
+                where('userId', '==', userId),
+                where('date', '>=', Timestamp.fromDate(startOfToday)),
+                limit(1)
+            );
+
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        } catch (error) {
+            console.error('Error checking today\'s symptom log:', error);
+            return false;
+        }
+    }
 };

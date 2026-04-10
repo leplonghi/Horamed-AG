@@ -6,6 +6,7 @@ import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
+import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +17,10 @@ import { motion } from "framer-motion";
 import { LanguageSwitch } from "@/components/LanguageToggle";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+
+// Injected by Vite at build time from package.json
+declare const __APP_VERSION__: string;
+const APP_VERSION = __APP_VERSION__;
 
 // New refined components
 import ProfileHeroHeader from "@/components/profile/ProfileHeroHeader";
@@ -81,12 +86,13 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background relative pb-24">
       <OceanBackground variant="page" />
+      <Header />
 
       <motion.main
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="page-container container max-w-lg mx-auto px-4 pt-4 space-y-6 relative z-10"
+        className="page-container container max-w-lg mx-auto px-4 pt-[calc(4rem+env(safe-area-inset-top))] space-y-6 relative z-10 pb-24"
       >
         {/* 1. HERO - Identity Only */}
         <motion.div variants={itemVariants}>
@@ -229,7 +235,7 @@ export default function Profile() {
               <Switch checked={preferences.showFitnessWidgets} onCheckedChange={toggleFitnessWidgets} />
             </div>
 
-            {/* Language */}
+            {/* Language — compact flag toggle */}
             <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm last:border-0 hover:bg-muted/50 transition-colors">
               <div className="flex items-center gap-4">
                 <div className="p-2 rounded-xl bg-blue-500/10">
@@ -237,7 +243,7 @@ export default function Profile() {
                 </div>
                 <span className="font-medium text-sm">{t('common.language')}</span>
               </div>
-              <LanguageSwitch />
+              <LanguageSwitch compact />
             </div>
 
             {biometricAvailable && isBiometricEnabled && (
@@ -274,8 +280,9 @@ export default function Profile() {
           </ProfileMenuSection>
         </motion.div>
 
-        <div className="text-center text-[10px] text-muted-foreground/60 pt-4 pb-8">
-          HoraMed v1.0.0
+        <div className="text-center text-[10px] text-muted-foreground/60 pt-4 pb-8 space-y-0.5">
+          <div>HoraMed v{APP_VERSION}</div>
+          <div className="text-muted-foreground/40">© {new Date().getFullYear()} HoraMed</div>
         </div>
       </motion.main>
 

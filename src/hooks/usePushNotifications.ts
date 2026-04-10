@@ -21,6 +21,7 @@ import { safeDateParse } from "@/lib/safeDateUtils";
 import { useNavigate } from "react-router-dom";
 import { addMinutes, addHours, subMinutes } from "date-fns";
 import { useNotificationTypes } from "./useNotificationTypes";
+import { safeParseDoseDate } from "@/types";
 
 // Check if running on native platform
 const isNativePlatform = Capacitor.isNativePlatform();

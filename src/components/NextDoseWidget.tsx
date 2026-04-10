@@ -6,6 +6,7 @@ import DoseActionButton from "./DoseActionButton";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeParseDoseDate } from "@/types";
 
 interface NextDoseWidgetProps {
   dose: {

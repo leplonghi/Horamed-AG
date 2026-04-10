@@ -47,7 +47,7 @@ import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 import OceanBackground from "@/components/ui/OceanBackground";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { cn, pressable } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -524,20 +524,22 @@ export default function CofreDocumento() {
             <motion.div variants={itemVariants}>
               <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass overflow-hidden">
                 <Collapsible open={expandedSections.prescriptions} onOpenChange={() => toggleSection('prescriptions')}>
-                  <div className="p-6 cursor-pointer" onClick={() => toggleSection('prescriptions')}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[1.25rem] bg-blue-500/10 flex items-center justify-center">
-                          <Pill className="w-5 h-5 text-blue-500" />
+                  <CollapsibleTrigger asChild>
+                    <div {...pressable(() => toggleSection('prescriptions'))} className="p-6 cursor-pointer focus-visible:bg-white/5 outline-none">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-[1.25rem] bg-blue-500/10 flex items-center justify-center">
+                            <Pill className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <h3 className="text-lg font-bold">{t('cofreDoc.prescribedMeds')}</h3>
+                          <Badge className="rounded-lg bg-blue-500/20 text-blue-500 border-0 font-bold">{meta.prescriptions.length}</Badge>
                         </div>
-                        <h3 className="text-lg font-bold">{t('cofreDoc.prescribedMeds')}</h3>
-                        <Badge className="rounded-lg bg-blue-500/20 text-blue-500 border-0 font-bold">{meta.prescriptions.length}</Badge>
+                        <div className={cn("transition-transform duration-200", expandedSections.prescriptions ? "rotate-180" : "")}>
+                          <ChevronDown className="w-5 h-5" />
+                        </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-                        {expandedSections.prescriptions ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                      </Button>
                     </div>
-                  </div>
+                  </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="px-6 pb-6 space-y-4">
                       {/* Quick Add Action */}
@@ -645,20 +647,22 @@ export default function CofreDocumento() {
             <motion.div variants={itemVariants}>
               <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass overflow-hidden">
                 <Collapsible open={expandedSections.exam} onOpenChange={() => toggleSection('exam')}>
-                  <div className="p-6 cursor-pointer" onClick={() => toggleSection('exam')}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center">
-                          <TestTube2 className="w-5 h-5 text-emerald-500" />
+                  <CollapsibleTrigger asChild>
+                    <div {...pressable(() => toggleSection('exam'))} className="p-6 cursor-pointer focus-visible:bg-white/5 outline-none">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center">
+                            <TestTube2 className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          <h3 className="text-lg font-bold">{t('cofreDoc.examResults')}</h3>
+                          <Badge className="rounded-lg bg-emerald-500/20 text-emerald-500 border-0 font-bold">{meta.extracted_values.length}</Badge>
                         </div>
-                        <h3 className="text-lg font-bold">{t('cofreDoc.examResults')}</h3>
-                        <Badge className="rounded-lg bg-emerald-500/20 text-emerald-500 border-0 font-bold">{meta.extracted_values.length}</Badge>
+                        <div className={cn("transition-transform duration-200", expandedSections.exam ? "rotate-180" : "")}>
+                          <ChevronDown className="w-5 h-5 text-emerald-500" />
+                        </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-full h-8 w-8">
-                        {expandedSections.exam ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                      </Button>
                     </div>
-                  </div>
+                  </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="px-6 pb-6 space-y-4">
                       <ExamDeficiencyBadges examData={meta.extracted_values} />

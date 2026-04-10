@@ -32,7 +32,7 @@ export default function Terms() {
           <Card className="p-6 bg-primary/5 border-primary/20">
             <div className="space-y-2 text-sm">
               <p><strong>Aplicativo:</strong> HoraMed</p>
-              <p><strong>Última atualização:</strong> 02/02/2026</p>
+              <p><strong>Última atualização:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
               <p><strong>Contato:</strong> <a href="mailto:duvidas@horamed.net" className="text-primary hover:underline">duvidas@horamed.net</a></p>
             </div>
           </Card>

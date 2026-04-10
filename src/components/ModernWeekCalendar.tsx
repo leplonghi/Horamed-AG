@@ -19,7 +19,9 @@ import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { fetchCollection } from "@/integrations/firebase/firestore";
+import { where } from "firebase/firestore";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -112,33 +114,26 @@ export default function ModernWeekCalendar({
   const { data: weekStats = {} } = useQuery({
     queryKey: ["week-dose-stats", format(weekStart, "yyyy-MM-dd"), profileId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return {};
 
       const weekEnd = addDays(weekStart, 6);
+      const startIso = startOfDay(weekStart).toISOString();
+      const endIso = endOfDay(weekEnd).toISOString();
 
-      let itemsQuery = supabase.from("items").select("id").eq("user_id", user.id);
-      if (profileId) {
-        itemsQuery = itemsQuery.eq("profile_id", profileId);
-      }
-
-      const { data: items } = await itemsQuery;
-      const itemIds = items?.map(item => item.id) || [];
-      if (itemIds.length === 0) return {};
-
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select("id, due_at, status")
-        .in("item_id", itemIds)
-        .gte("due_at", startOfDay(weekStart).toISOString())
-        .lte("due_at", endOfDay(weekEnd).toISOString());
-
-      if (!doses) return {};
+      const basePath = profileId 
+        ? `users/${user.uid}/profiles/${profileId}` 
+        : `users/${user.uid}`;
+      
+      const doses = await fetchCollection( `${basePath}/doses`, [
+        where("dueAt", ">=", startIso),
+        where("dueAt", "<=", endIso)
+      ]);
 
       const stats: Record<string, DayStats> = {};
 
-      doses.forEach((dose) => {
-        const doseDate = safeParseDoseDate(dose as any);
+      doses.forEach((dose: any) => {
+        const doseDate = safeParseDoseDate(dose);
         if (!doseDate) return;
 
         const dayKey = format(doseDate, "yyyy-MM-dd");
@@ -147,12 +142,10 @@ export default function ModernWeekCalendar({
         }
         stats[dayKey].total++;
 
-        if (dose.status === "taken") {
+        if (dose.status === "taken" || dose.status === "skipped") {
           stats[dayKey].taken++;
         } else if (dose.status === "missed") {
           stats[dayKey].missed++;
-        } else if (dose.status === "skipped") {
-          stats[dayKey].taken++;
         } else {
           stats[dayKey].pending++;
         }
@@ -160,7 +153,7 @@ export default function ModernWeekCalendar({
 
       return stats;
     },
-    staleTime: 30000,
+    staleTime: 60000,
   });
 
   const getDayStats = (date: Date): DayStats => {

@@ -14,6 +14,7 @@ import UpgradeModal from "@/components/UpgradeModal";
 import { isPDF } from "@/lib/pdfProcessor";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import imageCompression from 'browser-image-compression';
 
 
 export default function CofreUpload() {
@@ -122,23 +123,38 @@ export default function CofreUpload() {
         toast.loading(t('cofre.upload.analyzing'), { id: "extract" });
 
         try {
-          // First, upload the file
+          // First, compress the file if it's an image
+          let fileToUpload = firstFile;
+          if (firstFile.type.startsWith('image/')) {
+            toast.loading(t('cofre.upload.compressing') || "Comprimindo imagem...", { id: "extract" });
+            const options = {
+              maxSizeMB: 1,
+              maxWidthOrHeight: 1200,
+              useWebWorker: true,
+            };
+            try {
+              fileToUpload = await imageCompression(firstFile, options);
+            } catch (err) {
+              console.warn("Image compression failed, using original file", err);
+            }
+          }
+
           const user = auth.currentUser;
           if (!user) throw new Error(t('cofre.upload.userNotAuth'));
 
-          const fileExt = firstFile.name.split('.').pop();
+          const fileExt = fileToUpload.name.split('.').pop() || 'jpg';
           const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           const filePath = `${user.uid}/${fileName}`;
           const fileRef = ref(storage, filePath);
 
           toast.loading(t('cofre.upload.uploading'), { id: "extract" });
 
-          await uploadBytes(fileRef, firstFile);
+          await uploadBytes(fileRef, fileToUpload);
 
           // Now extract data from the file
           toast.loading(t('cofre.upload.aiProcessing'), { id: "extract" });
 
-          if (isPDF(firstFile)) {
+          if (isPDF(fileToUpload)) {
             console.log('Processando PDF completo...');
 
             const reader = new FileReader();
@@ -148,7 +164,7 @@ export default function CofreUpload() {
                 const data = await extractFromImage(base64);
 
                 if (data) {
-                  await saveDocumentAutomatically(data, user.uid, filePath, firstFile.type);
+                  await saveDocumentAutomatically(data, user.uid, filePath, fileToUpload.type);
                 } else {
                   throw new Error(t('cofre.upload.cannotExtractPdf'));
                 }
@@ -162,7 +178,7 @@ export default function CofreUpload() {
                 throw err;
               }
             };
-            reader.readAsDataURL(firstFile);
+            reader.readAsDataURL(fileToUpload);
           } else {
             const reader = new FileReader();
             reader.onloadend = async () => {
@@ -172,7 +188,7 @@ export default function CofreUpload() {
                 const data = await extractFromImage(base64);
 
                 if (data) {
-                  await saveDocumentAutomatically(data, user.uid, filePath, firstFile.type);
+                  await saveDocumentAutomatically(data, user.uid, filePath, fileToUpload.type);
                 } else {
                   try {
                     const fileRef = ref(storage, filePath);
@@ -192,7 +208,7 @@ export default function CofreUpload() {
                 throw err;
               }
             };
-            reader.readAsDataURL(firstFile);
+            reader.readAsDataURL(fileToUpload);
           }
         } catch (error: any) {
           console.error('Erro ao processar documento:', error);

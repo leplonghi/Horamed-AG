@@ -316,28 +316,31 @@ export default function Rotina() {
             <TabsList className="w-full flex-wrap h-auto gap-2 p-1.5 rounded-2xl bg-muted/50">
               <TabsTrigger
                 value="todos"
-                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-foreground/70 px-3 py-2 transition-all whitespace-nowrap min-w-0 flex-shrink text-sm"
               >
-                <Pill className="h-4 w-4 mr-2" />
-                {language === 'pt' ? 'Todos' : 'All'} ({items?.length || 0})
+                <Pill className="h-4 w-4 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{language === 'pt' ? 'Todos' : 'All'} ({items?.length || 0})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="medicamento"
-                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-foreground/70 px-3 py-2 transition-all whitespace-nowrap min-w-0 flex-shrink text-sm"
               >
-                💊 {language === 'pt' ? 'Medicamentos' : 'Medications'} ({getCategoryCount("medicamento")})
+                <span className="flex-shrink-0">💊</span>
+                <span className="ml-1.5 truncate">{language === 'pt' ? 'Med.' : 'Meds'} ({getCategoryCount("medicamento")})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="vitamina"
-                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-foreground/70 px-3 py-2 transition-all whitespace-nowrap min-w-0 flex-shrink text-sm"
               >
-                ❤️ {language === 'pt' ? 'Vitaminas' : 'Vitamins'} ({getCategoryCount("vitamina")})
+                <span className="flex-shrink-0">❤️</span>
+                <span className="ml-1.5 truncate">{language === 'pt' ? 'Vit.' : 'Vit.'} ({getCategoryCount("vitamina")})</span>
               </TabsTrigger>
               <TabsTrigger
                 value="suplemento"
-                className="rounded-xl px-4 py-2.5 transition-all whitespace-nowrap overflow-hidden min-w-0"
+                className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-foreground/70 px-3 py-2 transition-all whitespace-nowrap min-w-0 flex-shrink text-sm"
               >
-                ⚡ {language === 'pt' ? 'Suplementos' : 'Supplements'} ({getCategoryCount("suplemento")})
+                <span className="flex-shrink-0">⚡</span>
+                <span className="ml-1.5 truncate">{language === 'pt' ? 'Supl.' : 'Supl.'} ({getCategoryCount("suplemento")})</span>
               </TabsTrigger>
             </TabsList>
 

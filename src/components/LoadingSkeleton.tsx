@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const PageSkeleton = () => {
   return (
@@ -82,3 +83,53 @@ export const StatsSkeleton = () => {
     </div>
   );
 };
+
+/**
+ * TodaySkeleton
+ *
+ * Content-aware shimmer skeleton for the TodayRedesign screen.
+ * Mirrors the exact DOM structure so there's zero layout shift
+ * when live data replaces it.
+ */
+export const TodaySkeleton = () => (
+  <div className="min-h-screen bg-background px-4 pb-24 pt-4 space-y-4">
+    {/* Header row: greeting + avatar */}
+    <div className="flex items-center justify-between mb-2">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-24 rounded-md" />
+        <Skeleton className="h-7 w-44 rounded-md" />
+      </div>
+      <Skeleton className="h-10 w-10 rounded-full" />
+    </div>
+
+    {/* Week calendar strip */}
+    <div className="flex gap-2 overflow-hidden">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <Skeleton
+          key={i}
+          className="h-14 w-full rounded-2xl"
+          style={{ animationDelay: `${i * 40}ms` }}
+        />
+      ))}
+    </div>
+
+    {/* Hero card (Tier 1) */}
+    <Skeleton className="h-48 w-full rounded-3xl" />
+
+    {/* Stats row (2-col) */}
+    <div className="grid grid-cols-2 gap-3">
+      <Skeleton className="h-24 rounded-2xl" style={{ animationDelay: "60ms" }} />
+      <Skeleton className="h-24 rounded-2xl" style={{ animationDelay: "120ms" }} />
+    </div>
+
+    {/* Timeline items */}
+    {Array.from({ length: 3 }).map((_, i) => (
+      <Skeleton
+        key={i}
+        className="h-20 w-full rounded-2xl"
+        style={{ animationDelay: `${160 + i * 60}ms` }}
+      />
+    ))}
+  </div>
+);
+

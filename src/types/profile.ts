@@ -73,7 +73,7 @@ export function safeParseProfileBirthDate(profile: Profile): Date | null {
             return dateValue.toDate();
         }
 
-        const parsed = safeDateParse(dateValue as string | number);
+        const parsed = safeDateParse(dateValue as string | number, new Date(NaN));
         return isNaN(parsed.getTime()) ? null : parsed;
 
     } catch {

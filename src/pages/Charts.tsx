@@ -17,6 +17,7 @@ import InfoDialog from "@/components/InfoDialog";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeParseDoseDate } from "@/types";
 
 interface TimeSlotStats {
   label: string;

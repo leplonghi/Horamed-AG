@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/LoadingSkeleton";
 import TutorialHint from "@/components/TutorialHint";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pressable } from "@/lib/a11y";
 
 export default function Achievements() {
   const { t } = useLanguage();
@@ -159,8 +160,11 @@ export default function Achievements() {
                   transition={{ delay: index * 0.05 }}
                 >
                   <div
-                    onClick={() => handleShareClick(achievement)}
-                    className={achievement.unlocked ? "cursor-pointer" : ""}
+                    role="button"
+                    tabIndex={achievement.unlocked ? 0 : undefined}
+                    aria-label={achievement.unlocked ? `Compartilhar conquista: ${achievement.title}` : undefined}
+                    {...(achievement.unlocked ? pressable(() => handleShareClick(achievement)) : {})}
+                    className={achievement.unlocked ? "cursor-pointer rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" : ""}
                   >
                     <AchievementCard achievement={achievement} />
                   </div>
@@ -186,7 +190,13 @@ export default function Achievements() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <div onClick={() => handleShareClick(achievement)} className="cursor-pointer">
+                  <div 
+                    role="button" 
+                    tabIndex={0} 
+                    {...pressable(() => handleShareClick(achievement))} 
+                    className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg transition-shadow"
+                    aria-label={`Ver detalhes e compartilhar: ${achievement.title}`}
+                  >
                     <AchievementCard achievement={achievement} />
                   </div>
                   <Button

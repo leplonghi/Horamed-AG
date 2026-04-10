@@ -46,38 +46,27 @@ export function LanguageToggle() {
   );
 }
 
-export function LanguageSwitch() {
-  const { language, setLanguage, t } = useLanguage();
+export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
+  const { language, setLanguage } = useLanguage();
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-primary/10">
-          <Globe className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <p className="font-medium">{t('settings.language')}</p>
-          <p className="text-sm text-muted-foreground">{t('settings.languageDesc')}</p>
-        </div>
-      </div>
-      <div className="flex gap-1 p-1 rounded-xl bg-muted/50">
-        <Button
-          size="sm"
-          variant={language === 'pt' ? 'default' : 'ghost'}
-          className="rounded-lg px-3"
-          onClick={() => setLanguage('pt')}
-        >
-          🇧🇷 PT
-        </Button>
-        <Button
-          size="sm"
-          variant={language === 'en' ? 'default' : 'ghost'}
-          className="rounded-lg px-3"
-          onClick={() => setLanguage('en')}
-        >
-          🇺🇸 EN
-        </Button>
-      </div>
+    <div className="flex gap-1 p-1 rounded-xl bg-muted/50">
+      <Button
+        size="sm"
+        variant={language === 'pt' ? 'default' : 'ghost'}
+        className={compact ? "rounded-lg px-2 h-8 text-sm" : "rounded-lg px-3 h-8 text-xs font-semibold"}
+        onClick={() => setLanguage('pt')}
+      >
+        {compact ? '🇧🇷' : '🇧🇷 PT'}
+      </Button>
+      <Button
+        size="sm"
+        variant={language === 'en' ? 'default' : 'ghost'}
+        className={compact ? "rounded-lg px-2 h-8 text-sm" : "rounded-lg px-3 h-8 text-xs font-semibold"}
+        onClick={() => setLanguage('en')}
+      >
+        {compact ? '🇺🇸' : '🇺🇸 EN'}
+      </Button>
     </div>
   );
 }

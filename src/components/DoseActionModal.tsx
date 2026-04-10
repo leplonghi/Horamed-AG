@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeParseDoseDate } from "@/types";
 
 interface DoseActionModalProps {
   open: boolean;

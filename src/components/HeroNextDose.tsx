@@ -178,56 +178,54 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
     return <NewUserEmptyState language={language} />;
   }
 
-  // ✅ ESTADO: Tudo certo por hoje
+  // ✅ ESTADO: Tudo certo por hoje — strip compacta
   if (allDoneToday || (!dose && !nextDayDose)) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="p-3.5 bg-gradient-to-br from-blue-500/10 to-indigo-500/5 border-blue-500/20 backdrop-blur-lg shadow-[var(--shadow-glass)]">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0 shadow-inner">
-              <Check className="h-5 w-5 text-white" weight="bold" />
-            </div>
-            <div>
-              <h2 className="text-base font-semibold text-blue-700 dark:text-blue-400">
-                {language === 'pt' ? 'Tudo certo hoje' : 'All good today'}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {nextDayDose
-                  ? (language === 'pt' ? `Próxima às ${nextDayDose.time}` : `Next at ${nextDayDose.time}`)
-                  : (language === 'pt' ? 'Dia concluído' : 'Day completed')
-                }
-              </p>
-            </div>
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-500/8 border border-blue-500/15 backdrop-blur-sm">
+          <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+            <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" weight="bold" />
           </div>
-        </Card>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-blue-700 dark:text-blue-400 leading-tight">
+              {language === 'pt' ? 'Tudo certo hoje ✓' : 'All good today ✓'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {nextDayDose
+                ? (language === 'pt' ? `Próxima às ${nextDayDose.time}` : `Next at ${nextDayDose.time}`)
+                : (language === 'pt' ? 'Dia concluído' : 'Day completed')
+              }
+            </p>
+          </div>
+        </div>
       </motion.div>
     );
   }
 
-  // 📅 ESTADO: Próxima dose amanhã (sem doses hoje)
+  // 📅 ESTADO: Próxima dose amanhã — strip compacta
   if (!dose && nextDayDose) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-400/5 border-blue-500/20 backdrop-blur-lg shadow-[var(--shadow-glass)] text-center space-y-2">
-          <div className="mx-auto h-14 w-14 rounded-full bg-blue-500/10 flex items-center justify-center">
-            <Clock className="h-7 w-7 text-blue-500" />
+        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-muted/30 border border-border/30 backdrop-blur-sm">
+          <div className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center flex-shrink-0">
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div>
-            <p className="text-[10px] text-blue-500/70 uppercase tracking-widest font-bold mb-1">
-              {language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE'}
-            </p>
-            <h2 className="text-xl font-bold text-foreground">{nextDayDose.name}</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{nextDayDose.name}</p>
+            <p className="text-xs text-muted-foreground">
               {language === 'pt' ? `Amanhã às ${nextDayDose.time}` : `Tomorrow at ${nextDayDose.time}`}
             </p>
           </div>
-        </Card>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 px-2 py-1 rounded-md whitespace-nowrap">
+            {language === 'pt' ? 'AMANHÃ' : 'TOMORROW'}
+          </span>
+        </div>
       </motion.div>
     );
   }
@@ -245,7 +243,42 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
     const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / (1000 * 60));
     const isNow = minutesUntil <= 15 && minutesUntil >= -30;
     const isOverdue = minutesUntil < -5;
+    // Card is "calm" (compact) when dose is more than 60min away and not overdue
+    const isCalm = minutesUntil > 60 && !isOverdue;
 
+    // ─── COMPACT STRIP: dose is calm (>60min away) ────────────────────────────
+    if (isCalm) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          layout
+        >
+          <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-500/8 border border-blue-500/15 backdrop-blur-sm">
+            <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{dose.items?.name || "Medicamento"}</p>
+              <p className="text-xs text-muted-foreground">
+                {format(dueTime, "HH:mm", { locale: dateLocale })} — {dose.items?.dose_text || (language === 'pt' ? 'Próxima dose' : 'Next dose')}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleTake}
+              disabled={isSubmitting}
+              className="h-8 px-3 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+            >
+              <Check className="h-3.5 w-3.5 mr-1" weight="bold" />
+              {language === 'pt' ? 'Tomei' : 'Took it'}
+            </Button>
+          </div>
+        </motion.div>
+      );
+    }
+
+    // ─── FULL HERO CARD: urgent or overdue ────────────────────────────────────
     return (
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -256,28 +289,19 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
           "p-4 transition-all backdrop-blur-xl shadow-[var(--shadow-glass)] relative overflow-hidden",
           isOverdue
             ? "bg-gradient-to-br from-blue-600/20 to-blue-400/10 border-blue-500 ring-1 ring-blue-500/30"
-            : isNow
-              ? "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500 ring-1 ring-blue-500/30 shadow-glow"
-              : "bg-gradient-to-br from-blue-500/15 to-blue-600/5 border-blue-500/20"
+            : "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500 ring-1 ring-blue-500/30 shadow-glow"
         )}>
-          {/* Subtle Shine Background */}
           <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" />
 
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
               <span className={cn(
                 "text-[10px] uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-md",
-                isOverdue
-                  ? "bg-blue-600/20 text-blue-600"
-                  : isNow
-                    ? "bg-blue-500/20 text-blue-500"
-                    : "bg-muted text-muted-foreground"
+                isOverdue ? "bg-blue-600/20 text-blue-600" : "bg-blue-500/20 text-blue-500"
               )}>
                 {isOverdue
                   ? (language === 'pt' ? '⚠️ ATRASADA' : '⚠️ OVERDUE')
-                  : isNow
-                    ? (language === 'pt' ? '🔔 AGORA' : '🔔 NOW')
-                    : (language === 'pt' ? 'PRÓXIMA DOSE' : 'NEXT DOSE')
+                  : (language === 'pt' ? '🔔 AGORA' : '🔔 NOW')
                 }
               </span>
               <div className="flex items-center gap-1.5 text-blue-600/70 font-bold">
@@ -306,9 +330,8 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
                 disabled={isSubmitting}
                 className={cn(
                   "w-full h-14 text-base font-extrabold rounded-xl shadow-lg transition-all active:scale-[0.96] group relative overflow-hidden",
-                  "flex flex-col items-center justify-center gap-0",
-                  "bg-blue-600 hover:bg-blue-700 shadow-blue-500/30",
-                  isNow && "shadow-[0_0_20px_rgba(59,130,246,0.3)]"
+                  "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/30",
+                  "shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                 )}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />

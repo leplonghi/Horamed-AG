@@ -78,6 +78,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const CampaignGenerator = lazy(() => import("@/pages/internal/CampaignGenerator"));
 const HealthAIButton = lazy(() => import("@/components/HealthAIButton"));
 const PWAInstallPrompt = lazy(() => import("@/components/PWAInstallPrompt"));
+const AdminFloatingButton = lazy(() => import("@/components/AdminFloatingButton"));
 const NotificationPermissionPrompt = lazy(
   () => import("@/components/NotificationPermissionPrompt"),
 );
@@ -812,6 +813,9 @@ export default function AppShell() {
       </Suspense>
       <Suspense fallback={null}>
         <NotificationPermissionPrompt onRequestPermission={requestNotificationPermission} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <AdminFloatingButton />
       </Suspense>
     </>
   );

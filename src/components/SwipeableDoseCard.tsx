@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeParseDoseDate } from "@/types";
 interface DoseItem {
   id: string;
   due_at: string;
