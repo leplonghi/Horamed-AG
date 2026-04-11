@@ -153,10 +153,28 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
       value: "suplemento",
       label: t('wizard.supplement'),
       icon: Heart,
+      color: "text-red-500",
+      bgColor: "bg-red-50 dark:bg-red-950/30",
+      borderColor: "border-red-200 dark:border-red-800",
+      description: t('wizard.supplementDesc')
+    },
+    {
+      value: "cuidado",
+      label: t('wizard.care'),
+      icon: Droplets,
       color: "text-teal-500",
       bgColor: "bg-teal-50 dark:bg-teal-950/30",
       borderColor: "border-teal-200 dark:border-teal-800",
-      description: t('wizard.supplementDesc')
+      description: t('wizard.careDesc')
+    },
+    {
+      value: "habito",
+      label: t('wizard.habit'),
+      icon: Dumbbell,
+      color: "text-orange-500",
+      bgColor: "bg-orange-50 dark:bg-orange-950/30",
+      borderColor: "border-orange-200 dark:border-orange-800",
+      description: t('wizard.habitDesc')
     },
     {
       value: "outro",
@@ -349,7 +367,7 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
       </div>
 
       {/* Categoria do Suplemento - Animated reveal */}
-      <div className={cn("transition-all duration-300 overflow-hidden", (data.category === 'vitamina' || data.category === 'suplemento') ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}>
+      <div className={cn("transition-all duration-300 overflow-hidden", (data.category === 'vitamina' || data.category === 'suplemento' || data.category === 'cuidado' || data.category === 'habito') ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}>
         <div className="space-y-3 p-4 bg-muted/20 border border-white/5 rounded-2xl">
           <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
             <Sparkles className="w-3 h-3 text-amber-500" />

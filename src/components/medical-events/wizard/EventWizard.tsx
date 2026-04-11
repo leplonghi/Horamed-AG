@@ -14,17 +14,24 @@ import StepDetails from './steps/StepDetails';
 import StepReview from './steps/StepReview';
 import OCRCapture from './OCRCapture';
 
-const EventWizard = () => {
+interface EventWizardProps {
+    initialProviderId?: string;
+}
+
+const EventWizard = ({ initialProviderId }: EventWizardProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const { user } = useAuth();
 
-    const [step, setStep] = useState(0); // 0 = Mode Selection, 1 = Type, 2 = Basic, 3 = Details, 4 = Review
-    const [captureMode, setCaptureMode] = useState<'manual' | 'ocr' | null>(null);
+    const [step, setStep] = useState(initialProviderId ? 1 : 0); // 0 = Mode Selection, 1 = Type, 2 = Basic, 3 = Details, 4 = Review
+    const [captureMode, setCaptureMode] = useState<'manual' | 'ocr' | null>(initialProviderId ? 'manual' : null);
     const [isSaving, setIsSaving] = useState(false);
 
     // Initial State
-    const [formData, setFormData] = useState<Partial<MedicalEventFormData>>(defaultEventFormData);
+    const [formData, setFormData] = useState<Partial<MedicalEventFormData>>({
+        ...defaultEventFormData,
+        ...(initialProviderId && { providerId: initialProviderId })
+    });
 
     const updateFormData = (data: Partial<MedicalEventFormData>) => {
         setFormData(prev => ({ ...prev, ...data }));

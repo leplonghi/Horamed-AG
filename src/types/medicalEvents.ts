@@ -123,6 +123,7 @@ export interface MedicalEvent {
     // Location & Professional
     location: EventLocation;
     doctor: EventDoctor;
+    providerId?: string; // Optional link to a specific HealthProvider
 
     // Exam-specific (optional)
     examType?: string;
@@ -172,6 +173,7 @@ export interface MedicalEventFormData {
         crm?: string;
         specialty?: string;
     };
+    providerId?: string;
 
     examType?: string;
     preparation?: {

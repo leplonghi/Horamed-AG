@@ -328,7 +328,7 @@ export default function HealthDashboard() {
         {/* Hero Header */}
         <PageHeroHeader
           icon={<TrendingUp className="h-6 w-6 text-primary" />}
-          title="Saúde & Dados"
+          title="Sinais & Dados"
           subtitle={format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
         />
 

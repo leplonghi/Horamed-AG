@@ -475,6 +475,7 @@ export default function AddItem() {
       if (!itemId) throw new Error("Failed to get Item ID");
 
       // Create schedules and doses
+      const scheduledDoses: Dose[] = [];
       for (const schedule of schedules) {
         const { data: newScheduleId, error: scheduleError } = await addDocument(`users/${user.uid}/schedules`, {
           itemId: itemId,
@@ -512,7 +513,6 @@ export default function AddItem() {
           }
         }
 
-        const scheduledDoses: Dose[] = [];
         if (doseInstances.length > 0) {
           // Batch insert not supported by helper, loop addDocument
           // Parallelize?
@@ -528,6 +528,7 @@ export default function AddItem() {
             })
           ));
         }
+      }
 
       // Update stock
       // First delete existing stock record for this item (if any)

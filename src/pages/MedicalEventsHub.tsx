@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     IconPlus as Plus,
     IconSearch as Search,
@@ -26,10 +26,18 @@ import { ptBR, enUS } from 'date-fns/locale';
 
 const MedicalEventsHub = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { t, language } = useLanguage();
     const dateLocale = language === 'pt' ? ptBR : enUS;
     const [searchQuery, setSearchQuery] = useState('');
     const { stats, events, isLoading } = useMedicalEvents();
+    
+    const providerIdFilter = searchParams.get('providerId');
+    const filteredEvents = events?.filter(event => {
+        if (providerIdFilter && event.providerId !== providerIdFilter) return false;
+        if (searchQuery && !event.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        return true;
+    });
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -181,14 +189,14 @@ const MedicalEventsHub = () => {
                                     <div key={i} className="h-24 w-full bg-card/20 animate-pulse rounded-[1.5rem]" />
                                 ))}
                             </div>
-                        ) : events && events.length > 0 ? (
+                        ) : filteredEvents && filteredEvents.length > 0 ? (
                             <motion.div
                                 variants={containerVariants}
                                 initial="hidden"
                                 animate="show"
                                 className="space-y-3"
                             >
-                                {events.slice(0, 3).map((event) => (
+                                {filteredEvents.slice(0, providerIdFilter ? undefined : 3).map((event) => (
                                     <motion.div key={event.id} variants={itemVariants}>
                                         <div
                                             className="card-interactive overflow-hidden cursor-pointer"

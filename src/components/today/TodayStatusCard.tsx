@@ -50,7 +50,7 @@ export const TodayStatusCard = memo(function TodayStatusCard({
                         {taken}/{total}
                     </span>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                        {language === 'pt' ? 'doses hoje' : 'doses today'}
+                        {language === 'pt' ? 'itens hoje' : 'items today'}
                     </p>
                 </div>
             </div>

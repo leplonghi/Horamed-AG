@@ -156,7 +156,7 @@ export default function ImprovedCalendar({
 
         return doses.map((dose: any) => ({
           time: format(safeDateParse(dose.due_at), "HH:mm"),
-          medication: dose.items?.name || "Medicamento",
+          medication: dose.items?.name || t('common.medication'),
           status: dose.status
         })) as DosePreview[];
       },
@@ -175,23 +175,23 @@ export default function ImprovedCalendar({
     return (
       <HoverCard openDelay={200}>
         <HoverCardTrigger asChild>
-          <div className="absolute inset-0 cursor-pointer" />
+          <div className="absolute inset-0 cursor-pointer z-10" />
         </HoverCardTrigger>
-      <HoverCardContent className="w-64 p-3" side="top" align="center">
+        <HoverCardContent className="w-64 p-3 backdrop-blur-xl bg-background/80 border-primary/20 shadow-2xl animate-in zoom-in-95 duration-200" side="top" align="center">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold">
-                {format(date, "d 'de' MMMM", { locale: dateLocale })}
+                {format(date, t('calendar.dateFormatLong'), { locale: dateLocale })}
               </h4>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                 {count} {count === 1 ? t('calendar.event') : t('calendar.events')}
               </span>
             </div>
             
             {isLoading ? (
               <div className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full rounded-lg" />
+                <Skeleton className="h-8 w-full rounded-lg" />
               </div>
             ) : doses && doses.length > 0 ? (
               <div className="space-y-1.5">
@@ -199,26 +199,26 @@ export default function ImprovedCalendar({
                   <div 
                     key={idx}
                     className={cn(
-                      "flex items-center gap-2 p-2 rounded-md text-xs",
-                      dose.status === "taken" && "bg-green-500/10",
-                      dose.status === "scheduled" && "bg-blue-500/10",
-                      dose.status === "missed" && "bg-red-500/10"
+                      "flex items-center gap-2 p-2 rounded-lg text-xs transition-colors",
+                      dose.status === "taken" && "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20",
+                      dose.status === "scheduled" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+                      dose.status === "missed" && "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
                     )}
                   >
-                    <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="font-medium">{dose.time}</span>
-                    <Pill className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="truncate">{dose.medication}</span>
+                    <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span className="font-bold">{dose.time}</span>
+                    <Pill className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <span className="truncate flex-1">{dose.medication}</span>
                   </div>
                 ))}
                 {count > 5 && (
-                  <p className="text-xs text-muted-foreground text-center pt-1">
+                  <p className="text-[10px] text-muted-foreground text-center pt-1 font-medium">
                     +{count - 5} {t('calendar.more')}
                   </p>
                 )}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground italic">
                 {t('calendar.clickForDetails')}
               </p>
             )}
@@ -231,34 +231,34 @@ export default function ImprovedCalendar({
   const renderHeader = () => {
     let headerText = "";
     if (viewMode === "day") {
-      headerText = format(selectedDate, "d 'de' MMMM", { locale: dateLocale });
+      headerText = format(selectedDate, t('calendar.dateFormatLong'), { locale: dateLocale });
     } else if (viewMode === "week") {
-      headerText = format(weekStart, "MMM yyyy", { locale: dateLocale });
+      headerText = format(weekStart, t('calendar.weekFormat'), { locale: dateLocale });
     } else {
-      headerText = format(monthDate, "MMMM yyyy", { locale: dateLocale });
+      headerText = format(monthDate, t('calendar.monthFormat'), { locale: dateLocale });
     }
 
     return (
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-4 px-1">
+        <div className="flex items-center gap-1 bg-accent/50 p-1 rounded-xl backdrop-blur-sm">
           <Button
             variant="ghost"
             size="icon"
             onClick={goToPrevious}
-            className="h-9 w-9"
+            className="h-8 w-8 hover:bg-background/80 transition-all active:scale-95"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
-          <h3 className="text-lg font-semibold min-w-[140px] text-center capitalize">
+          <h3 className="text-sm font-bold min-w-[120px] text-center capitalize tracking-tight">
             {headerText}
           </h3>
           <Button
             variant="ghost"
             size="icon"
             onClick={goToNext}
-            className="h-9 w-9"
+            className="h-8 w-8 hover:bg-background/80 transition-all active:scale-95"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
 
@@ -268,17 +268,18 @@ export default function ImprovedCalendar({
               variant="outline"
               size="sm"
               onClick={goToToday}
+              className="h-8 px-3 text-xs font-semibold rounded-lg hover:bg-primary hover:text-primary-foreground transition-all"
             >
               {t('calendar.today')}
             </Button>
           )}
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" className="h-8 w-8 rounded-lg shadow-sm">
                 <CalendarIcon className="h-4 w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
+            <PopoverContent className="w-auto p-0 border-none shadow-2xl animate-in fade-in zoom-in-95" align="end">
               <Calendar
                 mode="single"
                 selected={selectedDate}
@@ -286,7 +287,7 @@ export default function ImprovedCalendar({
                   if (date) handleDateClick(date);
                 }}
                 locale={dateLocale}
-                className={cn("p-3 pointer-events-auto")}
+                className={cn("p-3 pointer-events-auto rounded-2xl bg-background/95 backdrop-blur-xl")}
               />
             </PopoverContent>
           </Popover>
@@ -300,33 +301,38 @@ export default function ImprovedCalendar({
     const isDayToday = isToday(selectedDate);
 
     return (
-      <div className="flex flex-col items-center justify-center py-8">
+      <div className="flex flex-col items-center justify-center py-6">
         <div 
           className={cn(
             "relative flex flex-col items-center justify-center",
-            "w-32 h-32 rounded-2xl transition-all",
-            isDayToday ? "bg-primary text-primary-foreground shadow-lg" : "bg-accent"
+            "w-36 h-36 rounded-[2.5rem] transition-all duration-500 shadow-xl",
+            isDayToday 
+              ? "bg-gradient-to-br from-primary via-primary/90 to-blue-600 text-primary-foreground scale-105" 
+              : "bg-gradient-to-br from-accent to-accent/50 border border-primary/5"
           )}
         >
-          <span className="text-sm font-medium uppercase opacity-70 mb-1">
-            {format(selectedDate, "EEEE", { locale: dateLocale })}
+          <span className={cn(
+            "text-xs font-bold uppercase tracking-widest opacity-80 mb-1",
+            isDayToday ? "text-primary-foreground" : "text-muted-foreground"
+          )}>
+            {format(selectedDate, t('calendar.dayNameFormat'), { locale: dateLocale })}
           </span>
-          <span className="text-5xl font-bold">
+          <span className="text-6xl font-black tracking-tighter">
             {format(selectedDate, "d")}
           </span>
           {count > 0 && (
-            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
               <div className={cn(
-                "px-3 py-1 rounded-full text-xs font-semibold",
-                isDayToday ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+                "px-4 py-1.5 rounded-2xl text-xs font-bold shadow-lg animate-bounce-subtle",
+                isDayToday ? "bg-white text-primary" : "bg-primary text-primary-foreground"
               )}>
                 {count} {count === 1 ? t('calendar.event') : t('calendar.events')}
               </div>
             </div>
           )}
         </div>
-        <p className="mt-6 text-sm text-muted-foreground">
-          {isDayToday ? t('calendar.today') : format(selectedDate, "d 'de' MMMM", { locale: dateLocale })}
+        <p className="mt-8 text-sm font-semibold text-muted-foreground/80 lowercase tracking-wide">
+          {isDayToday ? t('calendar.today') : format(selectedDate, t('calendar.dateFormatLong'), { locale: dateLocale })}
         </p>
       </div>
     );
@@ -341,34 +347,37 @@ export default function ImprovedCalendar({
           const isSelected = isSameDay(day, selectedDate);
 
           return (
-            <div key={day.toISOString()} className="relative">
+            <div key={day.toISOString()} className="relative group">
               <button
                 onClick={() => handleDateClick(day)}
                 className={cn(
-                  "w-full flex flex-col items-center justify-center p-3 rounded-xl transition-all",
-                  "hover:bg-accent hover:scale-105",
-                  isSelected && "bg-primary text-primary-foreground shadow-md",
-                  isDayToday && !isSelected && "ring-2 ring-primary"
+                  "w-full flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-300",
+                  "hover:bg-accent/80 hover:scale-105 active:scale-95",
+                  isSelected 
+                    ? "bg-gradient-to-br from-primary to-blue-600 text-primary-foreground shadow-lg shadow-primary/25 z-0" 
+                    : "bg-background border border-accent/50",
+                  isDayToday && !isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
               >
-                <span className="text-xs font-medium uppercase opacity-70 mb-1">
-                  {format(day, "EEEEEE", { locale: dateLocale })}
+                <span className={cn(
+                  "text-[10px] font-bold uppercase tracking-tight opacity-70 mb-1",
+                  isSelected ? "text-primary-foreground" : "text-muted-foreground"
+                )}>
+                  {format(day, t('calendar.shortDayNameFormat'), { locale: dateLocale })}
                 </span>
                 <span className={cn(
-                  "text-2xl font-bold",
+                  "text-xl font-black",
                   isDayToday && !isSelected && "text-primary"
                 )}>
                   {format(day, "d")}
                 </span>
                 {count > 0 && (
                   <div className={cn(
-                    "mt-2 px-2 py-0.5 rounded-full text-xs font-medium",
+                    "mt-2 h-1.5 w-1.5 rounded-full",
                     isSelected 
-                      ? "bg-primary-foreground/20 text-primary-foreground" 
-                      : "bg-primary/10 text-primary"
-                  )}>
-                    {count}
-                  </div>
+                      ? "bg-white animate-pulse" 
+                      : "bg-primary"
+                  )} />
                 )}
               </button>
               <DosePreviewCard date={day} />
@@ -382,11 +391,11 @@ export default function ImprovedCalendar({
   const renderMonthView = () => {
     const weekdays = t('calendar.weekdays').split(',');
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 gap-2">
           {weekdays.map((day) => (
-            <div key={day} className="text-center text-xs font-semibold text-muted-foreground py-2">
+            <div key={day} className="text-center text-[10px] font-black text-muted-foreground/60 uppercase tracking-widest pb-1">
               {day}
             </div>
           ))}
@@ -401,28 +410,30 @@ export default function ImprovedCalendar({
             const isSelected = isSameDay(day, selectedDate);
 
             return (
-              <div key={day.toISOString()} className="relative">
+              <div key={day.toISOString()} className="relative group">
                 <button
                   onClick={() => handleDateClick(day)}
                   className={cn(
-                    "w-full aspect-square p-2 rounded-lg transition-all",
-                    "hover:bg-accent hover:scale-105",
-                    isSelected && "bg-primary text-primary-foreground shadow-md",
-                    isDayToday && !isSelected && "ring-2 ring-primary",
-                    !isCurrentMonth && "opacity-40"
+                    "w-full aspect-square p-2 rounded-xl transition-all duration-300 flex items-center justify-center relative",
+                    "hover:bg-accent/80 hover:scale-110 active:scale-95",
+                    isSelected 
+                      ? "bg-gradient-to-br from-primary to-blue-600 text-primary-foreground shadow-lg z-0" 
+                      : "bg-background border border-accent/30",
+                    isDayToday && !isSelected && "ring-2 ring-primary ring-inset",
+                    !isCurrentMonth && "opacity-20 grayscale-[0.8]"
                   )}
                 >
                   <span className={cn(
-                    "text-sm font-medium",
-                    isDayToday && !isSelected && "text-primary font-bold"
+                    "text-sm font-bold",
+                    isDayToday && !isSelected && "text-primary"
                   )}>
                     {format(day, "d")}
                   </span>
                   {count > 0 && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
+                    <div className="absolute top-1 right-1 flex gap-0.5">
                       <div className={cn(
-                        "h-1.5 w-1.5 rounded-full",
-                        isSelected ? "bg-primary-foreground" : "bg-primary"
+                        "h-1 w-1 rounded-full",
+                        isSelected ? "bg-white" : "bg-primary"
                       )} />
                     </div>
                   )}
@@ -437,80 +448,42 @@ export default function ImprovedCalendar({
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-3 space-y-3">
-        {/* Compact Week Strip - default view */}
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPrevious}
-            className="h-8 w-8"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h4 className="text-sm font-semibold capitalize">
-            {format(weekStart, "MMM yyyy", { locale: dateLocale })}
-          </h4>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNext}
-            className="h-8 w-8"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+    <Card className="overflow-hidden border-none bg-gradient-to-b from-background to-accent/20 shadow-none">
+      <CardContent className="p-3 space-y-4">
+        {renderHeader()}
 
-        {/* Week days - simplified */}
-        <div className="grid grid-cols-7 gap-1">
-          {weekDays.map((day) => {
-            const count = getEventCount(day);
-            const isDayToday = isToday(day);
-            const isSelected = isSameDay(day, selectedDate);
-
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => handleDateClick(day)}
-                className={cn(
-                  "flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all",
-                  "hover:bg-accent",
-                  isSelected && "bg-primary text-primary-foreground shadow-sm",
-                  isDayToday && !isSelected && "ring-1 ring-primary"
-                )}
-              >
-                <span className="text-[10px] font-medium uppercase opacity-70">
-                  {format(day, "EEE", { locale: dateLocale }).slice(0, 3)}
-                </span>
-                <span className={cn(
-                  "text-lg font-bold",
-                  isDayToday && !isSelected && "text-primary"
-                )}>
-                  {format(day, "d")}
-                </span>
-                {count > 0 && (
-                  <div className={cn(
-                    "mt-0.5 h-1.5 w-1.5 rounded-full",
-                    isSelected ? "bg-primary-foreground" : "bg-primary"
-                  )} />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Today button if not today selected */}
-        {!isToday(selectedDate) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={goToToday}
-            className="w-full text-xs h-7"
-          >
-            Ir para hoje
-          </Button>
-        )}
+        <Tabs 
+          value={viewMode} 
+          onValueChange={(v) => setViewMode(v as ViewMode)}
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-3 bg-accent/30 p-1 rounded-xl h-9">
+            <TabsTrigger 
+              value="day" 
+              className="rounded-lg text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              {t('calendar.day')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="week" 
+              className="rounded-lg text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              {t('calendar.week')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="month" 
+              className="rounded-lg text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all"
+            >
+              {t('calendar.month')}
+            </TabsTrigger>
+          </TabsList>
+          
+          <div className="mt-4 min-h-[160px] animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {viewMode === "day" && renderDayView()}
+            {viewMode === "week" && renderWeekView()}
+            {viewMode === "month" && renderMonthView()}
+          </div>
+        </Tabs>
       </CardContent>
     </Card>
   );

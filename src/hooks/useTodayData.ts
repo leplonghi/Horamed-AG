@@ -19,45 +19,21 @@ import { Profile } from "@/types/profile";
 import { safeParseDoseDate } from "@/types";
 import { safeDateParse } from "@/lib/safeDateUtils";
 import { eventBus, AppEvents } from "@/domain/services/EventBus";
-
-// ── Local types ──────────────────────────────────────────────────────────────
+import { MedicalEvent } from "@/types/medicalEvents";
 
 export interface TimelineItem {
   id: string;
   time: string;
-  type: "medication" | "appointment" | "exam";
+  type: "medication" | "appointment" | "exam" | "procedure" | "other" | "vitamin" | "supplement";
+  category?: string;
   title: string;
   subtitle?: string;
   status: "pending" | "done" | "missed";
   onMarkDone?: () => void;
   onSnooze?: () => void;
   itemId?: string;
-}
-
-interface StockItem {
-  id: string;
-  itemId?: string;
-  itemName: string;
-  currentQty: number;
-  alertThreshold?: number;
-}
-
-interface Appointment {
-  id: string;
-  date: string | Date | { toDate: () => Date };
-  specialty?: string;
-  doctorName?: string;
   location?: string;
-  status: "done" | "pending" | "cancelled";
-}
-
-interface HealthEvent {
-  id: string;
-  type: string;
-  dueDate: string;
-  title: string;
-  notes?: string;
-  completedAt?: string | Date | null;
+  doctor?: string;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -108,6 +84,7 @@ export function useTodayData(
   const [hasLoggedSymptomsToday, setHasLoggedSymptomsToday] = useState(false);
   const [lowStockItems, setLowStockItems] = useState<string[]>([]);
   const [eventCounts, setEventCounts] = useState<Record<string, number>>({});
+  const [claraInsight, setClaraInsight] = useState<string>("");
 
   // Stable refs so callbacks in timeline items always call the latest version
   const onMarkDoneRef = useRef(onMarkDone);
@@ -183,7 +160,9 @@ export function useTodayData(
             cachedDoses.map((dose) => ({
               id: dose.id,
               time: format(safeDate(dose.dueAt || dose.due_at), "HH:mm"),
-              type: "medication",
+              type: dose.items?.category === "vitamina" ? "vitamin" : 
+                    dose.items?.category === "suplemento" ? "supplement" : "medication",
+              category: dose.items?.category,
               title: dose.itemName || dose.items?.name || "",
               subtitle: dose.doseText || dose.items?.dose_text,
               status:
@@ -201,6 +180,10 @@ export function useTodayData(
 
       if (forceLoading) setLoading(true);
 
+      const paths = getUserPaths(userId);
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
+
       try {
         const weekStart = startOfDay(subDays(date, 3));
         const weekEnd = endOfDay(addDays(date, 3));
@@ -214,16 +197,15 @@ export function useTodayData(
             where("dueAt", "<=", dayEnd.toISOString()),
             orderBy("dueAt", "asc"),
           ]),
-          fetchCollection<Appointment>(paths.appointments, [
+          fetchCollection<MedicalEvent>(paths.appointments, [
             where("date", ">=", dayStart.toISOString()),
             where("date", "<=", dayEnd.toISOString()),
             orderBy("date", "asc"),
           ]),
-          fetchCollection<HealthEvent>(paths.events, [
-            where("type", "==", "renovacao_exame"),
-            where("dueDate", ">=", format(dayStart, "yyyy-MM-dd")),
-            where("dueDate", "<=", format(dayEnd, "yyyy-MM-dd")),
-            orderBy("dueDate", "asc"),
+          fetchCollection<MedicalEvent>(paths.events, [
+            where("date", ">=", dayStart.toISOString()),
+            where("date", "<=", dayEnd.toISOString()),
+            orderBy("date", "asc"),
           ]),
           fetchCollection<Dose>(paths.doses, [
             where("dueAt", ">=", weekStart.toISOString()),
@@ -251,7 +233,9 @@ export function useTodayData(
           ...doses.map((dose) => ({
             id: dose.id,
             time: format(safeDate(dose.dueAt || dose.due_at), "HH:mm"),
-            type: "medication" as const,
+            type: dose.items?.category === "vitamina" ? ("vitamin" as const) : 
+                  dose.items?.category === "suplemento" ? ("supplement" as const) : ("medication" as const),
+            category: dose.items?.category || undefined,
             title: dose.itemName || dose.items?.name || "",
             subtitle: dose.doseText || dose.items?.dose_text,
             status:
@@ -268,25 +252,66 @@ export function useTodayData(
           })),
           ...appointments.map((apt) => ({
             id: apt.id,
-            time: format(safeDate(apt.date), "HH:mm"),
+            time: apt.time || format(safeDate(apt.date), "HH:mm"),
             type: "appointment" as const,
-            title: apt.specialty || t("todayRedesign.appointmentDefault"),
-            subtitle: apt.doctorName
-              ? t("todayRedesign.doctorPrefix", { name: apt.doctorName })
-              : apt.location,
-            status: apt.status === "done" ? ("done" as const) : ("pending" as const),
+            title: apt.title || apt.doctor?.specialty || t("todayRedesign.appointmentDefault"),
+            subtitle: apt.doctor?.name
+              ? t("todayRedesign.doctorPrefix", { name: apt.doctor.name })
+              : apt.location?.name,
+            status: (apt.status === "completed" || apt.status === "done") ? ("done" as const) : ("pending" as const),
+            location: apt.location?.name,
+            doctor: apt.doctor?.name,
           })),
           ...events.map((ev) => ({
             id: ev.id,
-            time: "09:00",
-            type: "exam" as const,
+            time: ev.time || "09:00",
+            type: (ev.type === "exam" ? "exam" : ev.type === "procedure" ? "procedure" : "other") as any,
             title: ev.title,
-            subtitle: ev.notes,
-            status: ev.completedAt ? ("done" as const) : ("pending" as const),
+            subtitle: ev.location?.name || ev.doctor?.name,
+            status: (ev.status === "completed" || ev.status === "done") ? ("done" as const) : ("pending" as const),
+            location: ev.location?.name,
+            doctor: ev.doctor?.name,
           })),
         ].sort((a, b) => a.time.localeCompare(b.time));
 
         setTimelineItems(items);
+
+        // ── Generative Clara Insight ──────────────────────────────────────
+        let insight = "";
+        const patientName = nd?.nickname || nd?.fullName || "você";
+        
+        const supplementsCount = doses.filter(d => d.items?.category === 'suplemento' || d.items?.category === 'vitamina').length;
+        const isWellnessFocused = supplementsCount > doses.length / 2;
+
+        if (doses.length > 0) {
+          const taken = doses.filter(d => d.status === 'taken').length;
+          
+          if (taken === doses.length) {
+            insight = isWellnessFocused 
+              ? `Incrível, ${patientName}! Meta de bem-estar batida. Você está no caminho certo!`
+              : `Parabéns, ${patientName}! Você completou toda a sua rotina de hoje.`;
+          } else if (taken > 0) {
+            insight = isWellnessFocused
+              ? `Foco total! Você já completou ${taken} etapas da sua rotina de performance hoje.`
+              : `Continue assim! Você já tomou ${taken} de ${doses.length} doses hoje.`;
+          } else {
+            insight = isWellnessFocused
+              ? `Bom dia, ${patientName}! Hoje é dia de potencializar sua saúde. Tem ${doses.length} itens na lista!`
+              : `Bom dia, ${patientName}! Você tem ${doses.length} doses planejadas para hoje.`;
+          }
+        } else if (items.length > 0) {
+          insight = `${patientName}, você tem ${items.length} compromissos de saúde hoje.`;
+        } else {
+          insight = "Dia tranquilo! Nenhuma medicação ou compromisso agendado.";
+        }
+
+        // Contextual awareness
+        const exams = events.filter(e => e.type === 'exam');
+        if (exams.length > 0) {
+          insight += " Lembre-se de conferir se algum exame exige jejum.";
+        }
+
+        setClaraInsight(insight);
 
         // 4. Stats + next dose
         if (isToday && doses.length > 0) {
@@ -463,6 +488,7 @@ export function useTodayData(
     setHasLoggedSymptomsToday,
     lowStockItems,
     eventCounts,
+    claraInsight,
     reload: () => latestLoadRef.current(),
     optimisticMarkDone,
   };

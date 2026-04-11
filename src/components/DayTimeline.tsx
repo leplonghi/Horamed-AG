@@ -9,12 +9,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface TimelineItem {
   id: string;
   time: string;
-  type: "medication" | "appointment" | "exam";
+  type: "medication" | "appointment" | "exam" | "procedure" | "other";
   title: string;
   subtitle?: string;
   status: "pending" | "done" | "missed";
   onMarkDone?: () => void;
   onSnooze?: () => void;
+  location?: string;
+  doctor?: string;
 }
 
 interface DayTimelineProps {
@@ -43,6 +45,8 @@ export default function DayTimeline({
         return <Stethoscope className="h-6 w-6" />;
       case "exam":
         return <TestTube className="h-6 w-6" />;
+      case "procedure":
+        return <Calendar className="h-6 w-6" />;
       default:
         return <Calendar className="h-6 w-6" />;
     }
@@ -68,6 +72,9 @@ export default function DayTimeline({
     } else if (type === "exam") {
       base.iconBox = "bg-sky-100 text-sky-600";
       base.timeBadge = "bg-sky-50 text-sky-600";
+    } else if (type === "procedure") {
+      base.iconBox = "bg-purple-100 text-purple-600";
+      base.timeBadge = "bg-purple-50 text-purple-600";
     }
 
     if (isDone) {
@@ -97,7 +104,7 @@ export default function DayTimeline({
       {/* Header Section */}
       <div className="flex items-center justify-between px-1">
         <h3 className="text-sm font-black text-blue-600/80 uppercase tracking-widest">
-          {language === 'pt' ? 'PRÓXIMAS DOSES' : 'UPCOMING DOSES'}
+          {language === 'pt' ? 'ROUTINA DE HOJE' : 'TODAY\'S ROUTINE'}
         </h3>
       </div>
 
@@ -150,9 +157,14 @@ export default function DayTimeline({
                         <h4 className={cn("text-base font-bold truncate leading-tight", styles.title)}>
                           {item.title}
                         </h4>
-                        {item.subtitle && (
+                        {(item.subtitle || item.location) && (
                           <p className={cn("text-xs truncate font-medium mt-0.5", styles.subtitle)}>
-                            {item.subtitle}
+                            {item.subtitle || item.location}
+                          </p>
+                        )}
+                        {item.doctor && (
+                          <p className={cn("text-[10px] truncate opacity-70 mt-0.5", styles.subtitle)}>
+                            {item.doctor}
                           </p>
                         )}
                       </div>

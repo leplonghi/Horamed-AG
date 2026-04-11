@@ -117,6 +117,11 @@ service cloud.firestore {
       match /rewards/{rewardId} {
         allow read: if isOwner(userId);
       }
+
+      // Health Providers (subcollection) — personal, private, fully owned by user
+      match /providers/{providerId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ===================================

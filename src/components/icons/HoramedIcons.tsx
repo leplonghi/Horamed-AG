@@ -156,6 +156,29 @@ export const IconChevronDown = (props: IconProps) => (
     </BaseIcon>
 );
 
+export const IconMapPin = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+    </BaseIcon>
+);
+
+export const IconStethoscope = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M4.8 2.3A.3.3 0 1 0 5 2a.3.3 0 0 0-.2.3Z" fill="currentColor" />
+        <path d="M10 2v2a5 5 0 0 0 10 0V2" />
+        <path d="M7 10v4a5 5 0 0 0 10 0v-4" />
+        <path d="M12 14v4" />
+        <circle cx="12" cy="19" r="2" />
+    </BaseIcon>
+);
+
+export const IconEmergency = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </BaseIcon>
+);
+
 export const IconClose = (props: IconProps) => (
     <BaseIcon {...props}>
         <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
@@ -303,6 +326,8 @@ export const IconLoader = ({ className, ...props }: IconProps) => (
         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
     </BaseIcon>
 );
+
+export const IconLoading = IconLoader;
 
 export const IconUsers = (props: IconProps) => (
     <BaseIcon {...props}>
@@ -498,6 +523,18 @@ export function IconSilverware(props: IconProps) {
             <path d="M3 2v7c0 1.1.9 2 2 2 1.1 0 2-.9 2-2V2" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M7 2v20" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
             <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+        </BaseIcon>
+    );
+}
+
+export function IconProviders(props: IconProps) {
+    return (
+        <BaseIcon {...props}>
+            <path d='M12 2C8.69 2 6 4.69 6 8c0 4.5 6 11 6 11s6-6.5 6-11c0-3.31-2.69-6-6-6z' strokeOpacity='0.35' />
+            <path d='M10.5 7.5h3M12 6v3' strokeWidth='1.6' />
+            <path d='M3 21h18' strokeOpacity='0.45' />
+            <rect x='3.5' y='15' width='5' height='6' rx='0.8' strokeOpacity='0.55' />
+            <rect x='15.5' y='15' width='5' height='6' rx='0.8' strokeOpacity='0.55' />
         </BaseIcon>
     );
 }

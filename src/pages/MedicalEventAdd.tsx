@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from "@phosphor-icons/react";
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -6,7 +6,10 @@ import EventWizard from '@/components/medical-events/wizard/EventWizard';
 
 const MedicalEventAdd = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { t } = useLanguage();
+    
+    const providerId = searchParams.get('providerId') || undefined;
 
     return (
         <div className="min-h-screen bg-background">
@@ -25,7 +28,7 @@ const MedicalEventAdd = () => {
                 </div>
             </div>
 
-            <EventWizard />
+            <EventWizard initialProviderId={providerId} />
         </div>
     );
 };

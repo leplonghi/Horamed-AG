@@ -40,6 +40,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DailyCheckInWidget } from "@/components/symptoms/DailyCheckInWidget";
 import { TodaySkeleton } from "@/components/LoadingSkeleton";
 import TrialReminderBanner from "@/components/TrialReminderBanner";
+import FamilyPulseWidget from "@/components/FamilyPulseWidget";
+import { Lock } from "@phosphor-icons/react";
 
 import { useTodayData } from "@/hooks/useTodayData";
 import { useGreeting } from "@/hooks/useGreeting";
@@ -64,7 +66,7 @@ export default function TodayRedesign() {
   const { achievements } = useAchievements();
   const { alerts, refresh: refreshAlerts, dismissAlert, dismissAll } = useCriticalAlerts();
   const { showFeedback } = useFeedbackToast();
-  const { activeProfile } = useUserProfiles();
+  const { activeProfile, profiles, switchProfile } = useUserProfiles();
   const { t, language } = useLanguage();
   useSmartRedirect();
   const { overdueDoses } = useOverdueDoses();
@@ -194,6 +196,7 @@ export default function TodayRedesign() {
     hasLoggedSymptomsToday,
     setHasLoggedSymptomsToday,
     lowStockItems,
+    claraInsight,
     optimisticMarkDone,
   } = useTodayData(selectedDate, markAsTaken, snoozeDose);
 
@@ -237,13 +240,23 @@ export default function TodayRedesign() {
         ) : (
           <>
             <div className="pt-1">
-              <h1 className="heading-page-fluid text-foreground">
-                {greetingWithName}
-              </h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {language === "pt" ? "Meu Painel de Saúde" : "My Health Dashboard"} ·{" "}
-                {format(selectedDate, language === "pt" ? "EEEE, d 'de' MMMM" : "EEEE, MMMM d")}
-              </p>
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h1 className="heading-page-fluid text-foreground">
+                    {greetingWithName}
+                  </h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {language === "pt" ? "Meu Painel de Saúde" : "My Health Dashboard"} ·{" "}
+                      {format(selectedDate, language === "pt" ? "EEEE, d 'de' MMMM" : "EEEE, MMMM d")}
+                    </p>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">
+                      <Lock size={10} weight="fill" />
+                      Privado & Seguro
+                    </div>
+                  </div>
+                </div>
+              </div>
               {subtitle && (
                 <p className="text-sm italic text-muted-foreground mt-2 opacity-80 border-l-2 border-primary/30 pl-2">
                   "{subtitle}"
@@ -284,12 +297,16 @@ export default function TodayRedesign() {
               lowStockItems={lowStockItems}
               currentStreak={currentStreak}
               todayProgress={todayStats}
+              dynamicMessage={claraInsight}
               onOpenClara={openClara}
               onActionClick={handleClaraAction}
             />
 
-            {/* Vitals glance */}
-            <VitalsGlanceWidget profileId={activeProfile?.id} />
+            <FamilyPulseWidget 
+              profiles={profiles}
+              activeProfileId={activeProfile?.id}
+              onSwitchProfile={switchProfile}
+            />
 
             {/* Day timeline */}
             <div className="mt-1 mb-4 px-1">
@@ -303,6 +320,9 @@ export default function TodayRedesign() {
                 onLogComplete={() => setHasLoggedSymptomsToday(true)}
               />
             </div>
+
+            {/* Vitals glance */}
+            <VitalsGlanceWidget profileId={activeProfile?.id} />
 
             {/* Day status */}
             <TodayStatusCard

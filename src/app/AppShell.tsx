@@ -76,6 +76,7 @@ const ConsultationCardView = lazy(() => import("@/pages/ConsultationCardView"));
 const DrugInteractions = lazy(() => import("@/pages/DrugInteractions"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const CampaignGenerator = lazy(() => import("@/pages/internal/CampaignGenerator"));
+const MyProviders = lazy(() => import("@/pages/MyProviders"));
 const HealthAIButton = lazy(() => import("@/components/HealthAIButton"));
 const PWAInstallPrompt = lazy(() => import("@/components/PWAInstallPrompt"));
 const AdminFloatingButton = lazy(() => import("@/components/AdminFloatingButton"));
@@ -149,8 +150,8 @@ export default function AppShell() {
       const alarmEvent = event as CustomEvent<{ doseId?: string }>;
       const doseId = alarmEvent.detail?.doseId;
 
-      toast("Hora do Medicamento", {
-        description: "Toque para confirmar que tomou",
+      toast("Lembrete", {
+        description: "Hora de cuidar de você! Toque para registrar.",
         action: {
           label: "Ver",
           onClick: () => {
@@ -243,6 +244,14 @@ export default function AppShell() {
           />
           <Route path="/wallet" element={<Navigate to="/carteira" replace />} />
           <Route path="/cofre" element={<Navigate to="/carteira" replace />} />
+          <Route
+            path="/provedores"
+            element={
+              <ProtectedRoute>
+                <MyProviders />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/perfil"
             element={

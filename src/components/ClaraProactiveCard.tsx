@@ -18,6 +18,7 @@ interface ClaraProactiveCardProps {
   onOpenClara?: () => void;
   onActionClick?: (action: string) => void;
   className?: string;
+  dynamicMessage?: string;
 }
 
 type InsightType = "greeting" | "motivation" | "reminder" | "tip" | "celebration" | "alert";
@@ -43,7 +44,8 @@ function ClaraProactiveCard({
   todayProgress = { taken: 0, total: 0 },
   onOpenClara,
   onActionClick,
-  className
+  className,
+  dynamicMessage
 }: ClaraProactiveCardProps) {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -171,7 +173,18 @@ function ClaraProactiveCard({
       }
     }
 
-    // Priority 5: Contextual greetings (simplified)
+    // Priority 5: External dynamic insight (e.g. from useTodayData)
+    if (dynamicMessage) {
+      return {
+        id: "dynamic",
+        type: "tip",
+        message: dynamicMessage,
+        icon: Lightbulb,
+        priority: 5
+      };
+    }
+
+    // Priority 6: Contextual greetings (simplified)
     if (hour < 10) {
       return {
         id: "morning",

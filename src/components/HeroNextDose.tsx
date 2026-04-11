@@ -28,8 +28,8 @@ function NewUserEmptyState({ language }: { language: string }) {
   const isPt = language === 'pt';
 
   const steps = isPt
-    ? ['Cadastre seu medicamento', 'Configure o horário', 'Receba lembretes']
-    : ['Add your medication', 'Set the schedule', 'Get reminders'];
+    ? ['Monte sua rotina', 'Configure o horário', 'Receba lembretes']
+    : ['Set up your routine', 'Set the schedule', 'Get reminders'];
 
   return (
     <motion.div
@@ -63,8 +63,8 @@ function NewUserEmptyState({ language }: { language: string }) {
             </h2>
             <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
               {isPt
-                ? 'Em 3 passos simples você nunca esquece um medicamento'
-                : 'In 3 simple steps you’ll never miss a dose again'}
+                ? 'Potencialize sua saúde em 3 passos simples'
+                : 'Optimize your health routine in 3 simple steps'}
             </p>
           </div>
 
@@ -106,7 +106,7 @@ function NewUserEmptyState({ language }: { language: string }) {
             size="lg"
           >
             <Plus className="h-4 w-4 mr-2" weight="bold" />
-            {isPt ? 'Adicionar primeiro remédio' : 'Add first medication'}
+            {isPt ? 'Começar minha rotina' : 'Start my routine'}
           </Button>
         </div>
       </Card>

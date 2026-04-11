@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
-import { Bell, Shield, Question as HelpCircle, SignOut as LogOut, FileArrowDown as FileDown, Crown, FileText, DeviceMobile as Smartphone, Heartbeat as Activity, BookOpen, Airplane as Plane, Gift } from "@phosphor-icons/react";
+import { Bell, Shield, Question as HelpCircle, SignOut as LogOut, FileArrowDown as FileDown, Crown, FileText, DeviceMobile as Smartphone, Heartbeat as Activity, BookOpen, Airplane as Plane, Gift, Waves } from "@phosphor-icons/react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";
@@ -42,6 +42,10 @@ export default function Profile() {
   const { preferences, toggleFitnessWidgets } = useFitnessPreferences();
   const { isAvailable: biometricAvailable, isBiometricEnabled, disableBiometric } = useBiometricAuth();
   const { t } = useTranslation();
+
+  const [isHapticEnabled, setIsHapticEnabled] = useState(
+    localStorage.getItem("horamed_haptic_disabled") !== "true"
+  );
 
   useEffect(() => {
     loadProfile();
@@ -233,6 +237,24 @@ export default function Profile() {
                 <span className="font-medium text-sm">{t('profile.wellnessWidgets')}</span>
               </div>
               <Switch checked={preferences.showFitnessWidgets} onCheckedChange={toggleFitnessWidgets} />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-card/50 backdrop-blur-sm border-b border-border/40 hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-xl bg-indigo-500/10">
+                  <Waves className="h-5 w-5 text-indigo-500" />
+                </div>
+                <span className="font-medium text-sm">{t('profile.haptics')}</span>
+              </div>
+              <Switch checked={isHapticEnabled} onCheckedChange={(checked) => {
+                setIsHapticEnabled(checked);
+                if (!checked) {
+                  localStorage.setItem("horamed_haptic_disabled", "true");
+                } else {
+                  localStorage.removeItem("horamed_haptic_disabled");
+                  if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(20);
+                }
+              }} />
             </div>
 
             {/* Language — compact flag toggle */}

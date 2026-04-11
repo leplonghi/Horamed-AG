@@ -73,8 +73,9 @@ class IntegrationService {
     }
 
     async connectProvider(providerId: IntegrationProviderId): Promise<boolean> {
-        return new Promise(async (resolve, reject) => {
-            try {
+        return new Promise((resolve, reject) => {
+            const run = async () => {
+                try {
                 // Feature removida: não integramos mais o '@capgo/capacitor-health' nativamente
                 // para evitar requerimentos de declaração de health tags na Play Store.
                 
@@ -96,10 +97,12 @@ class IntegrationService {
                     localStorage.setItem('horamed_integrations', JSON.stringify(currentStatus));
                     resolve(true);
                 }, 800); // Simulate auth redirect/popup
-            } catch (err) {
-                console.error('Error connecting provider:', err);
-                reject(err);
-            }
+                } catch (err) {
+                    console.error('Error connecting provider:', err);
+                    reject(err);
+                }
+            };
+            run();
         });
     }
 
@@ -118,12 +121,13 @@ class IntegrationService {
     }
 
     async syncProvider(providerId: IntegrationProviderId): Promise<DailyHealthSummary> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                let steps = Math.floor(Math.random() * 5000) + 3000;
-                let distance = Math.floor(Math.random() * 3000) + 1000;
-                let calories = Math.floor(Math.random() * 300) + 200;
-                let heartRate = 60 + Math.floor(Math.random() * 10);
+        return new Promise((resolve, reject) => {
+            const run = async () => {
+                try {
+                const steps = Math.floor(Math.random() * 5000) + 3000;
+                const distance = Math.floor(Math.random() * 3000) + 1000;
+                const calories = Math.floor(Math.random() * 300) + 200;
+                const heartRate = 60 + Math.floor(Math.random() * 10);
                 
                 // Mocks are locally generated for now as the @capgo/capacitor-health integration 
                 // was removed to comply with standard Play Store policies without Health Declarations.
@@ -155,6 +159,8 @@ class IntegrationService {
                 console.error('Failed to sync health data', err);
                 reject(err);
             }
+        };
+        run();
         });
     }
 }

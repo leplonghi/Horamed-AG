@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 
 interface UseVoiceInputNativeOptions {
   onTranscription?: (text: string) => void;
+  onCommandResult?: (data: any) => void;
   onError?: (error: string) => void;
   language?: string;
 }
@@ -43,6 +44,7 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [transcription, setTranscription] = useState<string>('');
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [isSupported, setIsSupported] = useState(true);
 
   const recognitionRef = useRef<InstanceType<SpeechRecognitionType> | null>(null);
@@ -68,10 +70,10 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
         return;
       }
 
-      // Request microphone permission first
+      // Request microphone permission first and keep stream for visualizer
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(track => track.stop());
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        setStream(audioStream);
       } catch (err) {
         console.error('Microphone access error:', err);
         toast.error('Não foi possível acessar o microfone. Verifique as permissões.');
@@ -222,11 +224,19 @@ export function useVoiceInputNative(options: UseVoiceInputNativeOptions = {}) {
     hasResultsRef.current = false;
   }, []);
 
+  // Cleanup stream when recording stops
+  useEffect(() => {
+    if (!isRecording && stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+  }, [isRecording, stream]);
+
   return {
     isRecording,
     isProcessing,
     transcription,
-    stream: null, // Native WebSpeech API does not expose the stream directly for visualization
+    stream,
     isSupported,
     startRecording,
     stopRecording,

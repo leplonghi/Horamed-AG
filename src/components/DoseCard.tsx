@@ -151,9 +151,20 @@ export default function DoseCard({ dose, onTake, onMore }: DoseCardProps) {
             <div className="flex items-start justify-between gap-2 mb-2">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-semibold text-foreground truncate">
+                  <h4 className="font-semibold text-foreground truncate leading-none">
                     {dose.items?.name || "Medicamento"}
                   </h4>
+                  {dose.items?.category && dose.items?.category !== 'medicamento' && (
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        "text-[9px] px-1.5 py-0 h-4 uppercase tracking-tighter font-black border-none", 
+                        categoryConfig.badgeColor
+                      )}
+                    >
+                      {dose.items.category}
+                    </Badge>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"

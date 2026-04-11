@@ -26,6 +26,7 @@ export function useHapticFeedback() {
   const triggerHaptic = useCallback(
     async (style: HapticStyle = "medium") => {
       if (!isSupported) return;
+      if (localStorage.getItem("horamed_haptic_disabled") === "true") return;
 
       try {
         if (isNative) {

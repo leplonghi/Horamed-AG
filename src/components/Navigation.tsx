@@ -7,7 +7,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where } from "@/integrations/firebase";
-import { IconToday as CalendarBlank, IconMedications as Pill, IconHealth as Heartbeat, IconWallet as Wallet, IconProfile as UserIcon } from "@/components/icons/HoramedIcons";
+import { IconToday as CalendarBlank, IconMedications as Pill, IconHealth as Heartbeat, IconWallet as Wallet, IconProfile as UserIcon, IconProviders } from "@/components/icons/HoramedIcons";
 
 type NavIconComponent = React.ComponentType<{ className?: string; size?: number | string }>;
 
@@ -108,7 +108,7 @@ function Navigation() {
   const navItems = useMemo(() => [
     { path: "/hoje", icon: CalendarBlank, labelKey: "nav.today" },
     { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
-    { path: "/dashboard-saude", icon: Heartbeat, labelKey: "nav.health" },
+    { path: "/dashboard-saude", icon: Heartbeat, labelKey: "nav.groups" },
     { path: "/carteira", icon: Wallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
     { path: "/perfil", icon: UserIcon, labelKey: "nav.profile" },
   ], [expiringCount]);

@@ -76,6 +76,7 @@ export const createMedicalEvent = async (
             title: formData.title,
             date: eventDate,
             time: formData.time,
+            providerId: formData.providerId,
             location: {
                 name: formData.location.name,
                 address: formData.location.address,
@@ -199,6 +200,7 @@ export const updateMedicalEvent = async (
         if (updates.date) updateData.date = Timestamp.fromDate(updates.date);
         if (updates.time) updateData.time = updates.time;
         if (updates.type) updateData.type = updates.type;
+        if (updates.providerId !== undefined) updateData.providerId = updates.providerId;
         if (updates.location) updateData.location = updates.location;
         if (updates.doctor) updateData.doctor = updates.doctor;
         if (updates.examType !== undefined) updateData.examType = updates.examType;

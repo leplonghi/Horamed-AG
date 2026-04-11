@@ -140,9 +140,9 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
 
   return (
     <>
-      <Card className="fixed inset-4 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-96 sm:h-[500px] h-[calc(100vh-2rem)] shadow-xl z-50 flex flex-col animate-scale-in">
+      <Card className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 sm:w-[400px] sm:h-[600px] h-[100dvh] w-full rounded-none sm:rounded-2xl shadow-2xl z-[100] flex flex-col animate-in slide-in-from-bottom-2 sm:zoom-in-95 duration-200 border-0 sm:border overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b bg-primary text-primary-foreground rounded-t-lg shrink-0">
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shrink-0 sm:pt-4 pt-[max(1rem,env(safe-area-inset-top))]">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden border border-primary-foreground/20">
               <img
@@ -192,12 +192,12 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
                 key={index}
                 className={cn(
                   "flex",
-                  message.role === "user" ? "justify-end" : "justify-start"
+                  message.role === "user" ? "justify-end pl-12" : "justify-start pr-12"
                 )}
               >
                 <div
                   className={cn(
-                    "max-w-[85%] rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 text-sm leading-relaxed",
+                    "rounded-2xl px-4 py-3 text-[15px] leading-relaxed shadow-sm",
                     message.role === "user"
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-foreground"
@@ -219,13 +219,13 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         </ScrollArea>
 
         {/* Quick Chips */}
-        <div className="px-3 sm:px-4 py-2 border-t shrink-0">
-          <div className="flex gap-1.5 sm:gap-2 flex-wrap">
+        <div className="px-2 sm:px-4 py-3 border-t shrink-0 bg-muted/20">
+          <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] snap-x px-2 sm:px-0">
             {quickChips.map((chip, idx) => (
               <Badge
                 key={idx}
-                variant="outline"
-                className="cursor-pointer hover:bg-primary/10 transition-colors text-xs px-2 py-0.5"
+                variant="secondary"
+                className="shrink-0 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-all duration-200 text-xs px-3 py-1.5 rounded-full snap-start font-medium bg-background border shadow-sm"
                 onClick={() => setInput(chip)}
               >
                 {chip}
@@ -235,8 +235,8 @@ export default function HealthAssistantChat({ onClose }: HealthAssistantChatProp
         </div>
 
         {/* Input */}
-        <div className="p-3 sm:p-4 border-t shrink-0">
-          <div className="flex gap-2">
+        <div className="p-3 sm:p-4 border-t shrink-0 bg-background pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="flex gap-2 items-end">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}

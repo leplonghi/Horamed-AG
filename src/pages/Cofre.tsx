@@ -12,6 +12,7 @@ import {
     IconShield as ShieldCheck,
     IconTestTube,
     IconSyringe,
+    IconProviders,
 } from "@/components/icons/HoramedIcons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,13 +25,16 @@ import OceanBackground from "@/components/ui/OceanBackground";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import AdSupportCard from "@/components/AdSupportCard";
 import GoogleAd from "@/components/GoogleAd";
-import { useDocumentos, HealthDocument } from "@/hooks/useCofre";
+import { useDocumentos } from "@/hooks/useCofre";
+import { useProviders } from "@/hooks/useProviders";
+import { ProviderCard } from "@/components/providers/ProviderCard";
+import { ProviderFormModal } from "@/components/providers/ProviderFormModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { safeDateParse } from "@/lib/safeDateUtils";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORIES = [
     { value: "all", label: "Todos", icon: FolderOpen, color: "text-primary", bg: "bg-primary/10", activeBg: "bg-primary text-white" },
@@ -38,6 +42,7 @@ const CATEGORIES = [
     { value: "exame", label: "Exames", icon: IconTestTube, color: "text-emerald-500", bg: "bg-emerald-500/10", activeBg: "bg-emerald-500 text-white" },
     { value: "vacinacao", label: "Vacinas", icon: IconSyringe, color: "text-amber-500", bg: "bg-amber-500/10", activeBg: "bg-amber-500 text-white" },
     { value: "consulta", label: "Consultas", icon: Calendar, color: "text-rose-500", bg: "bg-rose-500/10", activeBg: "bg-rose-500 text-white" },
+    { value: "locais", label: "Locais", icon: IconProviders, color: "text-purple-500", bg: "bg-purple-500/10", activeBg: "bg-purple-500 text-white" },
 ];
 
 function getCategoryMeta(slug?: string) {
@@ -58,9 +63,13 @@ export default function Cofre() {
     const [activeTab, setActiveTab] = useState("all");
 
     const { data: documents, isLoading } = useDocumentos({ q: searchTerm });
+    const { providers, add: addProvider, update: updateProvider, remove: removeProvider, toggleFavorite } = useProviders();
+    const [providerModalOpen, setProviderModalOpen] = useState(false);
+    const [editingProvider, setEditingProvider] = useState<any>(null);
 
     const filteredDocuments = documents?.filter((doc) => {
         if (activeTab === "all") return true;
+        if (activeTab === "locais") return false;
         return doc.categorySlug === activeTab;
     });
 
@@ -82,10 +91,14 @@ export default function Cofre() {
                 {/* Hero Header */}
                 <PageHeroHeader
                     icon={<ShieldCheck className="h-6 w-6 text-primary" />}
-                    title={t("wallet.title") || "Carteira de Saúde"}
-                    subtitle={t("wallet.subtitle") || "Seus documentos médicos em um só lugar"}
+                    title={activeTab === "locais" ? "Meus Locais" : (t("wallet.title") || "Carteira de Saúde")}
+                    subtitle={activeTab === "locais" ? "Especialistas, consultórios e hospitais de confiança" : (t("wallet.subtitle") || "Seus documentos médicos em um só lugar")}
                     badge="Wallet"
-                    action={{
+                    action={activeTab === "locais" ? {
+                        label: language === "pt" ? "Novo Local" : "New Place",
+                        icon: <IconPlus className="h-5 w-5" />,
+                        onClick: () => { setEditingProvider(null); setProviderModalOpen(true); }
+                    } : {
                         label: t("common.add") || "Adicionar",
                         icon: <IconPlus className="h-5 w-5" />,
                         onClick: () => navigate("/carteira/upload"),
@@ -97,7 +110,7 @@ export default function Cofre() {
                     <div className="relative group">
                         <IconSearch className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input
-                            placeholder={(t("common.search") || "Buscar") + " documentos..."}
+                            placeholder={(t("common.search") || "Buscar") + (activeTab === 'locais' ? " nos meus locais..." : " documentos...")}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className={cn(
@@ -140,161 +153,222 @@ export default function Cofre() {
                     })}
                 </motion.div>
 
-                <AdSupportCard />
-                <GoogleAd placement="wallet_feed" />
-
-                {/* Document List */}
-                {isLoading ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4].map((i) => (
-                            <Card key={i} className="rounded-3xl border-0 bg-card/40 backdrop-blur-xl">
-                                <CardContent className="p-4 flex items-center gap-4">
-                                    <Skeleton className="h-14 w-14 rounded-2xl" />
-                                    <div className="flex-1 space-y-2">
-                                        <Skeleton className="h-4 w-3/4" />
-                                        <Skeleton className="h-3 w-1/2" />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : !filteredDocuments || filteredDocuments.length === 0 ? (
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                        <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass">
-                            <CardContent className="py-16 text-center space-y-5 px-6">
-                                {/* Animated icon */}
-                                <motion.div
-                                    animate={{ scale: [1, 1.06, 1] }}
-                                    transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                                    className="bg-primary/10 rounded-[2rem] w-20 h-20 flex items-center justify-center mx-auto shadow-inner-light"
-                                >
-                                    {searchTerm
-                                        ? <IconSearch className="h-10 w-10 text-primary/70" />
-                                        : activeTab !== "all"
-                                            ? <FileText className="h-10 w-10 text-primary/70" />
-                                            : <ShieldCheck className="h-10 w-10 text-primary" />
-                                    }
-                                </motion.div>
-
-                                {/* Headline */}
-                                <div className="space-y-1.5">
-                                    <h3 className="text-lg font-bold text-foreground">
-                                        {searchTerm
-                                            ? (language === "pt" ? "Nenhum resultado" : "No results found")
-                                            : activeTab !== "all"
-                                                ? (language === "pt" ? `Nenhum${activeTab === "exame" ? " exame" : activeTab === "receita" ? "a receita" : activeTab === "vacinacao" ? "a vacina" : "a consulta"} ainda` : `No ${activeTab}s yet`)
-                                                : (language === "pt" ? "Sua carteira está vazia" : "Your wallet is empty")}
-                                    </h3>
-                                    <p className="text-sm text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
-                                        {searchTerm
-                                            ? (language === "pt" ? "Tente outro termo ou limpe os filtros." : "Try a different term or clear filters.")
-                                            : (language === "pt"
-                                                ? "Guarde receitas, exames e vacinas em um só lugar — seguro e sempre à mão."
-                                                : "Store prescriptions, exams and vaccines in one place — safe and always accessible.")}
-                                    </p>
-                                </div>
-
-                                {/* Security badge */}
-                                {!searchTerm && (
-                                    <div className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground/70 bg-muted/30 px-3 py-1.5 rounded-full">
-                                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                                        {language === "pt" ? "Criptografado e privado" : "Encrypted and private"}
-                                    </div>
-                                )}
-
-                                {/* CTAs */}
-                                {!searchTerm ? (
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-xs mx-auto pt-1">
-                                        <Button className="rounded-2xl h-12 gap-2 flex-1 shadow-glow" onClick={() => navigate("/carteira/upload")}>
-                                            <IconUpload className="h-5 w-5" />
-                                            {language === "pt" ? "Digitalizar" : "Scan"}
-                                        </Button>
-                                        <Button variant="outline" className="rounded-2xl h-12 gap-2 flex-1"
-                                            onClick={() => navigate("/carteira/criar-manual")}>
-                                            <IconPlus className="h-5 w-5" />
-                                            {language === "pt" ? "Manual" : "Manual"}
-                                        </Button>
-                                    </div>
+                <AnimatePresence mode="wait">
+                    {isLoading ? (
+                        <motion.div 
+                            key="loading"
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }}
+                            className="space-y-4"
+                        >
+                            {[1, 2, 3, 4].map((i) => (
+                                <Card key={i} className="rounded-3xl border-0 bg-card/40 backdrop-blur-xl">
+                                    <CardContent className="p-4 flex items-center gap-4">
+                                        <Skeleton className="h-14 w-14 rounded-2xl" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <Skeleton className="h-3 w-1/2" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </motion.div>
+                    ) : activeTab === "locais" ? (
+                        <motion.div 
+                            key="locais"
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="show" 
+                            className="space-y-4"
+                        >
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {providers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                    providers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((provider) => (
+                                        <motion.div key={provider.id} variants={itemVariants}>
+                                            <ProviderCard 
+                                                provider={provider} 
+                                                onEdit={(p) => { setEditingProvider(p); setProviderModalOpen(true); }}
+                                                onDelete={removeProvider}
+                                                onToggleFavorite={toggleFavorite}
+                                            />
+                                        </motion.div>
+                                    ))
                                 ) : (
-                                    <Button variant="ghost" className="rounded-2xl gap-2" onClick={() => setSearchTerm("")}>
-                                        {language === "pt" ? "Limpar busca" : "Clear search"}
-                                    </Button>
+                                    <Card className="col-span-full rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl p-12 flex flex-col items-center text-center">
+                                        <div className="h-20 w-20 rounded-[2rem] bg-muted/40 flex items-center justify-center text-muted-foreground mb-6 shadow-inner-light">
+                                            <IconProviders className="h-10 w-10 opacity-20" />
+                                        </div>
+                                        <h3 className="font-bold text-xl text-foreground/70 mb-2">
+                                            {searchTerm ? "Nenhum local encontrado" : "Nenhum local salvo ainda"}
+                                        </h3>
+                                        <p className="text-muted-foreground max-w-xs mx-auto mb-8">
+                                            {searchTerm ? "Tente buscar por outro termo." : "Salve seus hospitais, farmácias e médicos favoritos para acesso rápido."}
+                                        </p>
+                                        {!searchTerm && (
+                                            <Button 
+                                                onClick={() => { setEditingProvider(null); setProviderModalOpen(true); }}
+                                                className="h-12 rounded-2xl px-6 bg-primary font-bold shadow-glow"
+                                            >
+                                                Adicionar Primeiro Local
+                                            </Button>
+                                        )}
+                                    </Card>
                                 )}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                ) : (
-                    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-3.5">
-                        {filteredDocuments.map((doc) => {
-                            const meta = getCategoryMeta(doc.categorySlug);
-                            const IconComponent = meta.icon;
-                            return (
-                                <motion.div key={doc.id} variants={itemVariants}>
-                                    <div
-                                        className="card-interactive overflow-hidden cursor-pointer"
-                                        onClick={() => navigate(`/carteira/${doc.id}`)}
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div 
+                            key="documents"
+                            variants={containerVariants} 
+                            initial="hidden" 
+                            animate="show" 
+                            className="space-y-4"
+                        >
+                            {/* Special case: show Locais preview in 'all' tab if we have any */}
+                            {activeTab === "all" && providers.length > 0 && !searchTerm && (
+                                <motion.div variants={itemVariants}>
+                                    <div 
+                                        className="rounded-[2rem] bg-purple-500/10 border border-purple-500/20 p-4 flex items-center gap-4 cursor-pointer hover:bg-purple-500/15 transition-all shadow-glass"
+                                        onClick={() => setActiveTab("locais")}
                                     >
-                                        <div className="p-4 flex items-center gap-4">
-                                            {/* Icon */}
-                                            <div className={cn("h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 shadow-glass-hover bg-white/5", meta.bg)}>
-                                                <IconComponent className={cn("h-7 w-7", meta.color)} />
-                                            </div>
-
-                                            {/* Content */}
-                                            <div className="flex-1 min-w-0">
-                                                <h4 className="font-bold truncate text-base text-foreground/90">
-                                                    {doc.title || t("wallet.documents") || "Documento"}
-                                                </h4>
-                                                <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground/70 font-semibold uppercase tracking-wider">
-                                                    <span className={cn("px-2 py-0.5 rounded-md bg-white/5", meta.color)}>
-                                                        {meta.label}
-                                                    </span>
-                                                    {doc.provider && (
-                                                        <span className="truncate">
-                                                            • {doc.provider}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Date + Arrow */}
-                                            <div className="flex flex-col items-end gap-1.5 shrink-0 pr-1">
-                                                {doc.createdAt && (
-                                                    <span className="text-[10px] text-muted-foreground/60 font-black uppercase italic tracking-widest">
-                                                        {format(safeDateParse(doc.createdAt), "dd MMM", { locale: dateLocale })}
-                                                    </span>
-                                                )}
-                                                <div className="h-7 w-7 rounded-full bg-muted/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
-                                                    <ArrowRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
-                                                </div>
-                                            </div>
+                                        <div className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 bg-purple-500 text-white shadow-glow">
+                                            <IconProviders className="h-7 w-7" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-bold text-base">Meus Locais de Saúde</h4>
+                                            <p className="text-xs text-muted-foreground font-medium">
+                                                {providers.length} local{providers.length > 1 ? 'is' : ''} registrado{providers.length > 1 ? 's' : ''} na sua rede.
+                                            </p>
+                                        </div>
+                                        <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                                            <ArrowRight className="h-5 w-5 text-purple-500" />
                                         </div>
                                     </div>
                                 </motion.div>
-                            );
-                        })}
-                    </motion.div>
-                )}
+                            )}
 
-                {/* FAB - Upload button, always visible above nav */}
+                            {filteredDocuments && filteredDocuments.length > 0 ? (
+                                filteredDocuments.map((doc) => (
+                                    <motion.div key={doc.id} variants={itemVariants}>
+                                        <Card
+                                            onClick={() => navigate(`/carteira/${doc.id}`)}
+                                            className="rounded-[2rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass hover:shadow-glass-hover hover:scale-[1.01] transition-all duration-300 cursor-pointer overflow-hidden group"
+                                        >
+                                            <CardContent className="p-4 flex items-center gap-4">
+                                                <div
+                                                    className={cn(
+                                                        "h-14 w-14 rounded-2xl flex items-center justify-center shadow-inner-light shrink-0 transition-transform duration-300 group-hover:scale-110",
+                                                        getCategoryMeta(doc.categorySlug).bg,
+                                                        getCategoryMeta(doc.categorySlug).color
+                                                    )}
+                                                >
+                                                    {(() => {
+                                                        const Icon = getCategoryMeta(doc.categorySlug).icon;
+                                                        return <Icon className="h-7 w-7" />;
+                                                    })()}
+                                                </div>
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className="font-bold text-lg text-foreground/90 truncate">
+                                                            {doc.title}
+                                                        </h3>
+                                                        {doc.status === "finalizado" && (
+                                                            <Badge className="bg-emerald-500/10 text-emerald-500 border-0 h-5 px-1.5 rounded-md text-[10px] font-black uppercase">
+                                                                Finalizado
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-3 text-sm text-muted-foreground/60 font-medium">
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Calendar className="h-3.5 w-3.5 opacity-50" />
+                                                            {safeDateParse(doc.date)
+                                                                ? format(safeDateParse(doc.date)!, "dd MMM, yyyy", {
+                                                                      locale: dateLocale,
+                                                                  })
+                                                                : "Sem data"}
+                                                        </span>
+                                                        <span className="h-1 w-1 rounded-full bg-border" />
+                                                        <span className="truncate">
+                                                            {doc.providerName || "Documento Geral"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-10 w-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground opacity-50 group-hover:opacity-100 group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                                                    <ArrowRight className="h-5 w-5" />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                ))
+                            ) : (
+                                <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl p-12 flex flex-col items-center text-center">
+                                    <div className="h-20 w-20 rounded-[2rem] bg-muted/40 flex items-center justify-center text-muted-foreground mb-6 shadow-inner-light">
+                                        <IconSearch className="h-10 w-10 opacity-20" />
+                                    </div>
+                                    <h3 className="font-bold text-xl text-foreground/70 mb-2">
+                                        {searchTerm ? "Nenhum resultado" : "Sua carteira está vazia"}
+                                    </h3>
+                                    <p className="text-muted-foreground max-w-xs mx-auto mb-8">
+                                        {searchTerm
+                                            ? "Tente buscar por termos diferentes ou verifique a categoria."
+                                            : "Comece adicionando seus primeiros documentos médicos para manter seu histórico organizado."}
+                                    </p>
+                                    {!searchTerm && (
+                                        <Button 
+                                            onClick={() => navigate("/carteira/upload")}
+                                            className="h-12 rounded-2xl px-6 bg-primary font-bold shadow-glow"
+                                        >
+                                            Digitalizar Primeiro Documento
+                                        </Button>
+                                    )}
+                                </Card>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                <GoogleAd placement="bottom" />
+                <AdSupportCard />
+            </main>
+
+            {/* Floating Action Button */}
+            {!providerModalOpen && (
                 <motion.div
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.3, type: "spring", stiffness: 260, damping: 20 }}
-                    className="fixed bottom-28 right-4 z-30"
+                    className="fixed bottom-28 right-4 z-40"
                 >
                     <Button
                         size="lg"
-                        className="h-14 pl-4 pr-5 gap-2 rounded-2xl shadow-lg shadow-primary/25 active:scale-95 transition-all duration-200 bg-primary hover:bg-primary/90"
-                        onClick={() => navigate("/carteira/upload")}
+                        className="h-14 pl-4 pr-5 gap-2 rounded-2xl shadow-glow active:scale-95 transition-all bg-primary hover:bg-primary/90 text-white"
+                        onClick={() => {
+                            if (activeTab === 'locais') {
+                                setEditingProvider(null);
+                                setProviderModalOpen(true);
+                            } else {
+                                navigate("/carteira/upload");
+                            }
+                        }}
                     >
-                        <IconPlus className="h-5 w-5" />
-                        <span className="text-sm font-bold">{t("common.add") || "Adicionar"}</span>
+                        <IconPlus className="h-6 w-6" />
+                        <span className="font-bold">{activeTab === 'locais' ? "Novo Local" : (t("common.add") || "Adicionar")}</span>
                     </Button>
                 </motion.div>
-            </main>
+            )}
 
-            <Navigation />
+            {/* Modals */}
+            <ProviderFormModal 
+                open={providerModalOpen}
+                onClose={() => { setProviderModalOpen(false); setEditingProvider(null); }}
+                onCreate={addProvider}
+                onUpdate={updateProvider}
+                editing={editingProvider}
+            />
+
+            <Navigation activePath="/carteira" />
         </div>
     );
 }
