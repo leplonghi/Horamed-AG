@@ -18,6 +18,7 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { cn } from "@/lib/utils";
 
 interface DoseInstance {
   id: string;
@@ -46,7 +47,7 @@ interface MedicationStats {
   progressRate: number;
 }
 
-export default function History() {
+export default function History({ hideLayout = false }: { hideLayout?: boolean }) {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<'today' | 'week' | 'month'>('today');
   const [doses, setDoses] = useState<DoseInstance[]>([]);
@@ -257,20 +258,20 @@ export default function History() {
 
   if (loadingEffects || streakLoading) {
     return (
-      <>
-        <Header />
-        <PageSkeleton />
-        <Navigation />
-      </>
+      <div className={cn(!hideLayout && "min-h-screen bg-background pb-20")}>
+        {!hideLayout && <Header />}
+        <div className={cn("container max-w-4xl mx-auto px-4", !hideLayout && "pt-20")}>
+          <PageSkeleton />
+        </div>
+        {!hideLayout && <Navigation />}
+      </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header />
-
-      <main className="container max-w-4xl mx-auto px-4 pt-20 pb-8 space-y-6">
-        {/* Header */}
+  const mainContent = (
+    <div className={cn(hideLayout ? "p-4 space-y-6" : "container max-w-4xl mx-auto px-4 pt-20 pb-8 space-y-6")}>
+      {/* Header */}
+      {!hideLayout && (
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">{t('history.title')}</h1>
@@ -280,227 +281,239 @@ export default function History() {
           </div>
           {currentStreak > 0 && <StreakBadge streak={currentStreak} type="current" />}
         </div>
+      )}
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Target className="h-4 w-4" />
+              <span className="text-sm">{t('history.progress')}</span>
+              <InfoDialog
+                title={t('history.progress')}
+                description={t('history.progressDesc')}
+                triggerClassName="h-4 w-4"
+              />
+            </div>
+            <div className="text-3xl font-bold text-primary">
+              {currentStats.progressRate}%
+            </div>
+            <div className="flex items-center gap-1 mt-2 text-xs">
+              {difference > 0 && (
+                <>
+                  <TrendingUp className="h-3 w-3 text-success" />
+                  <span className="text-success">+{difference}%</span>
+                </>
+              )}
+              {difference < 0 && (
+                <>
+                  <TrendingDown className="h-3 w-3 text-destructive" />
+                  <span className="text-destructive">{difference}%</span>
+                </>
+              )}
+              {difference === 0 && (
+                <>
+                  <Minus className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground">{t('history.noChange')}</span>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Activity className="h-4 w-4" />
+              <span className="text-sm">{t('history.sequence')}</span>
+              <InfoDialog
+                title={t('history.sequence')}
+                description={t('history.sequenceDesc')}
+                triggerClassName="h-4 w-4"
+              />
+            </div>
+            <div className="text-3xl font-bold text-orange-600">
+              {currentStreak}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {t('history.record')}: {longestStreak} {t('history.days')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm">{t('history.taken')}</span>
+              <InfoDialog
+                title={t('history.taken')}
+                description={t('history.takenDesc')}
+                triggerClassName="h-4 w-4"
+              />
+            </div>
+            <div className="text-3xl font-bold text-success">
+              {currentStats.taken}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {t('history.ofDoses')} {currentStats.total} {t('history.doses')}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-muted-foreground mb-2">
+              <BarChart3 className="h-4 w-4" />
+              <span className="text-sm">{t('history.missed')}</span>
+              <InfoDialog
+                title={t('history.missed')}
+                description={t('history.missedDesc')}
+                triggerClassName="h-4 w-4"
+              />
+            </div>
+            <div className="text-3xl font-bold text-destructive">
+              {currentStats.missed + currentStats.skipped}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {currentStats.missed} {t('history.missed').toLowerCase()}, {currentStats.skipped} {t('history.skipped')}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="today">{t('history.today')}</TabsTrigger>
+          <TabsTrigger value="week">{t('history.week')}</TabsTrigger>
+          <TabsTrigger value="month">{t('history.month')}</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="space-y-6">
+          {/* Comparison Card */}
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Target className="h-4 w-4" />
-                <span className="text-sm">{t('history.progress')}</span>
-                <InfoDialog
-                  title={t('history.progress')}
-                  description={t('history.progressDesc')}
-                  triggerClassName="h-4 w-4"
-                />
+            <CardHeader>
+              <CardTitle className="text-lg">{t('history.periodComparison')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium">{getPeriodLabel()}</span>
+                  <span className="text-lg font-bold text-primary">
+                    {currentStats.progressRate}%
+                  </span>
+                </div>
+                <Progress value={currentStats.progressRate} className="h-2" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {currentStats.taken} {t('history.ofDoses')} {currentStats.total} {t('history.dosesTaken')}
+                </p>
               </div>
-              <div className="text-3xl font-bold text-primary">
-                {currentStats.progressRate}%
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">
+                    {getPreviousPeriodLabel()}
+                  </span>
+                  <span className="text-lg font-bold text-muted-foreground">
+                    {previousStats.progressRate}%
+                  </span>
+                </div>
+                <Progress value={previousStats.progressRate} className="h-2 opacity-50" />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {previousStats.taken} {t('history.ofDoses')} {previousStats.total} {t('history.dosesTaken')}
+                </p>
               </div>
-              <div className="flex items-center gap-1 mt-2 text-xs">
-                {difference > 0 && (
-                  <>
-                    <TrendingUp className="h-3 w-3 text-success" />
-                    <span className="text-success">+{difference}%</span>
-                  </>
-                )}
-                {difference < 0 && (
-                  <>
-                    <TrendingDown className="h-3 w-3 text-destructive" />
-                    <span className="text-destructive">{difference}%</span>
-                  </>
-                )}
-                {difference === 0 && (
-                  <>
-                    <Minus className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">{t('history.noChange')}</span>
-                  </>
-                )}
-              </div>
+
+              {difference !== 0 && (
+                <div className={`p-3 rounded-lg ${difference > 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
+                  <p className={`text-sm font-medium ${difference > 0 ? 'text-success' : 'text-destructive'}`}>
+                    {difference > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <Confetti className="w-4 h-4" weight="duotone" />
+                        <span>{t('history.congratsImproved', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Warning className="w-4 h-4" weight="duotone" />
+                        <span>{t('history.commitmentDropped', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
+                      </div>
+                    )}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Activity className="h-4 w-4" />
-                <span className="text-sm">{t('history.sequence')}</span>
-                <InfoDialog
-                  title={t('history.sequence')}
-                  description={t('history.sequenceDesc')}
-                  triggerClassName="h-4 w-4"
-                />
-              </div>
-              <div className="text-3xl font-bold text-orange-600">
-                {currentStreak}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {t('history.record')}: {longestStreak} {t('history.days')}
-              </p>
-            </CardContent>
-          </Card>
+          {/* Visualization Options */}
+          <Tabs defaultValue="timeline" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="timeline">{t('history.timeline')}</TabsTrigger>
+              <TabsTrigger value="calendar">{t('history.monthlyCalendar')}</TabsTrigger>
+              <TabsTrigger value="list">{t('history.doseList')}</TabsTrigger>
+            </TabsList>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm">{t('history.taken')}</span>
-                <InfoDialog
-                  title={t('history.taken')}
-                  description={t('history.takenDesc')}
-                  triggerClassName="h-4 w-4"
-                />
-              </div>
-              <div className="text-3xl font-bold text-success">
-                {currentStats.taken}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {t('history.ofDoses')} {currentStats.total} {t('history.doses')}
-              </p>
-            </CardContent>
-          </Card>
+            <TabsContent value="timeline">
+              <InteractiveTimelineChart
+                doses={doses}
+                period={activeTab}
+              />
+            </TabsContent>
 
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                <BarChart3 className="h-4 w-4" />
-                <span className="text-sm">{t('history.missed')}</span>
-                <InfoDialog
-                  title={t('history.missed')}
-                  description={t('history.missedDesc')}
-                  triggerClassName="h-4 w-4"
-                />
-              </div>
-              <div className="text-3xl font-bold text-destructive">
-                {currentStats.missed + currentStats.skipped}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                {currentStats.missed} {t('history.missed').toLowerCase()}, {currentStats.skipped} {t('history.skipped')}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+            <TabsContent value="calendar">
+              <MonthlyProgressCalendar
+                profileId={activeProfile?.id}
+              />
+            </TabsContent>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="today">{t('history.today')}</TabsTrigger>
-            <TabsTrigger value="week">{t('history.week')}</TabsTrigger>
-            <TabsTrigger value="month">{t('history.month')}</TabsTrigger>
-          </TabsList>
+            <TabsContent value="list">
+              <DoseTimeline
+                doses={doses}
+                period={activeTab}
+              />
+            </TabsContent>
+          </Tabs>
 
-          <TabsContent value={activeTab} className="space-y-6">
-            {/* Comparison Card */}
+          {/* Medication Stats */}
+          {medicationStats.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">{t('history.periodComparison')}</CardTitle>
+                <CardTitle className="text-lg">{t('history.byMedication')} ({t('history.last30days')})</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{getPeriodLabel()}</span>
-                    <span className="text-lg font-bold text-primary">
-                      {currentStats.progressRate}%
-                    </span>
-                  </div>
-                  <Progress value={currentStats.progressRate} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {currentStats.taken} {t('history.ofDoses')} {currentStats.total} {t('history.dosesTaken')}
-                  </p>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground">
-                      {getPreviousPeriodLabel()}
-                    </span>
-                    <span className="text-lg font-bold text-muted-foreground">
-                      {previousStats.progressRate}%
-                    </span>
-                  </div>
-                  <Progress value={previousStats.progressRate} className="h-2 opacity-50" />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {previousStats.taken} {t('history.ofDoses')} {previousStats.total} {t('history.dosesTaken')}
-                  </p>
-                </div>
-
-                {difference !== 0 && (
-                  <div className={`p-3 rounded-lg ${difference > 0 ? 'bg-success/10' : 'bg-destructive/10'}`}>
-                    <p className={`text-sm font-medium ${difference > 0 ? 'text-success' : 'text-destructive'}`}>
-                      {difference > 0 ? (
-                        <div className="flex items-center gap-2">
-                          <Confetti className="w-4 h-4" weight="duotone" />
-                          <span>{t('history.congratsImproved', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Warning className="w-4 h-4" weight="duotone" />
-                          <span>{t('history.commitmentDropped', { percent: String(Math.abs(difference)), period: getPreviousPeriodLabel().toLowerCase() })}</span>
-                        </div>
-                      )}
+                {medicationStats.map((med) => (
+                  <div key={med.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">{med.name}</span>
+                      <span className="text-sm font-bold text-primary">
+                        {med.progressRate}%
+                      </span>
+                    </div>
+                    <Progress value={med.progressRate} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {med.taken} {t('history.ofDoses')} {med.total} {t('history.dosesTaken')}
                     </p>
                   </div>
-                )}
+                ))}
               </CardContent>
             </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 
-            {/* Visualization Options */}
-            <Tabs defaultValue="timeline" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="timeline">{t('history.timeline')}</TabsTrigger>
-                <TabsTrigger value="calendar">{t('history.monthlyCalendar')}</TabsTrigger>
-                <TabsTrigger value="list">{t('history.doseList')}</TabsTrigger>
-              </TabsList>
+  if (hideLayout) {
+    return mainContent;
+  }
 
-              <TabsContent value="timeline">
-                <InteractiveTimelineChart
-                  doses={doses}
-                  period={activeTab}
-                />
-              </TabsContent>
-
-              <TabsContent value="calendar">
-                <MonthlyProgressCalendar
-                  profileId={activeProfile?.id}
-                />
-              </TabsContent>
-
-              <TabsContent value="list">
-                <DoseTimeline
-                  doses={doses}
-                  period={activeTab}
-                />
-              </TabsContent>
-            </Tabs>
-
-            {/* Medication Stats */}
-            {medicationStats.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('history.byMedication')} ({t('history.last30days')})</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {medicationStats.map((med) => (
-                    <div key={med.name}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{med.name}</span>
-                        <span className="text-sm font-bold text-primary">
-                          {med.progressRate}%
-                        </span>
-                      </div>
-                      <Progress value={med.progressRate} className="h-2" />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {med.taken} {t('history.ofDoses')} {med.total} {t('history.dosesTaken')}
-                      </p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header />
+      <main>
+        {mainContent}
       </main>
-
       <Navigation />
     </div>
   );

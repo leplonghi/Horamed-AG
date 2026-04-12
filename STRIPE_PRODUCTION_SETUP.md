@@ -57,19 +57,25 @@ No Stripe Dashboard (Live mode), vá em **Developers > API keys**:
 - Copiar **Secret key** (formato: `sk_live_xxxxx`)
 - ⚠️ **NUNCA** commitar essa chave no código!
 
-### 4. Configurar Variáveis de Ambiente no Firebase
+### 4. Configurar Variáveis de Ambiente e Segredos (Production)
 
-Execute os seguintes comandos no terminal:
+Para segurança máxima, use o **Firebase Secrets Manager** (recomendado) para chaves sensíveis.
 
 ```bash
-# Configurar chave secreta do Stripe (LIVE)
-firebase functions:config:set stripe.secret_key="sk_live_SEU_CODIGO_AQUI"
+# Configurar chave secreta do Stripe (LIVE) como um Secret
+firebase functions:secrets:set STRIPE_SECRET_KEY
 
-# Configurar webhook secret (LIVE)
-firebase functions:config:set stripe.webhook_secret="whsec_SEU_CODIGO_AQUI"
+# Configurar webhook secret (LIVE) como um Secret
+firebase functions:secrets:set STRIPE_WEBHOOK_SECRET
 
-# Verificar configuração
-firebase functions:config:get
+# Nota: O Firebase solicitará o valor após o comando. 
+# Cole a sk_live_... e whsec_... respectivamente.
+```
+
+Se preferir usar a configuração legada (menos segura):
+
+```bash
+firebase functions:config:set stripe.secret_key="sk_live_..." stripe.webhook_secret="whsec_..."
 ```
 
 ### 5. Atualizar Price IDs no Código

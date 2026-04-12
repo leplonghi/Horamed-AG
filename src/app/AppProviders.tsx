@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProfileCacheProvider } from "@/contexts/ProfileCacheContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
@@ -26,7 +27,11 @@ export default function AppProviders({ children }: AppProvidersProps) {
                 <ProfileCacheProvider>
                   <SubscriptionProvider>
                     <BrowserRouter>
-                      <AuthProvider>{children}</AuthProvider>
+                      <AuthProvider>
+                        <OnboardingProvider>
+                          {children}
+                        </OnboardingProvider>
+                      </AuthProvider>
                     </BrowserRouter>
                   </SubscriptionProvider>
                 </ProfileCacheProvider>

@@ -115,6 +115,21 @@ All colors MUST be HSL.
     --performance-foreground: 0 0% 100%;
     --performance-bg: 84 75% 97%;
     --performance-border: 84 75% 48%;
+
+    /* Master Gradients (Consolidated) */
+    --master-gradient-primary: linear-gradient(135deg, 
+      hsl(var(--gradient-start)) 0%, 
+      hsl(var(--gradient-mid)) 50%, 
+      hsl(var(--gradient-end)) 100%
+    );
+    --master-gradient-surface: linear-gradient(135deg, 
+      hsl(var(--card) / 0.8) 0%, 
+      hsl(var(--card) / 0.65) 100%
+    );
+    --master-gradient-glow: radial-gradient(circle at center, 
+      hsl(var(--primary) / 0.15) 0%, 
+      transparent 70%
+    );
   }
 
   .dark {
@@ -206,6 +221,7 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground antialiased;
+    line-height: 1.5;
     /* Native App Feel */
     -webkit-touch-callout: none;
     /* Disable callout on long press on iOS */
@@ -218,6 +234,12 @@ All colors MUST be HSL.
     overscroll-behavior-y: none;
     /* Prevent pull-to-refresh bounce effect on Android/Chrome */
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
 
   /* Allow text selection only on specific elements where users might want to copy */
   input,
@@ -558,16 +580,28 @@ All colors MUST be HSL.
    * NEVER use: -100, -200, -300, -400 suffixes on light bg with text-white
    */
 
-  /* Safe gradient button base — always legible, always clipped */
-  .btn-gradient-safe {
-    @apply relative overflow-hidden whitespace-nowrap text-white font-medium;
+  /* Accessibility: Optimized Touch Targets for Specific Contexts */
+  .touch-target-premium {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
 
-  /* ========== UTILITY CLASSES ========== */
+  /* Apply to navigation and main actions */
+  nav button, 
+  nav a,
+  .main-action-btn {
+    @apply touch-target-premium;
+  }
 
-  /* Skeleton loader */
-  .skeleton {
-    @apply animate-pulse bg-muted rounded-lg;
+  .bg-gradient-primary {
+    background: var(--master-gradient-primary);
+  }
+
+  .bg-gradient-glass {
+    background: var(--master-gradient-surface);
+  }
+
+  .bg-gradient-fluid {
+    background: var(--master-gradient-primary);
   }
 
   /* Focus visible styles */
@@ -847,16 +881,17 @@ All colors MUST be HSL.
   }
 
   /* ========== FLUID TYPOGRAPHY (clamp) — Phase 1 ========== */
-  /* Replace breakpoint jumps with smooth viewport scaling */
+  /* Optimized clamp values for smooth scaling */
 
   .text-fluid-xs    { font-size: clamp(0.65rem, 1.8vw, 0.75rem); }
-  .text-fluid-sm    { font-size: clamp(0.78rem, 2.2vw, 0.875rem); }
-  .text-fluid-base  { font-size: clamp(0.875rem, 2.5vw, 1rem); }
-  .text-fluid-lg    { font-size: clamp(1rem, 3vw, 1.125rem); }
-  .text-fluid-xl    { font-size: clamp(1.125rem, 3.5vw, 1.25rem); }
-  .text-fluid-2xl   { font-size: clamp(1.25rem, 4.5vw, 1.5rem); }
-  .text-fluid-3xl   { font-size: clamp(1.4rem, 5.5vw, 1.875rem); }
-  .text-fluid-4xl   { font-size: clamp(1.6rem, 7vw, 2.25rem); }
+  .text-fluid-sm    { font-size: clamp(0.78rem, 2vw, 0.875rem); }
+  .text-fluid-base  { font-size: clamp(0.9rem, 2.5vw, 1rem); }
+  .text-fluid-lg    { font-size: clamp(1.1rem, 3vw, 1.25rem); }
+  .text-fluid-xl    { font-size: clamp(1.4rem, 4vw, 1.75rem); }
+  .text-fluid-2xl   { font-size: clamp(1.8rem, 5vw, 2.5rem); }
+  .text-fluid-3xl   { font-size: clamp(2.2rem, 6vw, 3rem); }
+  .text-fluid-4xl   { font-size: clamp(2.8rem, 7.5vw, 3.75rem); }
+
 
   /* Page heading — replaces hardcoded `text-xl font-bold` on TodayRedesign */
   .heading-page-fluid {
@@ -938,35 +973,26 @@ All colors MUST be HSL.
 
   /* ========== SHIMMER EFFECT =========  =*/
 
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-
-    100% {
-      background-position: 200% 0;
-    }
-  }
-
-  @keyframes slide-up-fade {
-    0% {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
+  @keyframes shimmer-perf {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .shimmer {
-    background: linear-gradient(90deg,
-        hsl(var(--muted) / 0.5) 0%,
-        hsl(var(--muted) / 0.8) 50%,
-        hsl(var(--muted) / 0.5) 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
+    @apply relative overflow-hidden;
+    background: hsl(var(--muted) / 0.3);
+  }
+
+  .shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg, 
+      transparent 0%, 
+      hsl(var(--muted-foreground) / 0.1) 50%, 
+      transparent 100%
+    );
+    animation: shimmer-perf 2s infinite;
   }
 }
 

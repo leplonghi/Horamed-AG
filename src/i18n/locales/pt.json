@@ -8,6 +8,9 @@
   "nav.groups": "Saúde",
   "nav.achievements": "Conquistas",
   "nav.more": "Perfil",
+  "nav.meuProgresso": "Meu Progresso",
+  "nav.historico": "Histórico",
+  "nav.insights": "Insights",
   "common.save": "Salvar",
   "common.cancel": "Cancelar",
   "common.delete": "Excluir",
@@ -3344,5 +3347,14 @@
   "calendar.weekFormat": "MMM yyyy",
   "calendar.dayNameFormat": "EEEE",
   "calendar.shortDayNameFormat": "EEE",
-  "common.medication": "Medicamento"
+  "common.medication": "Medicamento",
+  "pharmacy.title": "Farmácia HoraMed",
+  "pharmacy.description": "Compare preços e economize em seus medicamentos",
+  "pharmacy.featured": "Destaque",
+  "pharmacy.savings": "Economize até {percentage}%",
+  "pharmacy.bestPrice": "Melhor preço encontrado",
+  "pharmacy.price_brl": "Preço Sugerido (Brasil)",
+  "pharmacy.price_usd": "Preço Sugerido (Internacional)",
+  "pharmacy.price_aed": "Preço Sugerido (Emirados)",
+  "pharmacy.buyNow": "Comprar Agora"
 }

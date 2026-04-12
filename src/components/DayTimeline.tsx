@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { format, isToday } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Check, CalendarBlank as Calendar, Stethoscope, TestTube, Pill } from "@phosphor-icons/react";
+import { Check, CalendarBlank as Calendar, Stethoscope, TestTube, Pill, DotsThreeOutlineVertical } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -15,6 +15,7 @@ interface TimelineItem {
   status: "pending" | "done" | "missed";
   onMarkDone?: () => void;
   onSnooze?: () => void;
+  onMore?: () => void;
   location?: string;
   doctor?: string;
 }
@@ -145,7 +146,10 @@ export default function DayTimeline({
                     delay: index * 0.04
                   }}
                 >
-                  <Card className={cn("rounded-2xl overflow-hidden relative", styles.card)}>
+                  <Card 
+                    className={cn("rounded-2xl overflow-hidden relative cursor-pointer", styles.card)}
+                    onClick={() => item.onMore?.()}
+                  >
                     <CardContent className="p-3 flex items-center gap-3.5">
                       {/* Left Icon Squircle */}
                       <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center shrink-0 transition-colors", styles.iconBox)}>
@@ -177,28 +181,43 @@ export default function DayTimeline({
                         </span>
 
                         {/* Action Button (Radio/Checkbox Hybrid) */}
-                        {isDone ? (
-                          <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm"
-                          >
-                            <Check className="h-4 w-4 text-white" weight="bold" />
-                          </motion.div>
-                        ) : (
-                          item.onMarkDone ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                item.onMarkDone?.();
-                              }}
-                              className="h-7 w-7 rounded-full border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group focus:outline-none"
-                              aria-label="Mark as done"
+                        <div className="flex items-center gap-1">
+                          {isDone ? (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="h-7 w-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm"
                             >
-                              <div className="h-3 w-3 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
-                            </button>
-                          ) : null
-                        )}
+                              <Check className="h-4 w-4 text-white" weight="bold" />
+                            </motion.div>
+                          ) : (
+                            <>
+                              {item.onMore && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    item.onMore?.();
+                                  }}
+                                  className="h-7 w-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
+                                >
+                                  <DotsThreeOutlineVertical className="h-4 w-4" weight="fill" />
+                                </button>
+                              )}
+                              {item.onMarkDone && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    item.onMarkDone?.();
+                                  }}
+                                  className="h-7 w-7 rounded-full border-2 border-slate-200 hover:border-blue-400 hover:bg-blue-50 transition-all flex items-center justify-center group focus:outline-none"
+                                  aria-label="Mark as done"
+                                >
+                                  <div className="h-3 w-3 rounded-full bg-slate-200 group-hover:bg-blue-400 transition-colors" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

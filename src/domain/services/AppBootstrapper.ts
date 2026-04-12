@@ -1,10 +1,15 @@
 import { eventBus, AppEvents } from "./EventBus";
 import { localNotificationService } from "@/infrastructure/notifications/LocalNotificationService";
 import { Dose } from "@/types/dose";
+import { validateStripeConfig, checkEnvironmentSecurity } from "@/lib/securityCheck";
 
 export class AppBootstrapper {
   static init() {
     console.log("[AppBootstrapper] Inicializando bindings arquiteturais da FASE 2...");
+
+    // Security & Sanity Checks
+    checkEnvironmentSecurity();
+    validateStripeConfig();
 
     // 1. Ao criar medicamento (quando o app gera múltiplas doses localmente), o EventBus avisa:
     eventBus.on(AppEvents.MEDICATION_CREATED, (payload: { doses: Dose[] }) => {

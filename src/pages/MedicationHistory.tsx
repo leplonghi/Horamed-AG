@@ -36,7 +36,7 @@ interface FormattedDose extends DoseHistoryDoc {
   items: { name: string; doseText: string };
 }
 
-export default function MedicationHistory() {
+export default function MedicationHistory({ hideLayout = false }: { hideLayout?: boolean }) {
   const { id } = useParams();
   const { t, language } = useLanguage();
   const { activeProfile } = useUserProfiles();
@@ -170,12 +170,9 @@ export default function MedicationHistory() {
 
   const calendarLocale = language === 'pt' ? ptBR : enUS;
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header />
-      <Navigation />
-
-      <main className="container max-w-4xl mx-auto px-4 pt-20 pb-8">
+  const content = (
+    <div className={cn(!hideLayout && "container max-w-4xl mx-auto px-4 pt-20 pb-8")}>
+      {!hideLayout && (
         <div className="mb-6">
           <Link to={id ? "/rotina" : "/medicamentos"}>
             <Button variant="ghost" size="sm" className="mb-4">
@@ -194,124 +191,136 @@ export default function MedicationHistory() {
             {t('medHistory.subtitle')}
           </p>
         </div>
+      )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-primary">{stats.adherence}%</p>
-                <p className="text-sm text-muted-foreground">{t('medHistory.adherence')}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-success">{stats.taken}</p>
-                <p className="text-sm text-muted-foreground">{t('medHistory.taken')}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-destructive">{stats.missed}</p>
-                <p className="text-sm text-muted-foreground">{t('medHistory.forgotten')}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-muted-foreground">{stats.skipped}</p>
-                <p className="text-sm text-muted-foreground">{t('medHistory.skipped')}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Adherence Progress */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              {t('medHistory.adherenceProgress')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Progress value={stats.adherence} className="h-4" />
-            <p className="text-sm text-muted-foreground mt-2">
-              {stats.taken} {t('history.ofDoses')} {stats.total} {t('history.dosesTaken')}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Calendar */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5" />
-              {t('medHistory.doseCalendar')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex justify-center">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              locale={calendarLocale}
-              className="rounded-md border"
-              modifiers={{
-                perfect: Object.keys(dosesByDate)
-                  .filter(date => {
-                    const data = dosesByDate[date];
-                    return data.taken === data.total;
-                  })
-                  .map(date => safeDateParse(date)),
-                partial: Object.keys(dosesByDate)
-                  .filter(date => {
-                    const data = dosesByDate[date];
-                    return data.taken > 0 && data.taken < data.total;
-                  })
-                  .map(date => safeDateParse(date)),
-                missed: Object.keys(dosesByDate)
-                  .filter(date => {
-                    const data = dosesByDate[date];
-                    return data.missed > 0;
-                  })
-                  .map(date => safeDateParse(date)),
-              }}
-              modifiersClassNames={{
-                perfect: "bg-success/20 text-success font-bold",
-                partial: "bg-warning/20 text-warning",
-                missed: "bg-destructive/20 text-destructive",
-              }}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Dose Timeline */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card>
-          <CardHeader>
-            <CardTitle>{t('medHistory.detailedHistory')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-center text-muted-foreground py-8">{t('medHistory.loading')}</p>
-            ) : doses.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                {t('medHistory.noDosesInPeriod')}
-              </p>
-            ) : (
-              <DoseTimeline doses={doses} period="month" />
-            )}
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary">{stats.adherence}%</p>
+              <p className="text-sm text-muted-foreground">{t('medHistory.adherence')}</p>
+            </div>
           </CardContent>
         </Card>
-      </main>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-success">{stats.taken}</p>
+              <p className="text-sm text-muted-foreground">{t('medHistory.taken')}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-destructive">{stats.missed}</p>
+              <p className="text-sm text-muted-foreground">{t('medHistory.forgotten')}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-muted-foreground">{stats.skipped}</p>
+              <p className="text-sm text-muted-foreground">{t('medHistory.skipped')}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Adherence Progress */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            {t('medHistory.adherenceProgress')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Progress value={stats.adherence} className="h-4" />
+          <p className="text-sm text-muted-foreground mt-2">
+            {stats.taken} {t('history.ofDoses')} {stats.total} {t('history.dosesTaken')}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Calendar */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5" />
+            {t('medHistory.doseCalendar')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => date && setSelectedDate(date)}
+            locale={calendarLocale}
+            className="rounded-md border"
+            modifiers={{
+              perfect: Object.keys(dosesByDate)
+                .filter(date => {
+                  const data = dosesByDate[date];
+                  return data.taken === data.total;
+                })
+                .map(date => safeDateParse(date)),
+              partial: Object.keys(dosesByDate)
+                .filter(date => {
+                  const data = dosesByDate[date];
+                  return data.taken > 0 && data.taken < data.total;
+                })
+                .map(date => safeDateParse(date)),
+              missed: Object.keys(dosesByDate)
+                .filter(date => {
+                  const data = dosesByDate[date];
+                  return data.missed > 0;
+                })
+                .map(date => safeDateParse(date)),
+            }}
+            modifiersClassNames={{
+              perfect: "bg-success/20 text-success font-bold",
+              partial: "bg-warning/20 text-warning",
+              missed: "bg-destructive/20 text-destructive",
+            }}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Dose Timeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('medHistory.detailedHistory')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">{t('medHistory.loading')}</p>
+          ) : doses.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              {t('medHistory.noDosesInPeriod')}
+            </p>
+          ) : (
+            <DoseTimeline doses={doses} period="month" />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-}
+
+  if (hideLayout) {
+    return content;
+  }
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header />
+      <Navigation />
+      {content}
+    </div>
+  );
+}

@@ -119,13 +119,13 @@ async function checkRateLimit(userId, functionKey) {
 // Price Configuration (Updated 2026-01-30)
 const PRICES = {
     BRL: {
-        monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y',
-        annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',
+        monthly: 'price_1SvI3uHh4P8HSV4YQvyCQGtN',
+        annual: 'price_1StuprHh4P8HSV4YRO4eI5YE',
         lifetime: 'price_1T5ZrAHh4P8HSV4YKrPTGhCg',
     },
     USD: {
-        monthly: 'price_1SvxqlHh4P8HSV4YpZKzGawy',
-        annual: 'price_1SvxrIHh4P8HSV4YCGnYC8Mn',
+        monthly: 'price_1SvI4XHh4P8HSV4YGE6v1szt',
+        annual: 'price_1SuWdlHh4P8HSV4YsApnqZxY',
         lifetime: 'price_1T5ZrAHh4P8HSV4YvS5ECHve',
     },
 };

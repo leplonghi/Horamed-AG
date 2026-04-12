@@ -79,7 +79,7 @@ export default function Auth() {
     if (user && !loading) {
       // Small delay to check if we are already on the welcome flow (navigate might be in progress)
       // This is a safety check.
-      const isWelcomePath = window.location.pathname === '/bem-vindo';
+      const isWelcomePath = window.location.pathname === '/onboarding';
       if (!isWelcomePath) {
         navigate("/");
       }
@@ -95,7 +95,7 @@ export default function Auth() {
       if (error) throw error;
 
       if (isNewUser) {
-        navigate("/bem-vindo");
+        navigate("/onboarding");
         return;
       }
 
@@ -158,7 +158,7 @@ export default function Auth() {
       if (firebaseUser) {
         toast.success(t('auth.accountCreated'));
         localStorage.setItem('horamed_has_visited', 'true');
-        navigate("/bem-vindo");
+        navigate("/onboarding");
         return;
       }
     } catch (error: any) {

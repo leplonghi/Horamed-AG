@@ -454,13 +454,17 @@ export function useTodayData(
     void loadLowStock();
   }, [loadLowStock]);
 
-  // Reactive to local dose events (DOSE_TAKEN / DOSE_SNOOZED)
+  // Reactive to local dose events (DOSE_TAKEN / DOSE_SNOOZED / etc)
   useEffect(() => {
     const unsub1 = eventBus.on(AppEvents.DOSE_TAKEN, () => latestLoadRef.current());
     const unsub2 = eventBus.on(AppEvents.DOSE_SNOOZED, () => latestLoadRef.current());
+    const unsub3 = eventBus.on(AppEvents.DOSE_SKIPPED, () => latestLoadRef.current());
+    const unsub4 = eventBus.on(AppEvents.DOSE_MISSED, () => latestLoadRef.current());
     return () => {
       unsub1();
       unsub2();
+      unsub3();
+      unsub4();
     };
   }, []);
 

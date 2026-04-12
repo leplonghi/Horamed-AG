@@ -101,6 +101,42 @@ export class MedicationRepository {
     
     eventBus.emit(AppEvents.DOSE_SNOOZED, { userId, profileId, doseId, newDateIso, itemName });
   }
+
+  /**
+   * Marca uma dose como pulada (quando o usuário escolhe não tomar por algum motivo)
+   */
+  async markDoseAsSkipped(userId: string, profileId: string | undefined, doseId: string, itemName: string): Promise<void> {
+    const basePath = profileId 
+      ? `users/${userId}/profiles/${profileId}/doses` 
+      : `users/${userId}/doses`;
+      
+    const doseRef = doc(db, basePath, doseId);
+    
+    await updateDoc(doseRef, {
+      status: "skipped",
+      skippedAt: Timestamp.now()
+    });
+    
+    eventBus.emit(AppEvents.DOSE_SKIPPED, { userId, profileId, doseId, itemName });
+  }
+
+  /**
+   * Marca uma dose como perdida (quando o tempo expirou ou o usuário esqueceu)
+   */
+  async markDoseAsMissed(userId: string, profileId: string | undefined, doseId: string, itemName: string): Promise<void> {
+    const basePath = profileId 
+      ? `users/${userId}/profiles/${profileId}/doses` 
+      : `users/${userId}/doses`;
+      
+    const doseRef = doc(db, basePath, doseId);
+    
+    await updateDoc(doseRef, {
+      status: "missed",
+      missedAt: Timestamp.now()
+    });
+    
+    eventBus.emit(AppEvents.DOSE_MISSED, { userId, profileId, doseId, itemName });
+  }
 }
 
 export const medicationRepository = new MedicationRepository();

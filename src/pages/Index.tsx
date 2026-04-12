@@ -1,11 +1,13 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 import Landing from "./Landing";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { isCompleted, loading: onboardingLoading } = useOnboarding();
 
   // Direct hostname check - more reliable than import.meta.env.PROD
   const hostname = window.location.hostname;
@@ -15,20 +17,24 @@ const Index = () => {
     // On landing domain: only redirect authenticated users to app
     if (isOnLandingHost) {
       if (!loading && user) {
-        window.location.href = "https://app.horamed.net/hoje";
+        window.location.href = isCompleted ? "https://app.horamed.net/hoje" : "https://app.horamed.net/onboarding";
       }
       return;
     }
 
     // On app domain: redirect based on auth state
-    if (!loading) {
+    if (!loading && !onboardingLoading) {
       if (user) {
-        navigate("/hoje");
+        if (isCompleted === false) {
+          navigate("/onboarding");
+        } else {
+          navigate("/hoje");
+        }
       } else {
         navigate("/auth");
       }
     }
-  }, [user, loading, navigate, isOnLandingHost]);
+  }, [user, loading, onboardingLoading, navigate, isOnLandingHost, isCompleted]);
 
   // CRITICAL: Show landing page immediately on landing domain
   if (isOnLandingHost) {

@@ -154,16 +154,13 @@ STRIPE_WEBHOOK_SECRET="whsec_COPIADO_DO_STRIPE"
 
 Marque cada item conforme concluir:
 
-- [ ] Revogadas as chaves expostas no Stripe Dashboard
+- [x] Limpeza profunda realizada: Segredos removidos de `.env.firebase` e `.env.production`.
+- [x] Verificação de sanidade implementada em `src/lib/securityCheck.ts`.
+- [ ] Revogadas as chaves expostas no Stripe Dashboard (Ação do Usuário)
 - [ ] Geradas novas Secret Key e Publishable Key
-- [ ] Atualizado arquivo `.env` local com novas chaves
-- [ ] Configuradas as secrets no Supabase (STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET)
-- [ ] Criado webhook no Stripe Dashboard
-- [ ] Copiado e configurado o Webhook Secret
+- [ ] Atualizado segredos no Firebase Console (`firebase functions:secrets:set STRIPE_SECRET_KEY`)
 - [ ] Verificadas atividades suspeitas nos últimos dias
 - [ ] Ativado 2FA na conta Stripe
-- [ ] Configurados alertas de segurança
-- [ ] Revisadas permissões de equipe
 
 ---
 

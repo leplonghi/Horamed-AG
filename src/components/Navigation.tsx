@@ -108,7 +108,7 @@ function Navigation() {
   const navItems = useMemo(() => [
     { path: "/hoje", icon: CalendarBlank, labelKey: "nav.today" },
     { path: "/rotina", icon: Pill, labelKey: "nav.routine" },
-    { path: "/dashboard-saude", icon: Heartbeat, labelKey: "nav.groups" },
+    { path: "/meu-progresso", icon: Heartbeat, labelKey: "nav.progress" },
     { path: "/carteira", icon: Wallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
     { path: "/perfil", icon: UserIcon, labelKey: "nav.profile" },
   ], [expiringCount]);

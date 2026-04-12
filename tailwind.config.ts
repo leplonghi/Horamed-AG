@@ -191,8 +191,8 @@ export default {
           "50%": { transform: "translateY(-8px)" },
         },
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 20px rgba(59, 130, 246, 0.3)" },
-          "50%": { boxShadow: "0 0 40px rgba(59, 130, 246, 0.5)" },
+          "0%, 100%": { opacity: "0.8", transform: "scale(1)" },
+          "50%": { opacity: "1", transform: "scale(1.05)" },
         },
         "slide-up-fade": {
           "0%": { opacity: "0", transform: "translateY(16px)" },

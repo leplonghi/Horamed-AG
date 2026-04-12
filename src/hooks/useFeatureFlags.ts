@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection } from "@/integrations/firebase";
 
 interface FeatureFlag {
+  id: string;
   key: string;
   enabled: boolean;
   config: Record<string, unknown> | null;
@@ -43,9 +44,7 @@ export function useFeatureFlags() {
 
   const loadFeatureFlags = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from("feature_flags")
-        .select("key, enabled, config");
+      const { data, error } = await fetchCollection("feature_flags");
 
       if (error) {
         throw error;

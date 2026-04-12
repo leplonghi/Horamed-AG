@@ -43,6 +43,11 @@ import TrialReminderBanner from "@/components/TrialReminderBanner";
 import FamilyPulseWidget from "@/components/FamilyPulseWidget";
 import { Lock } from "@phosphor-icons/react";
 
+import MicroCelebration from "@/components/celebrations/MicroCelebration";
+import ConfettiExplosion from "@/components/celebrations/ConfettiExplosion";
+import DailyCompleteModal from "@/components/celebrations/DailyCompleteModal";
+import DoseActionModal from "@/components/DoseActionModal";
+
 import { useTodayData } from "@/hooks/useTodayData";
 import { useGreeting } from "@/hooks/useGreeting";
 
@@ -76,6 +81,11 @@ export default function Today() {
   const [showMilestoneReward, setShowMilestoneReward] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
+  const [showMicroCelebration, setShowMicroCelebration] = useState(false);
+  const [celebrationType, setCelebrationType] = useState<"dose_taken" | "streak_day" | "perfect_day" | "milestone" | "level_up" | "combo">("dose_taken");
+  const [showDailyComplete, setShowDailyComplete] = useState(false);
+  const [isDoseModalOpen, setIsDoseModalOpen] = useState(false);
+  const [selectedDoseForModal, setSelectedDoseForModal] = useState<any>(null);
 
   useEffect(() => {
     if (isNewMilestone && milestone) {
@@ -143,11 +153,18 @@ export default function Today() {
 
       trackDoseTaken(doseId, itemName);
 
-      showFeedback("dose-taken", {
-        medicationName: itemName
-      });
-
+      // Trigger high-reward celebrations
+      setCelebrationType("dose_taken");
+      setShowMicroCelebration(true);
       setShowConfetti(true);
+
+      // Check for daily completion
+      if (todayStats.total > 0 && todayStats.taken + 1 === todayStats.total) {
+        setTimeout(() => {
+          setShowDailyComplete(true);
+        }, 1500);
+      }
+
       refreshStreak();
       refreshAlerts();
     } catch (error) {
@@ -156,6 +173,32 @@ export default function Today() {
       throw error;
     }
   }, [t, showFeedback, refreshStreak, refreshAlerts, activeProfile?.id]);
+
+  const markAsSkipped = useCallback(async (doseId: string, itemName: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      await medicationRepository.markDoseAsSkipped(user.uid, activeProfile?.id, doseId, itemName);
+      toast.info(t('todayRedesign.skipSuccess', { name: itemName }));
+      refreshAlerts();
+    } catch (error) {
+      console.error("Error skipping dose:", error);
+      toast.error(t('todayRedesign.skipError'));
+    }
+  }, [t, refreshAlerts, activeProfile?.id]);
+
+  const markAsMissed = useCallback(async (doseId: string, itemName: string) => {
+    try {
+      const user = auth.currentUser;
+      if (!user) return;
+      await medicationRepository.markDoseAsMissed(user.uid, activeProfile?.id, doseId, itemName);
+      toast.info(t('todayRedesign.missedSuccess', { name: itemName }));
+      refreshAlerts();
+    } catch (error) {
+      console.error("Error marking dose as missed:", error);
+      toast.error(t('todayRedesign.missedError'));
+    }
+  }, [t, refreshAlerts, activeProfile?.id]);
 
   const snoozeDose = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -223,13 +266,49 @@ export default function Today() {
   return (
     <div className="min-h-screen bg-background relative overflow-x-hidden">
       {showConfetti && (
-        <div
-          className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center"
-          onAnimationEnd={() => setShowConfetti(false)}
-        >
-          <div className="text-6xl animate-bounce">🎉</div>
-        </div>
+        <ConfettiExplosion trigger={showConfetti} onComplete={() => setShowConfetti(false)} />
       )}
+      
+      <MicroCelebration 
+        trigger={showMicroCelebration} 
+        type={celebrationType} 
+        streak={currentStreak}
+        onComplete={() => setShowMicroCelebration(false)} 
+      />
+
+      <DailyCompleteModal 
+        open={showDailyComplete} 
+        onOpenChange={setShowDailyComplete}
+        streak={currentStreak}
+      />
+
+      <DoseActionModal
+        open={isDoseModalOpen}
+        onOpenChange={setIsDoseModalOpen}
+        dose={selectedDoseForModal}
+        onAction={async (action) => {
+          if (!selectedDoseForModal) return;
+          
+          if (action === 'taken') {
+            await markAsTaken(
+              selectedDoseForModal.id, 
+              selectedDoseForModal.itemId, 
+              selectedDoseForModal.items.name
+            );
+          } else if (action === 'skipped') {
+            await markAsSkipped(selectedDoseForModal.id, selectedDoseForModal.items.name);
+          } else if (action === 'missed') {
+            await markAsMissed(selectedDoseForModal.id, selectedDoseForModal.items.name);
+          } else if (action === 'custom-time') {
+            // Handle custom time - potentially open another sub-dialog or just use current time
+            await markAsTaken(
+              selectedDoseForModal.id, 
+              selectedDoseForModal.itemId, 
+              selectedDoseForModal.items.name
+            );
+          }
+        }}
+      />
       <OceanBackground variant="page" />
       <Header />
       <TrialReminderBanner />
@@ -277,6 +356,10 @@ export default function Today() {
               nextDayDose={nextDayDose}
               onTake={markAsTaken}
               onSnooze={snoozeDose}
+              onMore={(dose) => {
+                setSelectedDoseForModal(dose);
+                setIsDoseModalOpen(true);
+              }}
               allDoneToday={allDoneToday}
               hasMedications={hasMedications}
             />
@@ -307,7 +390,17 @@ export default function Today() {
             />
 
             {/* Day timeline */}
-            <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
+            <DayTimeline 
+              date={selectedDate} 
+              items={timelineItems.map(item => ({
+                ...item,
+                onMore: () => {
+                  setSelectedDoseForModal(item);
+                  setIsDoseModalOpen(true);
+                }
+              }))} 
+              onDateChange={setSelectedDate} 
+            />
 
             <DailyCheckInWidget
               hasLoggedToday={hasLoggedSymptomsToday}

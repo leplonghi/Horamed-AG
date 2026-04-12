@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
-import { Check, Clock, Plus, Sparkle as Sparkles, Pill, Bell, Confetti } from "@phosphor-icons/react";
+import { Check, Clock, Plus, Sparkle as Sparkles, Pill, Bell, Confetti, DotsThreeOutlineVertical } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -18,6 +18,7 @@ interface HeroNextDoseProps {
   } | null;
   onTake: (doseId: string, itemId: string, itemName: string) => void;
   onSnooze?: (doseId: string, itemName: string) => void;
+  onMore?: (dose: Dose) => void;
   allDoneToday?: boolean;
   hasMedications?: boolean;
 }
@@ -114,7 +115,7 @@ function NewUserEmptyState({ language }: { language: string }) {
   );
 }
 
-function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMedications = true }: HeroNextDoseProps) {
+function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToday, hasMedications = true }: HeroNextDoseProps) {
 
   const { language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
@@ -304,11 +305,21 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, allDoneToday, hasMe
                   : (language === 'pt' ? '🔔 AGORA' : '🔔 NOW')
                 }
               </span>
-              <div className="flex items-center gap-1.5 text-blue-600/70 font-bold">
-                <Clock className="h-3.5 w-3.5" />
-                <span className="text-xs">
-                  {format(dueTime, "HH:mm", { locale: dateLocale })}
-                </span>
+              <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1.5 text-blue-600/70 font-bold mr-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span className="text-xs">
+                    {format(dueTime, "HH:mm", { locale: dateLocale })}
+                  </span>
+                </div>
+                {onMore && (
+                  <button
+                    onClick={() => onMore(dose)}
+                    className="p-1 rounded-md hover:bg-slate-100/50 transition-colors text-slate-400"
+                  >
+                    <DotsThreeOutlineVertical className="h-4 w-4" weight="fill" />
+                  </button>
+                )}
               </div>
             </div>
 

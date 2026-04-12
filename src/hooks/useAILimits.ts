@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUser, fetchCollection, where, addDocument } from "@/integrations/firebase";
 import { useSubscription } from "./useSubscription";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, startOfToday, endOfToday } from "date-fns";
 
 interface AIUsageStats {
   usedToday: number;
@@ -16,7 +16,7 @@ interface AIUsageStats {
  * FREE users: 2 AI requests per day (resets at midnight)
  * PREMIUM users: Unlimited AI requests
  * 
- * Tracks usage in app_metrics table with event_name='ai_assistant_query'
+ * Tracks usage in app_metrics collection with event_name='ai_assistant_query'
  */
 export function useAILimits() {
   const { subscription, loading: subLoading } = useSubscription();
@@ -30,13 +30,13 @@ export function useAILimits() {
 
   useEffect(() => {
     loadAIUsage();
-  }, [subscription]);
+  }, [subscription, subLoading]);
 
   const loadAIUsage = async () => {
     if (subLoading) return;
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) {
         setIsLoading(false);
         return;
@@ -59,21 +59,19 @@ export function useAILimits() {
       }
 
       // Free users: count today's AI requests
-      const today = new Date();
-      const dayStart = startOfDay(today);
-      const dayEnd = endOfDay(today);
+      const dayStart = startOfToday();
+      const dayEnd = endOfToday();
 
-      const { count, error } = await supabase
-        .from('app_metrics')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('event_name', 'ai_assistant_query')
-        .gte('created_at', dayStart.toISOString())
-        .lte('created_at', dayEnd.toISOString());
+      const { data, error } = await fetchCollection('app_metrics', [
+        where('user_id', '==', user.uid),
+        where('event_name', '==', 'ai_assistant_query'),
+        where('createdAt', '>=', dayStart),
+        where('createdAt', '<=', dayEnd)
+      ]);
 
       if (error) throw error;
 
-      const usedToday = count || 0;
+      const usedToday = data?.length || 0;
       const dailyLimit = 2;
 
       setStats({
@@ -95,19 +93,17 @@ export function useAILimits() {
    */
   const recordAIUsage = async (metadata?: Record<string, unknown>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await getCurrentUser();
       if (!user) return;
 
       // Don't record for premium users (they have unlimited)
       if (stats.isPremium) return;
 
-      await supabase
-        .from('app_metrics')
-        .insert({
-          user_id: user.id,
-          event_name: 'ai_assistant_query',
-          event_data: metadata || {},
-        });
+      await addDocument('app_metrics', {
+        user_id: user.uid,
+        event_name: 'ai_assistant_query',
+        event_data: metadata || {},
+      });
 
       // Reload usage stats
       await loadAIUsage();

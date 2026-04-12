@@ -7,15 +7,15 @@
 
 // International prices (USD) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_USD = {
-  monthly: 'price_1SvxqlHh4P8HSV4YpZKzGawy', // $3.99/month
-  annual: 'price_1SvxrIHh4P8HSV4YCGnYC8Mn',  // $39.99/year
+  monthly: 'price_1SvI4XHh4P8HSV4YGE6v1szt', // $3.99/month
+  annual: 'price_1SuWdlHh4P8HSV4YsApnqZxY',  // $39.99/year
   lifetime: 'price_1T5ZrAHh4P8HSV4YvS5ECHve', // $99.00 lifetime
 } as const;
 
 // Brazilian prices (BRL) - Account: AY2hnWxlHu
 export const STRIPE_PRICES_BRL = {
-  monthly: 'price_1SvP3bHh4P8HSV4Y7Mrv5t2y', // R$ 19,90/mês
-  annual: 'price_1SvP45Hh4P8HSV4Y2DYbc4Gr',  // R$ 199,90/ano
+  monthly: 'price_1SvI3uHh4P8HSV4YQvyCQGtN', // R$ 19,90/mês
+  annual: 'price_1StuprHh4P8HSV4YRO4eI5YE',  // R$ 199,90/ano
   lifetime: 'price_1T5ZrAHh4P8HSV4YKrPTGhCg', // R$ 499,00 lifetime
 } as const;
 

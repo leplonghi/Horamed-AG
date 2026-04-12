@@ -7,6 +7,7 @@ import { useHapticFeedback } from "@/hooks/useHapticFeedback";
 import { trackNotificationEvent, NotificationEvents } from "@/hooks/useNotificationMetrics";
 import { toast } from "sonner";
 import notificationService from "@/services/NotificationService";
+import { useOnboarding } from "@/contexts/OnboardingContext";
 
 // Step components
 import OnboardingWelcomeNew from "./steps/OnboardingWelcomeNew";
@@ -27,6 +28,7 @@ export interface OnboardingData {
 
 export default function OnboardingFlow() {
   const navigate = useNavigate();
+  const { completeOnboarding: markOnboardingComplete } = useOnboarding();
   const { triggerLight, triggerSuccess, triggerHeavy } = useHapticFeedback();
   const [currentStep, setCurrentStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
@@ -193,32 +195,6 @@ export default function OnboardingFlow() {
       const user = auth.currentUser;
       if (!user) return;
 
-      // Update the user's settings/onboarding state
-      // Also update primary profile if exists
-
-      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
-      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
-
-      if (primaryProfile) {
-        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
-          onboardingCompleted: true,
-          onboardingCompletedAt: new Date().toISOString(),
-          tutorialFlags: {
-            flow_v2: true,
-            completedAt: new Date().toISOString(),
-            firstItem: data.itemName,
-          },
-        });
-      } else {
-        // Create an initial profile if none exists? 
-        // Or store in settings/onboarding as fallback
-        await setDocument(`users/${user.uid}/settings`, 'onboarding', {
-          isCompleted: true,
-          completedAt: new Date().toISOString(),
-          flowVersion: 'v2'
-        });
-      }
-
       // Track completion
       await addDocument(`users/${user.uid}/appMetrics`, {
         eventName: "onboarding_completed",
@@ -229,6 +205,7 @@ export default function OnboardingFlow() {
         createdAt: new Date().toISOString()
       });
 
+      await markOnboardingComplete();
       triggerHeavy();
       navigate("/hoje");
     } catch (error) {
@@ -238,23 +215,8 @@ export default function OnboardingFlow() {
   };
 
   const handleSkip = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) return;
-
-      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
-      const primaryProfile = profiles?.find(p => p.isPrimary) || profiles?.[0];
-
-      if (primaryProfile) {
-        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
-          onboardingCompleted: true
-        });
-      }
-
-      navigate("/hoje");
-    } catch {
-      navigate("/hoje");
-    }
+    await markOnboardingComplete();
+    navigate("/hoje");
   };
 
   // Track onboarding started

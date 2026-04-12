@@ -17,6 +17,7 @@ const MedicamentosHub = lazy(() => import("@/pages/MedicamentosHub"));
 const Progress = lazy(() => import("@/pages/Progress"));
 const Achievements = lazy(() => import("@/pages/Achievements"));
 const Gamification = lazy(() => import("@/pages/Gamification"));
+const MeuProgresso = lazy(() => import("@/pages/MeuProgresso"));
 const Cofre = lazy(() => import("@/pages/Cofre"));
 const Profile = lazy(() => import("@/pages/Profile"));
 const About = lazy(() => import("@/pages/About"));
@@ -58,6 +59,7 @@ const Terms = lazy(() => import("@/pages/Terms"));
 const Tutorial = lazy(() => import("@/pages/Tutorial"));
 const OnboardingFlow = lazy(() => import("@/components/onboarding/OnboardingFlow"));
 const Welcome = lazy(() => import("@/pages/Welcome"));
+const Pharmacy = lazy(() => import("@/pages/Pharmacy"));
 const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
 const AlarmSettings = lazy(() => import("@/pages/AlarmSettings"));
 const AlarmDiagnostics = lazy(() => import("@/pages/AlarmDiagnostics"));
@@ -187,6 +189,26 @@ export default function AppShell() {
             path="/splash"
             element={<div className="min-h-screen bg-background" aria-hidden="true" />}
           />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingFlow />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/bem-vindo" element={<Navigate to="/onboarding" replace />} />
+          <Route path="/welcome" element={<Navigate to="/onboarding" replace />} />
+
+          <Route
+             path="/farmacia"
+             element={
+               <ProtectedRoute>
+                 <Pharmacy />
+               </ProtectedRoute>
+             }
+           />
+           <Route path="/pharmacy" element={<Navigate to="/farmacia" replace />} />
 
           <Route
             path="/hoje"
@@ -206,29 +228,16 @@ export default function AppShell() {
             }
           />
           <Route
-            path="/progresso"
+            path="/meu-progresso"
             element={
               <ProtectedRoute>
-                <Progress />
+                <MeuProgresso />
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/conquistas"
-            element={
-              <ProtectedRoute>
-                <Achievements />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/jornada"
-            element={
-              <ProtectedRoute>
-                <Gamification />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/progresso" element={<Navigate to="/meu-progresso" replace />} />
+          <Route path="/conquistas" element={<Navigate to="/meu-progresso?tab=conquistas" replace />} />
+          <Route path="/jornada" element={<Navigate to="/meu-progresso" replace />} />
           <Route
             path="/carteira"
             element={
@@ -446,13 +455,9 @@ export default function AppShell() {
           />
           <Route
             path="/dashboard-saude"
-            element={
-              <ProtectedRoute>
-                <HealthDashboard />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/meu-progresso" replace />}
           />
-          <Route path="/health" element={<Navigate to="/dashboard-saude" replace />} />
+          <Route path="/health" element={<Navigate to="/meu-progresso" replace />} />
           <Route
             path="/linha-do-tempo"
             element={
@@ -537,15 +542,7 @@ export default function AppShell() {
             }
           />
           <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
-          <Route
-            path="/recompensas"
-            element={
-              <ProtectedRoute>
-                <Recompensas />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/meu-progresso" element={<Navigate to="/progresso" replace />} />
+          <Route path="/recompensas" element={<Navigate to="/meu-progresso?tab=conquistas" replace />} />
           <Route
             path="/peso"
             element={
@@ -643,10 +640,8 @@ export default function AppShell() {
               </ProtectedRoute>
             }
           />
-          <Route path="/onboarding" element={<OnboardingFlow />} />
           <Route path="/onboarding-completo" element={<Navigate to="/onboarding" replace />} />
           <Route path="/onboarding-rapido" element={<Navigate to="/onboarding" replace />} />
-          <Route path="/bem-vindo" element={<Welcome />} />
           <Route
             path="/ajuda"
             element={
@@ -777,8 +772,8 @@ export default function AppShell() {
             }
           />
 
-          <Route path="/historico" element={<Navigate to="/historico-medicamentos" replace />} />
-          <Route path="/evolucao" element={<Navigate to="/dashboard-saude" replace />} />
+          <Route path="/historico" element={<Navigate to="/meu-progresso?tab=historico" replace />} />
+          <Route path="/evolucao" element={<Navigate to="/meu-progresso" replace />} />
           <Route path="/calendario" element={<Navigate to="/hoje" replace />} />
           <Route
             path="/mais"
