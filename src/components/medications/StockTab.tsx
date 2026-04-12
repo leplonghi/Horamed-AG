@@ -147,25 +147,25 @@ export function StockTab({
 
                                         <Dialog>
                                             <DialogTrigger asChild>
-                                                <Button size="icon" className="w-11 h-11 rounded-2xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-all shadow-glow shadow-primary/10">
+                                                <Button size="icon" variant="soft" className="w-11 h-11 rounded-2xl shadow-none">
                                                     <Edit className="h-6 w-6" />
                                                 </Button>
                                             </DialogTrigger>
                                             <DialogContent className="rounded-[2.5rem] p-8 border-white/10 shadow-glass">
                                                 <DialogHeader className="space-y-3">
-                                                    <DialogTitle className="text-2xl font-black uppercase tracking-tighter italic">Ajustar Estoque</DialogTitle>
+                                                    <DialogTitle className="text-2xl font-bold tracking-tight text-foreground">Ajustar estoque</DialogTitle>
                                                     <DialogDescription className="text-sm font-medium text-muted-foreground">
-                                                        {item.itemName} • Gerencie as unidades atuais
+                                                        {item.itemName} • Atualize a quantidade disponível sem sair da tela
                                                     </DialogDescription>
                                                 </DialogHeader>
 
                                                 <div className="space-y-8 py-6">
-                                                    <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 flex flex-col items-center gap-1">
-                                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary/60">Estoque Atual</Label>
-                                                        <div className="text-5xl font-black tracking-tighter text-primary">
+                                                    <div className="flex flex-col items-center gap-1 rounded-3xl border border-border/50 bg-muted/30 p-6">
+                                                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estoque atual</Label>
+                                                        <div className="text-5xl font-black tracking-tighter text-foreground">
                                                             {item.currentQty}
                                                         </div>
-                                                        <span className="text-[10px] font-bold text-primary/40 uppercase">unidades</span>
+                                                        <span className="text-[10px] font-bold uppercase text-muted-foreground">unidades</span>
                                                     </div>
 
                                                     <div className="space-y-4">
@@ -187,7 +187,8 @@ export function StockTab({
                                                                 await onUpdateStock(item.id, item.currentQty + adjustmentAmount);
                                                             }}
                                                             disabled={adjustmentAmount <= 0}
-                                                            className="h-16 rounded-3xl bg-primary text-primary-foreground font-black uppercase tracking-widest shadow-glow shadow-primary/40 gap-3"
+                                                            variant="success"
+                                                            className="h-16 rounded-3xl gap-3 text-base font-semibold"
                                                         >
                                                             <Plus className="h-6 w-6" />
                                                             Repor
@@ -196,7 +197,7 @@ export function StockTab({
                                                             onClick={() => onUpdateStock(item.id, Math.max(0, item.currentQty - adjustmentAmount))}
                                                             disabled={adjustmentAmount <= 0}
                                                             variant="outline"
-                                                            className="h-16 rounded-3xl border-white/10 bg-white/5 hover:bg-white/10 font-black uppercase tracking-widest gap-3"
+                                                            className="h-16 rounded-3xl gap-3 border-destructive/20 bg-transparent text-base font-semibold text-destructive hover:border-destructive/40 hover:bg-destructive/5"
                                                         >
                                                             <AlertTriangle className="h-6 w-6 text-destructive" />
                                                             Remover
@@ -247,8 +248,8 @@ export function StockTab({
 
                                     <Collapsible open={isExpanded} onOpenChange={() => toggleExpanded(item.id)} className="w-full">
                                         <CollapsibleTrigger asChild>
-                                            <Button variant="ghost" className="w-full h-12 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.2em] transition-all">
-                                                {isExpanded ? 'Ocultar Detalhes' : 'Análise de Consumo'}
+                                            <Button variant="secondary" className="h-11 w-full rounded-2xl font-semibold text-foreground">
+                                                {isExpanded ? 'Ocultar detalhes' : 'Ver consumo e histórico'}
                                             </Button>
                                         </CollapsibleTrigger>
                                         <CollapsibleContent className="space-y-6 pt-6 overflow-hidden">

@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -10,9 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Pill, Leaf, Heart, Package, Check, CaretUpDown as ChevronsUpDown, MagnifyingGlass as Search, Lightning as Zap, Moon, Shield, Drop as Droplets, Barbell as Dumbbell, Bell, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useFilteredMedicamentos } from "@/hooks/useMedicamentosBrasileiros";
 import { cn } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useNotificationTypes, NotificationType } from "@/hooks/useNotificationTypes";
+import { useNotificationTypes } from "@/hooks/useNotificationTypes";
 
 // Unidades de dose disponíveis
 const DOSE_UNITS = [
@@ -121,13 +118,14 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
   const [searchTerm, setSearchTerm] = useState("");
   const { getAllNotificationTypes } = useNotificationTypes();
   const notificationTypes = getAllNotificationTypes();
+  const categorySupportsPurpose = ['vitamina', 'suplemento', 'cuidado', 'habito'].includes(data.category);
 
   const supplementCategories = [
-    { value: "energy", label: t('wizard.energy'), icon: Zap, color: "text-amber-500", bgColor: "bg-amber-50 dark:bg-amber-950/30", description: t('wizard.energyDesc') },
-    { value: "sleep", label: t('wizard.sleep'), icon: Moon, color: "text-teal-500", bgColor: "bg-teal-50 dark:bg-teal-950/30", description: t('wizard.sleepDesc') },
-    { value: "immunity", label: t('wizard.immunity'), icon: Shield, color: "text-green-500", bgColor: "bg-green-50 dark:bg-green-950/30", description: t('wizard.immunityDesc') },
-    { value: "performance", label: t('wizard.performance'), icon: Dumbbell, color: "text-orange-500", bgColor: "bg-orange-50 dark:bg-orange-950/30", description: t('wizard.performanceDesc') },
-    { value: "hydration", label: t('wizard.hydration'), icon: Droplets, color: "text-blue-500", bgColor: "bg-blue-50 dark:bg-blue-950/30", description: t('wizard.hydrationDesc') },
+    { value: "energy", label: t('wizard.energy'), icon: Zap, color: "text-amber-500", softClass: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300", description: t('wizard.energyDesc') },
+    { value: "sleep", label: t('wizard.sleep'), icon: Moon, color: "text-teal-500", softClass: "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/30 dark:text-teal-300", description: t('wizard.sleepDesc') },
+    { value: "immunity", label: t('wizard.immunity'), icon: Shield, color: "text-green-500", softClass: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300", description: t('wizard.immunityDesc') },
+    { value: "performance", label: t('wizard.performance'), icon: Dumbbell, color: "text-orange-500", softClass: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300", description: t('wizard.performanceDesc') },
+    { value: "hydration", label: t('wizard.hydration'), icon: Droplets, color: "text-sky-500", softClass: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-300", description: t('wizard.hydrationDesc') },
   ];
 
   const categories = [
@@ -135,57 +133,53 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
       value: "medicamento",
       label: t('wizard.medication'),
       icon: Pill,
-      color: "text-blue-500",
-      bgColor: "bg-blue-50 dark:bg-blue-950/30",
-      borderColor: "border-blue-200 dark:border-blue-800",
+      iconClass: "text-primary",
+      activeClass: "border-primary/25 bg-primary/10 text-primary",
       description: t('wizard.medicationDesc')
     },
     {
       value: "vitamina",
       label: t('wizard.vitamin'),
       icon: Leaf,
-      color: "text-green-500",
-      bgColor: "bg-green-50 dark:bg-green-950/30",
-      borderColor: "border-green-200 dark:border-green-800",
+      iconClass: "text-green-600 dark:text-green-400",
+      activeClass: "border-green-200 bg-green-50 text-green-700 dark:border-green-900/60 dark:bg-green-950/30 dark:text-green-300",
       description: t('wizard.vitaminDesc')
     },
     {
       value: "suplemento",
       label: t('wizard.supplement'),
       icon: Heart,
-      color: "text-red-500",
-      bgColor: "bg-red-50 dark:bg-red-950/30",
-      borderColor: "border-red-200 dark:border-red-800",
+      iconClass: "text-rose-600 dark:text-rose-400",
+      activeClass: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-300",
       description: t('wizard.supplementDesc')
     },
     {
       value: "cuidado",
       label: t('wizard.care'),
       icon: Droplets,
-      color: "text-teal-500",
-      bgColor: "bg-teal-50 dark:bg-teal-950/30",
-      borderColor: "border-teal-200 dark:border-teal-800",
+      iconClass: "text-teal-600 dark:text-teal-400",
+      activeClass: "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900/60 dark:bg-teal-950/30 dark:text-teal-300",
       description: t('wizard.careDesc')
     },
     {
       value: "habito",
       label: t('wizard.habit'),
       icon: Dumbbell,
-      color: "text-orange-500",
-      bgColor: "bg-orange-50 dark:bg-orange-950/30",
-      borderColor: "border-orange-200 dark:border-orange-800",
+      iconClass: "text-orange-600 dark:text-orange-400",
+      activeClass: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-300",
       description: t('wizard.habitDesc')
     },
     {
       value: "outro",
       label: t('wizard.other'),
       icon: Package,
-      color: "text-gray-500",
-      bgColor: "bg-gray-50 dark:bg-gray-950/30",
-      borderColor: "border-gray-200 dark:border-gray-800",
+      iconClass: "text-slate-500 dark:text-slate-400",
+      activeClass: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300",
       description: t('wizard.otherDesc')
     },
   ];
+  const selectedCategory = categories.find((cat) => cat.value === data.category) || categories[0];
+  const selectedSupplementCategory = supplementCategories.find((cat) => cat.value === data.supplementCategory);
 
   const { medicamentos, loading } = useFilteredMedicamentos(searchTerm, 50);
 
@@ -321,58 +315,91 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
           {t('wizard.type')}
         </Label>
 
-        <div className="grid grid-cols-2 gap-3">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            const isSelected = data.category === cat.value;
-            return (
-              <div
-                key={cat.value}
-                onClick={() => updateData({ category: cat.value })}
-                className={cn(
-                  "relative p-4 cursor-pointer transition-all duration-300 rounded-2xl border flex flex-col gap-3 group overflow-hidden",
-                  isSelected
-                    ? `bg-background/80 border-${cat.color.split('-')[1]}-500 shadow-lg scale-[1.02] ring-1 ring-${cat.color.split('-')[1]}-500/20`
-                    : "bg-muted/30 border-transparent hover:bg-muted/50 hover:border-border/50"
-                )}
-              >
-                {isSelected && (
-                  <div className={cn("absolute inset-0 opacity-10 pointer-events-none", cat.bgColor)} />
-                )}
-                <div className="flex items-center justify-between">
-                  <div className={cn(
-                    "w-10 h-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110",
-                    isSelected ? cat.bgColor : "bg-white/10 dark:bg-white/5"
-                  )}>
-                    <Icon className={cn("w-5 h-5", isSelected ? cat.color : "text-muted-foreground")} />
-                  </div>
-                  {isSelected && (
-                    <div className={cn("w-5 h-5 rounded-full flex items-center justify-center", cat.bgColor)}>
-                      <Check className={cn("w-3 h-3 stroke-[3]", cat.color)} />
-                    </div>
+        <div className="space-y-3">
+          <Select
+            value={data.category}
+            onValueChange={(value) =>
+              updateData({
+                category: value,
+                supplementCategory: ['vitamina', 'suplemento', 'cuidado', 'habito'].includes(value)
+                  ? data.supplementCategory
+                  : undefined,
+              })
+            }
+          >
+            <SelectTrigger className="h-14 bg-background/60">
+              <SelectValue placeholder={language === 'pt' ? 'Selecione o tipo do item' : 'Select the item type'} />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              const isSelected = data.category === cat.value;
+
+              return (
+                <button
+                  key={cat.value}
+                  type="button"
+                  onClick={() =>
+                    updateData({
+                      category: cat.value,
+                      supplementCategory: ['vitamina', 'suplemento', 'cuidado', 'habito'].includes(cat.value)
+                        ? data.supplementCategory
+                        : undefined,
+                    })
+                  }
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-all",
+                    isSelected
+                      ? cat.activeClass
+                      : "border-border/60 bg-background text-muted-foreground hover:border-primary/20 hover:bg-muted/50 hover:text-foreground"
                   )}
-                </div>
-                <div>
-                  <span className={cn("font-bold text-sm block mb-0.5", isSelected ? "text-foreground" : "text-muted-foreground")}>
-                    {cat.label}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/70 leading-tight block">
-                    {cat.description}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+                >
+                  <Icon className={cn("h-4 w-4", isSelected ? "text-current" : cat.iconClass)} />
+                  {cat.label}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="rounded-2xl border border-border/50 bg-muted/20 px-4 py-3">
+            <p className="text-sm font-semibold text-foreground">{selectedCategory.label}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{selectedCategory.description}</p>
+          </div>
         </div>
       </div>
 
-      {/* Categoria do Suplemento - Animated reveal */}
-      <div className={cn("transition-all duration-300 overflow-hidden", (data.category === 'vitamina' || data.category === 'suplemento' || data.category === 'cuidado' || data.category === 'habito') ? "max-h-40 opacity-100" : "max-h-0 opacity-0")}>
-        <div className="space-y-3 p-4 bg-muted/20 border border-white/5 rounded-2xl">
+      {/* Categoria do Suplemento */}
+      {categorySupportsPurpose && (
+        <div className="space-y-3 rounded-2xl border border-border/50 bg-muted/20 p-4">
           <Label className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
             <Sparkles className="w-3 h-3 text-amber-500" />
             {t('wizard.whatFor')}
           </Label>
+
+          <Select
+            value={data.supplementCategory}
+            onValueChange={(value) => updateData({ supplementCategory: value })}
+          >
+            <SelectTrigger className="h-12 bg-background/70">
+              <SelectValue placeholder={language === 'pt' ? 'Selecione a finalidade principal' : 'Select the main purpose'} />
+            </SelectTrigger>
+            <SelectContent>
+              {supplementCategories.map((cat) => (
+                <SelectItem key={cat.value} value={cat.value}>
+                  {cat.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <div className="flex flex-wrap gap-2">
             {supplementCategories.map((cat) => {
@@ -386,20 +413,26 @@ export function WizardStepIdentity({ data, updateData }: WizardStepIdentityProps
                     supplementCategory: isSelected ? undefined : cat.value
                   })}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all border",
+                    "flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-semibold transition-all",
                     isSelected
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm scale-105"
-                      : "bg-background border-border text-muted-foreground hover:bg-muted"
+                      ? cat.softClass
+                      : "bg-background border-border/60 text-muted-foreground hover:border-primary/20 hover:bg-muted"
                   )}
                 >
-                  <Icon className={cn("h-3.5 w-3.5", isSelected ? "text-primary-foreground" : cat.color)} />
+                  <Icon className={cn("h-3.5 w-3.5", isSelected ? "text-current" : cat.color)} />
                   {cat.label}
                 </button>
               );
             })}
           </div>
+
+          {selectedSupplementCategory && (
+            <p className="text-sm text-muted-foreground">
+              {selectedSupplementCategory.description}
+            </p>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Dose & Food Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

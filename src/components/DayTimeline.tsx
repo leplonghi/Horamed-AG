@@ -100,7 +100,7 @@ export default function DayTimeline({
   };
 
   return (
-    <div className="w-full space-y-3 pb-20">
+    <div className="w-full space-y-3">
       {/* Header Section */}
       <div className="flex items-center justify-between px-1">
         <h3 className="text-sm font-black text-blue-600/80 uppercase tracking-widest">

@@ -538,3 +538,26 @@ export function IconProviders(props: IconProps) {
         </BaseIcon>
     );
 }
+
+export const IconFolderOpen = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M7 20h10a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H9l-2-2H3a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z" />
+        <path d="M22 13h-4V7" strokeOpacity="0.4" />
+    </BaseIcon>
+);
+
+export const IconThermometer = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
+        <path d="M12 9v4" strokeOpacity="0.4" />
+    </BaseIcon>
+);
+
+export const IconWeight = (props: IconProps) => (
+    <BaseIcon {...props}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="m14.7 12.3-2.7-2.7-2.7 2.7" strokeOpacity="0.6" />
+        <path d="M12 18v-8.4" strokeOpacity="0.6" />
+        <rect x="7" y="5" width="10" height="4" rx="1" strokeOpacity="0.3" />
+    </BaseIcon>
+);

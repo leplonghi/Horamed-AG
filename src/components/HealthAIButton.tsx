@@ -1,14 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
-import { X, PaperPlaneRight as Send } from "@phosphor-icons/react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { X, PaperPlaneRight as Send, Camera, Microphone, Sparkle as Sparkles, PlusCircle, Image as ImageIcon } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useHealthAgent } from "@/hooks/useHealthAgent";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import FloatingActionHub from "./FloatingActionHub";
+import { cn } from "@/lib/utils";
 
 // Clara avatar loaded via URL to reduce bundle size
 const claraAvatarUrl = "/images/clara.jpg";
@@ -16,15 +17,20 @@ const claraAvatarUrl = "/images/clara.jpg";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  id: string;
 }
 
 export default function HealthAIButton() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [hasUnreadSuggestion, setHasUnreadSuggestion] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  
   const {
     processQuery,
     isProcessing
@@ -33,11 +39,27 @@ export default function HealthAIButton() {
 
   // Initialize welcome message with translation
   useEffect(() => {
-    setMessages([{
-      role: "assistant",
-      content: t('clara.welcomeMessage')
-    }]);
-  }, [t]);
+    if (messages.length === 0) {
+      setMessages([{
+        role: "assistant",
+        content: t('clara.welcomeMessage'),
+        id: 'welcome'
+      }]);
+    }
+  }, [t, messages.length]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (scrollRef.current) {
+      const scrollContainer = scrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTo({
+          top: scrollContainer.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [messages, isProcessing]);
 
   // Dynamic quick suggestions based on time of day
   const quickSuggestions = useMemo(() => {
@@ -81,24 +103,30 @@ export default function HealthAIButton() {
 
     setInput("");
     setShowSuggestions(false);
-    setMessages(prev => [...prev, {
+    
+    const newUserMsg: Message = {
       role: "user",
-      content: userMessage
-    }]);
+      content: userMessage,
+      id: Date.now().toString()
+    };
+    
+    setMessages(prev => [...prev, newUserMsg]);
 
     try {
       const response = await processQuery(userMessage);
       if (typeof response === 'string') {
         setMessages(prev => [...prev, {
           role: "assistant",
-          content: response
+          content: response,
+          id: (Date.now() + 1).toString()
         }]);
       }
     } catch (error) {
       console.error('AI error:', error);
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: t('clara.errorMessage')
+        content: t('clara.errorMessage'),
+        id: (Date.now() + 2).toString()
       }]);
     }
   };
@@ -112,128 +140,209 @@ export default function HealthAIButton() {
     setHasUnreadSuggestion(false);
   };
 
+  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Logic to process file would go here
+      // For now, redirect to scan page or inform Clara
+      setIsOpen(false);
+      navigate("/scan");
+    }
+  };
+
   return (
     <>
-      {/* Floating Action Hub - unifies Clara + Voice */}
       <FloatingActionHub
         onOpenAssistant={handleOpenAssistant}
         isAssistantOpen={isOpen}
         hasUnreadSuggestion={hasUnreadSuggestion}
       />
 
-      {/* Clara Chat Panel */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        className="hidden" 
+        ref={cameraInputRef}
+        onChange={handleCameraCapture}
+      />
+
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
+            {/* Backdrop with stronger blur */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-background/40 backdrop-blur-md z-[60]"
             />
+            
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.95 }}
-              className="fixed inset-4 md:inset-auto md:bottom-24 md:right-6 z-50 md:w-[380px] md:max-w-[calc(100vw-3rem)]"
+              initial={{ opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 top-[10%] md:inset-auto md:bottom-24 md:right-6 z-[70] md:w-[420px] md:max-w-[calc(100vw-3rem)] md:h-[650px]"
             >
-              <Card className="shadow-xl border h-full md:h-auto flex flex-col">
-                {/* Header */}
-                <div className="bg-primary p-4 rounded-t-lg shrink-0">
+              <Card className="glass-card overflow-hidden h-full flex flex-col border-primary/20 shadow-2xl rounded-t-[2.5rem] md:rounded-[2rem]">
+                
+                {/* Premium Header */}
+                <div className="bg-gradient-to-br from-primary/10 via-background/50 to-background p-5 pb-4 shrink-0 border-b border-primary/5">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-primary-foreground/30">
-                        <img src={claraAvatarUrl} alt="Clara" loading="lazy" className="w-full h-full object-cover" />
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <motion.div 
+                          animate={{ scale: [1, 1.1, 1] }} 
+                          transition={{ duration: 4, repeat: Infinity }}
+                          className="w-12 h-12 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-lg"
+                        >
+                          <img src={claraAvatarUrl} alt="Clara" className="w-full h-full object-cover" />
+                        </motion.div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full ring-2 ring-green-500/20" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-primary-foreground">Clara</h3>
-                        <p className="text-xs text-primary-foreground/80">{t('clara.assistant')}</p>
+                        <h3 className="font-bold text-lg text-foreground tracking-tight">Clara AI</h3>
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                          <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{t('clara.assistant') || "Online"}</p>
+                        </div>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => setIsOpen(false)}
-                      className="h-10 w-10 text-primary-foreground hover:bg-primary-foreground/20 rounded-full"
+                      className="h-10 w-10 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-full transition-all"
                     >
                       <X className="h-5 w-5" />
                     </Button>
                   </div>
                 </div>
 
-                {/* Messages */}
-                <ScrollArea className="flex-1 md:h-[350px] p-4">
-                  <div className="space-y-4">
+                {/* Messages Area */}
+                <ScrollArea ref={scrollRef} className="flex-1 px-4 py-6">
+                  <div className="space-y-6">
                     {messages.map((msg, idx) => (
                       <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        key={msg.id}
+                        initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, scale: 0.9 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        transition={{ duration: 0.2, delay: idx * 0.05 }}
+                        className={cn(
+                          "flex w-full mb-1",
+                          msg.role === 'user' ? 'justify-end' : 'justify-start'
+                        )}
                       >
-                        <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${msg.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-foreground'
-                          }`}>
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                        <div className={cn(
+                          "max-w-[82%] relative p-4",
+                          msg.role === 'user' ? 'bubble-user' : 'bubble-clara'
+                        )}>
+                          {msg.role === 'assistant' && (
+                            <div className="absolute -top-6 left-0 flex items-center gap-1 opacity-40">
+                              <Sparkles className="h-3 w-3 text-primary" weight="fill" />
+                              <span className="text-[10px] font-bold uppercase tracking-wider">HoraMed AI</span>
+                            </div>
+                          )}
+                          <p className="text-[15px] leading-[1.6] whitespace-pre-wrap font-book">
+                            {msg.content}
+                          </p>
                         </div>
                       </motion.div>
                     ))}
+                    
                     {isProcessing && (
-                      <div className="flex justify-start">
-                        <div className="bg-muted rounded-2xl px-4 py-2.5">
-                          <div className="flex gap-1.5">
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      <div className="flex justify-start pt-2">
+                        <div className="bg-card border border-primary/10 rounded-2xl rounded-tl-none p-4 shadow-sm">
+                          <div className="flex gap-1.5 items-center h-4">
+                            <motion.span 
+                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
+                              transition={{ duration: 1, repeat: Infinity, delay: 0 }}
+                              className="w-1.5 h-1.5 bg-primary rounded-full" 
+                            />
+                            <motion.span 
+                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
+                              transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
+                              className="w-1.5 h-1.5 bg-primary rounded-full" 
+                            />
+                            <motion.span 
+                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
+                              transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
+                              className="w-1.5 h-1.5 bg-primary rounded-full" 
+                            />
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
+                  
+                  {/* Bottom padding for scroll visibility */}
+                  <div className="h-4" />
                 </ScrollArea>
 
-                {/* Quick Suggestions */}
-                {showSuggestions && messages.length <= 1 && (
-                  <div className="px-4 pb-3 space-y-2 shrink-0">
-                    <p className="text-xs text-muted-foreground font-medium">{t('clara.quickSuggestions')}</p>
-                    <div className="flex flex-col gap-1.5">
-                      {quickSuggestions.map((suggestion, idx) => (
-                        <Button
-                          key={idx}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className="text-xs justify-start h-auto py-2 px-3 text-left hover:bg-primary/10 border border-border/50"
-                        >
-                          {suggestion}
-                        </Button>
-                      ))}
+                {/* Suggestions and Input Fixed for premium feel */}
+                <div className="p-4 bg-background/80 backdrop-blur-xl border-t border-primary/5 space-y-4">
+                  {/* Suggestion Chips */}
+                  {showSuggestions && (
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar pt-2">
+                      <AnimatePresence>
+                        {quickSuggestions.map((suggestion, idx) => (
+                          <motion.button
+                            key={idx}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="whitespace-nowrap px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-colors flex items-center gap-2"
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {suggestion}
+                          </motion.button>
+                        ))}
+                      </AnimatePresence>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Input */}
-                <div className="p-4 border-t shrink-0">
-                  <div className="flex gap-2">
+                  {/* Input Bar */}
+                  <div className="flex items-center gap-2 bg-muted/30 p-2 rounded-3xl border border-primary/10 focus-within:border-primary/30 transition-all shadow-inner">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 shrink-0 text-primary hover:bg-primary/10 rounded-full"
+                      onClick={() => cameraInputRef.current?.click()}
+                    >
+                      <Camera className="h-5 w-5" weight="bold" />
+                    </Button>
+                    
                     <Input
                       value={input}
                       onChange={e => setInput(e.target.value)}
                       onKeyDown={e => e.key === 'Enter' && handleSend()}
                       placeholder={t('clara.typeMessage')}
                       disabled={isProcessing}
-                      className="flex-1"
+                      className="border-none bg-transparent focus-visible:ring-0 px-1 text-[15px]"
                     />
-                    <Button
-                      onClick={() => handleSend()}
-                      disabled={!input.trim() || isProcessing}
-                      size="icon"
+                    
+                    <motion.div
+                      animate={{ scale: input.trim() ? 1 : 0.9 }}
                     >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                      <Button
+                        onClick={() => handleSend()}
+                        disabled={!input.trim() || isProcessing}
+                        size="icon"
+                        className="h-10 w-10 rounded-full bg-primary text-white shadow-lg disabled:opacity-50 disabled:bg-muted"
+                      >
+                        <Send className="h-5 w-5" weight="fill" />
+                      </Button>
+                    </motion.div>
                   </div>
+                  
+                  <p className="text-[10px] text-center text-muted-foreground/60 font-medium">
+                    Clara AI utiliza tecnologia HoraMed Intelligence para suporte à saúde.
+                  </p>
                 </div>
               </Card>
             </motion.div>

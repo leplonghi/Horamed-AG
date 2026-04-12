@@ -12,7 +12,7 @@ import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "@/pages/Index";
 import Landing from "@/pages/Landing";
 
-const TodayRedesign = lazy(() => import("@/pages/TodayRedesign"));
+const Today = lazy(() => import("@/pages/Today"));
 const MedicamentosHub = lazy(() => import("@/pages/MedicamentosHub"));
 const Progress = lazy(() => import("@/pages/Progress"));
 const Achievements = lazy(() => import("@/pages/Achievements"));
@@ -94,19 +94,14 @@ const HIDE_NAVIGATION_PATHS = [
 ];
 
 const HIDE_NAVIGATION_PREFIXES = [
-  "/medicamentos",
-  "/rotina",
   "/estoque",
   "/historico-medicamentos",
-  "/carteira",
   "/carteira-vacina",
   "/vacinas",
   "/consultas",
   "/eventos-medicos",
   "/saude/agenda",
-  "/dashboard-saude",
   "/linha-do-tempo",
-  "/perfil",
   "/perfis",
   "/recompensas",
   "/notificacoes-config",
@@ -197,7 +192,7 @@ export default function AppShell() {
             path="/hoje"
             element={
               <ProtectedRoute>
-                <TodayRedesign />
+                <Today />
               </ProtectedRoute>
             }
           />
@@ -270,7 +265,7 @@ export default function AppShell() {
             }
           />
           <Route path="/medications" element={<Navigate to="/medicamentos" replace />} />
-          <Route path="/saude" element={<Navigate to="/medicamentos" replace />} />
+          <Route path="/saude" element={<Navigate to="/dashboard-saude" replace />} />
 
           <Route
             path="/adicionar"

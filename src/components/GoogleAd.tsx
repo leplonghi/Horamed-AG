@@ -99,17 +99,15 @@ export default function GoogleAd({
     };
 
     // Delay ad loading to not block main thread
-    const timer = requestIdleCallback ?
-      requestIdleCallback(() => loadAd()) :
+    const timer = typeof window !== 'undefined' && 'requestIdleCallback' in window ?
+      (window as any).requestIdleCallback(() => loadAd()) :
       setTimeout(loadAd, 1000);
 
     return () => {
-      if (typeof timer === 'number') {
-        if (cancelIdleCallback) {
-          cancelIdleCallback(timer);
-        } else {
-          clearTimeout(timer);
-        }
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window && timer) {
+        (window as any).cancelIdleCallback(timer);
+      } else if (timer) {
+        clearTimeout(timer);
       }
     };
   }, [isVisible, adLoaded, hasFeature]);

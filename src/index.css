@@ -335,6 +335,23 @@ All colors MUST be HSL.
   .glass-card:hover {
     box-shadow: var(--shadow-glass-hover), var(--shadow-inner-glow);
   }
+  
+  /* PREMIUM CHAT BUBBLES - iMessage Style */
+  .bubble-user {
+    @apply relative bg-primary text-primary-foreground rounded-2xl rounded-tr-none shadow-sm;
+    background: linear-gradient(135deg, 
+      hsl(var(--primary)) 0%, 
+      hsl(var(--primary) / 0.9) 100%
+    );
+  }
+  
+  .bubble-clara {
+    @apply relative bg-card border border-primary/10 text-foreground rounded-2xl rounded-tl-none shadow-sm;
+    background: linear-gradient(135deg, 
+      hsl(var(--card)) 0%, 
+      hsl(var(--card) / 0.95) 100%
+    );
+  }
 
   /* Clean card without glass effect */
   .card-clean {

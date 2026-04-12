@@ -87,7 +87,7 @@ export const StatsSkeleton = () => {
 /**
  * TodaySkeleton
  *
- * Content-aware shimmer skeleton for the TodayRedesign screen.
+ * Content-aware shimmer skeleton for the Today screen.
  * Mirrors the exact DOM structure so there's zero layout shift
  * when live data replaces it.
  */

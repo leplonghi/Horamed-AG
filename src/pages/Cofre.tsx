@@ -183,7 +183,7 @@ export default function Cofre() {
                             className="space-y-4"
                         >
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {providers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                {providers?.filter(p => (p as any).name?.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
                                     providers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((provider) => (
                                         <motion.div key={provider.id} variants={itemVariants}>
                                             <ProviderCard 

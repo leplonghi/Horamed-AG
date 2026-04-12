@@ -783,7 +783,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
                               <div className={cn(
                                 "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-colors",
                                 option.id === 'manual'
-                                  ? "bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white"
+                                  ? "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"
                                   : "bg-accent-highlight/10 text-accent-highlight-foreground/80 group-hover:bg-accent-highlight group-hover:text-accent-highlight-foreground"
                               )}>
                                 <option.icon className="w-7 h-7" />

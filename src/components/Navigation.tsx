@@ -107,7 +107,7 @@ function Navigation() {
   // Memoize nav items to prevent recreating on each render
   const navItems = useMemo(() => [
     { path: "/hoje", icon: CalendarBlank, labelKey: "nav.today" },
-    { path: "/medicamentos", icon: Pill, labelKey: "nav.routine" },
+    { path: "/rotina", icon: Pill, labelKey: "nav.routine" },
     { path: "/dashboard-saude", icon: Heartbeat, labelKey: "nav.groups" },
     { path: "/carteira", icon: Wallet, labelKey: "nav.wallet", badge: expiringCount > 0 ? expiringCount : undefined },
     { path: "/perfil", icon: UserIcon, labelKey: "nav.profile" },

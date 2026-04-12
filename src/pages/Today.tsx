@@ -57,7 +57,7 @@ interface StockItem {
   alertThreshold?: number;
 }
 
-export default function TodayRedesign() {
+export default function Today() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const { scheduleNext48Hours } = usePushNotifications();
@@ -282,9 +282,7 @@ export default function TodayRedesign() {
             />
 
             {/* Android notification permissions */}
-            <div className="mb-2 mt-2 px-1">
-              <AndroidPermissionsCard hideWhenOk={true} />
-            </div>
+            <AndroidPermissionsCard hideWhenOk={true} />
 
             {/* Overdue banner */}
             <div id="overdue-banner">
@@ -309,17 +307,12 @@ export default function TodayRedesign() {
             />
 
             {/* Day timeline */}
-            <div className="mt-1 mb-4 px-1">
-              <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
-            </div>
+            <DayTimeline date={selectedDate} items={timelineItems} onDateChange={setSelectedDate} />
 
-            {/* Daily check-in */}
-            <div className="mb-4">
-              <DailyCheckInWidget
-                hasLoggedToday={hasLoggedSymptomsToday}
-                onLogComplete={() => setHasLoggedSymptomsToday(true)}
-              />
-            </div>
+            <DailyCheckInWidget
+              hasLoggedToday={hasLoggedSymptomsToday}
+              onLogComplete={() => setHasLoggedSymptomsToday(true)}
+            />
 
             {/* Vitals glance */}
             <VitalsGlanceWidget profileId={activeProfile?.id} />

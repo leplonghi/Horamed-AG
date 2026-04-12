@@ -1,10 +1,23 @@
 import { Card } from "./ui/card";
 import { Progress } from "./ui/progress";
-import { TrendUp as TrendingUp, TrendDown as TrendingDown, Target, CalendarBlank as Calendar, Flame, Trophy } from "@phosphor-icons/react";
+import { 
+  TrendUp, 
+  TrendDown, 
+  Target, 
+  Calendar, 
+  Flame, 
+  Trophy, 
+  User, 
+  DownloadSimple, 
+  CheckCircle, 
+  Lightning 
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { PremiumTooltip } from "./shared/ChartTooltip";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProgressDashboardProps {
   currentStreak: number;
@@ -25,6 +38,7 @@ export default function ProgressDashboard({
   monthlyProgress = 0,
   weeklyAdherence = [],
 }: ProgressDashboardProps) {
+  const { t } = useLanguage();
   const isImproving = thisWeekAverage > lastWeekAverage;
   const improvementPercent = lastWeekAverage > 0
     ? Math.round(((thisWeekAverage - lastWeekAverage) / lastWeekAverage) * 100)
@@ -33,211 +47,225 @@ export default function ProgressDashboard({
   const goalReached = monthlyProgress >= monthlyGoal;
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold flex items-center gap-2">
-        <Trophy className="h-5 w-5 text-amber-500" />
-        Seu Progresso
-      </h2>
+    <div className="space-y-6 pb-8">
+      {/* 1. Level Header - Soft Blue Glass Style */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass-card p-6 flex items-center gap-4 border-b border-primary/10"
+      >
+        <div className="relative">
+          <Avatar className="h-16 w-16 rounded-[22px] border-2 border-primary/20 shadow-glow">
+            <AvatarImage src="" />
+            <AvatarFallback className="bg-primary/10 text-primary">
+              <User size={32} weight="duotone" />
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute -bottom-1 -right-1 bg-gradient-to-br from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
+            Nível 5
+          </div>
+        </div>
+        
+        <div className="flex-1 space-y-2">
+          <div className="flex justify-between items-end">
+            <div>
+              <h3 className="text-lg font-bold text-foreground leading-none">Seu Percurso de Saúde</h3>
+              <p className="text-xs text-muted-foreground mt-1">Faltam 450 XP para o Nível 6</p>
+            </div>
+            <span className="text-xs font-bold text-primary">75%</span>
+          </div>
+          <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden border border-primary/5">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: "75%" }}
+              className="h-full bg-gradient-fluid shadow-[0_0_10px_rgba(37,99,235,0.3)]"
+            />
+          </div>
+        </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Current Streak - Vibrant Orange/Red Gradient */}
+        {/* 2. Highlight Streak Card - Big & Bold */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="p-5 bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 border-0 text-white shadow-lg shadow-orange-500/20">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Flame className="h-6 w-6 text-yellow-300 animate-pulse" />
-                  <span className="font-semibold">Sequência Atual</span>
+          <Card className="glass-card p-6 bg-gradient-fluid border-0 text-white overflow-hidden relative group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+              <Flame size={120} weight="fill" />
+            </div>
+            
+            <div className="relative z-10 space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
+                  <Flame size={24} weight="fill" className="text-orange-300 animate-pulse" />
                 </div>
-                <span className="text-4xl font-bold">
-                  {currentStreak}
-                </span>
+                <span className="font-semibold text-white/90">Sequência de Fogo</span>
               </div>
-              <div className="flex items-center gap-2 text-white/80">
-                <Trophy className="h-4 w-4" />
-                <p className="text-sm">
-                  Recorde: {longestStreak} dias
-                </p>
+              
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-black tracking-tighter">{currentStreak}</span>
+                <span className="text-xl font-bold opacity-80 uppercase tracking-widest">Dias</span>
+              </div>
+              
+              <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-sm text-white/80">
+                  <Trophy size={16} weight="duotone" />
+                  <span>Recorde: {longestStreak} d</span>
+                </div>
+                <div className="px-2 py-0.5 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  Incrivel!
+                </div>
               </div>
             </div>
           </Card>
         </motion.div>
 
-        {/* Weekly Comparison - Blue/teal Gradient */}
+        {/* 3. Stats Summary - Compact Grid */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2 }}
+          className="grid grid-cols-2 gap-3"
         >
-          <Card className="p-5 bg-gradient-to-br from-blue-500 via-indigo-500 to-teal-600 border-0 text-white shadow-lg shadow-blue-500/20">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {isImproving ? (
-                    <TrendingUp className="h-5 w-5 text-emerald-300" />
-                  ) : (
-                    <TrendingDown className="h-5 w-5 text-red-300" />
-                  )}
-                  <span className="font-semibold">Esta Semana</span>
-                </div>
-                <span className="text-4xl font-bold">
-                  {thisWeekAverage}%
-                </span>
+          <Card className="glass-card p-4 flex flex-col justify-between border-primary/5">
+            <div className="flex items-center justify-between">
+              <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-600">
+                <CheckCircle size={20} weight="duotone" />
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                {isImproving ? (
-                  <>
-                    <span className="bg-emerald-400/30 text-emerald-200 px-2 py-0.5 rounded-full font-medium">
-                      +{Math.abs(improvementPercent)}%
-                    </span>
-                    <span className="text-white/70">vs semana passada</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="bg-red-400/30 text-red-200 px-2 py-0.5 rounded-full font-medium">
-                      {improvementPercent}%
-                    </span>
-                    <span className="text-white/70">vs semana passada</span>
-                  </>
-                )}
-              </div>
+              <TrendUp size={16} className="text-emerald-500" />
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">{thisWeekAverage}%</div>
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Pontualidade</div>
             </div>
           </Card>
-        </motion.div>
 
-        {/* Monthly Goal - Emerald/Teal Gradient */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="md:col-span-2"
-        >
-          <Card className={cn(
-            "p-5 border-0 text-white shadow-lg",
-            goalReached
-              ? "bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 shadow-emerald-500/20"
-              : "bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-500 shadow-teal-500/20"
-          )}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Target className={cn(
-                    "h-5 w-5",
-                    goalReached ? "text-yellow-300" : "text-white"
-                  )} />
-                  <span className="font-semibold">Meta Mensal</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-white/70" />
-                  <span className="text-sm text-white/80">
-                    {monthlyProgress}% de {monthlyGoal}%
-                  </span>
-                </div>
+          <Card className="glass-card p-4 flex flex-col justify-between border-primary/5">
+            <div className="flex items-center justify-between">
+              <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-600">
+                <Lightning size={20} weight="duotone" />
               </div>
-
-              <div className="relative">
-                <Progress
-                  value={Math.min(monthlyProgress, 100)}
-                  className="h-4 bg-white/20"
-                />
-                <div
-                  className="absolute inset-0 h-4 rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 transition-all duration-500"
-                  style={{ width: `${Math.min(monthlyProgress, 100)}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                {goalReached ? (
-                  <span className="flex items-center gap-2 bg-yellow-400/30 text-yellow-100 px-3 py-1 rounded-full font-medium">
-                    Meta atingida!
-                  </span>
-                ) : (
-                  <span className="text-white/80">
-                    Faltam {monthlyGoal - monthlyProgress}% para sua meta
-                  </span>
-                )}
-                {!goalReached && (
-                  <span className="bg-white/20 px-3 py-1 rounded-full font-medium">
-                    Continue assim! 💪
-                  </span>
-                )}
-              </div>
+              <span className="text-[10px] font-black text-blue-500">+12%</span>
             </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">128</div>
+              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Doses Tomadas</div>
+            </div>
+          </Card>
+
+          <Card className="glass-card p-4 col-span-2 flex items-center gap-4 border-primary/5">
+            <div className="h-12 w-12 rounded-full border-4 border-primary/10 border-t-primary flex items-center justify-center relative">
+              <span className="text-xs font-bold text-primary">82%</span>
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-bold">Meta de Bem-estar</div>
+              <div className="text-[10px] text-muted-foreground">Você está próximo de atingir sua meta mensal!</div>
+            </div>
+            <Target size={24} weight="duotone" className="text-primary/40" />
           </Card>
         </motion.div>
       </div>
 
-      {/* Weekly Detail Chart */}
+      {/* 4. Weekly Analytics Chart */}
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="glass-card p-6 border-primary/5">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="font-bold text-foreground flex items-center gap-2">
+                <Calendar size={20} weight="duotone" className="text-primary" />
+                Adesão Semanal
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Visão detalhada dos últimos 7 dias</p>
+            </div>
+            <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold ring-1 ring-primary/20">
+              Média: {thisWeekAverage}%
+            </div>
+          </div>
+
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={weeklyAdherence.length > 0 ? weeklyAdherence : [
+                { day: 'Seg', percentage: 95 },
+                { day: 'Ter', percentage: 80 },
+                { day: 'Qua', percentage: 100 },
+                { day: 'Qui', percentage: 90 },
+                { day: 'Sex', percentage: 85 },
+                { day: 'Sáb', percentage: 95 },
+                { day: 'Dom', percentage: 100 },
+              ]}>
+                <XAxis
+                  dataKey="day"
+                  axisLine={false}
+                  tickLine={false}
+                  fontSize={11}
+                  tick={{ fill: 'currentColor', opacity: 0.5 }}
+                  dy={10}
+                />
+                <YAxis hide domain={[0, 100]} />
+                <Tooltip
+                  cursor={{ fill: 'rgba(37, 99, 235, 0.05)', radius: 8 }}
+                  content={<PremiumTooltip title="Nível de Adesão" suffix="%" />}
+                />
+                <Bar dataKey="percentage" radius={[8, 8, 8, 8]} barSize={28}>
+                  {(weeklyAdherence.length > 0 ? weeklyAdherence : [
+                    { day: 'Seg', percentage: 95 },
+                    { day: 'Ter', percentage: 80 },
+                    { day: 'Qua', percentage: 100 },
+                    { day: 'Qui', percentage: 90 },
+                    { day: 'Sex', percentage: 85 },
+                    { day: 'Sáb', percentage: 95 },
+                    { day: 'Dom', percentage: 100 },
+                  ]).map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={entry.percentage >= 90 ? 'url(#primaryGradient)' : 'url(#secondaryGradient)'}
+                    />
+                  ))}
+                </Bar>
+                <defs>
+                  <linearGradient id="primaryGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" />
+                    <stop offset="100%" stopColor="hsl(var(--gradient-mid))" />
+                  </linearGradient>
+                  <linearGradient id="secondaryGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary) / 0.5)" />
+                    <stop offset="100%" stopColor="hsl(var(--primary) / 0.3)" />
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* 5. Health Report Card - Actionable */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="p-5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-110" />
-
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-emerald-500" />
-                  Evolução Semanal
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">Seu nível de adesão nos últimos 7 dias</p>
-              </div>
-              <div className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full text-xs font-bold">
-                Média: {thisWeekAverage}%
-              </div>
+        <Card className="glass-card p-5 bg-secondary/50 border-dashed border-primary/20 flex items-center justify-between group overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-fluid opacity-0 group-hover:opacity-[0.03] transition-opacity" />
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="h-12 w-12 rounded-2xl bg-white dark:bg-zinc-800 shadow-sm flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+              <DownloadSimple size={24} weight="duotone" />
             </div>
-
-            <div className="h-[200px] w-full mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyAdherence.length > 0 ? weeklyAdherence : [
-                  { day: 'Seg', percentage: 100 },
-                  { day: 'Ter', percentage: 80 },
-                  { day: 'Qua', percentage: 95 },
-                  { day: 'Qui', percentage: 100 },
-                  { day: 'Sex', percentage: 85 },
-                  { day: 'Sáb', percentage: 90 },
-                  { day: 'Dom', percentage: 100 },
-                ]}>
-                  <XAxis
-                    dataKey="day"
-                    axisLine={false}
-                    tickLine={false}
-                    fontSize={12}
-                    tick={{ fill: 'currentColor', opacity: 0.6 }}
-                  />
-                  <YAxis hide domain={[0, 100]} />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(0,0,0,0.05)', radius: 8 }}
-                    content={<PremiumTooltip title="Seu Desempenho" suffix="%" />}
-                  />
-                  <Bar dataKey="percentage" radius={[4, 4, 0, 0]} barSize={24}>
-                    {(weeklyAdherence.length > 0 ? weeklyAdherence : [
-                      { day: 'Seg', percentage: 100 },
-                      { day: 'Ter', percentage: 80 },
-                      { day: 'Qua', percentage: 95 },
-                      { day: 'Qui', percentage: 100 },
-                      { day: 'Sex', percentage: 85 },
-                      { day: 'Sáb', percentage: 90 },
-                      { day: 'Dom', percentage: 100 },
-                    ]).map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={entry.percentage >= 80 ? '#10b981' : '#f59e0b'}
-                        fillOpacity={0.8}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div>
+              <h4 className="font-bold text-foreground">Relatório Mensal</h4>
+              <p className="text-xs text-muted-foreground">PDF pronto com seu resumo de saúde</p>
             </div>
           </div>
+          
+          <button className="btn-fluid h-10 px-6 text-sm relative z-10">
+            Gerar
+          </button>
         </Card>
       </motion.div>
     </div>

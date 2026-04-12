@@ -73,7 +73,7 @@ export default function VitalsGlanceWidget({ profileId }: VitalsGlanceWidgetProp
             variants={container}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-2 gap-2 mb-4"
+            className="grid grid-cols-2 gap-2"
         >
             {/* Card 1: Heart/Pressure */}
             <motion.div variants={item}>

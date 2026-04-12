@@ -91,7 +91,7 @@ export function useCollection<T = DocumentData>(
         )
 
         return () => unsubscribe()
-    }, [collectionName, JSON.stringify(constraints)])
+    }, [collectionName, constraints ? JSON.stringify(constraints) : '[]'])
 
     return { data, loading, error }
 }
