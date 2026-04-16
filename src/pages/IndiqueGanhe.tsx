@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth, fetchDocument, fetchCollection, setDocument, orderBy } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchDocument, fetchCollection, setDocument, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,7 +11,7 @@ import { getReferralDiscountForUser, getFreeExtraSlotsForUser, generateReferralC
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
 import { useTranslation } from "@/contexts/LanguageContext";
-import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface ProfileDoc {
   referralCode?: string;
@@ -27,7 +28,7 @@ interface ReferralDoc {
 export default function IndiqueGanhe() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isPremium } = useSubscription();
   const [referralCode, setReferralCode] = useState<string>("");
   const [referrals, setReferrals] = useState<ReferralDoc[]>([]);

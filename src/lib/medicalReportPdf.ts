@@ -352,8 +352,11 @@ async function fetchReportData(): Promise<MedicalReportData> {
 
   // Fetch dose instances
   const { data: doses } = await fetchCollection<any>(
-    `users/${user.uid}/doses`,
-    [where('dueAt', '>=', thirtyDaysAgo.toISOString())]
+    "dose_instances",
+    [
+      where('userId', '==', user.uid),
+      where('dueAt', '>=', thirtyDaysAgo.toISOString())
+    ]
   );
 
   // Calculate adherence per medication
@@ -381,8 +384,9 @@ async function fetchReportData(): Promise<MedicalReportData> {
 
   // Need to fetch older doses for trend
   const { data: oldDoses } = await fetchCollection<any>(
-    `users/${user.uid}/doses`,
+    "dose_instances",
     [
+      where('userId', '==', user.uid),
       where('dueAt', '>=', sixtyDaysAgo.toISOString()),
       where('dueAt', '<', thirtyDaysAgo.toISOString())
     ]

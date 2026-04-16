@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Target, Lightning as Zap, Clock, CheckCircle as CheckCircle2, Gift, Sparkle as Sparkles, Timer } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth } from "@/integrations/firebase/client";
+import { fetchCollection, where } from "@/integrations/firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -25,6 +27,7 @@ interface Challenge {
 
 export function DailyChallenges() {
   const { language } = useLanguage();
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -49,30 +52,28 @@ export function DailyChallenges() {
   }, []);
 
   const fetchChallenges = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
+    try {
       // Get today's doses
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = safeDateParse(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
 
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", today.toISOString())
-        .lt("due_at", tomorrow.toISOString());
+      // No Firestore, filtramos diretamente por userId e intervalo de data
+      const { data: doses, error } = await fetchCollection("dose_instances", [
+        where("userId", "==", user.uid),
+        where("dueAt", ">=", today.toISOString()),
+        where("dueAt", "<", tomorrow.toISOString())
+      ]);
+
+      if (error) throw error;
 
       const takenDoses = doses?.filter(d => d.status === "taken") || [];
       const totalDoses = doses?.length || 0;
       const onTimeDoses = takenDoses.filter(d => 
-        d.delay_minutes !== null && d.delay_minutes <= 15
+        d.delayMinutes !== undefined && d.delayMinutes !== null && d.delayMinutes <= 15
       ).length;
 
       // Generate daily challenges

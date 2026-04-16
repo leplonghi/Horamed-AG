@@ -188,7 +188,14 @@ export function useTodayData(
         const weekStart = startOfDay(subDays(date, 3));
         const weekEnd = endOfDay(addDays(date, 3));
 
-        const [nameResult, dosesResult, appointmentsResult, eventsResult, weekDosesResult] = await Promise.all([
+        // ── Main Data Fetching ───────────────────────────────────────────────
+        // We use a Promise.race with a timeout to avoid hanging indefinitely
+        const TIMEOUT_MS = 6000;
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Firebase request timeout")), TIMEOUT_MS)
+        );
+
+        const fetchAll = Promise.all([
           profileId
             ? fetchDocument<Profile>(`users/${userId}/profiles`, profileId)
             : fetchDocument<{ nickname?: string; fullName?: string }>(`users`, userId),
@@ -213,7 +220,10 @@ export function useTodayData(
           ]),
         ]);
 
-        const nd = nameResult.data as { nickname?: string; fullName?: string; name?: string } | null;
+        const [nameResult, dosesResult, appointmentsResult, eventsResult, weekDosesResult] = 
+          await Promise.race([fetchAll, timeoutPromise]) as any;
+
+        const nd = nameResult?.data as { nickname?: string; fullName?: string; name?: string } | null;
         if (nd) setUserName(nd.nickname || nd.fullName || nd.name || "");
 
         const doses = dosesResult.data || [];
@@ -370,10 +380,10 @@ export function useTodayData(
     if (!authUser) return;
     try {
       const monthStart = startOfDay(
-        new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
+        safeDateParse(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
       );
       const monthEnd = endOfDay(
-        new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0)
+        safeDateParse(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0)
       );
       const paths = getUserPaths(authUser.uid);
 

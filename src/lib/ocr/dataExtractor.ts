@@ -1,3 +1,5 @@
+import { safeDateParse } from "@/lib/safeDateUtils";
+
 export interface ExtractedData {
     date?: Date;
     time?: string;
@@ -30,7 +32,7 @@ export const extractData = (text: string): ExtractedData => {
 
         // Basic validation
         if (day > 0 && day <= 31 && month >= 0 && month <= 11 && year > 2000 && year < 2100) {
-            result.date = new Date(year, month, day);
+            result.date = safeDateParse(year, month, day);
         }
     }
 

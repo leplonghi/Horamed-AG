@@ -29,11 +29,13 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { getAuth } from "firebase/auth";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, query, where, orderBy, limit as firestoreLimit } from "firebase/firestore";
 
 interface ImprovedCalendarProps {
   selectedDate: Date;
@@ -117,48 +119,62 @@ export default function ImprovedCalendar({
     return useQuery({
       queryKey: ["dose-preview", format(date, "yyyy-MM-dd"), profileId],
       queryFn: async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const auth = getAuth();
+        const user = auth.currentUser;
         if (!user) return [];
 
         const dayStart = startOfDay(date);
         const dayEnd = endOfDay(date);
 
-        // Get items for the profile
-        let itemsQuery = supabase
-          .from("items")
-          .select("id");
+        try {
+          // Get items for the profile
+          const itemsConstraints: any[] = [where("userId", "==", user.uid)];
+          if (profileId) {
+            itemsConstraints.push(where("profileId", "==", profileId));
+          }
 
-        if (profileId) {
-          itemsQuery = itemsQuery.eq("profile_id", profileId);
+          const itemsQuery = query(
+            collection(db, "items"),
+            ...itemsConstraints
+          );
+          
+          const itemsSnapshot = await getDocs(itemsQuery);
+          const itemsMap = new Map<string, string>();
+          itemsSnapshot.forEach(doc => {
+            itemsMap.set(doc.id, doc.data().name || t('common.medication'));
+          });
+
+          const itemIds = Array.from(itemsMap.keys());
+          if (itemIds.length === 0) return [];
+
+          // Get doses for the day
+          const dosesQuery = query(
+            collection(db, "doses"),
+            where("userId", "==", user.uid),
+            where("itemId", "in", itemIds),
+            where("dueAt", ">=", dayStart),
+            where("dueAt", "<=", dayEnd),
+            orderBy("dueAt", "asc"),
+            firestoreLimit(5)
+          );
+
+          const dosesSnapshot = await getDocs(dosesQuery);
+          const doses: DosePreview[] = [];
+
+          dosesSnapshot.forEach(doc => {
+            const data = doc.data();
+            doses.push({
+              time: format(safeDateParse(data.dueAt), "HH:mm"),
+              medication: itemsMap.get(data.itemId) || t('common.medication'),
+              status: data.status
+            });
+          });
+
+          return doses;
+        } catch (error) {
+          console.error("Error fetching dose preview:", error);
+          return [];
         }
-
-        const { data: profileItems } = await itemsQuery;
-        const itemIds = profileItems?.map(item => item.id) || [];
-
-        if (itemIds.length === 0) return [];
-
-        // Get doses for the day
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select(`
-            id,
-            due_at,
-            status,
-            items (name)
-          `)
-          .in("item_id", itemIds)
-          .gte("due_at", dayStart.toISOString())
-          .lte("due_at", dayEnd.toISOString())
-          .order("due_at", { ascending: true })
-          .limit(5);
-
-        if (!doses) return [];
-
-        return doses.map((dose: any) => ({
-          time: format(safeDateParse(dose.due_at), "HH:mm"),
-          medication: dose.items?.name || t('common.medication'),
-          status: dose.status
-        })) as DosePreview[];
       },
       enabled: eventCounts[format(date, "yyyy-MM-dd")] > 0,
       staleTime: 30000, // Cache for 30 seconds

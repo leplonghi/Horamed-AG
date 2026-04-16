@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import { WarningCircle as AlertCircle, CheckCircle as CheckCircle2, Clock, XCircle } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -21,21 +21,22 @@ export default function NotificationMetrics() {
 
   const loadMetrics = async () => {
     try {
-      const { data, error } = await supabase
-        .from('notification_metrics')
-        .select('notification_type, delivery_status, metadata')
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
+      const db = getFirestore();
+      const metricsQuery = query(
+        collection(db, 'notification_metrics'),
+        orderBy('createdAt', 'desc'),
+        limit(100)
+      );
+      const snapshot = await getDocs(metricsQuery);
+      const data = snapshot.docs.map(doc => doc.data());
 
       // Aggregate metrics
-      const aggregated = data?.reduce((acc, item) => {
-        const key = `${item.notification_type}-${item.delivery_status}`;
+      const aggregated = data.reduce((acc, item) => {
+        const key = `${item.notificationType}-${item.deliveryStatus}`;
         if (!acc[key]) {
           acc[key] = {
-            notification_type: item.notification_type,
-            delivery_status: item.delivery_status,
+            notification_type: item.notificationType,
+            delivery_status: item.deliveryStatus,
             count: 0
           };
         }

@@ -15,6 +15,7 @@ import { ptBR, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { cn } from "@/lib/utils";
 
 interface MedHistoryDoc {
   id: string;
@@ -55,8 +56,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
     const endDate = endOfMonth(selectedDate);
 
     const dosesPath = profileId
-      ? `users/${userId}/profiles/${profileId}/doses`
-      : `users/${userId}/doses`;
+      ? "dose_instances"
+      : "dose_instances";
 
     const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
       dosesPath,
@@ -116,8 +117,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
 
       // Determine doses path
       const dosesPath = profileId
-        ? `users/${userId}/profiles/${profileId}/doses`
-        : `users/${userId}/doses`;
+        ? "dose_instances"
+        : "dose_instances";
 
       const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
         dosesPath,
@@ -171,7 +172,7 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
   const calendarLocale = language === 'pt' ? ptBR : enUS;
 
   const content = (
-    <div className={cn(!hideLayout && "container max-w-4xl mx-auto px-4 pt-20 pb-8")}>
+    <div className={cn("space-y-6", !hideLayout && "container max-w-4xl mx-auto px-4 pt-20 pb-8")}>
       {!hideLayout && (
         <div className="mb-6">
           <Link to={id ? "/rotina" : "/medicamentos"}>

@@ -220,10 +220,10 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
       // Get upcoming doses
       const now = new Date();
-      const next48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+      const next48h = safeDateParse(now.getTime() + 48 * 60 * 60 * 1000);
 
       const userId = user.uid;
-      const dosesPath = `users/${userId}/doses`;
+      const dosesPath = "dose_instances";
 
       const { data: doses, error } = await fetchCollection<any>(dosesPath, [
         where("status", "==", "scheduled"),

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, addDocument, updateDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 
@@ -103,57 +103,56 @@ export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, o
   const handleSave = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
       let successCount = 0;
+      const userId = user.uid;
       
       for (const med of selectedMeds) {
         try {
           // Create medication item
-          const { data: item, error: itemError } = await supabase
-            .from("items")
-            .insert({
-              user_id: user.id,
-              profile_id: activeProfile?.id || null,
-              name: med.name,
-              dose_text: med.dose,
-              with_food: med.withFood,
-              category: "medicamento",
-            })
-            .select()
-            .single();
+          const { data: item, error: itemError } = await addDocument(`users/${userId}/medications`, {
+            userId,
+            profileId: activeProfile?.id || null,
+            name: med.name,
+            doseText: med.dose,
+            withFood: med.withFood,
+            category: "medicamento",
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
 
-          if (itemError) throw itemError;
+          if (itemError || !item) throw itemError || new Error("Failed to create medication");
 
           // Create schedule
-          const times = presetSchedules[med.schedulePreset].times;
-          const { error: scheduleError } = await supabase
-            .from("schedules")
-            .insert({
-              item_id: item.id,
-              freq_type: "daily",
-              times,
-            });
+          const times = presetSchedules[med.schedule_preset || med.schedulePreset].times;
+          const { error: scheduleError } = await addDocument(`users/${userId}/schedules`, {
+            itemId: item.id,
+            freqType: "daily",
+            times,
+            createdAt: new Date().toISOString()
+          });
 
           if (scheduleError) throw scheduleError;
 
           // Create stock if enabled
           if (med.enableStock && med.stockTotal) {
-            const { error: stockError } = await supabase
-              .from("stock")
-              .insert({
-                item_id: item.id,
-                units_total: parseInt(med.stockTotal),
-                units_left: parseInt(med.stockTotal),
-                created_from_prescription_id: prescriptionId,
-                last_refill_at: new Date().toISOString(),
-                consumption_history: [{
-                  date: new Date().toISOString(),
-                  amount: parseInt(med.stockTotal),
-                  reason: 'refill'
-                }],
-              });
+            const unitsTotal = parseInt(med.stockTotal);
+            const { error: stockError } = await addDocument(`users/${userId}/stock`, {
+              itemId: item.id,
+              unitsTotal,
+              unitsLeft: unitsTotal,
+              createdFromPrescriptionId: prescriptionId,
+              lastRefillAt: new Date().toISOString(),
+              consumptionHistory: [{
+                date: new Date().toISOString(),
+                amount: unitsTotal,
+                reason: 'refill'
+              }],
+              createdAt: new Date().toISOString()
+            });
 
             if (stockError) console.error("Stock error:", stockError);
           }
@@ -165,15 +164,13 @@ export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, o
       }
 
       // Mark prescription as purchased
-      await supabase
-        .from("documentos_saude")
-        .update({ 
-          meta: { 
-            ...(medications as any), 
-            is_purchased: true 
-          } 
-        })
-        .eq("id", prescriptionId);
+      await updateDocument(`users/${userId}/healthDocuments`, prescriptionId, { 
+        meta: { 
+          ...(medications as any), 
+          isPurchased: true 
+        },
+        updatedAt: new Date().toISOString()
+      });
 
       toast.success(`✓ ${successCount} ${successCount === 1 ? 'medicamento adicionado' : 'medicamentos adicionados'}!`);
       onClose();

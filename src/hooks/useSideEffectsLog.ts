@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useAuth, fetchCollection, setDocument, updateDocument, deleteDocument, where, orderBy, fetchDocument } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, setDocument, updateDocument, deleteDocument, where, orderBy, fetchDocument } from '@/integrations/firebase';
 import type { QueryConstraint } from 'firebase/firestore';
 
 export interface SideEffectLog {

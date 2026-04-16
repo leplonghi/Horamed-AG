@@ -1,49 +1,51 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, addDocument, updateDocument, deleteDocument, where, orderBy } from "@/integrations/firebase";
 import { toast } from "sonner";
 
 export interface VaccinationRecord {
   id: string;
-  user_id: string;
-  profile_id?: string;
-  document_id?: string;
-  vaccine_name: string;
-  vaccine_type?: 'adulto' | 'infantil';
-  disease_prevention?: string;
-  dose_number?: number;
-  dose_description?: string;
-  application_date: string;
-  next_dose_date?: string;
-  vaccination_location?: string;
-  vaccinator_name?: string;
-  vaccinator_registration?: string;
-  batch_number?: string;
+  userId: string;
+  profileId?: string;
+  documentId?: string;
+  vaccineName: string;
+  vaccineType?: 'adulto' | 'infantil';
+  diseasePrevention?: string;
+  doseNumber?: number;
+  doseDescription?: string;
+  applicationDate: string;
+  nextDoseDate?: string;
+  vaccinationLocation?: string;
+  vaccinatorName?: string;
+  vaccinatorRegistration?: string;
+  batchNumber?: string;
   manufacturer?: string;
-  expiry_date?: string;
+  expiryDate?: string;
   notes?: string;
-  adverse_reactions?: string;
-  sus_card_number?: string;
-  official_source?: string;
-  created_at: string;
-  updated_at: string;
+  adverseReactions?: string;
+  susCardNumber?: string;
+  officialSource?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function useVaccinationRecords(profileId?: string) {
   return useQuery({
     queryKey: ["vaccination-records", profileId],
     queryFn: async () => {
-      let query = supabase
-        .from("vaccination_records")
-        .select("*")
-        .order("application_date", { ascending: false });
+      const user = auth.currentUser;
+      if (!user) throw new Error("No user");
 
+      const constraints = [orderBy("applicationDate", "desc")];
       if (profileId) {
-        query = query.eq("profile_id", profileId);
+        constraints.push(where("profileId", "==", profileId));
       }
 
-      const { data, error } = await query;
+      const { data, error } = await fetchCollection<VaccinationRecord>(
+        `users/${user.uid}/vaccination_records`,
+        constraints
+      );
       if (error) throw error;
-      return (data as unknown) as VaccinationRecord[];
+      return data;
     },
   });
 }
@@ -52,19 +54,23 @@ export function useVaccinationRecordsByType(vaccineType: 'adulto' | 'infantil', 
   return useQuery({
     queryKey: ["vaccination-records", vaccineType, profileId],
     queryFn: async () => {
-      let query = supabase
-        .from("vaccination_records")
-        .select("*")
-        .eq("vaccine_type", vaccineType)
-        .order("application_date", { ascending: false });
+      const user = auth.currentUser;
+      if (!user) throw new Error("No user");
 
+      const constraints = [
+        where("vaccineType", "==", vaccineType),
+        orderBy("applicationDate", "desc")
+      ];
       if (profileId) {
-        query = query.eq("profile_id", profileId);
+        constraints.push(where("profileId", "==", profileId));
       }
 
-      const { data, error } = await query;
+      const { data, error } = await fetchCollection<VaccinationRecord>(
+        `users/${user.uid}/vaccination_records`,
+        constraints
+      );
       if (error) throw error;
-      return (data as unknown) as VaccinationRecord[];
+      return data;
     },
   });
 }
@@ -74,14 +80,13 @@ export function useCreateVaccinationRecord() {
 
   return useMutation({
     mutationFn: async (record: Partial<VaccinationRecord>) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { data, error } = await supabase
-        .from("vaccination_records")
-        .insert({ ...record, user_id: user.id } as Omit<VaccinationRecord, 'id' | 'created_at' | 'updated_at'>)
-        .select()
-        .single();
+      const { data, error } = await addDocument<VaccinationRecord>(
+        `users/${user.uid}/vaccination_records`,
+        { ...record, userId: user.uid }
+      );
 
       if (error) throw error;
       return data;
@@ -102,15 +107,17 @@ export function useUpdateVaccinationRecord() {
 
   return useMutation({
     mutationFn: async ({ id, ...record }: Partial<VaccinationRecord> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("vaccination_records")
-        .update(record)
-        .eq("id", id)
-        .select()
-        .single();
+      const user = auth.currentUser;
+      if (!user) throw new Error("No user");
+
+      const { error } = await updateDocument(
+        `users/${user.uid}/vaccination_records`,
+        id,
+        record
+      );
 
       if (error) throw error;
-      return data;
+      return { id, ...record };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vaccination-records"] });
@@ -128,10 +135,13 @@ export function useDeleteVaccinationRecord() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("vaccination_records")
-        .delete()
-        .eq("id", id);
+      const user = auth.currentUser;
+      if (!user) throw new Error("No user");
+
+      const { error } = await deleteDocument(
+        `users/${user.uid}/vaccination_records`,
+        id
+      );
 
       if (error) throw error;
     },

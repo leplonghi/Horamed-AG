@@ -133,6 +133,7 @@ export default function CarteiraVacina() {
         </div>
 
         {/* Manual Form */}
+        {showManualForm && (
           <div className="mb-6">
             <VaccineManualForm
               profileId={activeProfile?.id}
@@ -140,6 +141,7 @@ export default function CarteiraVacina() {
               onClose={() => setShowManualForm(false)}
             />
           </div>
+        )}
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'adulto' | 'infantil')}>

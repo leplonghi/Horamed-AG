@@ -55,7 +55,12 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
           }
         }
       } catch (err) {
-        console.error('Error detecting country:', err);
+        // Only log error if it's not a common fetch failure (like blocked by adblock or no internet)
+        if (!(err instanceof TypeError && err.message === 'Failed to fetch')) {
+          console.error('Error detecting country:', err);
+        } else {
+          console.log('ℹ️ Could not detect country automatically (blocked or offline). Using default (BR).');
+        }
       }
     };
     fetchCountry();

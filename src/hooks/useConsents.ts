@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { auth, fetchCollection, setDocument } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
+import { fetchCollection, setDocument } from "@/integrations/firebase";
 import { useToast } from "@/hooks/use-toast";
 
 export type ConsentPurpose = "health_data" | "notifications" | "data_sharing" | "marketing" | "analytics";

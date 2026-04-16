@@ -6,9 +6,10 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { motion } from "framer-motion";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dose, safeParseDoseDate } from "@/types";
+import { useDeviceCapability } from "@/hooks/useDeviceCapability";
 
 interface HeroNextDoseProps {
   dose?: Dose | null;
@@ -27,6 +28,7 @@ interface HeroNextDoseProps {
 function NewUserEmptyState({ language }: { language: string }) {
   const navigate = useNavigate();
   const isPt = language === 'pt';
+  const { shouldReduceEffects } = useDeviceCapability();
 
   const steps = isPt
     ? ['Monte sua rotina', 'Configure o horário', 'Receba lembretes']
@@ -34,20 +36,27 @@ function NewUserEmptyState({ language }: { language: string }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
+      initial={{ opacity: 0, scale: shouldReduceEffects ? 1 : 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      transition={{ duration: shouldReduceEffects ? 0 : 0.5, ease: 'easeOut' }}
     >
-      <Card className="overflow-hidden border border-blue-500/20 bg-gradient-to-br from-blue-500/5 via-blue-400/5 to-background shadow-[var(--shadow-glass)] relative">
+      <Card className={cn(
+        "overflow-hidden border border-blue-500/20 shadow-[var(--shadow-glass)] relative",
+        shouldReduceEffects ? "bg-card" : "bg-gradient-to-br from-blue-500/5 via-blue-400/5 to-background"
+      )}>
         {/* Animated Background Blobs */}
-        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl p-6" />
-        <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl p-6" />
+        {!shouldReduceEffects && (
+          <>
+            <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl p-6" />
+            <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl p-6" />
+          </>
+        )}
 
         <div className="p-5 flex flex-col items-center text-center gap-4 relative z-10">
           {/* Icon */}
           <motion.div
             className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25"
-            animate={{
+            animate={shouldReduceEffects ? {} : {
               scale: [1, 1.05, 1],
               rotate: [0, 2, -2, 0]
             }}
@@ -85,9 +94,9 @@ function NewUserEmptyState({ language }: { language: string }) {
                     <motion.div
                       key={i}
                       className="flex-1 flex flex-col items-center gap-2"
-                      initial={{ opacity: 0, y: 8 }}
+                      initial={{ opacity: 0, y: shouldReduceEffects ? 0 : 8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.15 + i * 0.12 }}
+                      transition={{ delay: shouldReduceEffects ? 0 : 0.15 + i * 0.12 }}
                     >
                       <div className={`h-10 w-10 rounded-xl bg-gradient-to-br ${stepColors[i]} flex items-center justify-center shadow-md shadow-blue-500/10`}>
                         <Icon className="h-5 w-5 text-white" weight="duotone" />
@@ -115,12 +124,64 @@ function NewUserEmptyState({ language }: { language: string }) {
   );
 }
 
+// ─── Countdown Timer Hook ────────────────────────────────────────
+function useCountdown(targetDate: Date | null): string | null {
+  const [display, setDisplay] = useState<string | null>(null);
+  const intervalRef = useState<ReturnType<typeof setInterval> | null>(null)[1];
+
+  useEffect(() => {
+    if (!targetDate) {
+      setDisplay(null);
+      return;
+    }
+
+    const update = () => {
+      const diff = targetDate.getTime() - Date.now();
+      if (diff <= 0) {
+        setDisplay(null);
+        return;
+      }
+      const totalMinutes = Math.floor(diff / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const seconds = Math.floor((diff % 60000) / 1000);
+
+      if (hours > 0) {
+        setDisplay(`${hours}h ${minutes}m`);
+      } else if (totalMinutes > 0) {
+        setDisplay(`${minutes}m ${seconds}s`);
+      } else {
+        setDisplay(`${seconds}s`);
+      }
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [targetDate]);
+
+  return display;
+}
+
 function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToday, hasMedications = true }: HeroNextDoseProps) {
 
   const { language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [optimisticTaken, setOptimisticTaken] = useState(false);
+  const { shouldReduceEffects } = useDeviceCapability();
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Real-time ticking every minute to update the Hero state
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000 * 60); // Check every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const handleTake = useCallback(async () => {
     if (!dose || isSubmitting || optimisticTaken) return;
@@ -144,20 +205,27 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
     onSnooze(dose.id, dose.items?.name || "Medicamento");
   }, [dose, onSnooze, isSubmitting]);
 
+  // Countdown timer — shows live time remaining until dose
+  const doseDate = dose ? safeParseDoseDate(dose) : null;
+  const countdown = useCountdown(shouldReduceEffects ? null : doseDate);
+
   // Show success state immediately after optimistic update - REFORÇO POSITIVO
   if (optimisticTaken) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0, scale: shouldReduceEffects ? 1 : 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: shouldReduceEffects ? 0 : 0.4 }}
       >
-        <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/30 backdrop-blur-xl shadow-[var(--shadow-glass)] flex flex-col items-center text-center gap-3">
+        <Card className={cn(
+          "p-6 border-blue-500/30 backdrop-blur-xl shadow-[var(--shadow-glass)] flex flex-col items-center text-center gap-3",
+          shouldReduceEffects ? "bg-card" : "bg-gradient-to-br from-blue-500/10 to-blue-600/5"
+        )}>
           <motion.div
             className="h-16 w-16 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30"
-            initial={{ scale: 0 }}
+            initial={shouldReduceEffects ? { scale: 1 } : { scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            transition={shouldReduceEffects ? undefined : { type: "spring", stiffness: 260, damping: 20 }}
           >
             <Check className="h-8 w-8 text-white" weight="bold" />
           </motion.div>
@@ -241,7 +309,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
     }
 
     const now = new Date();
-    const minutesUntil = Math.round((dueTime.getTime() - now.getTime()) / (1000 * 60));
+    const minutesUntil = Math.round((dueTime.getTime() - currentTime.getTime()) / (1000 * 60));
     const isNow = minutesUntil <= 15 && minutesUntil >= -30;
     const isOverdue = minutesUntil < -5;
     // Card is "calm" (compact) when dose is more than 60min away and not overdue
@@ -251,9 +319,9 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
     if (isCalm) {
       return (
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: shouldReduceEffects ? 0 : 6 }}
           animate={{ opacity: 1, y: 0 }}
-          layout
+          layout={!shouldReduceEffects}
         >
           <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-blue-500/8 border border-blue-500/15 backdrop-blur-sm">
             <div className="h-8 w-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
@@ -282,17 +350,19 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
     // ─── FULL HERO CARD: urgent or overdue ────────────────────────────────────
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
+        initial={{ opacity: 0, y: shouldReduceEffects ? 0 : 8 }}
         animate={{ opacity: 1, y: 0 }}
-        layout
+        layout={!shouldReduceEffects}
       >
         <Card className={cn(
           "p-4 transition-all backdrop-blur-xl shadow-[var(--shadow-glass)] relative overflow-hidden",
-          isOverdue
+          shouldReduceEffects ? "bg-card border-blue-500/50" : (isOverdue
             ? "bg-gradient-to-br from-blue-600/20 to-blue-400/10 border-blue-500 ring-1 ring-blue-500/30"
-            : "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500 ring-1 ring-blue-500/30 shadow-glow"
+            : "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-500 ring-1 ring-blue-500/30 shadow-glow")
         )}>
-          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" />
+          {!shouldReduceEffects && (
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-blue-500/5 to-transparent -translate-x-full animate-[shimmer_3s_infinite]" />
+          )}
 
           <div className="space-y-3 relative z-10">
             <div className="flex items-center justify-between">
@@ -332,6 +402,18 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
                   {dose.items?.dose_text}
                 </p>
               )}
+              {countdown && (
+                <motion.span
+                  key={countdown}
+                  initial={{ opacity: 0.6 }}
+                  animate={{ opacity: 1 }}
+                  className="inline-block text-xs font-mono text-blue-500/70 tabular-nums mt-2"
+                  aria-live="off"
+                  aria-label="tempo restante"
+                >
+                  em {countdown}
+                </motion.span>
+              )}
             </div>
 
             <div className="space-y-2.5">
@@ -345,25 +427,31 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
                   "shadow-[0_0_20px_rgba(59,130,246,0.3)]"
                 )}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1s_infinite]" />
-                <div className="flex items-center gap-2">
-                  <Check className="h-6 w-6" weight="bold" />
-                  <span>{language === 'pt' ? 'Tomei agora' : 'I took it'}</span>
-                </div>
+                <span className="relative z-10 flex items-center justify-center gap-2 group-hover:scale-105 transition-transform duration-300">
+                  <Check className="w-5 h-5" weight="bold" />
+                  {language === 'pt' ? 'TOMAR AGORA' : 'TAKE NOW'}
+                </span>
               </Button>
 
-              {onSnooze && (
+              <div className="flex gap-2">
                 <Button
-                  variant="ghost"
                   size="sm"
+                  variant="outline"
                   onClick={handleSnooze}
                   disabled={isSubmitting}
-                  className="w-full h-9 text-xs font-semibold rounded-lg text-muted-foreground hover:text-blue-600 hover:bg-blue-500/5 transition-all"
+                  className="flex-1 h-11 text-xs font-bold rounded-xl border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-blue-600 transition-all"
                 >
-                  <Clock className="h-3.5 w-3.5 mr-1.5" />
-                  {language === 'pt' ? 'Lembrar depois (+15 min)' : 'Remind me later (+15 min)'}
+                  {language === 'pt' ? 'Adiar' : 'Snooze'}
                 </Button>
-              )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => onMore && onMore(dose)}
+                  className="h-11 px-4 text-xs font-bold rounded-xl text-muted-foreground hover:bg-slate-100/50"
+                >
+                  {language === 'pt' ? 'Detalhes' : 'Details'}
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -374,5 +462,4 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
   return null;
 }
 
-// Memoizado para evitar re-render desnecessário
 export default memo(HeroNextDose);

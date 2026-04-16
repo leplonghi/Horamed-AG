@@ -24,7 +24,8 @@ import {
     IconMapPin,
     IconHeartPulse,
     IconCheck,
-    IconClose
+    IconClose,
+    IconStar
 } from "@/components/icons/HoramedIcons";
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';

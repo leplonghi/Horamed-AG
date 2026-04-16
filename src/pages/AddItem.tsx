@@ -361,7 +361,7 @@ export default function AddItem() {
   const calculateEndDate = (): string | null => {
     if (!formData.treatment_start_date || !formData.treatment_duration_days) return null;
     const startDate = safeDateParse(formData.treatment_start_date);
-    const endDate = new Date(safeGetTime(startDate) + formData.treatment_duration_days * 24 * 60 * 60 * 1000);
+    const endDate = safeDateParse(safeGetTime(startDate) + formData.treatment_duration_days * 24 * 60 * 60 * 1000);
     return endDate.toISOString().split('T')[0];
   };
 
@@ -416,7 +416,7 @@ export default function AddItem() {
 
     try {
       const treatmentEndDate = formData.treatment_start_date && formData.treatment_duration_days
-        ? new Date(safeDateParse(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        ? safeDateParse(safeDateParse(formData.treatment_start_date).getTime() + formData.treatment_duration_days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         : null;
 
       const medData = {
@@ -452,13 +452,13 @@ export default function AddItem() {
         }
         // 2. Fetch future doses and delete
         // For simplicity, we might delete all scheduled doses for this item
-        const { data: oldDoses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        const { data: oldDoses } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
           where('itemId', '==', isEditing),
           where('status', '==', 'scheduled') // Keep history of taken?
         ]);
         if (oldDoses) {
           for (const d of oldDoses) {
-            await deleteDocument(`users/${user.uid}/doses`, d.id);
+            await deleteDocument("dose_instances", d.id);
           }
         }
 
@@ -505,6 +505,7 @@ export default function AddItem() {
                 scheduleId: newScheduleId,
                 itemId: itemId,
                 userId: user.uid,
+                profileId: activeProfile?.id || null,
                 dueAt: dueAt.toISOString(),
                 status: "scheduled",
                 createdAt: new Date().toISOString()
@@ -517,7 +518,7 @@ export default function AddItem() {
           // Batch insert not supported by helper, loop addDocument
           // Parallelize?
           await Promise.all(doseInstances.map(dose => 
-            addDocument(`users/${user.uid}/doses`, dose).then(({ data }) => {
+            addDocument("dose_instances", dose).then(({ data }) => {
                 if (data && data.id) {
                     scheduledDoses.push({
                         id: data.id,

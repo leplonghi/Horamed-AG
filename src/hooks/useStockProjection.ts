@@ -99,8 +99,8 @@ export function useStockProjection(profileId?: string) {
       // Fetch doses for adherence calculations
       const sevenDaysAgo = subDays(new Date(), 7);
       const { data: doses } = await fetchCollection<DoseDoc>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where('dueAt', '>=', sevenDaysAgo.toISOString()),
           where('itemId', 'in', itemIds)
         ]

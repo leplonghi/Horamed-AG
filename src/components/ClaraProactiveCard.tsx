@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth } from "@/integrations/firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCollection, orderBy, limit } from "@/integrations/firebase";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -233,6 +233,8 @@ function ClaraProactiveCard({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
+      layout
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className={cn("relative", className)}
     >
       <Card
@@ -269,9 +271,14 @@ function ClaraProactiveCard({
             </p>
 
             {currentInsight.subtext && (
-              <p className="text-xs opacity-80 mt-0.5 leading-tight">
+              <motion.p
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 0.8, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-xs mt-0.5 leading-tight overflow-hidden"
+              >
                 {currentInsight.subtext}
-              </p>
+              </motion.p>
             )}
           </div>
 

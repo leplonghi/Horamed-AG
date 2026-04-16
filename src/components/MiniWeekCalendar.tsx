@@ -5,9 +5,11 @@ import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, isBefore, s
 import { ptBR, enUS } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { getAuth } from "firebase/auth";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface MiniWeekCalendarProps {
   selectedDate: Date;
@@ -39,13 +41,19 @@ export default function MiniWeekCalendar({
     const loadDoseCounts = async () => {
       setLoading(true);
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const auth = getAuth();
+        const user = auth.currentUser;
         if (!user) return;
 
-        let itemsQuery = supabase.from("items").select("id");
-        if (activeProfile) itemsQuery = itemsQuery.eq("profile_id", activeProfile.id);
-        const { data: items } = await itemsQuery;
-        const itemIds = items?.map(i => i.id) || [];
+        const itemsConstraints: any[] = [where("userId", "==", user.uid)];
+        if (activeProfile) itemsConstraints.push(where("profileId", "==", activeProfile.id));
+
+        const itemsQuery = query(
+          collection(db, "items"),
+          ...itemsConstraints
+        );
+        const itemsSnapshot = await getDocs(itemsQuery);
+        const itemIds = itemsSnapshot.docs.map(doc => doc.id);
 
         if (itemIds.length === 0) {
           setDoseCounts({});
@@ -53,16 +61,20 @@ export default function MiniWeekCalendar({
         }
 
         const weekEnd = addDays(weekStart, 7);
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select("due_at, status")
-          .in("item_id", itemIds)
-          .gte("due_at", weekStart.toISOString())
-          .lt("due_at", weekEnd.toISOString());
+        const dosesQuery = query(
+          collection(db, "doses"),
+          where("userId", "==", user.uid),
+          where("itemId", "in", itemIds),
+          where("dueAt", ">=", weekStart),
+          where("dueAt", "<", weekEnd)
+        );
 
+        const dosesSnapshot = await getDocs(dosesQuery);
         const counts: Record<string, { total: number; completed: number }> = {};
-        (doses || []).forEach((dose: { due_at: string; status: string }) => {
-          const key = format(safeDateParse(dose.due_at), "yyyy-MM-dd");
+        
+        dosesSnapshot.forEach((doc) => {
+          const dose = doc.data();
+          const key = format(safeDateParse(dose.dueAt), "yyyy-MM-dd");
           if (!counts[key]) counts[key] = { total: 0, completed: 0 };
           counts[key].total++;
           if (dose.status === "taken") counts[key].completed++;

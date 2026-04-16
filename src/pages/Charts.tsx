@@ -128,7 +128,7 @@ export default function Charts() {
       }
 
       const { data: doses } = await fetchCollection<any>(
-        `users/${user.uid}/doses`,
+        "dose_instances",
         filters
       );
 

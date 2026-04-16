@@ -99,8 +99,8 @@ export default function MyDoses() {
 
       // 1. Fetch Doses
       const { data: dosesData } = await fetchCollection<DoseDoc>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where("dueAt", ">=", startDate.toISOString()),
           where("dueAt", "<=", endDate.toISOString()),
           orderBy("dueAt", "asc")
@@ -159,7 +159,7 @@ export default function MyDoses() {
       const takenTime = new Date();
 
       // Update Dose Status
-      await updateDocument(`users/${user.uid}/doses`, dose.id, {
+      await updateDocument("dose_instances", dose.id, {
         status: 'taken',
         takenAt: takenTime.toISOString()
       });
@@ -214,7 +214,7 @@ export default function MyDoses() {
     try {
       if (action === 'custom-time') {
         const customTakenAt = new Date().toISOString();
-        await updateDocument(`users/${user.uid}/doses`, selectedDose.id, {
+        await updateDocument("dose_instances", selectedDose.id, {
           status: 'taken',
           takenAt: customTakenAt
         });
@@ -230,7 +230,7 @@ export default function MyDoses() {
         ...(action === 'taken' && { takenAt: new Date().toISOString() }),
       };
 
-      await updateDocument(`users/${user.uid}/doses`, selectedDose.id, updateData);
+      await updateDocument("dose_instances", selectedDose.id, updateData);
 
       // Decrement stock if taken
       if (action === 'taken' && selectedDose.stock && selectedDose.stock.length > 0) {

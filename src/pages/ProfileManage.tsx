@@ -20,6 +20,7 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export default function ProfileManage() {
     const navigate = useNavigate();
@@ -114,7 +115,7 @@ export default function ProfileManage() {
                                         </div>
                                         {profile.birthDate && (
                                             <p className="text-sm text-muted-foreground">
-                                                {new Date(profile.birthDate).toLocaleDateString()}
+                                                {safeDateParse(profile.birthDate).toLocaleDateString()}
                                             </p>
                                         )}
                                     </div>

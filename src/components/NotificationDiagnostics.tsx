@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { getAuth } from "firebase/auth";
+import { getFirestore, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
@@ -38,7 +39,8 @@ export function NotificationDiagnostics() {
       });
 
       // 2. Check user authentication
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (user) {
         results.push({
           name: t('notifDiag.auth'),
@@ -98,18 +100,20 @@ export function NotificationDiagnostics() {
       }
 
       // 4. Check push token in database
-      const { data: preferences } = await supabase
-        .from("notification_preferences")
-        .select("push_token, push_enabled, email_enabled")
-        .eq("user_id", user.id)
-        .single();
+      const db = getFirestore();
+      const prefQuery = query(
+        collection(db, "notification_preferences"),
+        where("userId", "==", user.uid)
+      );
+      const prefSnapshot = await getDocs(prefQuery);
+      const preferences = prefSnapshot.docs[0]?.data();
 
-      if (preferences?.push_token) {
-        setPushToken(preferences.push_token);
+      if (preferences?.pushToken) {
+        setPushToken(preferences.pushToken);
         results.push({
           name: t('notifDiag.tokenInDb'),
           status: "success",
-          message: `${t('notifDiag.tokenSaved')} (${preferences.push_token.substring(0, 15)}...)`
+          message: `${t('notifDiag.tokenSaved')} (${preferences.pushToken.substring(0, 15)}...)`
         });
       } else {
         results.push({
@@ -121,45 +125,49 @@ export function NotificationDiagnostics() {
 
       results.push({
         name: t('notifDiag.pushEnabled'),
-        status: preferences?.push_enabled ? "success" : "warning",
-        message: preferences?.push_enabled ? `${t('common.yes')} ✓` : t('notifDiag.activeInSettings')
+        status: preferences?.pushEnabled ? "success" : "warning",
+        message: preferences?.pushEnabled ? `${t('common.yes')} ✓` : t('notifDiag.activeInSettings')
       });
 
       results.push({
         name: t('notifDiag.emailEnabled'),
-        status: preferences?.email_enabled ? "success" : "warning",
-        message: preferences?.email_enabled ? `${t('common.yes')} ✓` : t('common.no')
+        status: preferences?.emailEnabled ? "success" : "warning",
+        message: preferences?.emailEnabled ? `${t('common.yes')} ✓` : t('common.no')
       });
 
       // 5. Check scheduled notifications in database
-      const { data: scheduled, count } = await supabase
-        .from("notification_logs")
-        .select("*", { count: "exact" })
-        .eq("user_id", user.id)
-        .eq("delivery_status", "scheduled")
-        .limit(5);
+      const scheduledQuery = query(
+        collection(db, "notification_logs"),
+        where("userId", "==", user.uid),
+        where("deliveryStatus", "==", "scheduled"),
+        limit(5)
+      );
+      const scheduledSnapshot = await getDocs(scheduledQuery);
+      const count = scheduledSnapshot.size;
 
       results.push({
         name: t('notifDiag.scheduledNotifs'),
-        status: (count || 0) > 0 ? "success" : "warning",
-        message: `${count || 0} ${t('notifDiag.pendingNotifs')}`
+        status: count > 0 ? "success" : "warning",
+        message: `${count} ${t('notifDiag.pendingNotifs')}`
       });
 
       // 6. Check recent notifications
-      const { data: recent } = await supabase
-        .from("notification_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(3);
+      const recentQuery = query(
+        collection(db, "notification_logs"),
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc"),
+        limit(3)
+      );
+      const recentSnapshot = await getDocs(recentQuery);
+      const recent = recentSnapshot.docs.map(doc => doc.data());
 
       if (recent && recent.length > 0) {
         const lastNotif = recent[0];
         results.push({
           name: t('notifDiag.lastNotif'),
-          status: lastNotif.delivery_status === "delivered" ? "success" : 
-                  lastNotif.delivery_status === "failed" ? "error" : "warning",
-          message: `${lastNotif.delivery_status} - ${safeDateParse(lastNotif.created_at).toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US')}`
+          status: lastNotif.deliveryStatus === "delivered" ? "success" :
+                  lastNotif.deliveryStatus === "failed" ? "error" : "warning",
+          message: `${lastNotif.deliveryStatus} - ${safeDateParse(lastNotif.createdAt).toLocaleString(language === 'pt' ? 'pt-BR' : 'en-US')}`
         });
       } else {
         results.push({

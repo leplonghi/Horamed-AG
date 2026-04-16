@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
 import { canUserActivateAnotherItem } from "@/lib/referrals";
 
 export function useItemLimits() {

@@ -4,7 +4,8 @@ import { Button } from "./ui/button";
 import { Heart, X, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useAuth, fetchDocument, updateDocument, setDocument } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchDocument, updateDocument, setDocument } from "@/integrations/firebase";
 
 interface ImprovedClaraButtonProps {
   onClick: () => void;

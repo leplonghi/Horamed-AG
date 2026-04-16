@@ -80,34 +80,7 @@
   <meta name="twitter:creator" content="@HoraMed" />
   <meta name="twitter:image" content="https://app.horamed.net/og-image.png" />
 
-
-
-
-
-
-  <!-- Inline critical CSS for splash screen -->
-  <style>
-    /* Prevent flash of unstyled content */
-    html {
-      background-color: #f8f9fb;
-    }
-
-    .dark html,
-    html.dark {
-      background-color: #0d0f12;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      html:not(.light) {
-        background-color: #0d0f12;
-      }
-    }
-
-    /* Ensure root always has minimum height and visible content */
-    #root {
-      min-height: 100vh;
-    }
-  </style>
+  <!-- Critical CSS moved to src/critical.css to avoid PWA plugin processing issues -->
   <meta property="og:title" content="HoraMed - Gestão Completa da Sua Saúde" />
   <meta name="twitter:title" content="HoraMed - Gestão Completa da Sua Saúde" />
   <meta property="og:description"

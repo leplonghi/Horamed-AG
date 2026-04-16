@@ -27,7 +27,7 @@ import {
   IconPlans
 } from "@/components/icons/HoramedIcons";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { auth } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
 import { functions } from "@/integrations/firebase/client";
 import { httpsCallable } from "firebase/functions";
 import { getReferralDiscountForUser } from "@/lib/referrals";

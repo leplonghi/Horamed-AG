@@ -302,6 +302,23 @@ export async function fetchCollectionGroup<T = DocumentData>(
 }
 
 /**
+ * Fetch a collection count (one-time read)
+ */
+export async function fetchCount(
+    collectionName: string,
+    constraints: QueryConstraint[] = []
+): Promise<{ count: number; error: Error | null }> {
+    try {
+        const { getCountFromServer } = await import('firebase/firestore')
+        const q = query(collection(db, collectionName), ...constraints)
+        const snapshot = await getCountFromServer(q)
+        return { count: snapshot.data().count, error: null }
+    } catch (error: any) {
+        return { count: 0, error }
+    }
+}
+
+/**
  * Helper to convert Firestore Timestamp to Date
  */
 export function timestampToDate(timestamp: Timestamp | null): Date | null {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useAuth, updateDocument } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { updateDocument } from "@/integrations/firebase";
 import { storage } from "@/integrations/firebase/client";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

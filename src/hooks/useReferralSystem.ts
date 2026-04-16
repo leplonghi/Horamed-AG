@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth, fetchCollection, fetchDocument, updateDocument, setDocument, orderBy, where } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, fetchDocument, updateDocument, setDocument, orderBy, where } from '@/integrations/firebase';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useRewardHistory } from '@/hooks/useRewardHistory';
 import { generateReferralCode } from '@/lib/referrals';

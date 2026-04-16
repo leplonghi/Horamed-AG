@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { fetchCollection, orderBy } from "@/integrations/firebase";
-import { useAuth } from "@/integrations/firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Header from "@/components/Header";
 import PageHeader from "@/components/PageHeader";
@@ -115,7 +115,7 @@ export default function WeightHistory() {
 
   // Calculate days since last log for frequency guidance
   const daysSinceLastLog = weightLogs && weightLogs.length > 0
-    ? differenceInDays(new Date(), new Date(weightLogs[0].recordedAt))
+    ? differenceInDays(new Date(), safeDateParse(weightLogs[0].recordedAt))
     : null;
 
   const showFrequencyReminder = daysSinceLastLog !== null && daysSinceLastLog > 7;

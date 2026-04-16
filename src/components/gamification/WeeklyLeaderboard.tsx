@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Crown, TrendUp as TrendingUp, Users } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { getAuth } from "firebase/auth";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LeaderboardEntry {
@@ -37,8 +37,12 @@ export function WeeklyLeaderboard() {
 
   const fetchLeaderboard = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       // For privacy, we simulate anonymous leaderboard data
       // In production, this would use anonymized aggregated data
@@ -46,7 +50,7 @@ export function WeeklyLeaderboard() {
         { rank: 1, userId: "1", nickname: "HealthHero", avatarUrl: null, weeklyXP: 850, streak: 42, isCurrentUser: false },
         { rank: 2, userId: "2", nickname: "MedMaster", avatarUrl: null, weeklyXP: 720, streak: 28, isCurrentUser: false },
         { rank: 3, userId: "3", nickname: "WellnessWin", avatarUrl: null, weeklyXP: 680, streak: 21, isCurrentUser: false },
-        { rank: 4, userId: user.id, nickname: t.you, avatarUrl: null, weeklyXP: 450, streak: 7, isCurrentUser: true },
+        { rank: 4, userId: user.uid, nickname: t.you, avatarUrl: null, weeklyXP: 450, streak: 7, isCurrentUser: true },
         { rank: 5, userId: "5", nickname: "CareChamp", avatarUrl: null, weeklyXP: 420, streak: 14, isCurrentUser: false },
       ];
 

@@ -17,7 +17,7 @@ interface VaccineCardProps {
 export default function VaccineCard({ record, onEdit, onDelete }: VaccineCardProps) {
   const { t, language } = useLanguage();
   const dateLocale = language === 'pt' ? ptBR : enUS;
-  const isAdult = record.vaccine_type === 'adulto';
+  const isAdult = record.vaccineType === 'adulto';
   
   return (
     <Card className={`${isAdult ? 'border-l-4 border-l-blue-500' : 'border-l-4 border-l-pink-500'} hover:shadow-md transition-shadow`}>
@@ -26,11 +26,11 @@ export default function VaccineCard({ record, onEdit, onDelete }: VaccineCardPro
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <Syringe className={`h-4 w-4 ${isAdult ? 'text-blue-600' : 'text-pink-600'}`} />
-              <h3 className="font-semibold text-lg">{record.vaccine_name}</h3>
+              <h3 className="font-semibold text-lg">{record.vaccineName}</h3>
             </div>
-            {record.disease_prevention && (
+            {record.diseasePrevention && (
               <p className="text-sm text-muted-foreground">
-                {t('vaccines.prevents')}: {record.disease_prevention}
+                {t('vaccines.prevents')}: {record.diseasePrevention}
               </p>
             )}
           </div>
@@ -39,42 +39,42 @@ export default function VaccineCard({ record, onEdit, onDelete }: VaccineCardPro
           </Badge>
         </div>
 
-        {record.dose_description && (
+        {record.doseDescription && (
           <div className="mb-3">
-            <Badge variant="outline">{record.dose_description}</Badge>
+            <Badge variant="outline">{record.doseDescription}</Badge>
           </div>
         )}
 
         <div className="space-y-2 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{t('vaccines.appliedOn')}: {format(safeDateParse(record.application_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
+            <span>{t('vaccines.appliedOn')}: {format(safeDateParse(record.applicationDate), "dd/MM/yyyy", { locale: dateLocale })}</span>
           </div>
 
-          {record.next_dose_date && (
+          {record.nextDoseDate && (
             <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
               <Calendar className="h-4 w-4" />
-              <span>{t('vaccines.nextDose')}: {format(safeDateParse(record.next_dose_date), "dd/MM/yyyy", { locale: dateLocale })}</span>
+              <span>{t('vaccines.nextDose')}: {format(safeDateParse(record.nextDoseDate), "dd/MM/yyyy", { locale: dateLocale })}</span>
             </div>
           )}
 
-          {record.vaccination_location && (
+          {record.vaccinationLocation && (
             <div className="flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>{record.vaccination_location}</span>
+              <span>{record.vaccinationLocation}</span>
             </div>
           )}
 
-          {record.vaccinator_name && (
+          {record.vaccinatorName && (
             <div className="text-muted-foreground">
-              <span className="font-medium">{t('vaccines.vaccinator')}:</span> {record.vaccinator_name}
+              <span className="font-medium">{t('vaccines.vaccinator')}:</span> {record.vaccinatorName}
             </div>
           )}
 
-          {(record.batch_number || record.manufacturer) && (
+          {(record.batchNumber || record.manufacturer) && (
             <div className="pt-2 border-t">
-              {record.batch_number && (
-                <p className="text-xs text-muted-foreground">{t('vaccines.batch')}: {record.batch_number}</p>
+              {record.batchNumber && (
+                <p className="text-xs text-muted-foreground">{t('vaccines.batch')}: {record.batchNumber}</p>
               )}
               {record.manufacturer && (
                 <p className="text-xs text-muted-foreground">{t('vaccines.manufacturer')}: {record.manufacturer}</p>
@@ -117,10 +117,10 @@ export default function VaccineCard({ record, onEdit, onDelete }: VaccineCardPro
           </div>
         )}
 
-        {record.official_source && record.official_source !== 'Manual' && (
+        {record.officialSource && record.officialSource !== 'Manual' && (
           <div className="mt-3 pt-3 border-t">
             <Badge variant="outline" className="text-xs">
-              {t('vaccines.source')}: {record.official_source}
+              {t('vaccines.source')}: {record.officialSource}
             </Badge>
           </div>
         )}

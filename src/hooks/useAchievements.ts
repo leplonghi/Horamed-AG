@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, fetchCollection, where } from "@/integrations/firebase";
 import { subDays, startOfDay } from "date-fns";
 import { safeDateParse } from "@/lib/safeDateUtils";
 
@@ -25,22 +25,20 @@ export function useAchievements() {
 
   const calculateAchievements = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      // Get all doses
-      const { data: allDoses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id)
-        `)
-        .eq("items.user_id", user.id);
+      const userId = user.uid;
 
-      if (!allDoses) return;
+      // Get all doses for the user
+      const { data: allDoses, error: dosesError } = await fetchCollection("dose_instances", [
+        where("userId", "==", userId)
+      ]);
 
-      const takenDoses = allDoses.filter((d) => d.status === "taken");
-      const totalDoses = allDoses.length;
+      if (dosesError || !allDoses) return;
+
+      const takenDoses = (allDoses as any[]).filter((d) => d.status === "taken");
+      const totalDoses = (allDoses as any[]).length;
 
       // Calculate streak for achievements
       const last30Days = startOfDay(subDays(new Date(), 30));
@@ -72,11 +70,9 @@ export function useAchievements() {
       const adherenceRate = totalDoses > 0 ? (takenDoses.length / totalDoses) * 100 : 0;
 
       // Get active medications count
-      const { data: medications } = await supabase
-        .from("items")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
+      const { data: medications, error: medsError } = await fetchCollection(`users/${userId}/medications`, [
+        where("isActive", "==", true)
+      ]);
 
       const medsCount = medications?.length || 0;
 

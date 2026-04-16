@@ -10,6 +10,7 @@ import { useRewardHistory } from '@/hooks/useRewardHistory';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export function RewardsDashboard() {
     const { user } = useAuth();
@@ -19,7 +20,7 @@ export function RewardsDashboard() {
 
     const getRelativeDate = (date: any) => {
         if (!date) return '';
-        const d = date.toDate ? date.toDate() : new Date(date);
+        const d = date.toDate ? date.toDate() : safeDateParse(date);
         const now = new Date();
         const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 

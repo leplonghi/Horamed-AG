@@ -149,9 +149,9 @@ export default function ClaraWeeklySummary() {
                 <AnimatePresence>
                   {expanded && (
                     <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
+                      initial={{ opacity: 0, scale: 0.98, transformOrigin: "top" }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
                       className="space-y-3 overflow-hidden"
                     >
                       {metrics.bestHour && (

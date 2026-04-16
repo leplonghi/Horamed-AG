@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn, pressable } from "@/lib/utils";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 // TYPES
 type NicheType = "saas" | "ecommerce" | "infoproduct" | "services" | "real_estate";
@@ -210,7 +211,7 @@ const generateMagicReply = (inputText: string, tone: ToneType, link: string): st
 };
 
 export default function CampaignGenerator() {
-    const [activeTab, setActiveTab] = useState("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "create" | "tools" | "detail_view">("overview");
 
     // NEW: Business Identity State
     const [businessId, setBusinessId] = useState<BusinessIdentity>({
@@ -551,7 +552,7 @@ export default function CampaignGenerator() {
                                                 <div>
                                                     <div className="font-bold text-foreground">{c.code}</div>
                                                     <div className="text-xs text-muted-foreground flex gap-2">
-                                                        <span>{new Date(c.createdAt || "").toLocaleDateString()}</span>
+                                                        <span>{safeDateParse(c.createdAt || "").toLocaleDateString()}</span>
                                                         <span>•</span>
                                                         <span>{c.description}</span>
                                                     </div>
@@ -738,7 +739,13 @@ export default function CampaignGenerator() {
                                         {/* Dynamic Input for Strategy Context */}
                                         <AnimatePresence>
                                             {campaignGoal === 'flash_launch' && (
-                                                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                <motion.div
+                                                  initial={{ opacity: 0, scaleY: 0.95, transformOrigin: "top" }}
+                                                  animate={{ opacity: 1, scaleY: 1 }}
+                                                  exit={{ opacity: 0, scaleY: 0.95 }}
+                                                  transition={{ duration: 0.2 }}
+                                                  className="overflow-hidden"
+                                                >
                                                     <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20 mt-6">
                                                         <div className="flex gap-4 items-start">
                                                             <div className="p-3 bg-white rounded-full shadow-sm">💰</div>
@@ -1088,13 +1095,14 @@ export default function CampaignGenerator() {
 
                         )}
                     </TabsContent>
-
-                    {/* 3. ESTRATÉGIA (MANAGER) */}
-
-
                 </Tabs>
             </div>
-        </div >
+        </div>
     );
 }
 
+
+
+
+
+                

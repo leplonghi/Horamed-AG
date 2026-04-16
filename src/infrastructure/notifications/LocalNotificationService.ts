@@ -1,6 +1,7 @@
 import { LocalNotifications, ScheduleOptions, PendingResult } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { Dose } from '@/types/dose';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export class LocalNotificationService {
   constructor() {
@@ -39,7 +40,7 @@ export class LocalNotificationService {
     if (Capacitor.getPlatform() === 'web') return;
 
     try {
-        const dueAt = new Date(dose.due_at || dose.dueAt || new Date());
+        const dueAt = safeDateParse(dose.due_at || dose.dueAt || new Date());
         // Não agenda para o passado
         if (dueAt.getTime() < Date.now()) return;
 

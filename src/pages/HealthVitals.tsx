@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { fetchCollection, orderBy, fetchDocument, limit } from "@/integrations/firebase";
-import { useAuth } from "@/integrations/firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { db } from "@/integrations/firebase/client";
 import { doc, deleteDoc } from "firebase/firestore";
 import { useLanguage } from "@/contexts/LanguageContext";

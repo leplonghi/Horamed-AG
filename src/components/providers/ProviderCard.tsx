@@ -160,9 +160,9 @@ export function ProviderCard({ provider, onEdit, onDelete, onToggleFavorite }: P
           <AnimatePresence>
             {expanded && hasContact && (
                 <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
+                    initial={{ opacity: 0, scale: 0.98, transformOrigin: "top" }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="overflow-hidden bg-muted/5 border-t border-border/10"
                 >

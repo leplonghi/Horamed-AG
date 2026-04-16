@@ -1,4 +1,5 @@
 /**
+import { safeDateParse } from "@/lib/safeDateUtils";
  * featureAge — determines if a feature was launched recently enough to show a "NEW" badge
  * Features are tracked by ID with their launch date.
  * Default threshold: 30 days.
@@ -16,11 +17,11 @@ const FEATURE_LAUNCH_DATES: Record<string, string> = {
 export function isFeatureNew(featureId: string, daysThreshold = 30): boolean {
   const launchDate = FEATURE_LAUNCH_DATES[featureId];
   if (!launchDate) return false;
-  const diffDays = (Date.now() - new Date(launchDate).getTime()) / (1000 * 60 * 60 * 24);
+  const diffDays = (Date.now() - safeDateParse(launchDate).getTime()) / (1000 * 60 * 60 * 24);
   return diffDays <= daysThreshold;
 }
 
 export function getFeatureLaunchDate(featureId: string): Date | null {
   const d = FEATURE_LAUNCH_DATES[featureId];
-  return d ? new Date(d) : null;
+  return d ? safeDateParse(d) : null;
 }

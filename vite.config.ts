@@ -111,7 +111,7 @@ export default defineConfig(({ mode }) => {
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp,jpg,jpeg}"],
           navigateFallback: "/index.html",
-          navigateFallbackDenylist: [/^\/api/, /^\/auth/],
+          navigateFallbackDenylist: [/^\/api/],
           skipWaiting: true,
           clientsClaim: true,
           cleanupOutdatedCaches: true,
@@ -168,7 +168,7 @@ export default defineConfig(({ mode }) => {
           importScripts: ["/sw-notifications.js"],
         },
         devOptions: {
-          enabled: mode === "development",
+          enabled: false,
         },
       }),
     ],
@@ -182,9 +182,8 @@ export default defineConfig(({ mode }) => {
       minify: 'terser',
       terserOptions: {
         compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
+          drop_console: false,
+          drop_debugger: false,
         },
       },
       rollupOptions: {

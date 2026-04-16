@@ -53,8 +53,8 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             // 2. Fetch Doses
             // Firestore filtering by date range
             const { data: doses, error } = await fetchCollection<DoseDoc>(
-                `users/${user.uid}/doses`,
-                [
+                "dose_instances",
+                [where("userId", "==", user.uid), 
                     where("dueAt", ">=", startOfWeek.toISOString()),
                     where("dueAt", "<=", endOfWeek.toISOString())
                 ]
@@ -104,7 +104,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
                 updateData.takenAt = null;
             }
 
-            const { error } = await updateDocument(`users/${user.uid}/doses`, doseId, updateData);
+            const { error } = await updateDocument("dose_instances", doseId, updateData);
             if (error) throw error;
         },
         onSuccess: (_, variables) => {

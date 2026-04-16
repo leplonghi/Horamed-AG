@@ -20,6 +20,14 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
+    // Caregiver check — determines if the logged user is a designated caregiver for the patient.
+    // Logic: Checks for an APPROVED record in the patient's caregivers subcollection.
+    function isCaregiverOf(userId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)).data.status == "approved";
+    }
+
     // ===================================
     // Users Collection
     // ===================================
@@ -41,12 +49,16 @@ service cloud.firestore {
 
       // Medications (subcollection)
       match /medications/{medicationId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
+        allow write: if isOwner(userId);
       }
 
       // Doses (subcollection)
       match /doses/{doseId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
+        allow update: if isCaregiverOf(userId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taken', 'takenAt', 'updatedAt']);
+        allow create, delete: if isOwner(userId);
       }
 
       // Medical Documents (subcollection)
@@ -66,7 +78,8 @@ service cloud.firestore {
 
       // Vaccination Records (subcollection)
       match /vaccinations/{vaccinationId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
+        allow write: if isOwner(userId);
       }
 
       // XP Transactions (subcollection)
@@ -122,6 +135,12 @@ service cloud.firestore {
       match /providers/{providerId} {
         allow read, write: if isOwner(userId);
       }
+
+      // Caregivers (subcollection) — users authorized to view/manage this user's health
+      match /caregivers/{caregiverUid} {
+        allow read: if isOwner(userId) || request.auth.uid == caregiverUid;
+        allow write: if isOwner(userId);
+      }
     }
 
     // ===================================
@@ -138,32 +157,26 @@ service cloud.firestore {
     }
 
     // ===================================
+    // Shared Documents (Time-Limited Sharing)
+    // ===================================
+
+    match /sharedDocuments/{shareId} {
+      allow read: if resource.data.expiresAt > request.time;
+      allow create: if isAuthenticated() &&
+        request.resource.data.ownerId == request.auth.uid &&
+        request.resource.data.expiresAt is timestamp &&
+        request.resource.data.expiresAt > request.time;
+      allow delete: if isAuthenticated() &&
+        resource.data.ownerId == request.auth.uid;
+    }
+
+    // ===================================
     // Global Collections (Read-Only)
     // ===================================
 
     // Medication Interactions (global reference data)
-    match /medicationInteractions/{interactionId} {
+    match /interactions/{interactionId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // Feature Flags (global configuration)
-    match /featureFlags/{flagId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
-    }
-
-    // ===================================
-    // Admin Collections
-    // ===================================
-
-    match /admin/{document=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // Referral Fraud Logs (admin only)
-    match /referralFraudLogs/{logId} {
-      allow read: if isAdmin();
       allow write: if isAdmin();
     }
   }

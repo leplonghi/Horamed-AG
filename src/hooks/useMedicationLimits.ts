@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { auth, fetchCollection, where } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
+import { fetchCollection, where } from "@/integrations/firebase";
 import { useSubscription } from "./useSubscription";
 import { useUserProfiles } from "./useUserProfiles";
 
@@ -14,7 +15,7 @@ interface MedicationLimitsStats {
 /**
  * Hook to manage medication limits
  *
- * FREE users: Max 2 active medications (enough to experience real value before upgrading)
+ * FREE users: Max 5 active medications (enough to experience real value before upgrading)
  * PREMIUM users: Unlimited medications
  *
  * Enforces limits on medications collection where isActive = true
@@ -24,7 +25,7 @@ export function useMedicationLimits() {
   const { activeProfile } = useUserProfiles();
   const [stats, setStats] = useState<MedicationLimitsStats>({
     activeCount: 0,
-    maxActive: 3,
+    maxActive: 5,
     canAddMedication: false,
     isPremium: false,
     remaining: 0,
@@ -76,7 +77,7 @@ export function useMedicationLimits() {
       if (error) throw error;
 
       const activeCount = medsData?.length || 0;
-      const maxActive = 2; // Free tier allows up to 2 medications
+      const maxActive = 5; // Free tier allows up to 5 medications
       const remaining = Math.max(0, maxActive - activeCount);
 
       setStats({

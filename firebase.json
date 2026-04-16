@@ -56,6 +56,41 @@
                     {
                         "key": "Cache-Control",
                         "value": "max-age=31536000"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/javascript"
+                    }
+                ]
+            },
+            {
+                "source": "**/*.css",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "text/css"
+                    }
+                ]
+            },
+            {
+                "source": "index.html",
+                "headers": [
+                    {
+                        "key": "Cache-Control",
+                        "value": "no-cache"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "text/html"
+                    }
+                ]
+            },
+            {
+                "source": "**/manifest*.@(json|webmanifest)",
+                "headers": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/manifest+json"
                     }
                 ]
             }

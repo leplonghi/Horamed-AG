@@ -37,22 +37,37 @@ class Colors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
 
+def safe_print(text: str, fallback: str = None):
+    """Print with fallback for encoding errors"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        if fallback:
+            # Strip non-ascii from fallback just in case it also has emojis
+            print(fallback.encode('ascii', 'ignore').decode('ascii'))
+        else:
+            # Strip non-ascii if no fallback
+            print(text.encode('ascii', 'ignore').decode('ascii'))
+
 def print_header(text: str):
-    print(f"\n{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}")
-    print(f"{Colors.BOLD}{Colors.CYAN}{text.center(60)}{Colors.ENDC}")
-    print(f"{Colors.BOLD}{Colors.CYAN}{'='*60}{Colors.ENDC}\n")
+    divider = '=' * 60
+    # Center text manually and clear colors to ensure length calculation is correct or use simpler print
+    clean_text = text.encode('ascii', 'ignore').decode('ascii')
+    print(f"\n{Colors.BOLD}{Colors.CYAN}{divider}{Colors.ENDC}")
+    print(f"{Colors.BOLD}{Colors.CYAN}{clean_text.center(60)}{Colors.ENDC}")
+    print(f"{Colors.BOLD}{Colors.CYAN}{divider}{Colors.ENDC}")
 
 def print_step(text: str):
-    print(f"{Colors.BOLD}{Colors.BLUE}🔄 {text}{Colors.ENDC}")
+    safe_print(f"{Colors.BOLD}{Colors.BLUE}🔄 {text}{Colors.ENDC}", f"{Colors.BOLD}{Colors.BLUE}>> {text}{Colors.ENDC}")
 
 def print_success(text: str):
-    print(f"{Colors.GREEN}✅ {text}{Colors.ENDC}")
+    safe_print(f"{Colors.GREEN}✅ {text}{Colors.ENDC}", f"{Colors.GREEN}[OK] {text}{Colors.ENDC}")
 
 def print_warning(text: str):
-    print(f"{Colors.YELLOW}⚠️  {text}{Colors.ENDC}")
+    safe_print(f"{Colors.YELLOW}⚠️  {text}{Colors.ENDC}", f"{Colors.YELLOW}[!] {text}{Colors.ENDC}")
 
 def print_error(text: str):
-    print(f"{Colors.RED}❌ {text}{Colors.ENDC}")
+    safe_print(f"{Colors.RED}❌ {text}{Colors.ENDC}", f"{Colors.RED}[ERR] {text}{Colors.ENDC}")
 
 # Define priority-ordered checks
 CORE_CHECKS = [
@@ -97,6 +112,8 @@ def run_script(name: str, script_path: Path, project_path: str, url: Optional[st
             cmd,
             capture_output=True,
             text=True,
+            encoding='utf-8',
+            errors='replace',
             timeout=300  # 5 minute timeout
         )
         
@@ -134,21 +151,24 @@ def print_summary(results: List[dict]):
     skipped_count = sum(1 for r in results if r.get("skipped"))
     
     print(f"Total Checks: {len(results)}")
-    print(f"{Colors.GREEN}✅ Passed: {passed_count}{Colors.ENDC}")
-    print(f"{Colors.RED}❌ Failed: {failed_count}{Colors.ENDC}")
-    print(f"{Colors.YELLOW}⏭️  Skipped: {skipped_count}{Colors.ENDC}")
+    safe_print(f"{Colors.GREEN}✅ Passed: {passed_count}{Colors.ENDC}", f"{Colors.GREEN}[OK] Passed: {passed_count}{Colors.ENDC}")
+    safe_print(f"{Colors.RED}❌ Failed: {failed_count}{Colors.ENDC}", f"{Colors.RED}[ERR] Failed: {failed_count}{Colors.ENDC}")
+    safe_print(f"{Colors.YELLOW}⏭️  Skipped: {skipped_count}{Colors.ENDC}", f"{Colors.YELLOW}[SKIP] Skipped: {skipped_count}{Colors.ENDC}")
     print()
     
     # Detailed results
     for r in results:
         if r.get("skipped"):
-            status = f"{Colors.YELLOW}⏭️ {Colors.ENDC}"
+            status_text = f"{Colors.YELLOW}⏭️ {Colors.ENDC}"
+            status_fallback = f"{Colors.YELLOW}[SKIP]{Colors.ENDC}"
         elif r["passed"]:
-            status = f"{Colors.GREEN}✅{Colors.ENDC}"
+            status_text = f"{Colors.GREEN}✅{Colors.ENDC}"
+            status_fallback = f"{Colors.GREEN}[OK]{Colors.ENDC}"
         else:
-            status = f"{Colors.RED}❌{Colors.ENDC}"
+            status_text = f"{Colors.RED}❌{Colors.ENDC}"
+            status_fallback = f"{Colors.RED}[ERR]{Colors.ENDC}"
         
-        print(f"{status} {r['name']}")
+        safe_print(f"{status_text} {r['name']}", f"{status_fallback} {r['name']}")
     
     print()
     

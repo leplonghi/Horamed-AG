@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import FloatingActionHub from "./FloatingActionHub";
 import { cn } from "@/lib/utils";
+import { useDeviceCapability } from "@/hooks/useDeviceCapability";
 
 // Clara avatar loaded via URL to reduce bundle size
 const claraAvatarUrl = "/images/clara.jpg";
@@ -30,6 +31,7 @@ export default function HealthAIButton() {
   const [hasUnreadSuggestion, setHasUnreadSuggestion] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const { shouldReduceEffects } = useDeviceCapability();
   
   const {
     processQuery,
@@ -55,11 +57,11 @@ export default function HealthAIButton() {
       if (scrollContainer) {
         scrollContainer.scrollTo({
           top: scrollContainer.scrollHeight,
-          behavior: 'smooth'
+          behavior: shouldReduceEffects ? 'auto' : 'smooth'
         });
       }
     }
-  }, [messages, isProcessing]);
+  }, [messages, isProcessing, shouldReduceEffects]);
 
   // Dynamic quick suggestions based on time of day
   const quickSuggestions = useMemo(() => {
@@ -176,30 +178,37 @@ export default function HealthAIButton() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="fixed inset-0 bg-background/40 backdrop-blur-md z-[60]"
+              className={cn(
+                "fixed inset-0 bg-background/40 z-[60]",
+                shouldReduceEffects ? "backdrop-blur-none bg-background/60" : "backdrop-blur-md"
+              )}
             />
             
             <motion.div
-              initial={{ opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
+              initial={shouldReduceEffects ? { opacity: 0, y: 20 } : { opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              exit={shouldReduceEffects ? { opacity: 0, y: 20 } : { opacity: 0, y: 40, scale: 0.95, filter: "blur(10px)" }}
+              transition={shouldReduceEffects ? { duration: 0.2 } : { type: "spring", damping: 25, stiffness: 300 }}
               className="fixed inset-x-0 bottom-0 top-[10%] md:inset-auto md:bottom-24 md:right-6 z-[70] md:w-[420px] md:max-w-[calc(100vw-3rem)] md:h-[650px]"
             >
-              <Card className="glass-card overflow-hidden h-full flex flex-col border-primary/20 shadow-2xl rounded-t-[2.5rem] md:rounded-[2rem]">
+              <Card className={cn(
+                "overflow-hidden h-full flex flex-col border-primary/20 shadow-2xl rounded-t-[2.5rem] md:rounded-[2rem]",
+                !shouldReduceEffects && "glass-card"
+              )}>
                 
                 {/* Premium Header */}
                 <div className="bg-gradient-to-br from-primary/10 via-background/50 to-background p-5 pb-4 shrink-0 border-b border-primary/5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <motion.div 
-                          animate={{ scale: [1, 1.1, 1] }} 
-                          transition={{ duration: 4, repeat: Infinity }}
-                          className="w-12 h-12 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-lg"
+                        <div 
+                          className={cn(
+                            "w-12 h-12 rounded-2xl overflow-hidden ring-4 ring-primary/20 shadow-lg",
+                            !shouldReduceEffects && "animate-pulse" // Simple way to indicate life, or remove
+                          )}
                         >
                           <img src={claraAvatarUrl} alt="Clara" className="w-full h-full object-cover" />
-                        </motion.div>
+                        </div>
                         <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full ring-2 ring-green-500/20" />
                       </div>
                       <div>
@@ -227,9 +236,9 @@ export default function HealthAIButton() {
                     {messages.map((msg, idx) => (
                       <motion.div
                         key={msg.id}
-                        initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20, scale: 0.9 }}
+                        initial={shouldReduceEffects ? { opacity: 0 } : { opacity: 0, x: msg.role === 'user' ? 20 : -20, scale: 0.9 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
-                        transition={{ duration: 0.2, delay: idx * 0.05 }}
+                        transition={{ duration: 0.2, delay: shouldReduceEffects ? 0 : idx * 0.05 }}
                         className={cn(
                           "flex w-full mb-1",
                           msg.role === 'user' ? 'justify-end' : 'justify-start'
@@ -256,21 +265,14 @@ export default function HealthAIButton() {
                       <div className="flex justify-start pt-2">
                         <div className="bg-card border border-primary/10 rounded-2xl rounded-tl-none p-4 shadow-sm">
                           <div className="flex gap-1.5 items-center h-4">
-                            <motion.span 
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
-                              transition={{ duration: 1, repeat: Infinity, delay: 0 }}
-                              className="w-1.5 h-1.5 bg-primary rounded-full" 
-                            />
-                            <motion.span 
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
-                              transition={{ duration: 1, repeat: Infinity, delay: 0.2 }}
-                              className="w-1.5 h-1.5 bg-primary rounded-full" 
-                            />
-                            <motion.span 
-                              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
-                              transition={{ duration: 1, repeat: Infinity, delay: 0.4 }}
-                              className="w-1.5 h-1.5 bg-primary rounded-full" 
-                            />
+                            {[0, 0.2, 0.4].map((delay, i) => (
+                              <motion.span 
+                                key={i}
+                                animate={shouldReduceEffects ? { opacity: [0.3, 1, 0.3] } : { scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }} 
+                                transition={{ duration: 1, repeat: Infinity, delay }}
+                                className="w-1.5 h-1.5 bg-primary rounded-full" 
+                              />
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -282,7 +284,10 @@ export default function HealthAIButton() {
                 </ScrollArea>
 
                 {/* Suggestions and Input Fixed for premium feel */}
-                <div className="p-4 bg-background/80 backdrop-blur-xl border-t border-primary/5 space-y-4">
+                <div className={cn(
+                  "p-4 border-t border-primary/5 space-y-4",
+                  shouldReduceEffects ? "bg-background" : "bg-background/80 backdrop-blur-xl"
+                )}>
                   {/* Suggestion Chips */}
                   {showSuggestions && (
                     <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar pt-2">
@@ -290,11 +295,11 @@ export default function HealthAIButton() {
                         {quickSuggestions.map((suggestion, idx) => (
                           <motion.button
                             key={idx}
-                            initial={{ opacity: 0, scale: 0.8 }}
+                            initial={shouldReduceEffects ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            exit={shouldReduceEffects ? { opacity: 0 } : { opacity: 0, scale: 0.8 }}
+                            whileHover={shouldReduceEffects ? {} : { scale: 1.05 }}
+                            whileTap={shouldReduceEffects ? {} : { scale: 0.95 }}
                             onClick={() => handleSuggestionClick(suggestion)}
                             className="whitespace-nowrap px-4 py-2 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs font-semibold hover:bg-primary hover:text-white transition-colors flex items-center gap-2"
                           >
@@ -327,7 +332,7 @@ export default function HealthAIButton() {
                     />
                     
                     <motion.div
-                      animate={{ scale: input.trim() ? 1 : 0.9 }}
+                      animate={shouldReduceEffects ? {} : { scale: input.trim() ? 1 : 0.9 }}
                     >
                       <Button
                         onClick={() => handleSend()}

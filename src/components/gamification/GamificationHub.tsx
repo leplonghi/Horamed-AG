@@ -139,7 +139,7 @@ export function GamificationHub() {
         >
           <Card 
             className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => navigate("/conquistas")}
+            onClick={() => navigate("/meu-progresso?tab=achievements")}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export function GamificationHub() {
         <Button 
           variant="outline" 
           className="w-full"
-          onClick={() => navigate("/conquistas")}
+          onClick={() => navigate("/meu-progresso?tab=achievements")}
         >
           Ver todas as conquistas
           <ChevronRight className="h-4 w-4 ml-2" />

@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchCollection, updateDocument } from "@/integrations/firebase";
 import OnboardingWelcome from "./OnboardingWelcome";
 import OnboardingStep1 from "./OnboardingStep1";
 import OnboardingStep2 from "./OnboardingStep2";
@@ -24,6 +25,7 @@ const TOTAL_STEPS = 5; // Welcome(0), Step1(1), Step2(2), Step3(3), Notification
 
 export default function SmartOnboarding() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { triggerLight, triggerSuccess } = useHapticFeedback();
   const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
@@ -62,23 +64,22 @@ export default function SmartOnboarding() {
 
   const savePreferences = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { error } = await supabase
-        .from("profiles")
-        .update({
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find((p: any) => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
           tutorial_flags: {
             userType: data.userType,
             medicationCount: data.medicationCount,
             mainConcern: data.mainConcern,
             completedAt: new Date().toISOString(),
           },
-          onboarding_completed: true,
-        })
-        .eq("user_id", user.id);
-
-      if (error) throw error;
+          onboardingCompleted: true,
+        });
+      }
       triggerSuccess();
     } catch (error) {
       console.error("Error saving onboarding preferences:", error);
@@ -92,13 +93,16 @@ export default function SmartOnboarding() {
 
   const handleSkip = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await supabase
-        .from("profiles")
-        .update({ onboarding_completed: true })
-        .eq("user_id", user.id);
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find((p: any) => p.isPrimary) || profiles?.[0];
+
+      if (primaryProfile) {
+        await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+          onboardingCompleted: true,
+        });
+      }
 
       navigate("/hoje");
     } catch (error) {

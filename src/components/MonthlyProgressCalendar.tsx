@@ -5,10 +5,12 @@ import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, CalendarBlank as 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { getAuth } from "firebase/auth";
+import { db } from "@/integrations/firebase/client";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface DayProgress {
   date: Date;
@@ -29,51 +31,55 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
   const { data: progressData = [] } = useQuery({
     queryKey: ["monthly-progress", format(monthStart, "yyyy-MM"), profileId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (!user) return [];
 
-      let query = supabase
-        .from("dose_instances")
-        .select(`
-          id,
-          due_at,
-          status,
-          item_id,
-          items!inner(user_id, profile_id)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", monthStart.toISOString())
-        .lte("due_at", monthEnd.toISOString());
+      try {
+        const dosesConstraints: any[] = [
+          where("userId", "==", user.uid),
+          where("dueAt", ">=", monthStart),
+          where("dueAt", "<=", monthEnd)
+        ];
 
-      if (profileId) {
-        query = query.eq("items.profile_id", profileId);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
-
-      // Group by day
-      const dayMap = new Map<string, DayProgress>();
-      
-      data?.forEach((dose) => {
-        const dayKey = format(safeDateParse(dose.due_at), "yyyy-MM-dd");
-        const existing = dayMap.get(dayKey) || {
-          date: safeDateParse(dose.due_at),
-          total: 0,
-          taken: 0,
-          rate: 0,
-        };
-
-        existing.total++;
-        if (dose.status === "taken") {
-          existing.taken++;
+        if (profileId) {
+          dosesConstraints.push(where("profileId", "==", profileId));
         }
-        existing.rate = existing.total > 0 ? (existing.taken / existing.total) * 100 : 0;
 
-        dayMap.set(dayKey, existing);
-      });
+        const dosesQuery = query(
+          collection(db, "doses"),
+          ...dosesConstraints
+        );
 
-      return Array.from(dayMap.values());
+        const dosesSnapshot = await getDocs(dosesQuery);
+
+        // Group by day
+        const dayMap = new Map<string, DayProgress>();
+        
+        dosesSnapshot.forEach((doc) => {
+          const dose = doc.data();
+          const dayKey = format(safeDateParse(dose.dueAt), "yyyy-MM-dd");
+          const existing = dayMap.get(dayKey) || {
+            date: safeDateParse(dose.dueAt),
+            total: 0,
+            taken: 0,
+            rate: 0,
+          };
+
+          existing.total++;
+          if (dose.status === "taken") {
+            existing.taken++;
+          }
+          existing.rate = existing.total > 0 ? (existing.taken / existing.total) * 100 : 0;
+
+          dayMap.set(dayKey, existing);
+        });
+
+        return Array.from(dayMap.values());
+      } catch (error) {
+        console.error("Error fetching progress data:", error);
+        return [];
+      }
     },
   });
 

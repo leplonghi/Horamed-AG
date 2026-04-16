@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { auth, addDocument } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { addDocument } from "@/integrations/firebase";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import {
   Dialog,
@@ -30,6 +31,7 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
     height_cm: "",
   });
   const { updateProfile, activeProfile } = useUserProfiles();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +59,6 @@ export default function HealthProfileSetup({ open, onComplete }: HealthProfileSe
     setLoading(true);
 
     try {
-      const user = auth.currentUser;
       if (!user) throw new Error("Usuário não autenticado");
 
       // Update active profile

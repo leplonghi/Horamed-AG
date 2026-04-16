@@ -98,7 +98,7 @@ export const useMedicationAlarm = () => {
         if (!user) return;
 
         const now = new Date();
-        const alertWindow = new Date(now.getTime() + (settings.alertMinutes + 5) * 60000);
+        const alertWindow = safeDateParse(now.getTime() + (settings.alertMinutes + 5) * 60000);
         const nowIso = now.toISOString();
         const alertWindowIso = alertWindow.toISOString();
 

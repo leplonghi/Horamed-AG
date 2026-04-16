@@ -1,6 +1,5 @@
-﻿
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/client';

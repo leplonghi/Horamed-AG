@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth, fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 /**
  * Hook para redirecionamento inteligente baseado em doses pendentes
@@ -23,13 +25,13 @@ export const useSmartRedirect = () => {
         if (!user) return;
 
         const now = new Date();
-        const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000);
+        const thirtyMinutesFromNow = safeDateParse(now.getTime() + 30 * 60 * 1000);
 
         // Check for pending doses in the next 30 minutes or already overdue
         // In Firebase, doses are in users/{userId}/doses
         const { data: doses, error } = await fetchCollection(
-          `users/${user.uid}/doses`,
-          [
+          "dose_instances",
+          [where("userId", "==", user.uid), 
             where('status', '==', 'scheduled'),
             where('dueAt', '<=', thirtyMinutesFromNow), // Changed due_at to dueAt
             orderBy('dueAt', 'asc'),

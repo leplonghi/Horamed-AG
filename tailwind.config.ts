@@ -226,6 +226,12 @@ export default {
           "50%": { transform: "translateX(-25%) translateY(5%)" },
         },
       },
+      backgroundImage: {
+        'card-subtle': 'linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)/0.3) 100%)',
+        'hero-primary': 'linear-gradient(135deg, hsl(var(--primary)/0.08) 0%, hsl(var(--primary)/0.03) 100%)',
+        'hero-success': 'linear-gradient(135deg, hsl(142 76% 36%/0.08) 0%, hsl(142 76% 36%/0.03) 100%)',
+        'surface-glass': 'linear-gradient(135deg, hsl(var(--background)/0.9) 0%, hsl(var(--muted)/0.4) 100%)',
+      },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",

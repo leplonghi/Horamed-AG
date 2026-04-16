@@ -128,7 +128,7 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
         orderBy('dueAt', 'desc')
       ];
 
-      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, constraints);
+      const { data: dosesData } = await fetchCollection<any>("dose_instances", constraints);
 
       const mappedDoses = (dosesData || []).map(dose => {
         const item = itemsMap.get(dose.itemId);
@@ -155,7 +155,7 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
         where('dueAt', '>=', previousStartDate.toISOString()),
         where('dueAt', '<=', previousEndDate.toISOString())
       ];
-      const { data: prevDosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, prevConstraints);
+      const { data: prevDosesData } = await fetchCollection<any>("dose_instances", prevConstraints);
 
       const mappedPrevDoses = (prevDosesData || []).map(dose => {
         const item = itemsMap.get(dose.itemId);
@@ -193,7 +193,7 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
       const { data: items } = await fetchCollection<any>(`users/${user.uid}/medications`);
       const itemsMap = new Map(items?.map(i => [i.id, i]));
 
-      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+      const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
         where('dueAt', '>=', thirtyDaysAgo.toISOString()),
         where('dueAt', '<=', now.toISOString())
       ]);

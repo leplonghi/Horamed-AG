@@ -1,186 +1,158 @@
 import { motion } from "framer-motion";
-import { Pill, Users, FileText, Crown, CalendarBlank as Calendar, Heartbeat as Activity, Sparkle as Sparkles, TrendUp as TrendingUp, Trophy } from "@phosphor-icons/react";
+import { 
+  Pill, 
+  Users, 
+  FileText, 
+  Crown, 
+  CalendarBlank as Calendar, 
+  Sparkle as Sparkles, 
+  TrendUp as TrendingUp, 
+  Trophy,
+  ChartLineUp
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useMedications } from "@/hooks/useMedications";
+import { useDocumentos } from "@/hooks/useCofre";
+import { useStreakCalculator } from "@/hooks/useStreakCalculator";
 import { Badge } from "@/components/ui/badge";
-import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
-interface StatItem {
+interface StatItemProps {
   label: string;
   value: string | number;
-  icon: React.ReactNode;
-  color: string;
-  bgColor: string;
+  icon: typeof Pill;
+  color: "cyan" | "emerald" | "amber" | "indigo" | "rose";
   onClick?: () => void;
   badge?: string;
+  isPremium?: boolean;
+  delay: number;
 }
 
-export default function ProfileStatsGrid() {
-  const { profiles } = useUserProfiles();
-  const { isPremium, daysLeft } = useSubscription();
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  // Fetch items count
-  const { data: itemsCount = 0 } = useQuery({
-    queryKey: ["profile-items-count"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 0;
-
-      const { count } = await supabase
-        .from("items")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-
-      return count || 0;
-    }
-  });
-
-  // Fetch documents count
-  const { data: docsCount = 0 } = useQuery({
-    queryKey: ["profile-docs-count"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 0;
-
-      const { count } = await supabase
-        .from("documentos_saude")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      return count || 0;
-    }
-  });
-
-  // Fetch streak
-  const { data: currentStreak = 0 } = useQuery({
-    queryKey: ["profile-streak"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return 0;
-
-      // Simplified streak calculation - count consecutive days with taken doses
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select("due_at, status")
-        .eq("status", "taken")
-        .order("due_at", { ascending: false })
-        .limit(30);
-
-      if (!doses?.length) return 0;
-
-      let streak = 0;
-      const today = new Date();
-      const currentDate = safeDateParse(today);
-
-      for (let i = 0; i < 30; i++) {
-        const dateStr = currentDate.toISOString().split('T')[0];
-        const hasDose = doses.some(d => d.due_at?.startsWith(dateStr));
-        if (hasDose) {
-          streak++;
-          currentDate.setDate(currentDate.getDate() - 1);
-        } else if (i > 0) {
-          break;
-        }
-      }
-
-      return streak;
-    }
-  });
-
-  const stats: StatItem[] = [
-    {
-      label: t('profile.activeMeds'),
-      value: itemsCount,
-      icon: <Pill className="h-5 w-5" />,
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-      onClick: () => navigate('/medicamentos')
-    },
-    {
-      label: t('profile.profiles'),
-      value: profiles.length,
-      icon: <Users className="h-5 w-5" />,
-      color: "text-info",
-      bgColor: "bg-info/10",
-      onClick: () => { }
-    },
-    {
-      label: t('nav.achievements'),
-      value: `${t('progress.level')} 1`, // dynamic later if needed
-      icon: <Trophy className="h-5 w-5" />,
-      color: "text-amber-500",
-      bgColor: "bg-amber-500/10",
-      onClick: () => navigate('/conquistas')
-    },
-    {
-      label: isPremium ? t('common.premium') : t('profile.daysLeft'),
-      value: isPremium ? "✓" : (daysLeft || 0),
-      icon: isPremium ? <Crown className="h-5 w-5" /> : <Calendar className="h-5 w-5" />,
-      color: isPremium ? "text-warning" : "text-muted-foreground",
-      bgColor: isPremium ? "bg-warning/10" : "bg-muted",
-      onClick: () => navigate('/planos'),
-      badge: !isPremium ? t('profile.7daysFree') : undefined
-    }
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
+const StatCard = ({ label, value, icon: Icon, color, onClick, badge, isPremium, delay }: StatItemProps) => {
+  const colorMap = {
+    cyan: "from-cyan-500/20 to-blue-500/20 text-cyan-400 group-hover:text-cyan-300",
+    emerald: "from-emerald-500/20 to-teal-500/20 text-emerald-400 group-hover:text-emerald-300",
+    amber: "from-amber-500/20 to-orange-500/20 text-amber-400 group-hover:text-amber-300",
+    indigo: "from-indigo-500/20 to-purple-500/20 text-indigo-400 group-hover:text-indigo-300",
+    rose: "from-rose-500/20 to-pink-500/20 text-rose-400 group-hover:text-rose-300",
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, scale: 0.95 },
-    show: { opacity: 1, scale: 1 }
+  const glowMap = {
+    cyan: "bg-cyan-500/10",
+    emerald: "bg-emerald-500/10",
+    amber: "bg-amber-500/10",
+    indigo: "bg-indigo-500/10",
+    rose: "bg-rose-500/10",
   };
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="show"
-      className="grid grid-cols-4 gap-2"
+    <motion.button
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay, ease: [0.23, 1, 0.32, 1] }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      whileTap={{ scale: 0.96 }}
+      onClick={onClick}
+      className={cn(
+        "group relative flex flex-col items-center justify-center gap-3 p-5 rounded-3xl",
+        "bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden",
+        "shadow-lg hover:shadow-2xl transition-all duration-300",
+        badge && "ring-1 ring-primary/40"
+      )}
     >
+      {/* Dynamic Background Glow */}
+      <div className={cn(
+        "absolute -right-6 -bottom-6 h-20 w-20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+        glowMap[color]
+      )} />
+
+      {badge && (
+        <Badge className="absolute top-3 right-3 text-[10px] px-2 py-0.5 bg-primary/20 text-primary border-primary/20 backdrop-blur-md">
+          {badge}
+        </Badge>
+      )}
+
+      <div className={cn(
+        "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br transition-all duration-300 group-hover:scale-110 group-hover:rotate-3",
+        colorMap[color]
+      )}>
+        <Icon weight="duotone" className="h-6 w-6" />
+      </div>
+
+      <div className="flex flex-col items-center text-center">
+        <span className="text-2xl font-bold tracking-tight text-white group-hover:scale-105 transition-transform duration-300">
+          {value}
+        </span>
+        <span className="text-[11px] font-medium text-white/40 uppercase tracking-wider mt-1">
+          {label}
+        </span>
+      </div>
+
+      {isPremium && (
+        <div className="absolute top-3 left-3">
+          <Crown weight="fill" className="h-4 w-4 text-amber-400 animate-pulse" />
+        </div>
+      )}
+    </motion.button>
+  );
+};
+
+export function ProfileStatsGrid() {
+  const { profiles } = useUserProfiles();
+  const { isPremium, daysLeft } = useSubscription();
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+
+  // Integrated data hooks (Firebase)
+  const { data: medications = [] } = useMedications();
+  const { data: documents = [] } = useDocumentos();
+  const { currentStreak } = useStreakCalculator();
+
+  const stats = [
+    {
+      label: t('profile.activeMeds', 'Medicamentos'),
+      value: medications.length,
+      icon: Pill,
+      color: "cyan" as const,
+      onClick: () => navigate('/medicamentos'),
+      delay: 0.1
+    },
+    {
+      label: t('profile.profiles', 'Perfis'),
+      value: profiles.length,
+      icon: Users,
+      color: "indigo" as const,
+      onClick: () => {},
+      delay: 0.2
+    },
+    {
+      label: t('nav.achievements', 'Conquistas'),
+      value: currentStreak > 0 ? `${currentStreak}d` : "0",
+      icon: Trophy,
+      color: "emerald" as const,
+      onClick: () => navigate('/conquistas'),
+      badge: currentStreak > 0 ? t('stats.streakActive', 'Em alta!') : undefined,
+      delay: 0.3
+    },
+    {
+      label: isPremium ? t('common.premium', 'Premium') : t('profile.daysLeft', 'Teste'),
+      value: isPremium ? '✓' : (daysLeft || 0),
+      icon: isPremium ? Crown : Calendar,
+      color: isPremium ? "amber" as const : "rose" as const,
+      onClick: () => navigate('/planos'),
+      isPremium,
+      delay: 0.4
+    }
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-1">
       {stats.map((stat, index) => (
-        <motion.button
-          key={index}
-          variants={itemVariants}
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={stat.onClick}
-          className={cn(
-            "flex flex-col items-center gap-1.5 p-3 rounded-2xl relative",
-            "bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-sm",
-            "border border-border/30 hover:border-border/50",
-            "shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]",
-            "transition-all duration-200",
-            stat.badge && "ring-2 ring-primary/30"
-          )}
-        >
-          {stat.badge && (
-            <Badge className="absolute -top-2 -right-1 text-[8px] px-1.5 py-0 bg-primary text-primary-foreground">
-              {stat.badge}
-            </Badge>
-          )}
-          <div className={cn("p-2 rounded-xl", stat.bgColor)}>
-            <div className={stat.color}>{stat.icon}</div>
-          </div>
-          <span className={cn("text-lg font-bold", stat.color)}>{stat.value}</span>
-          <span className="text-[10px] text-muted-foreground text-center leading-tight">
-            {stat.label}
-          </span>
-        </motion.button>
+        <StatCard key={index} {...stat} />
       ))}
-    </motion.div>
+    </div>
   );
 }

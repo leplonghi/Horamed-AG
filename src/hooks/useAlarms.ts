@@ -6,7 +6,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { alarmDB, Alarm } from '@/lib/alarmDB';
-import { useAuth, fetchCollection, setDocument, deleteDocument, orderBy } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, setDocument, deleteDocument, orderBy } from '@/integrations/firebase';
 import { toast } from 'sonner';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 

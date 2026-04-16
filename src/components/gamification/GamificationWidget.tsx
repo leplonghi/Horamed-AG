@@ -47,7 +47,7 @@ export function GamificationWidget() {
     >
       <Card 
         className="p-4 cursor-pointer transition-all bg-gradient-to-br from-card/90 to-card/70 backdrop-blur-xl border border-border/30 shadow-[var(--shadow-glass)] hover:shadow-[var(--shadow-glass-hover)]"
-        onClick={() => navigate("/jornada")}
+        onClick={() => navigate("/meu-progresso?tab=jornada")}
       >
         <div className="flex items-center gap-4">
           {/* Level Badge */}

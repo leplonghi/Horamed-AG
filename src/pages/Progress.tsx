@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OceanBackground from "@/components/ui/OceanBackground";
 import Header from "@/components/Header";
+import { cn } from "@/lib/utils";
 
 export default function Progress({ hideLayout = false }: { hideLayout?: boolean }) {
   const { t } = useLanguage();

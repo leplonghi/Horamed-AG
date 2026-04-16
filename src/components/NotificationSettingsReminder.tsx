@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from "@/integrations/supabase/client";
+import { getAuth } from "firebase/auth";
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 const REMINDER_INTERVAL_DAYS = 7; // Show reminder every 7 days
@@ -44,25 +45,26 @@ export function NotificationSettingsReminder() {
       if (localState?.configured) return;
 
       // Check remote profile
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("tutorial_flags")
-          .eq("user_id", user.id)
-          .single();
-
-        const flags = (profile?.tutorial_flags as Record<string, any>) || {};
+        const db = getFirestore();
+        const profileQuery = query(
+          collection(db, "users", user.uid, "profiles"),
+          where("id", "==", "default")
+        );
+        const snapshot = await getDocs(profileQuery);
+        const flags = (snapshot.docs[0]?.data()?.tutorialFlags as Record<string, any>) || {};
 
         // If remotely configured, sync local and return
-        if (flags["reminders_configured"]) {
+        if (flags["remindersConfigured"]) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...localState, configured: true }));
           return;
         }
 
         // Check remote dismissal time if available
-        if (flags["reminders_last_dismissed"]) {
-          const daysSinceDismissed = (Date.now() - new Date(flags["reminders_last_dismissed"]).getTime()) / (1000 * 60 * 60 * 24);
+        if (flags["remindersLastDismissed"]) {
+          const daysSinceDismissed = (Date.now() - safeDateParse(flags["remindersLastDismissed"]).getTime()) / (1000 * 60 * 60 * 24);
           if (daysSinceDismissed < REMINDER_INTERVAL_DAYS) {
             return; // Too soon
           }
@@ -104,20 +106,28 @@ export function NotificationSettingsReminder() {
 
   const updateRemoteFlag = async (updates: Record<string, any>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
+      const db = getFirestore();
+      const profileQuery = query(
+        collection(db, "users", user.uid, "profiles"),
+        where("id", "==", "default")
+      );
+      const snapshot = await getDocs(profileQuery);
+      const currentFlags = (snapshot.docs[0]?.data()?.tutorialFlags as Record<string, any>) || {};
 
-      const currentFlags = (profile?.tutorial_flags as Record<string, any>) || {};
+      // Convert snake_case keys to camelCase
+      const formattedUpdates: Record<string, any> = {};
+      for (const [key, value] of Object.entries(updates)) {
+        const camelKey = key.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+        formattedUpdates[camelKey] = value;
+      }
 
-      await supabase.from("profiles").update({
-        tutorial_flags: { ...currentFlags, ...updates }
-      }).eq("user_id", user.id);
+      await updateDoc(doc(db, "users", user.uid, "profiles", "default"), {
+        tutorialFlags: { ...currentFlags, ...formattedUpdates }
+      });
     } catch (e) {
       console.error("Error updating remote flags", e);
     }
@@ -194,4 +204,4 @@ export function NotificationSettingsReminder() {
       )}
     </AnimatePresence>
   );
-}
+}

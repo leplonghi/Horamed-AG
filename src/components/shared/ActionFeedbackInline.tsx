@@ -59,9 +59,9 @@ export default function ActionFeedbackInline({
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           className={cn(
             "rounded-xl border p-3 flex items-center gap-3",
             config.bg,

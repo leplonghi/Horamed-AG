@@ -6,6 +6,7 @@ import { FileText, Flask as FlaskConical, Syringe, Stethoscope, FolderOpen } fro
 import { DocumentoSaude } from "@/hooks/useCofre";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface DocumentTimelineProps {
   documents: DocumentoSaude[];
@@ -24,8 +25,8 @@ export default function DocumentTimeline({ documents, maxItems = 10 }: DocumentT
   const groupedDocuments = useMemo(() => {
     const sorted = [...documents]
       .sort((a, b) => 
-        new Date(b.issued_at || b.created_at).getTime() - 
-        new Date(a.issued_at || a.created_at).getTime()
+        safeDateParse(b.issued_at || b.created_at).getTime() - 
+        safeDateParse(a.issued_at || a.created_at).getTime()
       )
       .slice(0, maxItems);
 
@@ -33,7 +34,7 @@ export default function DocumentTimeline({ documents, maxItems = 10 }: DocumentT
     let currentGroup: TimelineGroup | null = null;
 
     sorted.forEach(doc => {
-      const date = new Date(doc.issued_at || doc.created_at);
+      const date = safeDateParse(doc.issued_at || doc.created_at);
       let label: string;
 
       if (isThisMonth(date)) {
@@ -104,7 +105,7 @@ export default function DocumentTimeline({ documents, maxItems = 10 }: DocumentT
               <div className="ml-12 space-y-2">
                 {group.documents.map((doc, docIndex) => {
                   const { Icon, color, bg } = getCategoryIcon(doc.categorias_saude?.slug);
-                  const date = new Date(doc.issued_at || doc.created_at);
+                  const date = safeDateParse(doc.issued_at || doc.created_at);
 
                   return (
                     <motion.div

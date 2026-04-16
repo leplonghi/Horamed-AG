@@ -362,7 +362,7 @@ const Landing = () => {
 
                 <div className="flex items-center gap-3 justify-center lg:justify-start mt-10">
                   <div className="flex -space-x-2">
-                    {[C.primary, C.success, "hsl(38 92% 50%)", "hsl(0 65% 52%)", "hsl(280 60% 60%)"].map((bg, i) => (
+                    {[C.primary, C.success, "hsl(38 92% 50%)", "hsl(0 65% 52%)", "hsl(215 60% 60%)"].map((bg, i) => (
                       <div key={i} className="w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold"
                         style={{ background: bg }}>
                          {["L", "M", "R", "F", "P"][i]}
@@ -417,7 +417,7 @@ const Landing = () => {
                   className="absolute -right-8 bottom-28 z-20 flex items-center gap-3 rounded-[1.2rem] px-4 py-3 shadow-[0_10px_40px_rgba(0,0,0,0.12)] border"
                   style={{ background: C.card, borderColor: C.border }}
                 >
-                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, hsl(280 60% 55%), hsl(280 60% 45%))" }}>
+                  <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, hsl(245 60% 55%), hsl(245 60% 45%))" }}>
                     <Stethoscope className="h-5 w-5 text-white" weight="fill"/>
                   </div>
                   <div>
@@ -493,7 +493,7 @@ const Landing = () => {
 
             {/* Bento Item 3 - Carteira & Exames */}
             <Reveal delay={0.2} className="relative p-8 sm:p-10 rounded-[2rem] overflow-hidden border shadow-sm group" style={{ background: "#fff", borderColor: C.border }}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-purple-100 text-purple-600 shadow-sm">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-indigo-100 text-indigo-600 shadow-sm">
                 <BookBookmark size={28} weight="fill" />
               </div>
               <h3 className="text-2xl font-bold mb-3 text-slate-800">{isPt ? "Carteira Médica" : "Medical Wallet"}</h3>
@@ -503,7 +503,7 @@ const Landing = () => {
                 : "Store prescriptions securely, archive PDF exam results and create your official health history in your pocket."}
               </p>
               <div className="absolute -left-6 -bottom-6 opacity-[0.05] transition-transform duration-700 ease-out group-hover:scale-110">
-                <FileText size={180} weight="fill" className="text-purple-600" />
+                <FileText size={180} weight="fill" className="text-emerald-600" />
               </div>
             </Reveal>
 

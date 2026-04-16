@@ -10,7 +10,8 @@ import SpotlightSearch from "./SpotlightSearch";
 import VoiceControlButton from "./VoiceControlButton";
 
 import logo from "@/assets/logo_HoraMed.png";
-import { useAuth, fetchDocument } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchDocument } from "@/integrations/firebase";
 
 import { useTranslation } from "@/contexts/LanguageContext";
 
@@ -57,7 +58,7 @@ function Header() {
       <div className="relative max-w-4xl mx-auto py-2 px-4">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
-            <Link to="/" className="flex items-center">
+            <Link to={user ? "/hoje" : "/"} className="flex items-center">
               <img src={logo} alt="HoraMed" width={44} height={40} className="h-10 w-auto shrink-0" loading="eager" />
             </Link>
             <SubscriptionBadge />

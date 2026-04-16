@@ -1,4 +1,5 @@
-import { auth, addDocument } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
+import { addDocument } from "@/integrations/firebase";
 
 interface AuditLogParams {
   action: string;

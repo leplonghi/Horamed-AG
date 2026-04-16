@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth, fetchCollection, where, orderBy, updateDocument } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, where, orderBy, updateDocument } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 

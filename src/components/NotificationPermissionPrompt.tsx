@@ -8,7 +8,8 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { getAuth } from "firebase/auth";
+import { getFirestore, collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 
 interface NotificationPermissionPromptProps {
   onRequestPermission: () => Promise<boolean>;
@@ -25,23 +26,26 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
 
   const updateRemoteFlag = async (isDismissed: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
+      const db = getFirestore();
+      const profileRef = doc(db, "users", user.uid, "profiles", "default");
+      const profileQuery = query(
+        collection(db, "users", user.uid, "profiles"),
+        where("id", "==", "default")
+      );
+      const snapshot = await getDocs(profileQuery);
 
-      const currentFlags = (profile?.tutorial_flags as Record<string, any>) || {};
+      const currentFlags = snapshot.docs[0]?.data()?.tutorialFlags || {};
 
-      await supabase.from("profiles").update({
-        tutorial_flags: {
+      await updateDoc(doc(db, "users", user.uid, "profiles", "default"), {
+        tutorialFlags: {
           ...currentFlags,
-          notifications_prompt_dismissed: isDismissed
+          notificationsPromptDismissed: isDismissed
         }
-      }).eq("user_id", user.id);
+      });
     } catch (e) {
       console.error("Error updating notification flags", e);
     }
@@ -58,16 +62,18 @@ export default function NotificationPermissionPrompt({ onRequestPermission }: No
 
       // Check remote dismissal
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const auth = getAuth();
+        const user = auth.currentUser;
         if (user) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("tutorial_flags")
-            .eq("user_id", user.id)
-            .single();
+          const db = getFirestore();
+          const profileQuery = query(
+            collection(db, "users", user.uid, "profiles"),
+            where("id", "==", "default")
+          );
+          const snapshot = await getDocs(profileQuery);
+          const flags = (snapshot.docs[0]?.data()?.tutorialFlags as Record<string, any>) || {};
 
-          const flags = (profile?.tutorial_flags as Record<string, any>) || {};
-          if (flags["notifications_prompt_dismissed"]) {
+          if (flags["notificationsPromptDismissed"]) {
             localStorage.setItem('notification_prompt_dismissed', 'true');
             setDismissed(true);
             return;

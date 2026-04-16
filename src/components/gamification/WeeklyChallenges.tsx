@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Target, Flame, Star, Gift, Lock, CheckCircle as CheckCircle2, Clock } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection, where } from "@/integrations/firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -29,6 +30,7 @@ interface WeeklyChallenge {
 export default function WeeklyChallenges() {
   const { language } = useLanguage();
   const { isPremium } = useSubscription();
+  const { user } = useAuth();
   const [challenges, setChallenges] = useState<WeeklyChallenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimingId, setClaimingId] = useState<string | null>(null);
@@ -54,35 +56,35 @@ export default function WeeklyChallenges() {
   }, []);
 
   const fetchChallenges = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
+    try {
       const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
       const weekEnd = endOfWeek(new Date(), { weekStartsOn: 0 });
 
-      // Get week's doses
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select(`*, items!inner(user_id)`)
-        .eq("items.user_id", user.id)
-        .gte("due_at", weekStart.toISOString())
-        .lte("due_at", weekEnd.toISOString());
+      // Get week's doses using Firestore query
+      const { data: doses, error } = await fetchCollection("dose_instances", [
+        where("userId", "==", user.uid),
+        where("dueAt", ">=", weekStart.toISOString()),
+        where("dueAt", "<=", weekEnd.toISOString())
+      ]);
+
+      if (error) throw error;
 
       const takenDoses = doses?.filter(d => d.status === "taken") || [];
       const totalDoses = doses?.length || 0;
       const onTimeDoses = takenDoses.filter(d => 
-        d.delay_minutes !== null && Math.abs(d.delay_minutes) <= 5
+        d.delayMinutes !== undefined && d.delayMinutes !== null && Math.abs(d.delayMinutes) <= 5
       ).length;
       const earlyDoses = takenDoses.filter(d => {
-        const hour = safeDateParse(d.taken_at).getHours();
+        const hour = safeDateParse(d.takenAt).getHours();
         return hour < 8;
       }).length;
 
       // Calculate streak days this week
       const daysWithDoses = new Set<string>();
       takenDoses.forEach(d => {
-        const date = safeDateParse(d.taken_at).toISOString().split('T')[0];
+        const date = safeDateParse(d.takenAt).toISOString().split('T')[0];
         daysWithDoses.add(date);
       });
       const streakDays = daysWithDoses.size;

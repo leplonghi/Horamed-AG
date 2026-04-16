@@ -18,7 +18,7 @@ const TYPE_CONFIG = {
   medications: {
     labelPt: "medicamentos ativos",
     labelEn: "active medications",
-    urgencyThreshold: 1,
+    urgencyThreshold: 5,
   },
   documents: {
     labelPt: "documentos salvos",

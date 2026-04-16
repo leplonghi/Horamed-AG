@@ -141,8 +141,8 @@ export default function MedicamentosHub() {
       const profileId = activeProfile?.id;
 
       const dosesPath = profileId
-        ? `users/${userId}/profiles/${profileId}/doses`
-        : `users/${userId}/doses`;
+        ? "dose_instances"
+        : "dose_instances";
 
       const { data: dosesData } = await fetchCollection<HubDoseDoc>(
         dosesPath,

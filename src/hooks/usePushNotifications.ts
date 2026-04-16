@@ -3,8 +3,8 @@ import { PushNotifications, ActionPerformed } from "@capacitor/push-notification
 import { LocalNotifications, LocalNotificationSchema, ScheduleEvery } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  useAuth,
   auth,
   functions,
   httpsCallable,
@@ -429,8 +429,8 @@ export const usePushNotifications = () => {
 
     // 2. Fetch doses
     const { data: doses } = await fetchCollection<NotifDoseDoc>(
-      `users/${user.uid}/doses`,
-      [
+      "dose_instances",
+      [where("userId", "==", user.uid), 
         where('status', '==', 'scheduled'),
         where('dueAt', '>=', start.toISOString()),
         where('dueAt', '<=', end.toISOString()),
@@ -545,7 +545,7 @@ export const usePushNotifications = () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const { data: dose } = await fetchDocument<NotifDoseDoc>(`users/${user.uid}/doses`, doseId);
+      const { data: dose } = await fetchDocument<NotifDoseDoc>("dose_instances", doseId);
 
       if (dose?.status === 'scheduled') {
         // Dose still not taken, repeat notification
@@ -903,7 +903,7 @@ export const usePushNotifications = () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const { data: dose } = await fetchDocument<NotifDoseDoc>(`users/${user.uid}/doses`, doseId);
+      const { data: dose } = await fetchDocument<NotifDoseDoc>("dose_instances", doseId);
       if (!dose) return;
 
       const { data: itemData } = await fetchDocument<NotifMedicationDoc>(`users/${user.uid}/medications`, dose.itemId);

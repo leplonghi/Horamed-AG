@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { fetchCollection, where, orderBy } from "@/integrations/firebase";
 import type { Dose } from "@/types/dose";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface AdherenceStats {
   /** Number of doses taken in the window */
@@ -74,7 +75,7 @@ export function useAdherenceInsights(windowDays = 7) {
 
       for (const dose of doses) {
         const dayKey = dose.dueAt
-          ? format(new Date(dose.dueAt as string), "yyyy-MM-dd")
+          ? format(safeDateParse(dose.dueAt as string), "yyyy-MM-dd")
           : null;
 
         if (!dayKey || !(dayKey in buckets)) continue;

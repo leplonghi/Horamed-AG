@@ -41,7 +41,7 @@ export const useOverdueDoses = () => {
       if (!user) return [];
 
       const now = new Date();
-      const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+      const twoHoursAgo = safeDateParse(now.getTime() - 2 * 60 * 60 * 1000);
       const nowIso = now.toISOString();
       const twoHoursAgoIso = twoHoursAgo.toISOString();
 

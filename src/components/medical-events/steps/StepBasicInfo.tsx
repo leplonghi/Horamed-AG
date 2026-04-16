@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface StepBasicProps {
     formData: Partial<MedicalEventFormData>;
@@ -23,7 +24,7 @@ const StepBasicInfo = ({ formData, updateFormData, onNext, onBack }: StepBasicPr
         if (val) {
             // Create date at noon to avoid timezone issues for simple date selection
             const [year, month, day] = val.split('-').map(Number);
-            const date = new Date(year, month - 1, day, 12, 0, 0);
+            const date = safeDateParse(year, month - 1, day, 12, 0, 0);
             updateFormData({ date });
         }
     };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { auth, addDocument } from "@/integrations/firebase";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -113,7 +114,7 @@ export function usePWAInstall() {
     // Check if dismissed recently
     const dismissedAt = localStorage.getItem(STORAGE_KEYS.DISMISSED_AT);
     if (dismissedAt) {
-      const dismissedDate = new Date(parseInt(dismissedAt, 10));
+      const dismissedDate = safeDateParse(parseInt(dismissedAt, 10));
       const daysSinceDismiss = (Date.now() - dismissedDate.getTime()) / (1000 * 60 * 60 * 24);
       if (daysSinceDismiss < DISMISS_DURATION_DAYS) {
         return false;

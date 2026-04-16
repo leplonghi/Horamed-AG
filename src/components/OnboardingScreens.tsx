@@ -3,7 +3,8 @@ import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { Check, ArrowRight, WarningCircle, Heart, Confetti } from "@phosphor-icons/react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchCollection, updateDocument } from "@/integrations/firebase";
 
 const screens = [
   {
@@ -32,6 +33,8 @@ export default function OnboardingScreens() {
   const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -45,20 +48,16 @@ export default function OnboardingScreens() {
     }
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         setIsChecking(false);
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("user_id", user.id)
-        .single();
+      const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+      const primaryProfile = profiles?.find((p: any) => p.isPrimary) || profiles?.[0];
 
       // Redirect to SimpleOnboarding if not completed
-      if (!profile?.onboarding_completed) {
+      if (!primaryProfile?.onboardingCompleted) {
         navigate("/onboarding");
         return;
       }
@@ -71,12 +70,14 @@ export default function OnboardingScreens() {
 
   const handleComplete = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase
-          .from("profiles")
-          .update({ onboarding_completed: true })
-          .eq("user_id", user.id);
+        const { data: profiles } = await fetchCollection<any>(`users/${user.uid}/profiles`);
+        const primaryProfile = profiles?.find((p: any) => p.isPrimary) || profiles?.[0];
+        if (primaryProfile) {
+          await updateDocument(`users/${user.uid}/profiles`, primaryProfile.id, {
+            onboardingCompleted: true
+          });
+        }
       }
     } catch (error) {
       console.error("Error completing onboarding:", error);

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { getUniqueItemColors } from "@/lib/categoryColors";
 import SupplementCategoryTag, { detectSupplementCategory } from "@/components/SupplementCategoryTag";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export interface MedicationItem {
     id: string;
@@ -187,7 +188,7 @@ export function MedicationItemCard({ item, index, onEdit, onDelete }: Medication
                     {item.treatmentEndDate && (
                         <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5 opacity-50" />
-                            <span>Termina em {new Date(item.treatmentEndDate).toLocaleDateString('pt-BR')}</span>
+                            <span>Termina em {safeDateParse(item.treatmentEndDate).toLocaleDateString('pt-BR')}</span>
                         </div>
                     )}
                     {item.instructions && (

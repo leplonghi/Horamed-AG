@@ -45,7 +45,7 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
 
     if (expiringIn7Days.length > 0) {
       const doc = expiringIn7Days[0];
-      const days = differenceInDays(new Date(doc.expiresAt!), now);
+      const days = differenceInDays(safeDateParse(doc.expiresAt!), now);
       result.push({
         id: "expiring-urgent",
         type: "urgent",
@@ -86,12 +86,12 @@ export default function SmartDocumentInsights({ documents, onActionClick }: Smar
     const exams = documents.filter(doc => doc.categorySlug === "exame" || doc.category?.slug === "exame");
     const lastExam = exams.length > 0
       ? exams.reduce((latest, doc) =>
-        new Date(doc.issuedAt || doc.createdAt) > new Date(latest.issuedAt || latest.createdAt)
+        safeDateParse(doc.issuedAt || doc.createdAt) > safeDateParse(latest.issuedAt || latest.createdAt)
           ? doc : latest
       )
       : null;
 
-    if (!lastExam || differenceInDays(now, new Date(lastExam.issuedAt || lastExam.createdAt)) > 180) {
+    if (!lastExam || differenceInDays(now, safeDateParse(lastExam.issuedAt || lastExam.createdAt)) > 180) {
       result.push({
         id: "checkup-suggestion",
         type: "info",

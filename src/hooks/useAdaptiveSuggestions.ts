@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAuth, fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 import { differenceInDays } from 'date-fns';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
@@ -43,8 +44,8 @@ export const useAdaptiveSuggestions = () => {
 
         // Fetch recent dose history: users/{uid}/doses
         const { data: doses, error } = await fetchCollection<DoseDoc>(
-          `users/${user.uid}/doses`,
-          [
+          "dose_instances",
+          [where("userId", "==", user.uid), 
             where('dueAt', '>=', sevenDaysAgo.toISOString()), // Changed to ISO comparison
             orderBy('dueAt', 'desc'),
             limit(100)

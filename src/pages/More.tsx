@@ -34,6 +34,7 @@ const ICON_COLORS: Record<string, { bg: string; icon: string }> = {
   "/notificacoes": { bg: "bg-red-500/15", icon: "text-red-500" },
   "/privacy": { bg: "bg-slate-500/15", icon: "text-slate-500" },
   "/help-support": { bg: "bg-teal-500/15", icon: "text-teal-500" },
+  "/desempenho": { bg: "bg-blue-500/15", icon: "text-blue-600" },
 };
 
 const containerVariants = {
@@ -175,6 +176,7 @@ export default function More() {
     { title: t('more.exportData'), description: t('more.exportDataDesc'), icon: FileText, path: "/exportar", badge: <Badge variant="secondary" className="ml-2">LGPD</Badge> },
     { title: t('more.tutorial'), description: t('more.tutorialDesc'), icon: BookOpen, path: "/tutorial" },
     { title: t('more.notifications'), description: t('more.notificationsDesc'), icon: Bell, path: "/notificacoes" },
+    { title: t('more.performance') || 'Desempenho & Acessibilidade', description: t('more.performanceDesc') || 'Ajuste animações e velocidade', icon: Settings, path: "/desempenho" },
     { title: t('more.privacyData'), description: t('more.privacyDataDesc'), icon: Shield, path: "/privacy" },
     { title: t('more.helpSupport'), description: t('more.helpSupportDesc'), icon: HelpCircle, path: "/help-support" },
   ];

@@ -74,8 +74,8 @@ export default function DayTimeline({
       base.iconBox = "bg-sky-100 text-sky-600";
       base.timeBadge = "bg-sky-50 text-sky-600";
     } else if (type === "procedure") {
-      base.iconBox = "bg-purple-100 text-purple-600";
-      base.timeBadge = "bg-purple-50 text-purple-600";
+      base.iconBox = "bg-emerald-100 text-emerald-600";
+      base.timeBadge = "bg-emerald-50 text-emerald-600";
     }
 
     if (isDone) {

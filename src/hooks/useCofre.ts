@@ -104,22 +104,22 @@ export function useDocumentos(filters: ListDocumentsFilters = {}) {
       }
 
       if (filters.exp === "30") {
-        const today = new Date();
-        const in30Days = safeDateParse(today);
-        in30Days.setDate(today.getDate() + 30);
+        const now = new Date();
+        const in30Days = safeDateParse(now);
+        in30Days.setDate(now.getDate() + 30);
         result = result.filter(d => {
           if (!d.expiresAt) return false;
           const exp = safeDateParse(d.expiresAt);
-          return exp >= today && exp <= in30Days;
+          return exp >= now && exp <= in30Days;
         });
       }
 
       if (filters.q) {
         const q = filters.q.toLowerCase();
         result = result.filter(d =>
-          d.title?.toLowerCase().includes(q) ||
-          d.ocrText?.toLowerCase().includes(q) ||
-          d.provider?.toLowerCase().includes(q)
+          (d.title?.toLowerCase() || "").includes(q) ||
+          (d.ocrText?.toLowerCase() || "").includes(q) ||
+          (d.provider?.toLowerCase() || "").includes(q)
         );
       }
 

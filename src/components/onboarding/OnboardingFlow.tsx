@@ -96,7 +96,7 @@ export default function OnboardingFlow() {
       });
 
       // Create dose instance for today
-      const { data: doseData, error: doseError } = await addDocument(`users/${user.uid}/doses`, {
+      const { data: doseData, error: doseError } = await addDocument("dose_instances", {
         itemId: itemData.id,
         scheduleId: scheduleData?.id || itemData.id,
         dueAt: data.scheduledTime.toISOString(),
@@ -153,7 +153,7 @@ export default function OnboardingFlow() {
       const user = auth.currentUser;
       if (!user) return;
 
-      await updateDocument(`users/${user.uid}/doses`, data.doseId, {
+      await updateDocument("dose_instances", data.doseId, {
         status: "taken",
         takenAt: new Date().toISOString()
       });
@@ -181,7 +181,7 @@ export default function OnboardingFlow() {
 
     const newTime = new Date(Date.now() + 10 * 60 * 1000);
 
-    await updateDocument(`users/${user.uid}/doses`, data.doseId, {
+    await updateDocument("dose_instances", data.doseId, {
       dueAt: newTime.toISOString(),
       delayMinutes: 10,
     });

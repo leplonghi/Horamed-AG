@@ -1,5 +1,6 @@
 import { db } from '@/integrations/firebase/client';
 import { collection, addDoc, query, where, getDocs, orderBy, Timestamp, limit } from 'firebase/firestore';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export type GeneralFeeling = 'great' | 'okay' | 'poor';
 export type SymptomSeverity = 'mild' | 'moderate' | 'severe';
@@ -76,7 +77,7 @@ export const symptomService = {
     async hasLoggedToday(userId: string): Promise<boolean> {
         try {
             const now = new Date();
-            const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const startOfToday = safeDateParse(now.getFullYear(), now.getMonth(), now.getDate());
             
             const logsRef = collection(db, 'symptom_logs');
             const q = query(

@@ -96,8 +96,8 @@ async function calculateProjectedEndAt(itemId: string, unitsLeft: number): Promi
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const dosesPath = `users/${userId}/doses`;
-    const { data: takenDoses } = await fetchCollection<TakenDoseDoc>(dosesPath, [
+    const { data: takenDoses } = await fetchCollection<TakenDoseDoc>("dose_instances", [
+      where("userId", "==", userId),
       where("itemId", "==", itemId),
       where("status", "==", "taken"),
       where("takenAt", ">=", sevenDaysAgo.toISOString())

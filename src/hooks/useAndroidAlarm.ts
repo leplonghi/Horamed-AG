@@ -12,7 +12,7 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db, fetchCollection, addDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
@@ -68,26 +68,27 @@ export const useAndroidAlarm = () => {
   /**
    * Log to Supabase notification_logs
    */
-  const logToSupabase = useCallback(async (log: AlarmLog) => {
+  const logToFirebase = useCallback(async (log: AlarmLog) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      await supabase.from("notification_logs").insert({
-        user_id: user.id,
-        dose_id: log.doseId || null,
-        notification_type: "local_alarm",
+      const base = `users/${user.uid}`;
+      await addDocument(`${base}/notification_logs`, {
+        userId: user.uid,
+        doseId: log.doseId || null,
+        notificationType: "local_alarm",
         title: log.type,
         body: log.details || "",
-        scheduled_at: log.timestamp.toISOString(),
-        delivery_status: log.success ? "delivered" : "failed",
+        scheduledAt: log.timestamp.toISOString(),
+        deliveryStatus: log.success ? "delivered" : "failed",
         metadata: {
           alarmId: log.alarmId,
           platform: "android",
         },
       });
     } catch (error) {
-      console.error("[AndroidAlarm] Error logging to Supabase:", error);
+      console.error("[AndroidAlarm] Error logging to Firebase:", error);
     }
   }, []);
 
@@ -109,9 +110,9 @@ export const useAndroidAlarm = () => {
       // Ignore quota errors
     }
 
-    // Also log to Supabase for analytics
-    logToSupabase(log).catch(console.error);
-  }, [logToSupabase]);
+    // Also log to Firebase for analytics
+    logToFirebase(log).catch(console.error);
+  }, [logToFirebase]);
 
   /**
    * Initialize notification channel for Android
@@ -299,47 +300,28 @@ export const useAndroidAlarm = () => {
    */
   const scheduleAllPendingDoses = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const now = new Date();
-      const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const next24h = safeDateParse(now.getTime() + 24 * 60 * 60 * 1000);
 
-      const { data: doses, error } = await supabase
-        .from("dose_instances")
-        .select(`
-          id,
-          due_at,
-          status,
-          item_id,
-          items (
-            name,
-            dose_text
-          )
-        `)
-        .eq("status", "scheduled")
-        .gte("due_at", now.toISOString())
-        .lte("due_at", next24h.toISOString())
-        .order("due_at");
+      // In a real multi-profile scenario, we'd loop through profiles or use a root collection
+      // For simplicity, we'll use the current active profile logic if possible, 
+      // but useAndroidAlarm doesn't have access to activeProfile. 
+      // We'll fetch from the user's root doses for now.
+      const paths = { doses: `users/${user.uid}/doses` };
 
-      if (error) {
-        console.error("[AndroidAlarm] Error fetching doses:", error);
-        return;
-      }
+      const { data: doses } = await fetchCollection<Dose>(paths.doses, [
+        where("status", "==", "scheduled"),
+        where("dueAt", ">=", now.toISOString()),
+        where("dueAt", "<=", next24h.toISOString()),
+        orderBy("dueAt", "asc"),
+      ]);
 
       if (doses && doses.length > 0) {
-        interface DoseRow {
-          id: string;
-          due_at: string;
-          status: string;
-          item_id: string;
-          items: { name: string; dose_text: string | null };
-        }
-        const typedDoses = doses as unknown as DoseRow[];
-
-        for (const dose of typedDoses) {
-          const item = dose.items;
-          const dueAt = safeDateParse(dose.due_at);
+        for (const dose of doses) {
+          const dueAt = safeDateParse(dose.dueAt || dose.due_at);
 
           // Generate unique ID from dose ID
           const notificationId = parseInt(dose.id.replace(/\D/g, "").slice(0, 8)) ||
@@ -348,10 +330,10 @@ export const useAndroidAlarm = () => {
           await scheduleAlarm({
             id: notificationId,
             title: "⏰ Hora do remédio!",
-            body: `${item.name}${item.dose_text ? ` - ${item.dose_text}` : ""}`,
+            body: `${dose.itemName || dose.items?.name}${dose.doseText || dose.items?.dose_text ? ` - ${dose.doseText || dose.items?.dose_text}` : ""}`,
             scheduledAt: dueAt,
             doseId: dose.id,
-            itemId: dose.item_id,
+            itemId: dose.itemId || dose.item_id || "",
           });
         }
       }

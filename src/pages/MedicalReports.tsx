@@ -110,7 +110,7 @@ export default function MedicalReports() {
       ]);
 
       // 4. Fetch Dose Instances
-      const { data: doses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+      const { data: doses } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
         where('dueAt', '>=', startDate.toISOString()),
         orderBy('dueAt', 'desc')
       ]);

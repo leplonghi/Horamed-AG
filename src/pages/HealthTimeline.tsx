@@ -147,7 +147,7 @@ export default function HealthTimeline() {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+      const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
         where("status", "==", "taken"),
         where("takenAt", ">=", thirtyDaysAgo.toISOString()),
         orderBy("takenAt", "desc"),

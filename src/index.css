@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Critical splash screen CSS (moved from index.html inline style) */
+html { background-color: #f8f9fb; }
+.dark html, html.dark { background-color: #0d0f12; }
+@media (prefers-color-scheme: dark) {
+  html:not(.light) { background-color: #0d0f12; }
+}
+#root { min-height: 100vh; }
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
@@ -344,10 +352,8 @@ All colors MUST be HSL.
 
   /* Base glass card - primary style */
   .glass-card {
-    @apply relative rounded-2xl border-0;
-    background: linear-gradient(135deg,
-        hsl(var(--card) / 0.75) 0%,
-        hsl(var(--card) / 0.6) 100%);
+    @apply relative border-0 overflow-hidden;
+    background: hsl(var(--card) / 0.75);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow: var(--shadow-glass), var(--shadow-inner-glow);
@@ -360,19 +366,13 @@ All colors MUST be HSL.
   
   /* PREMIUM CHAT BUBBLES - iMessage Style */
   .bubble-user {
-    @apply relative bg-primary text-primary-foreground rounded-2xl rounded-tr-none shadow-sm;
-    background: linear-gradient(135deg, 
-      hsl(var(--primary)) 0%, 
-      hsl(var(--primary) / 0.9) 100%
-    );
+    @apply max-w-[85%] rounded-[1.5rem] rounded-tr-[0.5rem] p-4 text-white shadow-md;
+    background: hsl(var(--primary));
   }
   
   .bubble-clara {
-    @apply relative bg-card border border-primary/10 text-foreground rounded-2xl rounded-tl-none shadow-sm;
-    background: linear-gradient(135deg, 
-      hsl(var(--card)) 0%, 
-      hsl(var(--card) / 0.95) 100%
-    );
+    @apply max-w-[85%] rounded-[1.5rem] rounded-tl-[0.5rem] p-4 border border-border/20 shadow-sm;
+    background: hsl(var(--card));
   }
 
   /* Clean card without glass effect */
@@ -397,10 +397,9 @@ All colors MUST be HSL.
 
   /* Interactive glass card */
   .card-interactive {
-    @apply relative rounded-2xl border-0 cursor-pointer;
-    background: linear-gradient(135deg,
-        hsl(var(--card) / 0.8) 0%,
-        hsl(var(--card) / 0.65) 100%);
+    @apply rounded-2xl border-0 transition-all duration-300;
+    background: hsl(var(--card) / 0.8);
+    box-shadow: var(--shadow-sm);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow: var(--shadow-glass), var(--shadow-inner-glow);
@@ -418,11 +417,9 @@ All colors MUST be HSL.
 
   /* Glass morphism - generic */
   .glass {
-    @apply relative;
-    background: linear-gradient(135deg,
-        hsl(var(--background) / 0.7) 0%,
-        hsl(var(--background) / 0.5) 100%);
-    backdrop-filter: blur(24px) saturate(180%);
+    @apply relative overflow-hidden;
+    background: hsl(var(--background) / 0.7);
+    backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid hsl(var(--border) / 0.3);
   }
@@ -448,11 +445,11 @@ All colors MUST be HSL.
   /* ========== GRADIENT BACKGROUNDS ========== */
 
   .bg-gradient-subtle {
-    @apply bg-gradient-to-br from-background via-background to-muted/30;
+    @apply bg-background border-b border-muted/20;
   }
 
   .bg-gradient-radial {
-    background: radial-gradient(ellipse at top, hsl(var(--muted) / 0.3) 0%, transparent 70%);
+    background: transparent;
   }
 
   .bg-gradient-primary {
@@ -460,10 +457,8 @@ All colors MUST be HSL.
   }
 
   .bg-gradient-glass {
-    background: linear-gradient(135deg,
-        hsl(var(--card) / 0.9) 0%,
-        hsl(var(--card) / 0.7) 50%,
-        hsl(var(--card) / 0.8) 100%);
+    background: hsl(var(--card) / 0.9);
+    backdrop-filter: blur(20px) saturate(170%);
   }
 
   /* ========== FLUID OCEAN GRADIENTS ========== */
@@ -478,10 +473,7 @@ All colors MUST be HSL.
 
   /* Subtle fluid gradient for backgrounds */
   .bg-gradient-fluid-subtle {
-    background: linear-gradient(180deg,
-        hsl(var(--gradient-start) / 0.05) 0%,
-        hsl(var(--gradient-mid) / 0.08) 50%,
-        hsl(var(--gradient-end) / 0.03) 100%);
+    background: transparent;
   }
 
   /* Blob gradients for organic shapes */
@@ -515,12 +507,9 @@ All colors MUST be HSL.
 
   /* Card with fluid accent */
   .card-fluid {
-    @apply relative overflow-hidden rounded-2xl;
-    background: linear-gradient(135deg,
-        hsl(var(--card) / 0.95) 0%,
-        hsl(var(--card) / 0.85) 100%);
-    backdrop-filter: blur(20px);
-    box-shadow: var(--shadow-md), 0px 0px 0px transparent;
+    @apply relative rounded-3xl overflow-hidden border border-white/10;
+    background: hsl(var(--card) / 0.95);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1), var(--shadow-inner-glow);
   }
 
   .card-fluid::before {
@@ -533,21 +522,20 @@ All colors MUST be HSL.
 
   /* Gradient text with fluid colors */
   .gradient-text-fluid {
+    color: hsl(var(--gradient-start));
+  }
+
+  /* Shared fluid gradient background */
+  .bg-fluid-gradient {
     background: linear-gradient(135deg,
         hsl(var(--gradient-start)) 0%,
-        hsl(var(--gradient-end)) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+        hsl(var(--gradient-mid)) 100%);
   }
 
   /* Button with fluid gradient */
   /* Always uses dark enough gradient stops for white text (WCAG AA 4.5:1) */
   .btn-fluid {
-    @apply relative overflow-hidden rounded-xl text-white font-medium whitespace-nowrap;
-    background: linear-gradient(135deg,
-        hsl(var(--gradient-start)) 0%,
-        hsl(var(--gradient-mid)) 100%);
+    @apply relative overflow-hidden rounded-xl text-white font-medium whitespace-nowrap bg-fluid-gradient;
     box-shadow: 0px 4px 6px -1px hsl(var(--gradient-start) / 0.15), 0px 2px 4px -1px hsl(var(--gradient-start) / 0.08);
     transition: all 0.3s ease;
   }
@@ -559,10 +547,7 @@ All colors MUST be HSL.
 
   /* Pill with fluid gradient */
   .pill-fluid {
-    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white whitespace-nowrap;
-    background: linear-gradient(135deg,
-        hsl(var(--gradient-start)) 0%,
-        hsl(var(--gradient-mid)) 100%);
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white whitespace-nowrap bg-fluid-gradient;
   }
 
   /* ========== GRADIENT BUTTON CONTRACT ========== */
@@ -611,7 +596,7 @@ All colors MUST be HSL.
 
   /* Gradient text */
   .gradient-text {
-    @apply bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent;
+    @apply text-primary font-bold;
   }
 
   /* Fluid container with mobile-safe padding */
@@ -770,18 +755,8 @@ All colors MUST be HSL.
     @apply relative overflow-hidden;
   }
 
-  .border-glow::before {
-    content: '';
-    @apply absolute inset-0 rounded-[inherit] p-[1px];
-    background: linear-gradient(90deg,
-        transparent 0%,
-        hsl(var(--primary) / 0.5) 50%,
-        transparent 100%);
-    background-size: 200% 100%;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    -webkit-mask-composite: xor;
-    animation: shimmer 3s linear infinite;
+  .border-glow {
+    @apply border border-primary/20;
   }
 
   /* Ripple effect base */
@@ -919,9 +894,7 @@ All colors MUST be HSL.
   /* Tier 1 — dominant hero card with strong glow */
   .card-tier-1 {
     @apply relative rounded-3xl border-0 overflow-hidden;
-    background: linear-gradient(145deg,
-        hsl(var(--card) / 0.92) 0%,
-        hsl(var(--card) / 0.78) 100%);
+    background: hsl(var(--card) / 0.92);
     backdrop-filter: blur(28px) saturate(200%);
     -webkit-backdrop-filter: blur(28px) saturate(200%);
     box-shadow:
@@ -943,9 +916,7 @@ All colors MUST be HSL.
   /* Tier 2 — secondary context cards */
   .card-tier-2 {
     @apply relative rounded-2xl border-0 overflow-hidden;
-    background: linear-gradient(135deg,
-        hsl(var(--card) / 0.82) 0%,
-        hsl(var(--card) / 0.68) 100%);
+    background: hsl(var(--card) / 0.82);
     backdrop-filter: blur(20px) saturate(170%);
     -webkit-backdrop-filter: blur(20px) saturate(170%);
     box-shadow: var(--shadow-md), var(--shadow-inner-glow);
@@ -1092,4 +1063,26 @@ All colors MUST be HSL.
 
 .animate-bounce-subtle {
   animation: bounce-subtle 2s infinite;
+}
+
+/* Accessibility fallback for gradients */
+@media (prefers-reduced-motion: reduce), (prefers-contrast: more) {
+  * {
+    background-image: none !important;
+    backdrop-filter: none !important;
+  }
+  .shadow-glass,
+  [class*="blur-"] {
+    box-shadow: none !important;
+    filter: none !important;
+  }
+}
+
+@layer utilities {
+  .performance-mode *, .performance-mode {
+    transition: none !important;
+    animation: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }

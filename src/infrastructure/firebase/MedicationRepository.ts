@@ -12,12 +12,17 @@ export class MedicationRepository {
    * Busca doses de um perfil específico em um intervalo de datas.
    */
   async getDosesByDateRange(userId: string, profileId: string | undefined, startDate: Date, endDate: Date): Promise<Dose[]> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
+    const constraints: any[] = [
+      where("userId", "==", userId)
+    ];
+
+    if (profileId) {
+      constraints.push(where("profileId", "==", profileId));
+    }
+
     const q = query(
-      collection(db, basePath),
+      collection(db, "dose_instances"),
+      ...constraints,
       where("dueAt", ">=", startDate.toISOString()),
       where("dueAt", "<=", endDate.toISOString()),
       orderBy("dueAt", "asc")
@@ -40,12 +45,17 @@ export class MedicationRepository {
    * Busca a primeira dose agendada para amanhã
    */
   async getFirstDoseTomorrow(userId: string, profileId: string | undefined, tomorrowStart: Date, tomorrowEnd: Date): Promise<Dose | null> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
+    const constraints: any[] = [
+      where("userId", "==", userId)
+    ];
+
+    if (profileId) {
+      constraints.push(where("profileId", "==", profileId));
+    }
+
     const q = query(
-      collection(db, basePath),
+      collection(db, "dose_instances"),
+      ...constraints,
       where("dueAt", ">=", tomorrowStart.toISOString()),
       where("dueAt", "<=", tomorrowEnd.toISOString()),
       where("status", "==", "scheduled"),
@@ -70,11 +80,7 @@ export class MedicationRepository {
    * Dispara um evento global de sistema para audit logs ou gamificação
    */
   async markDoseAsTaken(userId: string, profileId: string | undefined, doseId: string, itemId: string, itemName: string): Promise<void> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
-    const doseRef = doc(db, basePath, doseId);
+    const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
       status: "taken",
@@ -89,11 +95,7 @@ export class MedicationRepository {
    * Adia a dose por X minutos
    */
   async snoozeDose(userId: string, profileId: string | undefined, doseId: string, newDateIso: string, itemName: string): Promise<void> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
-    const doseRef = doc(db, basePath, doseId);
+    const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
       dueAt: newDateIso
@@ -106,11 +108,7 @@ export class MedicationRepository {
    * Marca uma dose como pulada (quando o usuário escolhe não tomar por algum motivo)
    */
   async markDoseAsSkipped(userId: string, profileId: string | undefined, doseId: string, itemName: string): Promise<void> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
-    const doseRef = doc(db, basePath, doseId);
+    const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
       status: "skipped",
@@ -124,11 +122,7 @@ export class MedicationRepository {
    * Marca uma dose como perdida (quando o tempo expirou ou o usuário esqueceu)
    */
   async markDoseAsMissed(userId: string, profileId: string | undefined, doseId: string, itemName: string): Promise<void> {
-    const basePath = profileId 
-      ? `users/${userId}/profiles/${profileId}/doses` 
-      : `users/${userId}/doses`;
-      
-    const doseRef = doc(db, basePath, doseId);
+    const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
       status: "missed",

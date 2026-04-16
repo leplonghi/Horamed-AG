@@ -41,25 +41,27 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
     }));
   }, [vaccineType, t]);
 
+  const [selectedVaccineKey, setSelectedVaccineKey] = useState("");
   const [formData, setFormData] = useState({
-    vaccine_name: "",
-    disease_prevention: "",
-    dose_description: "",
-    application_date: "",
-    next_dose_date: "",
-    vaccination_location: "",
-    vaccinator_name: "",
-    batch_number: "",
+    vaccineName: "",
+    diseasePrevention: "",
+    doseDescription: "",
+    applicationDate: "",
+    nextDoseDate: "",
+    vaccinationLocation: "",
+    vaccinatorName: "",
+    batchNumber: "",
     manufacturer: "",
     notes: "",
   });
 
   const handleVaccineSelect = (key: string) => {
     const vaccine = vaccines.find(v => v.key === key);
+    setSelectedVaccineKey(key);
     setFormData({
       ...formData,
-      vaccine_name: vaccine?.name || key,
-      disease_prevention: vaccine?.prevention || "",
+      vaccineName: vaccine?.name || key,
+      diseasePrevention: vaccine?.prevention || "",
     });
   };
 
@@ -67,10 +69,11 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
     e.preventDefault();
     createMutation.mutate({
       ...formData,
-      profile_id: profileId,
-      vaccine_type: vaccineType,
-      official_source: "Manual",
+      profileId: profileId,
+      vaccineType: vaccineType,
+      officialSource: "Manual",
     });
+    setSelectedVaccineKey("");
     onClose();
   };
 
@@ -87,8 +90,8 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="vaccine_name">{t('vaccines.selectVaccine')} *</Label>
-            <Select value={formData.vaccine_name} onValueChange={handleVaccineSelect} required>
+            <Label htmlFor="vaccineName">{t('vaccines.selectVaccine')} *</Label>
+            <Select value={selectedVaccineKey} onValueChange={handleVaccineSelect} required>
               <SelectTrigger>
                 <SelectValue placeholder={t('vaccines.selectVaccine')} />
               </SelectTrigger>
@@ -102,74 +105,74 @@ export default function VaccineManualForm({ profileId, vaccineType, onClose }: V
             </Select>
           </div>
 
-          {formData.disease_prevention && (
+          {formData.diseasePrevention && (
             <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
               <p className="text-sm text-blue-900 dark:text-blue-100">
-                <span className="font-semibold">{t('vaccines.prevents')}:</span> {formData.disease_prevention}
+                <span className="font-semibold">{t('vaccines.prevents')}:</span> {formData.diseasePrevention}
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="dose_description">{t('vaccines.doseLabel')}</Label>
+              <Label htmlFor="doseDescription">{t('vaccines.doseLabel')}</Label>
               <Input
-                id="dose_description"
-                value={formData.dose_description}
-                onChange={(e) => setFormData({ ...formData, dose_description: e.target.value })}
+                id="doseDescription"
+                value={formData.doseDescription}
+                onChange={(e) => setFormData({ ...formData, doseDescription: e.target.value })}
                 placeholder={t('vaccines.dosePlaceholder')}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="application_date">{t('vaccines.applicationDate')} *</Label>
+              <Label htmlFor="applicationDate">{t('vaccines.applicationDate')} *</Label>
               <Input
-                id="application_date"
+                id="applicationDate"
                 type="date"
-                value={formData.application_date}
-                onChange={(e) => setFormData({ ...formData, application_date: e.target.value })}
+                value={formData.applicationDate}
+                onChange={(e) => setFormData({ ...formData, applicationDate: e.target.value })}
                 required
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="next_dose_date">{t('vaccines.nextDoseIfAny')}</Label>
+            <Label htmlFor="nextDoseDate">{t('vaccines.nextDoseIfAny')}</Label>
             <Input
-              id="next_dose_date"
+              id="nextDoseDate"
               type="date"
-              value={formData.next_dose_date}
-              onChange={(e) => setFormData({ ...formData, next_dose_date: e.target.value })}
+              value={formData.nextDoseDate}
+              onChange={(e) => setFormData({ ...formData, nextDoseDate: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="vaccination_location">{t('vaccines.applicationLocation')}</Label>
+            <Label htmlFor="vaccinationLocation">{t('vaccines.applicationLocation')}</Label>
             <Input
-              id="vaccination_location"
-              value={formData.vaccination_location}
-              onChange={(e) => setFormData({ ...formData, vaccination_location: e.target.value })}
+              id="vaccinationLocation"
+              value={formData.vaccinationLocation}
+              onChange={(e) => setFormData({ ...formData, vaccinationLocation: e.target.value })}
               placeholder={t('vaccines.locationPlaceholder')}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="vaccinator_name">{t('vaccines.vaccinatorName')}</Label>
+            <Label htmlFor="vaccinatorName">{t('vaccines.vaccinatorName')}</Label>
             <Input
-              id="vaccinator_name"
-              value={formData.vaccinator_name}
-              onChange={(e) => setFormData({ ...formData, vaccinator_name: e.target.value })}
+              id="vaccinatorName"
+              value={formData.vaccinatorName}
+              onChange={(e) => setFormData({ ...formData, vaccinatorName: e.target.value })}
               placeholder={t('vaccines.vaccinatorPlaceholder')}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="batch_number">{t('vaccines.batchNumber')}</Label>
+              <Label htmlFor="batchNumber">{t('vaccines.batchNumber')}</Label>
               <Input
-                id="batch_number"
-                value={formData.batch_number}
-                onChange={(e) => setFormData({ ...formData, batch_number: e.target.value })}
+                id="batchNumber"
+                value={formData.batchNumber}
+                onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
                 placeholder={t('vaccines.batchPlaceholder')}
               />
             </div>

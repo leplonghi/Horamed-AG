@@ -51,7 +51,7 @@ export default function StepContinuous({
 
   // Calculate end date
   const endDate = startDate && treatmentDays
-    ? format(new Date(safeDateParse(startDate).getTime() + treatmentDays * 24 * 60 * 60 * 1000), 'PP', { locale })
+    ? format(safeDateParse(safeDateParse(startDate).getTime() + treatmentDays * 24 * 60 * 60 * 1000), 'PP', { locale })
     : null;
 
   return (

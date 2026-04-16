@@ -32,8 +32,8 @@ function MonthlyReportWidget() {
       // Or limit to 7 items to minimize read cost if we only care if it's >= 7.
 
       const { data } = await fetchCollection<any>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where('dueAt', '>=', monthStart.toISOString()),
           where('dueAt', '<=', monthEnd.toISOString())
         ]

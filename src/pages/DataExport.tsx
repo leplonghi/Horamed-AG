@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth, fetchCollection } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import Header from '@/components/Header';

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
-import { useAuth } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functions, db } from '@/integrations/firebase/client';

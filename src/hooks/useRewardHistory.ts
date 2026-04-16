@@ -1,4 +1,5 @@
-import { useAuth, fetchCollection, addDocument, orderBy, limit, query, where, Timestamp } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { fetchCollection, addDocument, orderBy, limit, query, where, Timestamp } from "@/integrations/firebase";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export interface RewardHistoryItem {

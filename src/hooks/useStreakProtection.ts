@@ -74,8 +74,8 @@ export function useStreakProtection() {
       const yesterday = startOfDay(subDays(new Date(), 1));
 
       const { data: yesterdayDoses } = await fetchCollection<any>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where("dueAt", ">=", yesterday.toISOString()),
           where("dueAt", "<", startOfDay(new Date()).toISOString())
         ]

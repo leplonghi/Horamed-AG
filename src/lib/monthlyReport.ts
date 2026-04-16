@@ -68,8 +68,8 @@ export async function generateMonthlyReport(userId: string, month: Date): Promis
 }
 
 async function getMonthlyReportData(userId: string, month: Date): Promise<MonthlyReportData> {
-  const monthStart = new Date(month.getFullYear(), month.getMonth(), 1);
-  const monthEnd = new Date(month.getFullYear(), month.getMonth() + 1, 0);
+  const monthStart = safeDateParse(month.getFullYear(), month.getMonth(), 1);
+  const monthEnd = safeDateParse(month.getFullYear(), month.getMonth() + 1, 0);
 
   // Get user profile
   const { data: profile } = await fetchDocument<ProfileDoc>(
@@ -79,8 +79,9 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
 
   // Get doses for the month
   const { data: doses } = await fetchCollection<DoseDoc>(
-    `users/${userId}/doses`,
+    "dose_instances",
     [
+      where('userId', '==', userId),
       where('dueAt', '>=', monthStart.toISOString()),
       where('dueAt', '<=', monthEnd.toISOString())
     ]

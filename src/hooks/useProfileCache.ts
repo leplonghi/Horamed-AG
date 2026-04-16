@@ -95,8 +95,8 @@ export function useProfileCache() {
 
         // Doses (Today)
         fetchCollection(
-          `users/${userId}/doses`,
-          [
+          "dose_instances",
+          [where("userId", "==", userId), 
             where('profileId', '==', profileId),
             where('dueAt', '>=', today),
             where('dueAt', '<=', endOfDay),

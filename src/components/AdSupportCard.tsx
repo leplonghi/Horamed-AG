@@ -9,6 +9,7 @@ import { Crown, Timer, MegaphoneSimple } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface AdSupportCardProps {
   className?: string;
@@ -51,7 +52,7 @@ export default function AdSupportCard({ className = "" }: AdSupportCardProps) {
     }
 
     const nextState = activateDailyPause();
-    const endsAt = new Date(nextState.adFreeUntil).toLocaleTimeString("pt-BR", {
+    const endsAt = safeDateParse(nextState.adFreeUntil).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
     });

@@ -4,9 +4,11 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { useAuth, fetchCollection, where, orderBy } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, where, orderBy } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 const GENERATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 const STORAGE_KEY = 'last_dose_generation';
@@ -46,13 +48,13 @@ export function useDoseGeneration() {
       }
 
       // Check if we have doses for the next 24 hours
-      const next24h = new Date(now + 24 * 60 * 60 * 1000);
+      const next24h = safeDateParse(now + 24 * 60 * 60 * 1000);
 
       // In Firebase: users/{uid}/doses
       // We don't filter by schedule IDs here to avoid "in" limits, just date and status
       const { data: futureDoses } = await fetchCollection(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where('status', '==', 'scheduled'),
           where('dueAt', '>=', new Date()),
           where('dueAt', '<=', next24h)

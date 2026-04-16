@@ -43,8 +43,9 @@ export function useStreakCalculator() {
       const startDate = startOfDay(subDays(new Date(), 90));
 
       const { data: doses } = await fetchCollection<DoseDoc>(
-        `users/${user.uid}/doses`,
+        "dose_instances",
         [
+          where("userId", "==", user.uid),
           where("dueAt", ">=", startDate.toISOString()),
           orderBy("dueAt", "asc")
         ]

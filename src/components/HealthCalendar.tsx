@@ -3,7 +3,7 @@ import { Calendar } from "./ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useToast } from "@/hooks/use-toast";
 import { CalendarBlank as CalendarIcon, Stethoscope, Heartbeat as Activity, Pill, CheckCircle as CheckCircle2, Clock, Link as LinkIcon, Plus, Funnel as Filter, CaretLeft as ChevronLeft, CaretRight as ChevronRight, ArrowsClockwise as RefreshCw } from "@phosphor-icons/react";
 import { format, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
@@ -49,15 +49,15 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
       const start = startOfMonth(date);
       const end = endOfMonth(date);
 
-      const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
-        body: {
-          action: 'fetch',
-          startDate: start.toISOString(),
-          endDate: end.toISOString()
-        }
+      const functions = getFunctions();
+      const googleCalendarSync = httpsCallable(functions, 'googleCalendarSync');
+      const result = await googleCalendarSync({
+        action: 'fetch',
+        startDate: start.toISOString(),
+        endDate: end.toISOString()
       });
 
-      if (error) throw error;
+      const data = result.data as any;
       setEvents(data.events || []);
     } catch (error) {
       console.error('Error fetching events:', error);

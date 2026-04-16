@@ -174,8 +174,8 @@ export default function ElderlyModeToggle({ className, compact = false }: Elderl
 
         {isElderlyMode && (
           <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             className="text-sm text-center text-primary font-medium pt-2"
           >
             ✓ {language === 'pt' ? 'Modo acessível ativado' : 'Accessibility mode enabled'}

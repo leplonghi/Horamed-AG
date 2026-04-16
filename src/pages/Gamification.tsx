@@ -3,8 +3,16 @@ import PageHeader from "@/components/PageHeader";
 import { GamificationHub } from "@/components/gamification/GamificationHub";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-export default function Gamification() {
+interface GamificationProps {
+  hideLayout?: boolean;
+}
+
+export default function Gamification({ hideLayout = false }: GamificationProps) {
   const { t } = useLanguage();
+
+  if (hideLayout) {
+    return <GamificationHub />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-muted/20 to-background page-container">

@@ -5,10 +5,10 @@ import {
     IconSearch,
     IconFile as FileText,
     IconMedications as Pill,
-    IconHistory as Calendar,
+    IconCalendar as Calendar,
     IconChevronRight as ArrowRight,
     IconUpload,
-    IconPlans as FolderOpen,
+    IconFolderOpen as FolderOpen,
     IconShield as ShieldCheck,
     IconTestTube,
     IconSyringe,
@@ -42,7 +42,7 @@ const CATEGORIES = [
     { value: "exame", label: "Exames", icon: IconTestTube, color: "text-emerald-500", bg: "bg-emerald-500/10", activeBg: "bg-emerald-500 text-white" },
     { value: "vacinacao", label: "Vacinas", icon: IconSyringe, color: "text-amber-500", bg: "bg-amber-500/10", activeBg: "bg-amber-500 text-white" },
     { value: "consulta", label: "Consultas", icon: Calendar, color: "text-rose-500", bg: "bg-rose-500/10", activeBg: "bg-rose-500 text-white" },
-    { value: "locais", label: "Locais", icon: IconProviders, color: "text-purple-500", bg: "bg-purple-500/10", activeBg: "bg-purple-500 text-white" },
+    { value: "locais", label: "Locais", icon: IconProviders, color: "text-emerald-500", bg: "bg-emerald-500/10", activeBg: "bg-emerald-500 text-white" },
 ];
 
 function getCategoryMeta(slug?: string) {
@@ -183,8 +183,8 @@ export default function Cofre() {
                             className="space-y-4"
                         >
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {providers?.filter(p => (p as any).name?.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
-                                    providers.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((provider) => (
+                                {providers?.filter(p => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                                    providers.filter(p => (p.name || "").toLowerCase().includes(searchTerm.toLowerCase())).map((provider) => (
                                         <motion.div key={provider.id} variants={itemVariants}>
                                             <ProviderCard 
                                                 provider={provider} 
@@ -225,27 +225,53 @@ export default function Cofre() {
                             animate="show" 
                             className="space-y-4"
                         >
-                            {/* Special case: show Locais preview in 'all' tab if we have any */}
-                            {activeTab === "all" && providers.length > 0 && !searchTerm && (
-                                <motion.div variants={itemVariants}>
-                                    <div 
-                                        className="rounded-[2rem] bg-purple-500/10 border border-purple-500/20 p-4 flex items-center gap-4 cursor-pointer hover:bg-purple-500/15 transition-all shadow-glass"
-                                        onClick={() => setActiveTab("locais")}
-                                    >
-                                        <div className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 bg-purple-500 text-white shadow-glow">
-                                            <IconProviders className="h-7 w-7" />
+                            {/* Custom Quick Links in 'all' or 'consulta' tab */}
+                            {(activeTab === "all" || activeTab === "consulta") && !searchTerm && (
+                                <div className="space-y-3 mb-6">
+                                    {/* Minhas Consultas Link */}
+                                    <motion.div variants={itemVariants}>
+                                        <div 
+                                            className="rounded-[2rem] bg-rose-500/10 border border-rose-500/20 p-4 flex items-center gap-4 cursor-pointer hover:bg-rose-500/15 transition-all shadow-glass"
+                                            onClick={() => navigate("/consultas")}
+                                        >
+                                            <div className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 bg-rose-500 text-white shadow-glow">
+                                                <Calendar className="h-7 w-7" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-base">Minhas Consultas</h4>
+                                                <p className="text-xs text-muted-foreground font-medium">
+                                                    Agende e acompanhe seus próximos compromissos médicos.
+                                                </p>
+                                            </div>
+                                            <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                                                <ArrowRight className="h-5 w-5 text-rose-500" />
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <h4 className="font-bold text-base">Meus Locais de Saúde</h4>
-                                            <p className="text-xs text-muted-foreground font-medium">
-                                                {providers.length} local{providers.length > 1 ? 'is' : ''} registrado{providers.length > 1 ? 's' : ''} na sua rede.
-                                            </p>
-                                        </div>
-                                        <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
-                                            <ArrowRight className="h-5 w-5 text-purple-500" />
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                    </motion.div>
+
+                                    {/* Meus Locais preview */}
+                                    {providers.length > 0 && (
+                                        <motion.div variants={itemVariants}>
+                                            <div 
+                                                className="rounded-[2rem] bg-emerald-500/10 border border-emerald-500/20 p-4 flex items-center gap-4 cursor-pointer hover:bg-emerald-500/15 transition-all shadow-glass"
+                                                onClick={() => setActiveTab("locais")}
+                                            >
+                                                <div className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0 bg-emerald-500 text-white shadow-glow">
+                                                    <IconProviders className="h-7 w-7" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="font-bold text-base">Meus Locais de Saúde</h4>
+                                                    <p className="text-xs text-muted-foreground font-medium">
+                                                        {providers.length} local{providers.length > 1 ? 'is' : ''} registrado{providers.length > 1 ? 's' : ''} na sua rede.
+                                                    </p>
+                                                </div>
+                                                <div className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center">
+                                                    <ArrowRight className="h-5 w-5 text-emerald-500" />
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
                             )}
 
                             {filteredDocuments && filteredDocuments.length > 0 ? (
@@ -317,12 +343,23 @@ export default function Cofre() {
                                             : "Comece adicionando seus primeiros documentos médicos para manter seu histórico organizado."}
                                     </p>
                                     {!searchTerm && (
-                                        <Button 
-                                            onClick={() => navigate("/carteira/upload")}
-                                            className="h-12 rounded-2xl px-6 bg-primary font-bold shadow-glow"
-                                        >
-                                            Digitalizar Primeiro Documento
-                                        </Button>
+                                        <div className="flex flex-col sm:flex-row gap-3">
+                                            <Button 
+                                                onClick={() => navigate("/carteira/upload")}
+                                                className="h-12 rounded-2xl px-6 bg-primary font-bold shadow-glow"
+                                            >
+                                                Digitalizar Documento
+                                            </Button>
+                                            {activeTab === "consulta" && (
+                                                <Button 
+                                                    variant="outline"
+                                                    onClick={() => navigate("/consultas")}
+                                                    className="h-12 rounded-2xl px-6 bg-rose-500/10 text-rose-500 border-rose-500/20 font-bold hover:bg-rose-500/20"
+                                                >
+                                                    Agendar Consulta
+                                                </Button>
+                                            )}
+                                        </div>
                                     )}
                                 </Card>
                             )}

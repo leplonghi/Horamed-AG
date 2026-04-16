@@ -367,12 +367,12 @@ class NotificationService {
       if (!user) return 0;
 
       const now = new Date();
-      const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const next24h = safeDateParse(now.getTime() + 24 * 60 * 60 * 1000);
 
       // In Firebase: users/{uid}/doses
       const { data: doses, error } = await fetchCollection<PendingDoseDoc>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where("status", "==", "scheduled"),
           where("dueAt", ">=", now.toISOString()),
           where("dueAt", "<=", next24h.toISOString()),
@@ -406,7 +406,7 @@ class NotificationService {
 
         // Schedule for each alert time (e.g. 15 min before, 0 min before)
         for (const minutesBefore of alertMinutes) {
-          const alertTime = new Date(dueAt.getTime() - minutesBefore * 60 * 1000);
+          const alertTime = safeDateParse(dueAt.getTime() - minutesBefore * 60 * 1000);
 
           // Skip if time is in the past
           if (alertTime.getTime() < Date.now()) continue;

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCollection, orderBy, fetchDocument, limit } from "@/integrations/firebase";
-import { useAuth } from "@/integrations/firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Scales as Scale, Heart, Flame, Heartbeat as Activity } from "@phosphor-icons/react";

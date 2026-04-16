@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useAuth, fetchCollection, updateDocument } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, updateDocument } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { FileText, Download, TrendUp as TrendingUp, TrendDown as TrendingDown, CalendarBlank as Calendar } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "./ui/progress";
+import { safeDateParse } from "@/lib/safeDateUtils";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 interface MonthlyReport {
   month: number;
@@ -32,22 +33,20 @@ export default function MonthlyReportCard() {
     setLoading(true);
     try {
       const now = new Date();
-      const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      
-      const { data, error } = await supabase.functions.invoke("generate-monthly-report", {
-        body: {
-          month: lastMonth.getMonth() + 1,
-          year: lastMonth.getFullYear(),
-        },
+      const lastMonth = safeDateParse(now.getFullYear(), now.getMonth() - 1, 1);
+
+      const functions = getFunctions();
+      const generateMonthlyReport = httpsCallable(functions, "generateMonthlyReport");
+      const result = await generateMonthlyReport({
+        month: lastMonth.getMonth() + 1,
+        year: lastMonth.getFullYear(),
       });
 
-      if (error) throw error;
-
-      if (data.report) {
-        setReport(data.report);
+      if (result.data.report) {
+        setReport(result.data.report);
         toast.success("Relatório gerado com sucesso!");
       } else {
-        toast.info(data.message);
+        toast.info(result.data.message);
       }
     } catch (error) {
       console.error("Error generating report:", error);
@@ -182,7 +181,7 @@ export default function MonthlyReportCard() {
       </Card>
 
       <Button variant="outline" onClick={generateReport} className="w-full">
-        Gerar Novo Relatório
+        Atualizar Relatório
       </Button>
     </Card>
   );

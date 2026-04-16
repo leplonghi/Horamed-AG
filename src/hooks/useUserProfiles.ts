@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { auth, fetchCollection, addDocument, updateDocument, deleteDocument, where, orderBy } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
+import { fetchCollection, addDocument, updateDocument, deleteDocument, where, orderBy } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useProfileCacheContext } from "@/contexts/ProfileCacheContext";
 

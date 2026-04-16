@@ -28,7 +28,7 @@ export function ClinicalBriefGenerator() {
             const startDate = subDays(endDate, 30);
 
             // 1. Fetch Doses for adherence calculation
-            const dosesRef = collection(db, `users/${user.uid}/doses`);
+            const dosesRef = collection(db, "dose_instances");
             const dosesQuery = query(
                 dosesRef,
                 where('dueAt', '>=', startDate.toISOString()),

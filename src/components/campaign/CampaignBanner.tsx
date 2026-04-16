@@ -6,6 +6,7 @@ import { Crown, Clock, ArrowRight, Lock } from "@phosphor-icons/react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchDocument } from "@/integrations/firebase";
 import FeedbackQuest from "@/components/feedback/FeedbackQuest";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 export default function CampaignBanner() {
     const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function CampaignBanner() {
                 if (profile?.campaignSource && profile.campaignSource !== 'organic' && !profile.feedbackCompleted) {
 
                     // Calculate days left of the 7-day trial before lock
-                    const creationTime = new Date(user.metadata.creationTime || Date.now());
+                    const creationTime = safeDateParse(user.metadata.creationTime || Date.now());
                     const now = new Date();
                     const diffTime = Math.abs(now.getTime() - creationTime.getTime());
                     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

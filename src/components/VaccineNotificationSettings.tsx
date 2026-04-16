@@ -4,7 +4,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Users, Syringe } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { getAuth } from "firebase/auth";
+import { getFirestore, collection, query, where, getDocs, setDoc, doc } from "firebase/firestore";
 import { toast } from "sonner";
 
 export function VaccineNotificationSettings() {
@@ -18,22 +19,23 @@ export function VaccineNotificationSettings() {
 
   const loadPreferences = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { data, error } = await supabase
-        .from("notification_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
+      const db = getFirestore();
+      const prefsQuery = query(
+        collection(db, "notification_preferences"),
+        where("userId", "==", user.uid)
+      );
+      const snapshot = await getDocs(prefsQuery);
+      const data = snapshot.docs[0]?.data();
 
       if (data) {
-        // Por enquanto usando push_enabled como proxy para vacinas
-        setVaccineRemindersEnabled(data.push_enabled ?? true);
-        // Assumindo que email_enabled pode ser usado para cuidadores
-        setCaregiverRemindersEnabled(data.email_enabled ?? true);
+        // Por enquanto usando pushEnabled como proxy para vacinas
+        setVaccineRemindersEnabled(data.pushEnabled ?? true);
+        // Assumindo que emailEnabled pode ser usado para cuidadores
+        setCaregiverRemindersEnabled(data.emailEnabled ?? true);
       }
     } catch (error) {
       console.error("Error loading vaccine notification preferences:", error);
@@ -44,20 +46,21 @@ export function VaccineNotificationSettings() {
 
   const updatePreference = async (field: string, value: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const auth = getAuth();
+      const user = auth.currentUser;
       if (!user) return;
 
-      const { error } = await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          [field]: value,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+      const db = getFirestore();
+      const prefsRef = doc(db, "notification_preferences", user.uid);
 
-      if (error) throw error;
+      // Convert snake_case field to camelCase
+      const camelField = field.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+
+      await setDoc(prefsRef, {
+        userId: user.uid,
+        [camelField]: value,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
 
       toast.success("Preferência atualizada com sucesso!");
     } catch (error) {

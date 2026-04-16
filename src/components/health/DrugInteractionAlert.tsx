@@ -197,9 +197,9 @@ export default function DrugInteractionAlert({
           <AnimatePresence>
             {expanded && (
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
+                initial={{ opacity: 0, scale: 0.98, transformOrigin: "top" }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98 }}
                 transition={{ duration: 0.2 }}
               >
                 <CardContent className="pt-0 space-y-3">

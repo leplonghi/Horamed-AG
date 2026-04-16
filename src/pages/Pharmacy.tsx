@@ -177,11 +177,11 @@ const Pharmacy = () => {
                 <div className="text-sm font-black text-green-600">$ 4.90</div>
               </div>
               <div className="aspect-square rounded-2xl bg-white dark:bg-slate-900 p-4 shadow-sm flex flex-col items-center justify-center text-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
                   <CurrencyCircleDollar className="w-6 h-6" weight="bold" />
                 </div>
                 <div className="text-[10px] font-bold text-muted-foreground uppercase leading-tight">Sugestão UAE</div>
-                <div className="text-sm font-black text-purple-600">AED 18</div>
+                <div className="text-sm font-black text-emerald-600">AED 18</div>
               </div>
             </div>
 

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { differenceInDays, subDays, format } from "date-fns";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -25,8 +25,8 @@ export interface WeightInsight {
 }
 
 interface WeightData {
-  weight_kg: number;
-  recorded_at: string;
+  weightKg: number;
+  recordedAt: string;
 }
 
 export interface MedicationMarker {
@@ -40,9 +40,9 @@ export interface MedicationMarker {
 interface MedicationData {
   id: string;
   name: string;
-  created_at: string;
+  createdAt: string;
   category: string | null;
-  treatment_start_date: string | null;
+  treatmentStartDate: string | null;
 }
 
 export function useWeightInsights(profileId?: string) {
@@ -51,48 +51,31 @@ export function useWeightInsights(profileId?: string) {
   return useQuery({
     queryKey: ["weight-insights", user?.id, profileId],
     queryFn: async () => {
-      if (!user?.id) return { 
-        insights: [], 
-        hasGLP1: false, 
-        medications: [], 
-        medicationMarkers: [],
-        latestWeight: null,
-        totalChange: null,
-        daysSinceFirst: null,
-        daysSinceLastLog: null
-      };
+      const userId = user.uid;
 
       // Fetch weight logs
-      let weightQuery = supabase
-        .from("weight_logs")
-        .select("weight_kg, recorded_at")
-        .eq("user_id", user.id)
-        .order("recorded_at", { ascending: true });
-
-      if (profileId) {
-        weightQuery = weightQuery.eq("profile_id", profileId);
-      }
-
-      const { data: weightLogs } = await weightQuery;
+      const weightPath = profileId 
+        ? `users/${userId}/profiles/${profileId}/weight_logs`
+        : `users/${userId}/weight_logs`;
+      
+      const { data: weightLogs } = await fetchCollection<WeightData>(weightPath, [
+        orderBy("recordedAt", "asc")
+      ]);
 
       // Fetch ALL active medications for timeline markers
-      let allMedsQuery = supabase
-        .from("items")
-        .select("id, name, created_at, category, treatment_start_date")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
+      const medsPath = profileId
+        ? `users/${userId}/profiles/${profileId}/medications`
+        : `users/${userId}/medications`;
 
-      if (profileId) {
-        allMedsQuery = allMedsQuery.eq("profile_id", profileId);
-      }
-
-      const { data: allMedications } = await allMedsQuery;
+      const { data: allMedications } = await fetchCollection<MedicationData>(medsPath, [
+        where("isActive", "==", true)
+      ]);
 
       // Create medication markers for timeline
       const medicationMarkers: MedicationMarker[] = (allMedications || []).map((med: MedicationData) => ({
         id: med.id,
         name: med.name,
-        startDate: med.treatment_start_date || med.created_at,
+        startDate: med.treatmentStartDate || med.createdAt,
         category: med.category || 'medication',
         type: med.category === 'supplement' ? 'supplement' : 'medication'
       }));
@@ -134,28 +117,28 @@ export function useWeightInsights(profileId?: string) {
       const firstWeight = weights[0];
 
       // Calculate total change
-      const totalChange = latestWeight.weight_kg - firstWeight.weight_kg;
+      const totalChange = latestWeight.weightKg - firstWeight.weightKg;
       const daysSinceFirst = differenceInDays(
-        safeDateParse(latestWeight.recorded_at),
-        safeDateParse(firstWeight.recorded_at)
+        safeDateParse(latestWeight.recordedAt),
+        safeDateParse(firstWeight.recordedAt)
       );
 
-      const lastLogDate = safeDateParse(latestWeight.recorded_at);
+      const lastLogDate = safeDateParse(latestWeight.recordedAt);
       const daysSinceLastLog = differenceInDays(new Date(), lastLogDate);
 
       // NEUTRAL 7-day trend observation
       const sevenDaysAgo = subDays(new Date(), 7);
-      const recentWeights = weights.filter(w => safeDateParse(w.recorded_at) >= sevenDaysAgo);
+      const recentWeights = weights.filter(w => safeDateParse(w.recordedAt) >= sevenDaysAgo);
       
       if (recentWeights.length >= 2) {
-        const weekChange = recentWeights[recentWeights.length - 1].weight_kg - recentWeights[0].weight_kg;
+        const weekChange = recentWeights[recentWeights.length - 1].weightKg - recentWeights[0].weightKg;
         
         if (Math.abs(weekChange) < 0.3) {
           insights.push({
             type: 'trend',
             title: 'Peso estável',
             description: 'Seu peso está estável nas últimas semanas.',
-            value: `${latestWeight.weight_kg} kg`,
+            value: `${latestWeight.weightKg} kg`,
             trend: 'stable'
           });
         } else {
@@ -177,14 +160,14 @@ export function useWeightInsights(profileId?: string) {
 
       // NEUTRAL medication correlation (if applicable)
       if (hasGLP1 && weightRelatedMeds[0]) {
-        const medStartDate = safeDateParse(weightRelatedMeds[0].treatment_start_date || weightRelatedMeds[0].created_at);
+        const medStartDate = safeDateParse(weightRelatedMeds[0].treatmentStartDate || weightRelatedMeds[0].createdAt);
         const weightsAfterMed = weights.filter(w => 
-          safeDateParse(w.recorded_at) >= medStartDate
+          safeDateParse(w.recordedAt) >= medStartDate
         );
 
         if (weightsAfterMed.length >= 2) {
           const weightAtMedStart = weightsAfterMed[0];
-          const changeWithMed = latestWeight.weight_kg - weightAtMedStart.weight_kg;
+          const changeWithMed = latestWeight.weightKg - weightAtMedStart.weightKg;
           const daysSinceMed = differenceInDays(new Date(), medStartDate);
 
           insights.push({
@@ -222,12 +205,12 @@ export function useWeightInsights(profileId?: string) {
         hasGLP1, 
         medications: weightRelatedMeds,
         medicationMarkers,
-        latestWeight: latestWeight.weight_kg,
+        latestWeight: latestWeight.weightKg,
         totalChange,
         daysSinceFirst,
         daysSinceLastLog
       };
     },
-    enabled: !!user?.id,
+    enabled: !!user?.uid,
   });
 }

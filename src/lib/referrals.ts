@@ -1,3 +1,4 @@
+import { safeDateParse } from "@/lib/safeDateUtils";
 import {
   fetchCollection,
   fetchDocument,
@@ -78,8 +79,8 @@ export async function getReferralDiscountForUser(userId: string): Promise<number
  * Max 3 slots per month
  */
 export async function getFreeExtraSlotsForUser(userId: string, currentMonth: Date): Promise<number> {
-  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
-  const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+  const monthStart = safeDateParse(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+  const monthEnd = safeDateParse(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
 
   const { data: referrals, error } = await fetchCollection<ReferralDoc>(
     `users/${userId}/referrals`,

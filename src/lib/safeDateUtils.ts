@@ -69,7 +69,7 @@ export function safeDateParse(value: DateLike, fallback: Date = new Date()): Dat
  * @returns Valid timestamp in milliseconds
  */
 export function safeGetTime(value: DateLike, fallback: number = Date.now()): number {
-    const date = safeDateParse(value, new Date(fallback));
+    const date = safeDateParse(value, safeDateParse(fallback));
     const time = date.getTime();
     return isNaN(time) ? fallback : time;
 }

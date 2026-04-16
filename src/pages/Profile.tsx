@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { auth } from "@/integrations/firebase";
+import { auth } from "@/integrations/firebase/client";
 import { toast } from "sonner";
 import { Bell, Shield, Question as HelpCircle, SignOut as LogOut, FileArrowDown as FileDown, Crown, FileText, DeviceMobile as Smartphone, Heartbeat as Activity, BookOpen, Airplane as Plane, Gift, Waves } from "@phosphor-icons/react";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
@@ -24,6 +24,7 @@ const APP_VERSION = __APP_VERSION__;
 
 // New refined components
 import ProfileHeroHeader from "@/components/profile/ProfileHeroHeader";
+import { ProfileStatsGrid } from "@/components/profile/ProfileStatsGrid";
 import PlanOverviewCard from "@/components/profile/PlanOverviewCard";
 import ProfileGamification from "@/components/profile/ProfileGamification";
 import SmartProfileInsights from "@/components/profile/SmartProfileInsights"; // Keep smart insights, mostly for critical alerts
@@ -98,9 +99,13 @@ export default function Profile() {
         animate="show"
         className="page-container container max-w-lg mx-auto px-4 pt-[calc(4rem+env(safe-area-inset-top))] space-y-6 relative z-10 pb-24"
       >
-        {/* 1. HERO - Identity Only */}
         <motion.div variants={itemVariants}>
           <ProfileHeroHeader userEmail={userEmail} onLogout={handleLogout} />
+        </motion.div>
+
+        {/* 1.5. QUICK STATS - New refined visual hooks */}
+        <motion.div variants={itemVariants}>
+          <ProfileStatsGrid />
         </motion.div>
 
         {/* 2. GAMIFICATION - Badges, Streaks, Rewards */}

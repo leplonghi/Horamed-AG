@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CheckCircle as CheckCircle2, Clock, WarningCircle as AlertCircle } from '@phosphor-icons/react';
-import { useAuth, fetchCollection, where, orderBy, limit, fetchDocument } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, where, orderBy, limit, fetchDocument } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import { format } from 'date-fns';
@@ -44,12 +45,12 @@ export default function QuickDoseWidget({
     if (!user) return;
     try {
       const now = new Date();
-      const next2Hours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+      const next2Hours = safeDateParse(now.getTime() + 2 * 60 * 60 * 1000);
 
       // In Firebase: users/{uid}/doses
       const { data: doses, error } = await fetchCollection<{ id: string; dueAt: string; itemId: string; status: string }>(
-        `users/${user.uid}/doses`,
-        [
+        "dose_instances",
+        [where("userId", "==", user.uid), 
           where('status', '==', 'scheduled'),
           where('dueAt', '>=', now.toISOString()),
           where('dueAt', '<=', next2Hours.toISOString()),

@@ -69,7 +69,7 @@ export function usePrescriptionControl(profileId?: string) {
       const prescriptions: PrescriptionDoc[] = snap.docs.map(d => ({ id: d.id, ...d.data() } as PrescriptionDoc));
 
       // Sort manually by createdAt DESC
-      prescriptions.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+      prescriptions.sort((a, b) => safeDateParse(b.createdAt || 0).getTime() - safeDateParse(a.createdAt || 0).getTime());
 
       const statusList: PrescriptionStatus[] = [];
       const medicationMap = new Map<string, string[]>(); // medication name -> prescription IDs

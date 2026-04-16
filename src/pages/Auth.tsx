@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { Fingerprint, Shield, ArrowLeft, Users, Bell, Eye, EyeSlash as EyeOff, Clock, Sun, GoogleLogo } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
-import { useAuth, signIn, signUp, signInWithGoogle, signOut } from "@/integrations/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { signIn, signUp, signInWithGoogle, signOut } from "@/integrations/firebase";
 import { processReferralOnSignup } from "@/lib/referrals";
 import { APP_DOMAIN } from "@/lib/domainConfig";
 import { useDeviceFingerprint } from "@/hooks/useDeviceFingerprint";
@@ -94,18 +95,28 @@ export default function Auth() {
       });
       if (error) throw error;
 
+      // On mobile web, signInWithRedirect returns null user — page will reload.
+      // AuthContext.onAuthStateChanged will handle navigation after redirect.
+      if (!firebaseUser) {
+        // Don't reset setLoading here — the browser is about to redirect away.
+        return;
+      }
+
       if (isNewUser) {
         navigate("/onboarding");
         return;
       }
 
-      if (firebaseUser && referralCode) {
+      if (referralCode) {
         try {
           await processReferralOnSignup(firebaseUser.uid, referralCode);
         } catch (refError) {
           console.error('Error processing referral:', refError);
         }
       }
+
+      // Existing user via popup — navigate explicitly (useEffect is blocked by loading=true)
+      navigate("/");
     } catch (error: any) {
       toast.error(error.message || t('auth.googleError'));
       setLoading(false);
@@ -170,7 +181,10 @@ export default function Auth() {
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔐 Initiating email sign in for:', email);
+    
     if (!email || !password) {
+      console.warn('⚠️ Missing email or password');
       toast.error(t('auth.fillAllFields'));
       return;
     }
@@ -183,8 +197,13 @@ export default function Auth() {
 
       if (error) throw error;
 
+      console.log('✅ Auth success, waiting for context redirect...');
       toast.success(t('auth.loginSuccess'));
       localStorage.setItem('horamed_has_visited', 'true');
+      
+      // Clear persistence issues if any
+      sessionStorage.removeItem("horamed_splash_shown");
+      
       if (isAvailable && !isBiometricEnabled) {
         setTimeout(() => {
           if (window.confirm(t('auth.enableBiometric'))) {
@@ -194,7 +213,7 @@ export default function Auth() {
       }
       navigate("/");
     } catch (error: any) {
-      console.error('🔥 Auth page error:', error);
+      console.error('🔥 Auth page handleEmailSignIn error:', error);
       
       let errorMessage = error.message || t('auth.loginError');
       
@@ -408,7 +427,14 @@ export default function Auth() {
           </div>
 
           {/* Email Form */}
-          <form onSubmit={isLogin ? handleEmailSignIn : handleEmailSignUp} className="space-y-3">
+          <form 
+            onSubmit={(e) => {
+              console.log('📝 Form submit triggered! isLogin:', isLogin, 'Email:', email);
+              if (isLogin) handleEmailSignIn(e);
+              else handleEmailSignUp(e);
+            }} 
+            className="space-y-3"
+          >
             <div className="space-y-1">
               <Label htmlFor="email" className="text-sm font-medium">E-mail</Label>
               <Input id="email" type="email" placeholder="seu@email.com" value={email} onChange={e => setEmail(e.target.value)} required className="h-11 rounded-xl bg-white/70 backdrop-blur-sm border-border/50 focus:border-primary transition-colors" />
@@ -434,17 +460,16 @@ export default function Auth() {
               </p>}
             </div>
 
-            {/* Terms checkbox for signup */}
             <AnimatePresence>
               {!isLogin && <motion.div initial={{
                 opacity: 0,
-                height: 0
+                scale: 0.95
               }} animate={{
                 opacity: 1,
-                height: "auto"
+                scale: 1
               }} exit={{
                 opacity: 0,
-                height: 0
+                scale: 0.95
               }} className="flex items-start gap-2 pt-1">
                 <Checkbox id="terms" checked={acceptedTerms} onCheckedChange={checked => setAcceptedTerms(checked as boolean)} className="mt-0.5" />
                 <Label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer">
@@ -456,7 +481,12 @@ export default function Auth() {
               </motion.div>}
             </AnimatePresence>
 
-            <Button type="submit" disabled={loading || !isLogin && !acceptedTerms} className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30">
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              onClick={() => console.log('🔘 Submit Button clicked! Current state:', { loading, isLogin, acceptedTerms, email: !!email, pass: !!password })}
+              className="w-full h-11 rounded-xl font-semibold text-sm bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/25 transition-all hover:shadow-xl hover:shadow-primary/30"
+            >
               {loading ? <div className="flex items-center gap-2">
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span>Aguarde...</span>

@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MedicalEventFormData } from "@/types/medicalEvents";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface StepBasicInfoProps {
     formData: Partial<MedicalEventFormData>;
@@ -26,7 +27,7 @@ export default function StepBasicInfo({
         const dateStr = e.target.value;
         if (dateStr) {
             // Create date at noon to avoid timezone issues for simple date picking
-            const date = new Date(dateStr + 'T12:00:00');
+            const date = safeDateParse(dateStr + 'T12:00:00');
             updateFormData({ date: date });
         }
     };

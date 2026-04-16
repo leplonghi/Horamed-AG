@@ -81,7 +81,7 @@ export default function AlarmManager() {
     setIsSubmitting(true);
 
     try {
-      const scheduledAt = new Date(`${form.date}T${form.time}`);
+      const scheduledAt = safeDateParse(`${form.date}T${form.time}`);
 
       await createAlarm({
         title: form.title,

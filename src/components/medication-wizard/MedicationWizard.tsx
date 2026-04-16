@@ -432,12 +432,12 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           await Promise.all(oldSchedules.map((s: any) => deleteDocument(`users/${user.uid}/schedules`, s.id)));
         }
 
-        const { data: oldDoses } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+        const { data: oldDoses } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
           where('itemId', '==', itemId),
           where('status', '==', 'scheduled')
         ]);
         if (oldDoses) {
-          await Promise.all(oldDoses.map((d: any) => deleteDocument(`users/${user.uid}/doses`, d.id)));
+          await Promise.all(oldDoses.map((d: any) => deleteDocument("dose_instances", d.id)));
         }
 
         // Update Stock: Delete old
@@ -531,7 +531,7 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
 
       if (doseInstances.length > 0) {
         // Sequential add because no batch helper yet or just map
-        await Promise.all(doseInstances.map(dose => addDocument(`users/${user.uid}/doses`, dose)));
+        await Promise.all(doseInstances.map(dose => addDocument("dose_instances", dose)));
       }
 
       // Create stock if enabled

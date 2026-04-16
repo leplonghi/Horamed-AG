@@ -167,7 +167,7 @@ export default function AddItemWizard() {
 
       // Calculate end date for temporary treatments
       const treatmentEndDate = !formData.isContinuous && formData.startDate && formData.treatmentDays
-        ? new Date(safeDateParse(formData.startDate).getTime() + formData.treatmentDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        ? safeDateParse(safeDateParse(formData.startDate).getTime() + formData.treatmentDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         : null;
 
       // Create item
@@ -233,7 +233,9 @@ export default function AddItemWizard() {
           if (dueAt > now) {
             const dueAtISO = dueAt.toISOString();
             batchPromises.push(
-              addDocument(`users/${user.uid}/doses`, {
+              addDocument("dose_instances", {
+                userId: user.uid,
+                profileId: activeProfile?.id || null,
                 scheduleId: schedule?.id || item.id,
                 itemId: item.id,
                 dueAt: dueAtISO,

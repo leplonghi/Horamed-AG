@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 const STORAGE_KEY = "horamed_ad_support_state";
 const AD_FREE_HOURS = 6;
@@ -54,12 +55,12 @@ export function useAdSupport() {
   const canClaimDailyPause = !hasFeature("no_ads") && (!state.nextClaimAt || state.nextClaimAt <= now);
 
   const adFreeUntilDate = useMemo(
-    () => (state.adFreeUntil ? new Date(state.adFreeUntil) : null),
+    () => (state.adFreeUntil ? safeDateParse(state.adFreeUntil) : null),
     [state.adFreeUntil]
   );
 
   const nextClaimDate = useMemo(
-    () => (state.nextClaimAt ? new Date(state.nextClaimAt) : null),
+    () => (state.nextClaimAt ? safeDateParse(state.nextClaimAt) : null),
     [state.nextClaimAt]
   );
 

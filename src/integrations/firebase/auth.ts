@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import {
     User,
     signInWithEmailAndPassword,
@@ -10,10 +9,11 @@ import {
     GoogleAuthProvider,
     signInWithPopup,
     signInWithRedirect,
-    getRedirectResult,
     signInWithCredential,
     setPersistence,
     browserLocalPersistence,
+    browserSessionPersistence,
+    inMemoryPersistence,
     indexedDBLocalPersistence,
     getAdditionalUserInfo,
 } from 'firebase/auth'
@@ -22,11 +22,28 @@ import { Capacitor } from '@capacitor/core'
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication'
 
 // On Capacitor native (Android/iOS), use indexedDB persistence (more reliable in WebView).
-// On web, use localStorage persistence.
+// On web, use localStorage persistence with session/memory fallback if access is denied.
 const isNativePlatform = Capacitor.isNativePlatform();
-setPersistence(auth, isNativePlatform ? indexedDBLocalPersistence : browserLocalPersistence).catch((err) => {
-    console.error('Failed to set auth persistence:', err);
-});
+
+const trySetPersistence = async () => {
+    try {
+        await setPersistence(auth, isNativePlatform ? indexedDBLocalPersistence : browserLocalPersistence);
+    } catch (err: any) {
+        // If localStorage is blocked (common with third-party cookie blocking), fallback to session
+        if (err.message?.includes('localStorage') || err.code?.includes('persistence')) {
+            console.warn('⚠️ Local auth persistence denied (storage blocked). Falling back to session persistence...');
+            try {
+                await setPersistence(auth, browserSessionPersistence);
+            } catch (err2) {
+                await setPersistence(auth, inMemoryPersistence).catch(console.error);
+            }
+        } else {
+            console.error('Failed to set auth persistence:', err);
+        }
+    }
+};
+
+trySetPersistence();
 
 function isNoCredentialAvailableError(error: unknown) {
     if (!error || typeof error !== 'object') return false
@@ -40,50 +57,6 @@ function isNoCredentialAvailableError(error: unknown) {
         message.includes('no credential available') ||
         message.includes('no credentials available')
     )
-}
-
-export interface AuthState {
-    user: User | null
-    loading: boolean
-    error: Error | null
-}
-
-/**
- * Hook to get current auth state and handle redirect results
- */
-export function useAuth(): AuthState {
-    const [user, setUser] = useState<User | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<Error | null>(null)
-
-    useEffect(() => {
-        // Handle redirect result only in web/PWA context (not in native Capacitor).
-        if (!Capacitor.isNativePlatform()) {
-            getRedirectResult(auth).then((result) => {
-                if (result?.user) {
-                    setUser(result.user)
-                }
-            }).catch((err) => {
-                console.error('Auth redirect error:', err);
-            });
-        }
-
-        const unsubscribe = onAuthStateChanged(
-            auth,
-            (user) => {
-                setUser(user)
-                setLoading(false)
-            },
-            (err) => {
-                setError(err)
-                setLoading(false)
-            }
-        )
-
-        return () => unsubscribe()
-    }, [])
-
-    return { user, loading, error }
 }
 
 /**
@@ -121,16 +94,13 @@ export async function signUp(email: string, password: string, displayName?: stri
  *
  * Strategy:
  * - Capacitor native (Android/iOS): uses @capacitor-firebase/authentication which calls
- *   the native Android Google Sign-In SDK directly. NO external browser is opened.
- *   The native idToken is then exchanged for a Firebase credential via signInWithCredential.
+ *   the native Android Google Sign-In SDK directly.
  * - Web/PWA on mobile browser: use signInWithRedirect (standard mobile web flow).
  * - Web/PWA on desktop: use signInWithPopup.
  */
 export async function signInWithGoogle(options?: { prompt?: string, login_hint?: string }) {
     try {
         if (Capacitor.isNativePlatform()) {
-            // ✅ CORRECT: Uses native Android Google Sign-In SDK via @capacitor-firebase/authentication.
-            // This shows the system account picker — NO Chrome Custom Tab, NO external browser.
             const customParameters: { key: string; value: string }[] = []
             if (options?.prompt) customParameters.push({ key: 'prompt', value: options.prompt })
             if (options?.login_hint) customParameters.push({ key: 'login_hint', value: options.login_hint })
@@ -139,6 +109,7 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             let nativeResult
 
             try {
+                // Try standard native sign in
                 nativeResult = await FirebaseAuthentication.signInWithGoogle(nativeOptions)
             } catch (error) {
                 const shouldFallbackToLegacyGoogleSignIn =
@@ -148,6 +119,7 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
                     throw error
                 }
 
+                // Fallback for older Android environments or missing Credential Manager
                 nativeResult = await FirebaseAuthentication.signInWithGoogle({
                     ...nativeOptions,
                     useCredentialManager: false,
@@ -181,9 +153,9 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
         if (isMobile) {
-            // Mobile browser: redirect flow is more reliable than popup
+            // Mobile browser: redirect flow is more reliable
             await signInWithRedirect(auth, provider)
-            return { user: null, isNewUser: false, error: null } // Will redirect back
+            return { user: null, isNewUser: false, error: null }
         } else {
             const result = await signInWithPopup(auth, provider)
             const additionalInfo = getAdditionalUserInfo(result)
@@ -194,20 +166,18 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             }
         }
     } catch (error: any) {
+        console.error('Google Sign-In Error:', error);
         return { user: null, isNewUser: false, error }
     }
 }
 
 /**
- * Sign out — also signs out from the native layer on Capacitor.
+ * Sign out
  */
 export async function signOut() {
     try {
         if (Capacitor.isNativePlatform()) {
-            // Sign out from native layer too, to clear the native auth state
-            await FirebaseAuthentication.signOut().catch(() => {
-                // Non-critical: ignore native sign-out errors
-            })
+            await FirebaseAuthentication.signOut().catch(() => {})
         }
         await firebaseSignOut(auth)
         return { error: null }

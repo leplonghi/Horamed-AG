@@ -24,7 +24,7 @@ export default function AnalyticsDetails() {
       const startDate = subDays(now, 30);
 
       // Fetch Doses
-      const { data: dosesData } = await fetchCollection<any>(`users/${user.uid}/doses`, [
+      const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
         where('dueAt', '>=', startOfDay(startDate).toISOString()),
         where('dueAt', '<=', endOfDay(now).toISOString()),
         orderBy('dueAt', 'asc')

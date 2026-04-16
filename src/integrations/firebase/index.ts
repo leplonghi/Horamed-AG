@@ -3,7 +3,6 @@ export { default as app, auth, db, storage, functions, analytics } from './clien
 
 // Authentication
 export {
-    useAuth,
     signIn,
     signUp,
     signInWithGoogle,
@@ -24,6 +23,7 @@ export {
     addDocument,
     fetchDocument,
     fetchCollection,
+    fetchCount,
     fetchCollectionGroup,
     timestampToDate,
     where,

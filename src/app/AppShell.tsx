@@ -11,6 +11,7 @@ import { useDoseGeneration } from "@/hooks/useDoseGeneration";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "@/pages/Index";
 import Landing from "@/pages/Landing";
+import { useDeviceCapability } from "@/hooks/useDeviceCapability";
 
 const Today = lazy(() => import("@/pages/Today"));
 const MedicamentosHub = lazy(() => import("@/pages/MedicamentosHub"));
@@ -86,6 +87,8 @@ const NotificationPermissionPrompt = lazy(
   () => import("@/components/NotificationPermissionPrompt"),
 );
 
+const PerformanceSettings = lazy(() => import("@/pages/PerformanceSettings"));
+
 const HIDE_NAVIGATION_PATHS = [
   "/auth",
   "/onboarding",
@@ -137,6 +140,16 @@ const PageLoader = () => (
 
 export default function AppShell() {
   const { requestNotificationPermission } = usePushNotifications();
+  const { shouldReduceEffects } = useDeviceCapability();
+
+  // Apply performance mode class to root for CSS reduction
+  useEffect(() => {
+    if (shouldReduceEffects) {
+      document.documentElement.classList.add("performance-mode");
+    } else {
+      document.documentElement.classList.remove("performance-mode");
+    }
+  }, [shouldReduceEffects]);
 
   useDoseGeneration();
 
@@ -236,8 +249,8 @@ export default function AppShell() {
             }
           />
           <Route path="/progresso" element={<Navigate to="/meu-progresso" replace />} />
-          <Route path="/conquistas" element={<Navigate to="/meu-progresso?tab=conquistas" replace />} />
-          <Route path="/jornada" element={<Navigate to="/meu-progresso" replace />} />
+          <Route path="/conquistas" element={<Navigate to="/meu-progresso?tab=achievements" replace />} />
+          <Route path="/jornada" element={<Navigate to="/meu-progresso?tab=jornada" replace />} />
           <Route
             path="/carteira"
             element={
@@ -542,7 +555,7 @@ export default function AppShell() {
             }
           />
           <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
-          <Route path="/recompensas" element={<Navigate to="/meu-progresso?tab=conquistas" replace />} />
+          <Route path="/recompensas" element={<Navigate to="/meu-progresso?tab=achievements" replace />} />
           <Route
             path="/peso"
             element={
@@ -612,6 +625,14 @@ export default function AppShell() {
             }
           />
           <Route path="/configuracoes/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
+          <Route
+            path="/desempenho"
+            element={
+              <ProtectedRoute>
+                <PerformanceSettings />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/exportar"
             element={

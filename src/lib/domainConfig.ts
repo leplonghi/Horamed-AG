@@ -28,7 +28,7 @@ export const STRIPE_PORTAL_RETURN_URL = `${APP_DOMAIN}/assinatura`;
 export const isLandingDomain = () => {
   if (!import.meta.env.PROD) return false;
   const host = window.location.hostname;
-  return host === 'horamed.net' || host === 'www.horamed.net';
+  return host === 'horamed.net' || host === 'www.horamed.net' || host === 'horamed.me';
 };
 
 // Check if we're on the app domain

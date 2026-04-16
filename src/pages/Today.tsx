@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/integrations/firebase/client";
 import { fetchDocument, updateDocument } from "@/integrations/firebase";
-import { auth } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
@@ -87,6 +87,9 @@ export default function Today() {
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false);
   const [selectedDoseForModal, setSelectedDoseForModal] = useState<any>(null);
 
+  // We use a ref for stats to break the circular dependency between markAsTaken and useTodayData
+  const todayStatsRef = useRef({ total: 0, taken: 0 });
+
   useEffect(() => {
     if (isNewMilestone && milestone) {
       setShowMilestoneReward(true);
@@ -153,16 +156,18 @@ export default function Today() {
 
       trackDoseTaken(doseId, itemName);
 
-      // Trigger high-reward celebrations
-      setCelebrationType("dose_taken");
-      setShowMicroCelebration(true);
-      setShowConfetti(true);
-
-      // Check for daily completion
-      if (todayStats.total > 0 && todayStats.taken + 1 === todayStats.total) {
+      const stats = todayStatsRef.current;
+      if (stats.total > 0 && stats.taken + 1 === stats.total) {
+        setCelebrationType("perfect_day");
+        setShowMicroCelebration(true);
+        setShowConfetti(true);
         setTimeout(() => {
           setShowDailyComplete(true);
-        }, 1500);
+        }, 2000);
+      } else {
+        setCelebrationType("dose_taken");
+        setShowMicroCelebration(true);
+        setShowConfetti(true);
       }
 
       refreshStreak();
@@ -207,8 +212,8 @@ export default function Today() {
 
       const userId = user.uid;
       const dosePath = activeProfile?.id
-        ? `users/${userId}/profiles/${activeProfile.id}/doses`
-        : `users/${userId}/doses`;
+        ? "dose_instances"
+        : "dose_instances";
 
       const { data: dose } = await fetchDocument<Dose>(dosePath, doseId);
 
@@ -242,6 +247,11 @@ export default function Today() {
     claraInsight,
     optimisticMarkDone,
   } = useTodayData(selectedDate, markAsTaken, snoozeDose);
+
+  // Keep the ref updated with the latest stats from the hook
+  useEffect(() => {
+    todayStatsRef.current = todayStats;
+  }, [todayStats]);
 
   const adherenceRate = todayStats.total > 0
     ? todayStats.taken / todayStats.total

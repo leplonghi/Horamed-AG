@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchDocument, setDocument, auth, db } from "@/integrations/firebase";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/integrations/firebase";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -31,23 +33,17 @@ export default function Notifications() {
 
   const loadPreferences = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from("notification_preferences")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (data) {
+      if (!auth.currentUser) return;
+      const { data } = await fetchDocument("users", auth.currentUser.uid, "notification_preferences", "default");
+      // Note: "default" is a placeholder if we don't have a specific ID, but usually we'd store it 
+      // directly under the user document or in a specific doc ID.
+      // Based on the Supabase code, it was a single record per user.
+      
+      const res = await fetchDocument("users", auth.currentUser.uid);
+      if (res.data?.notification_preferences) {
         setPreferences({
-          email_enabled: data.email_enabled,
-          push_enabled: data.push_enabled,
-          whatsapp_enabled: data.whatsapp_enabled || false,
-          whatsapp_number: data.whatsapp_number || "",
-          whatsapp_instance_id: data.whatsapp_instance_id || "",
-          whatsapp_api_token: data.whatsapp_api_token || "",
+          ...preferences,
+          ...res.data.notification_preferences
         });
       }
     } catch (error) {
@@ -63,21 +59,15 @@ export default function Notifications() {
 
     try {
       setTestingWhatsApp(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const sendWhatsApp = httpsCallable(functions, 'sendWhatsappReminder');
       
-      const { data, error } = await supabase.functions.invoke('send-whatsapp-reminder', {
-        body: {
-          phoneNumber: preferences.whatsapp_number,
-          message: "🧪 Teste do HoraMed!\n\nSe você recebeu esta mensagem, suas notificações por WhatsApp estão configuradas corretamente! ✅",
-          instanceId: preferences.whatsapp_instance_id,
-          apiToken: preferences.whatsapp_api_token,
-        },
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
+      const { data } = await sendWhatsApp({
+        phoneNumber: preferences.whatsapp_number,
+        message: "🧪 Teste do HoraMed!\n\nSe você recebeu esta mensagem, suas notificações por WhatsApp estão configuradas corretamente! ✅",
+        instanceId: preferences.whatsapp_instance_id,
+        apiToken: preferences.whatsapp_api_token,
       });
 
-      if (error) throw error;
       toast.success(t('notifPage.testSent'));
     } catch (error) {
       console.error("Error testing WhatsApp:", error);
@@ -90,17 +80,12 @@ export default function Notifications() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!auth.currentUser) return;
 
-      const { error } = await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          ...preferences,
-        });
+      await setDocument("users", auth.currentUser.uid, {
+        notification_preferences: preferences
+      });
 
-      if (error) throw error;
       toast.success(t('notifPage.prefsSaved'));
     } catch (error) {
       console.error("Error saving preferences:", error);

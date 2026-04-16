@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Crown, Medal, Flame, Trophy, Star } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { fetchCollection, where } from "@/integrations/firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
@@ -22,6 +23,7 @@ interface FamilyMember {
 export default function FamilyLeaderboard() {
   const { language } = useLanguage();
   const { isPremium } = useSubscription();
+  const { user } = useAuth();
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserRank, setCurrentUserRank] = useState(0);
@@ -45,15 +47,15 @@ export default function FamilyLeaderboard() {
   }, []);
 
   const fetchFamilyData = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+    if (!user) return;
 
-      // Get all profiles for this user (family members)
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, user_id")
-        .eq("user_id", user.id);
+    try {
+      // Get all profiles for this user (family members) from Firestore
+      const { data: profiles, error: profileError } = await fetchCollection("profiles", [
+        where("userId", "==", user.uid)
+      ]);
+
+      if (profileError) throw profileError;
 
       if (!profiles || profiles.length === 0) {
         setLoading(false);
@@ -64,15 +66,16 @@ export default function FamilyLeaderboard() {
       const memberData: FamilyMember[] = [];
       
       for (const profile of profiles) {
-        // Get this week's doses
+        // Get this week's doses for this profile
         const weekStart = new Date();
         weekStart.setDate(weekStart.getDate() - 7);
         
-        const { data: doses } = await supabase
-          .from("dose_instances")
-          .select(`status, items!inner(profile_id)`)
-          .eq("items.profile_id", profile.id)
-          .gte("due_at", weekStart.toISOString());
+        const { data: doses, error: doseError } = await fetchCollection("dose_instances", [
+          where("profileId", "==", profile.id),
+          where("dueAt", ">=", weekStart.toISOString())
+        ]);
+
+        if (doseError) console.error(`Error fetching doses for profile ${profile.id}:`, doseError);
 
         const taken = doses?.filter(d => d.status === "taken").length || 0;
         const total = doses?.length || 1;
@@ -83,8 +86,8 @@ export default function FamilyLeaderboard() {
 
         memberData.push({
           id: profile.id,
-          name: profile.full_name || 'Membro',
-          avatar: profile.avatar_url,
+          name: profile.fullName || 'Membro',
+          avatar: profile.avatarUrl,
           adherenceRate,
           streak: streakData?.current_streak || 0,
           weeklyXP: taken * 10, // Simple XP calculation

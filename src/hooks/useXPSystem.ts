@@ -37,7 +37,7 @@ export function useXPSystem() {
       if (!user) return;
 
       const userId = user.uid;
-      const dosesPath = `users/${userId}/doses`;
+      const dosesPath = "dose_instances";
 
       // Get all taken doses
       const { data: doses } = await fetchCollection<DoseDoc>(dosesPath, [

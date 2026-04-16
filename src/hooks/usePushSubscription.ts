@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAuth, fetchCollection, setDocument, deleteDocument, where } from '@/integrations/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchCollection, setDocument, deleteDocument, where } from '@/integrations/firebase';
 import { messaging } from '@/integrations/firebase/client';
 import { getToken, deleteToken } from 'firebase/messaging';
 
