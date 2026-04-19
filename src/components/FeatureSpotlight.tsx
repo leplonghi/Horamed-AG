@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CaretRight as ChevronRight, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { isTutorialFlagSet, setTutorialFlag } from "@/lib/tutorialFlags";
 
 interface SpotlightStep {
   id: string;
@@ -28,19 +28,8 @@ export default function FeatureSpotlight({ id, steps, onComplete }: FeatureSpotl
 
   const checkSpotlightStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      const flags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      if (!flags[`spotlight_${id}`]) {
-        setIsVisible(true);
-      }
+      const seen = await isTutorialFlagSet(`spotlight_${id}`);
+      if (!seen) setIsVisible(true);
     } catch (error) {
       console.error("Error checking spotlight status:", error);
     }
@@ -49,20 +38,7 @@ export default function FeatureSpotlight({ id, steps, onComplete }: FeatureSpotl
   const handleComplete = async () => {
     setIsVisible(false);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      const flags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: { ...flags, [`spotlight_${id}`]: true } })
-        .eq("user_id", user.id);
+      await setTutorialFlag(`spotlight_${id}`);
     } catch (error) {
       console.error("Error completing spotlight:", error);
     }

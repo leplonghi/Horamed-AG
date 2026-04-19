@@ -6,6 +6,27 @@ import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
+const FREE_DOCUMENT_LIMIT = 5;
+
+class DocumentLimitError extends Error {
+  constructor(public readonly currentCount: number, public readonly limit: number) {
+    super(`Free plan allows ${limit} documents (currently ${currentCount}). Upgrade to Premium for unlimited.`);
+    this.name = "DocumentLimitError";
+  }
+}
+
+async function isUserPremium(userId: string): Promise<boolean> {
+  const { data } = await fetchDocument<{ planType?: string; status?: string; trialEndsAt?: string | null }>(
+    `users/${userId}/subscription`,
+    "current"
+  );
+  if (!data) return false;
+  const premiumPlan = data.planType === "premium" || data.planType === "premium_individual" || data.planType === "premium_family";
+  const activeStatus = data.status === "active" || data.status === "trial" || data.status === "trialing";
+  const onTrial = !!data.trialEndsAt && safeDateParse(data.trialEndsAt).getTime() > Date.now();
+  return (premiumPlan && activeStatus) || onTrial;
+}
+
 export interface HealthCategory {
   id: string;
   slug: string;
@@ -162,7 +183,14 @@ export function useUploadDocumento() {
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
 
-      // Check limits (TODO: Implement subscription check properly using claims or simplified logic)
+      // Enforce free-tier document limit (FREE: 5, PREMIUM/trial: unlimited)
+      if (!(await isUserPremium(user.uid))) {
+        const { data: existing } = await fetchCollection(`users/${user.uid}/healthDocuments`);
+        const currentCount = existing?.length ?? 0;
+        if (currentCount >= FREE_DOCUMENT_LIMIT) {
+          throw new DocumentLimitError(currentCount, FREE_DOCUMENT_LIMIT);
+        }
+      }
 
       // Compress image if applicable
       let fileToUpload = file;
@@ -219,7 +247,11 @@ export function useUploadDocumento() {
     },
     onError: (error) => {
       console.error("Upload error:", error);
-      toast.error("Erro ao enviar documento");
+      if (error instanceof DocumentLimitError) {
+        toast.error(`Plano grátis limitado a ${error.limit} documentos. Faça upgrade para Premium para armazenar sem limite.`);
+      } else {
+        toast.error("Erro ao enviar documento");
+      }
     }
   });
 }

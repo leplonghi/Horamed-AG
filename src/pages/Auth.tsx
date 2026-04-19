@@ -9,7 +9,7 @@ import { Fingerprint, Shield, ArrowLeft, Users, Bell, Eye, EyeSlash as EyeOff, C
 import { motion, AnimatePresence } from "framer-motion";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import { signIn, signUp, signInWithGoogle, signOut } from "@/integrations/firebase";
+import { signIn, signUp, signInWithGoogle, signOut, resetPassword } from "@/integrations/firebase";
 import { processReferralOnSignup } from "@/lib/referrals";
 import { APP_DOMAIN } from "@/lib/domainConfig";
 import { useDeviceFingerprint } from "@/hooks/useDeviceFingerprint";
@@ -40,6 +40,30 @@ export default function Auth() {
     t
   } = useLanguage();
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleForgotPassword = useCallback(async () => {
+    const targetEmail = email.trim();
+    if (!targetEmail) {
+      toast.info("Digite seu e-mail no campo acima para receber o link de redefinição.");
+      return;
+    }
+    try {
+      setResetting(true);
+      const { error } = await resetPassword(targetEmail);
+      if (error) throw error;
+      toast.success(`Enviamos um link de redefinição para ${targetEmail}. Verifique sua caixa de entrada.`);
+    } catch (err: any) {
+      const code = err?.code;
+      let msg = "Não foi possível enviar o e-mail. Tente novamente.";
+      if (code === "auth/invalid-email") msg = "E-mail inválido.";
+      else if (code === "auth/user-not-found") msg = "Não encontramos uma conta com este e-mail.";
+      else if (code === "auth/network-request-failed") msg = "Erro de conexão. Verifique sua internet.";
+      toast.error(msg);
+    } finally {
+      setResetting(false);
+    }
+  }, [email]);
 
   useEffect(() => {
     if (authError) {
@@ -443,11 +467,16 @@ export default function Auth() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-sm font-medium">Senha</Label>
-                {/* TODO: Implementar página de recuperação de senha
-                {isLogin && <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Esqueceu?
-                </Link>}
-                */}
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    disabled={resetting}
+                    className="text-xs text-primary hover:underline disabled:opacity-50"
+                  >
+                    {resetting ? "Enviando..." : "Esqueceu?"}
+                  </button>
+                )}
               </div>
               <div className="relative">
                 <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required className="h-11 rounded-xl bg-white/70 backdrop-blur-sm border-border/50 focus:border-primary transition-colors pr-10" />

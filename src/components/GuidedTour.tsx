@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { X, CaretRight as ChevronRight, CaretLeft as ChevronLeft, Sparkle as Sparkles, House as Home, Pill, FileText, User, Heart } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { isTutorialFlagSet, setTutorialFlag } from "@/lib/tutorialFlags";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
@@ -90,23 +90,8 @@ export default function GuidedTour({ onComplete }: GuidedTourProps) {
 
   const checkTourStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      if (profile?.tutorial_flags) {
-        const flags = profile.tutorial_flags as Record<string, boolean>;
-        if (!flags["guided_tour_completed"]) {
-          setHasSeenTour(false);
-          // Delay to let page load first
-          setTimeout(() => setIsVisible(true), 1500);
-        }
-      } else {
+      const completed = await isTutorialFlagSet("guided_tour_completed");
+      if (!completed) {
         setHasSeenTour(false);
         setTimeout(() => setIsVisible(true), 1500);
       }
@@ -117,22 +102,7 @@ export default function GuidedTour({ onComplete }: GuidedTourProps) {
 
   const completeTour = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      const newFlags = { ...currentFlags, guided_tour_completed: true };
-
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: newFlags })
-        .eq("user_id", user.id);
+      await setTutorialFlag("guided_tour_completed");
     } catch (error) {
       console.error("Error completing tour:", error);
     }

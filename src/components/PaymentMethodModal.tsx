@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CreditCard, Shield, CheckCircle as CheckCircle2, Spinner as Loader2 } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { functions } from "@/integrations/firebase/client";
+import { httpsCallable } from "firebase/functions";
 
 interface PaymentMethodModalProps {
   open: boolean;
@@ -21,15 +22,16 @@ export function PaymentMethodModal({ open, onOpenChange, onSuccess }: PaymentMet
   // Load current payment method when modal opens
   const loadCurrentPaymentMethod = async () => {
     setLoadingCard(true);
+    setCurrentCard(null);
     try {
-      const { data, error } = await supabase.functions.invoke('get-payment-method');
-      if (error) throw error;
-      
-      if (data?.paymentMethod) {
-        setCurrentCard(data.paymentMethod);
+      const getPaymentMethod = httpsCallable<void, { paymentMethod?: { last4: string; brand: string; expMonth: number; expYear: number } }>(functions, 'get-payment-method');
+      const result = await getPaymentMethod();
+      if (result.data?.paymentMethod) {
+        setCurrentCard(result.data.paymentMethod);
       }
     } catch (error) {
       console.error('Error loading payment method:', error);
+      toast.error('Não foi possível carregar seu cartão atual. Você ainda pode cadastrar ou atualizar.');
     } finally {
       setLoadingCard(false);
     }
@@ -39,13 +41,11 @@ export function PaymentMethodModal({ open, onOpenChange, onSuccess }: PaymentMet
   const handleUpdatePaymentMethod = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('update-payment-method');
-      
-      if (error) throw error;
-      
-      if (data?.url) {
+      const updatePaymentMethod = httpsCallable<void, { url?: string }>(functions, 'update-payment-method');
+      const result = await updatePaymentMethod();
+      if (result.data?.url) {
         // Open in same tab for better UX - user will return after update
-        window.location.href = data.url;
+        window.location.href = result.data.url;
       }
     } catch (error: any) {
       console.error('Update payment method error:', error);
@@ -56,11 +56,11 @@ export function PaymentMethodModal({ open, onOpenChange, onSuccess }: PaymentMet
   };
 
   // Load payment method when modal opens
-  useState(() => {
+  useEffect(() => {
     if (open) {
       loadCurrentPaymentMethod();
     }
-  });
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

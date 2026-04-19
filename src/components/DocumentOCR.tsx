@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Camera, Upload, X, Sparkle as Sparkles, WarningCircle as AlertCircle, FileText } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { functions } from "@/integrations/firebase/client";
+import { httpsCallable } from "firebase/functions";
 import { convertPDFToImages, isPDF } from "@/lib/pdfProcessor";
 import { Progress } from "@/components/ui/progress";
 
@@ -58,23 +59,13 @@ export default function DocumentOCR({ onResult }: DocumentOCRProps) {
   };
 
   const extractFromImage = async (base64: string) => {
+    const extractDocument = httpsCallable<{ image: string }, OCRResult>(functions, "extract-document");
     let attempts = 0;
-    
+
     while (attempts < 3) {
       try {
-        const { data, error: invokeError } = await supabase.functions.invoke("extract-document", {
-          body: { image: base64 },
-        });
-
-        if (invokeError) {
-          if (invokeError.message?.includes('400') || invokeError.message?.includes('Invalid')) {
-            throw invokeError;
-          }
-          if (attempts === 2) throw invokeError;
-          attempts++;
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          continue;
-        }
+        const result = await extractDocument({ image: base64 });
+        const data = result.data;
 
         if (data?.title) {
           return data;

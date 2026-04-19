@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -82,39 +83,40 @@ export default function SpotlightSearch({ open, onOpenChange }: SpotlightSearchP
       );
       searchResults.push(...matchingStatic);
 
-      // 2. Search Medications (Supabase)
-      const { data: items } = await supabase
-        .from("items")
-        .select("id, name, dose_text")
-        .ilike("name", `%${normalizedQuery}%`)
-        .limit(3);
+      const user = auth.currentUser;
+      if (user) {
+        // 2. Search Medications — Firestore lacks ilike, so fetch + filter in memory
+        const medSnap = await getDocs(collection(db, `users/${user.uid}/medications`));
+        medSnap.docs
+          .map(d => ({ id: d.id, ...(d.data() as { name?: string; doseText?: string }) }))
+          .filter(m => m.name?.toLowerCase().includes(normalizedQuery))
+          .slice(0, 3)
+          .forEach(item => {
+            searchResults.push({
+              id: `med-${item.id}`,
+              type: "medication",
+              title: item.name || "Medicamento",
+              subtitle: item.doseText || "Medicamento",
+              route: `/medicamentos?edit=${item.id}`,
+            });
+          });
 
-      items?.forEach(item => {
-        searchResults.push({
-          id: `med-${item.id}`,
-          type: "medication",
-          title: item.name,
-          subtitle: item.dose_text || "Medicamento",
-          route: `/medicamentos?edit=${item.id}`, // Or a specific detail route if available
-        });
-      });
-
-      // 3. Search Documents (Supabase)
-      const { data: docs } = await supabase
-        .from("documentos_saude")
-        .select("id, title")
-        .ilike("title", `%${normalizedQuery}%`)
-        .limit(3);
-
-      docs?.forEach(doc => {
-        searchResults.push({
-          id: `doc-${doc.id}`,
-          type: "document",
-          title: doc.title || "Documento",
-          subtitle: "Carteira Digital",
-          route: `/carteira/${doc.id}`,
-        });
-      });
+        // 3. Search Health Documents
+        const docSnap = await getDocs(collection(db, `users/${user.uid}/healthDocuments`));
+        docSnap.docs
+          .map(d => ({ id: d.id, ...(d.data() as { title?: string }) }))
+          .filter(doc => doc.title?.toLowerCase().includes(normalizedQuery))
+          .slice(0, 3)
+          .forEach(doc => {
+            searchResults.push({
+              id: `doc-${doc.id}`,
+              type: "document",
+              title: doc.title || "Documento",
+              subtitle: "Carteira Digital",
+              route: `/carteira/${doc.id}`,
+            });
+          });
+      }
 
       setResults(searchResults.slice(0, 10)); // Limit total results
     } catch (error) {

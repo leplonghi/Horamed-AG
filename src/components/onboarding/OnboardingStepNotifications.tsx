@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { LocalNotifications } from "@capacitor/local-notifications";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -72,17 +73,19 @@ export default function OnboardingStepNotifications({ onComplete, onSkip }: Prop
 
   const saveNotificationPreference = async (enabled: boolean) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      // Upsert notification preferences
-      await supabase
-        .from("notification_preferences")
-        .upsert({
-          user_id: user.id,
-          push_enabled: enabled,
-          email_enabled: true,
-        }, { onConflict: "user_id" });
+      await setDoc(
+        doc(db, "users", user.uid),
+        {
+          notificationPreferences: {
+            pushEnabled: enabled,
+            emailEnabled: true,
+          },
+        },
+        { merge: true }
+      );
     } catch (error) {
       console.error("Error saving notification preference:", error);
     }

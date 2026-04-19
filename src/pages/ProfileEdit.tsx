@@ -13,7 +13,6 @@ import { useTranslation } from "@/contexts/LanguageContext";
 
 interface ProfileFormData {
   full_name: string;
-  nickname: string;
   weight_kg: string;
   height_cm: string;
   birth_date: string;
@@ -28,7 +27,6 @@ export default function ProfileEdit() {
   const { activeProfile, updateProfile, refresh } = useUserProfiles();
   const [profileData, setProfileData] = useState<ProfileFormData>({
     full_name: "",
-    nickname: "",
     weight_kg: "",
     height_cm: "",
     birth_date: "",
@@ -48,7 +46,6 @@ export default function ProfileEdit() {
     if (activeProfile) {
       setProfileData({
         full_name: activeProfile.name || "",
-        nickname: "", // UserProfile interface doesn't have nickname
         weight_kg: activeProfile.weightKg?.toString() || "",
         height_cm: activeProfile.heightCm?.toString() || "",
         birth_date: activeProfile.birthDate || "",

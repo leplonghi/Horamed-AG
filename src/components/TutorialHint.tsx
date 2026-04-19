@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Lightbulb, Sparkle as Sparkles, Info, Warning as AlertTriangle, Lightning as Zap } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { isTutorialFlagSet, setTutorialFlag } from "@/lib/tutorialFlags";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -62,19 +62,8 @@ export default function TutorialHint({
 
   const checkTutorialStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      const flags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      if (!flags[id]) {
-        setIsVisible(true);
-      }
+      const seen = await isTutorialFlagSet(id);
+      if (!seen) setIsVisible(true);
     } catch (error) {
       console.error("Error checking tutorial status:", error);
     }
@@ -83,20 +72,7 @@ export default function TutorialHint({
   const handleDismiss = async () => {
     setIsVisible(false);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tutorial_flags")
-        .eq("user_id", user.id)
-        .single();
-
-      const flags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-      await supabase
-        .from("profiles")
-        .update({ tutorial_flags: { ...flags, [id]: true } })
-        .eq("user_id", user.id);
+      await setTutorialFlag(id);
     } catch (error) {
       console.error("Error dismissing tutorial:", error);
     }

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 import { X, ArrowRight, ArrowLeft, Check } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, getDocs, limit, query } from "firebase/firestore";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface OnboardingStep {
@@ -56,26 +57,20 @@ export default function OnboardingTour() {
 
   const checkOnboardingStatus = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
-      // Check if user has completed onboarding
-      const onboardingKey = `onboarding_completed_${user.id}`;
+      const onboardingKey = `onboarding_completed_${user.uid}`;
       const completed = localStorage.getItem(onboardingKey);
-      
+
       if (!completed) {
-        // Check if user has any medications
-        const { data: items } = await supabase
-          .from("items")
-          .select("id")
-          .limit(1);
-        
-        // Show onboarding if no medications
-        if (!items || items.length === 0) {
-          setIsVisible(true);
-        }
+        const snap = await getDocs(query(
+          collection(db, `users/${user.uid}/medications`),
+          limit(1)
+        ));
+        if (snap.empty) setIsVisible(true);
       }
-      
+
       setHasCompletedOnboarding(!!completed);
     } catch (error) {
       console.error("Error checking onboarding:", error);
@@ -106,9 +101,9 @@ export default function OnboardingTour() {
 
   const handleComplete = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (user) {
-        localStorage.setItem(`onboarding_completed_${user.id}`, "true");
+        localStorage.setItem(`onboarding_completed_${user.uid}`, "true");
       }
     } catch (error) {
       console.error("Error saving onboarding status:", error);

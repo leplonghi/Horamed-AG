@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Microphone as Mic, NavigationArrow as Navigation, Pill, ChatCircle as MessageCircle, CaretRight as ChevronRight, Check, Sparkle as Sparkles } from "@phosphor-icons/react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { setTutorialFlag } from "@/lib/tutorialFlags";
 
 interface VoiceOnboardingModalProps {
   open: boolean;
@@ -66,22 +66,7 @@ export default function VoiceOnboardingModal({ open, onOpenChange, onComplete }:
 
   const handleComplete = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("tutorial_flags")
-          .eq("user_id", user.id)
-          .single();
-
-        const currentFlags = (profile?.tutorial_flags as Record<string, boolean>) || {};
-        const newFlags = { ...currentFlags, voice_onboarding_completed: true };
-
-        await supabase
-          .from("profiles")
-          .update({ tutorial_flags: newFlags })
-          .eq("user_id", user.id);
-      }
+      await setTutorialFlag("voice_onboarding_completed");
     } catch (error) {
       console.error("Error saving voice onboarding status:", error);
     }

@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Lightbulb, X, Warning as AlertTriangle, Info, TrendUp as TrendingUp } from "@phosphor-icons/react";
-import { supabase } from "@/integrations/supabase/client";
+import { auth, db } from "@/integrations/firebase/client";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { cn } from "@/lib/utils";
 import { startOfDay, subDays, differenceInHours } from "date-fns";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
+import { safeDateParse } from "@/lib/safeDateUtils";
 
 interface SmartInsight {
   id: string;
@@ -27,35 +28,37 @@ export default function SmartInsightsCard() {
 
   const generateSmartInsights = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) return;
 
       const newInsights: SmartInsight[] = [];
 
       // Analyze last 14 days of data
       const last14Days = startOfDay(subDays(new Date(), 14));
-      
-      const { data: doses } = await supabase
-        .from("dose_instances")
-        .select(`
-          *,
-          items!inner(user_id, name)
-        `)
-        .eq("items.user_id", user.id)
-        .gte("due_at", last14Days.toISOString());
 
-      if (!doses || doses.length === 0) {
+      const dosesSnap = await getDocs(query(
+        collection(db, "dose_instances"),
+        where("userId", "==", user.uid),
+        where("dueAt", ">=", last14Days.toISOString())
+      ));
+      const doses = dosesSnap.docs.map(d => d.data() as {
+        status?: string;
+        delayMinutes?: number;
+        dueAt: string;
+      });
+
+      if (doses.length === 0) {
         setLoading(false);
         return;
       }
 
       // Pattern 1: Consistent delay pattern
       const delayedDoses = doses.filter(
-        (d) => d.status === "taken" && d.delay_minutes && d.delay_minutes > 30
+        (d) => d.status === "taken" && d.delayMinutes && d.delayMinutes > 30
       );
       if (delayedDoses.length > 5) {
         const avgDelay = Math.round(
-          delayedDoses.reduce((sum, d) => sum + (d.delay_minutes || 0), 0) / delayedDoses.length
+          delayedDoses.reduce((sum, d) => sum + (d.delayMinutes || 0), 0) / delayedDoses.length
         );
         newInsights.push({
           id: "delay-pattern",
@@ -68,18 +71,18 @@ export default function SmartInsightsCard() {
 
       // Pattern 2: Weekend adherence drop
       const weekendDoses = doses.filter((d) => {
-        const day = safeDateParse(d.due_at).getDay();
+        const day = safeDateParse(d.dueAt).getDay();
         return day === 0 || day === 6;
       });
       const weekdayDoses = doses.filter((d) => {
-        const day = safeDateParse(d.due_at).getDay();
+        const day = safeDateParse(d.dueAt).getDay();
         return day > 0 && day < 6;
       });
 
       if (weekendDoses.length > 0 && weekdayDoses.length > 0) {
         const weekendAdherence = (weekendDoses.filter((d) => d.status === "taken").length / weekendDoses.length) * 100;
         const weekdayAdherence = (weekdayDoses.filter((d) => d.status === "taken").length / weekdayDoses.length) * 100;
-        
+
         if (weekdayAdherence - weekendAdherence > 15) {
           newInsights.push({
             id: "weekend-drop",
@@ -93,7 +96,7 @@ export default function SmartInsightsCard() {
 
       // Pattern 3: Specific time slot issues
       const morningDoses = doses.filter((d) => {
-        const hour = safeDateParse(d.due_at).getHours();
+        const hour = safeDateParse(d.dueAt).getHours();
         return hour >= 6 && hour < 12;
       });
 
@@ -111,40 +114,34 @@ export default function SmartInsightsCard() {
       }
 
       // Pattern 4: Stock insights
-      const { data: stockData } = await supabase
-        .from("stock")
-        .select(`
-          *,
-          items!inner(user_id, name)
-        `)
-        .eq("items.user_id", user.id);
+      const stockSnap = await getDocs(collection(db, `users/${user.uid}/stock`));
+      const stockData = stockSnap.docs.map(d => d.data() as { projectedEndAt?: string });
+      const lowStock = stockData.filter((s) => {
+        if (!s.projectedEndAt) return false;
+        const daysLeft = Math.ceil(
+          (safeDateParse(s.projectedEndAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+        );
+        return daysLeft <= 7 && daysLeft > 0;
+      });
 
-      if (stockData) {
-        const lowStock = stockData.filter((s) => {
-          if (!s.projected_end_at) return false;
-          const daysLeft = Math.ceil(
-            (safeDateParse(s.projected_end_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-          );
-          return daysLeft <= 7 && daysLeft > 0;
+      if (lowStock.length > 0) {
+        newInsights.push({
+          id: "low-stock",
+          type: "reminder",
+          title: t('smartInsights.restockNeeded'),
+          description: t('smartInsights.restockNeededDesc', { count: String(lowStock.length) }),
+          priority: "high",
         });
-
-        if (lowStock.length > 0) {
-          newInsights.push({
-            id: "low-stock",
-            type: "reminder",
-            title: t('smartInsights.restockNeeded'),
-            description: t('smartInsights.restockNeededDesc', { count: String(lowStock.length) }),
-            priority: "high",
-          });
-        }
       }
 
       // Pattern 5: Positive reinforcement
       const recentDoses = doses.filter((d) => {
-        const hoursSince = differenceInHours(new Date(), safeDateParse(d.due_at));
+        const hoursSince = differenceInHours(new Date(), safeDateParse(d.dueAt));
         return hoursSince <= 168; // Last 7 days
       });
-      const recentAdherence = (recentDoses.filter((d) => d.status === "taken").length / recentDoses.length) * 100;
+      const recentAdherence = recentDoses.length > 0
+        ? (recentDoses.filter((d) => d.status === "taken").length / recentDoses.length) * 100
+        : 0;
 
       if (recentAdherence >= 95) {
         newInsights.push({
