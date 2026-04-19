@@ -213,7 +213,7 @@ export default function Auth() {
       }
       navigate("/");
     } catch (error: any) {
-      console.error('🔥 Auth page handleEmailSignIn error:', error);
+      console.error('AUTH_SIGNIN_ERROR code=' + (error?.code ?? 'none') + ' msg=' + (error?.message ?? ''), error);
       
       let errorMessage = error.message || t('auth.loginError');
       

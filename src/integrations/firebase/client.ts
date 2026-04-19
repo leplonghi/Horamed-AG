@@ -56,7 +56,9 @@ try {
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
-export const functions = getFunctions(app) // Default region: us-central1
+// Região southamerica-east1 (São Paulo) reduz latência ~200ms para usuários brasileiros
+// Fallback: se a função não existir nessa região, o SDK retorna erro claro
+export const functions = getFunctions(app, 'southamerica-east1')
 
 // Initialize Analytics (only in browser, not in Capacitor native WebView)
 export const analytics = typeof window !== 'undefined' && !Capacitor.isNativePlatform()

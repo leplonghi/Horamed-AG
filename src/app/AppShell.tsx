@@ -9,77 +9,25 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { trackAppOpened } from "@/hooks/useAppMetrics";
 import { useDoseGeneration } from "@/hooks/useDoseGeneration";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useDeviceCapability } from "@/hooks/useDeviceCapability";
 import Index from "@/pages/Index";
 import Landing from "@/pages/Landing";
-import { useDeviceCapability } from "@/hooks/useDeviceCapability";
 
+// Route domain modules
+import { MedicamentosRoutes } from "./routes/MedicamentosRoutes";
+import { SaudeRoutes } from "./routes/SaudeRoutes";
+import { CarteiraRoutes } from "./routes/CarteiraRoutes";
+import { PerfilRoutes } from "./routes/PerfilRoutes";
+import { ConfigRoutes } from "./routes/ConfigRoutes";
+
+// Lazy pages that don't fit a domain module
 const Today = lazy(() => import("@/pages/Today"));
-const MedicamentosHub = lazy(() => import("@/pages/MedicamentosHub"));
-const Progress = lazy(() => import("@/pages/Progress"));
-const Achievements = lazy(() => import("@/pages/Achievements"));
-const Gamification = lazy(() => import("@/pages/Gamification"));
-const MeuProgresso = lazy(() => import("@/pages/MeuProgresso"));
-const Cofre = lazy(() => import("@/pages/Cofre"));
-const Profile = lazy(() => import("@/pages/Profile"));
-const About = lazy(() => import("@/pages/About"));
 const Auth = lazy(() => import("@/pages/Auth"));
-const AddItemRedirect = lazy(() => import("@/pages/AddItemRedirect"));
-const EditItemRedirect = lazy(() => import("@/pages/EditItemRedirect"));
-const StockDetails = lazy(() => import("@/pages/StockDetails"));
-const MedicationHistory = lazy(() => import("@/pages/MedicationHistory"));
-const AnalyticsDetails = lazy(() => import("@/pages/AnalyticsDetails"));
-const Agenda = lazy(() => import("@/pages/Agenda"));
-const MedicalAppointments = lazy(() => import("@/pages/MedicalAppointments"));
-const MedicalEventsHub = lazy(() => import("@/pages/MedicalEventsHub"));
-const MedicalEventAdd = lazy(() => import("@/pages/MedicalEventAdd"));
-const MedicalEventsCalendar = lazy(() => import("@/pages/MedicalEventsCalendar"));
-const MedicalEventDetails = lazy(() => import("@/pages/MedicalEventDetails"));
-const TravelMode = lazy(() => import("@/pages/TravelMode"));
-const SideEffectsDiary = lazy(() => import("@/pages/SideEffectsDiary"));
-const CarteiraVacina = lazy(() => import("@/pages/CarteiraVacina"));
-const MedicalReports = lazy(() => import("@/pages/MedicalReports"));
-const Charts = lazy(() => import("@/pages/Charts"));
-const HealthDashboard = lazy(() => import("@/pages/HealthDashboard"));
-const HealthTimeline = lazy(() => import("@/pages/HealthTimeline"));
-const HealthAnalysis = lazy(() => import("@/pages/HealthAnalysis"));
-const ProfileCreate = lazy(() => import("@/pages/ProfileCreate"));
-const ProfileEdit = lazy(() => import("@/pages/ProfileEdit"));
-const ProfileManage = lazy(() => import("@/pages/ProfileManage"));
-const IndiqueGanhe = lazy(() => import("@/pages/IndiqueGanhe"));
-const Recompensas = lazy(() => import("@/pages/Recompensas"));
-const WeightHistory = lazy(() => import("@/pages/WeightHistory"));
-const SinaisVitais = lazy(() => import("@/pages/SinaisVitais"));
-const SubscriptionManagement = lazy(() => import("@/pages/SubscriptionManagement"));
-const SubscriptionSuccess = lazy(() => import("@/pages/SubscriptionSuccess"));
-const SubscriptionCanceled = lazy(() => import("@/pages/SubscriptionCanceled"));
-const NotificationSettings = lazy(() => import("@/pages/NotificationSettings"));
-const NotificationSetup = lazy(() => import("@/pages/NotificationSetup"));
-const DataExport = lazy(() => import("@/pages/DataExport"));
-const Privacy = lazy(() => import("@/pages/Privacy"));
-const Terms = lazy(() => import("@/pages/Terms"));
-const Tutorial = lazy(() => import("@/pages/Tutorial"));
 const OnboardingFlow = lazy(() => import("@/components/onboarding/OnboardingFlow"));
-const Welcome = lazy(() => import("@/pages/Welcome"));
-const Pharmacy = lazy(() => import("@/pages/Pharmacy"));
-const HelpSupport = lazy(() => import("@/pages/HelpSupport"));
-const AlarmSettings = lazy(() => import("@/pages/AlarmSettings"));
-const AlarmDiagnostics = lazy(() => import("@/pages/AlarmDiagnostics"));
-const Emergency = lazy(() => import("@/pages/Emergency"));
-const Plans = lazy(() => import("@/pages/Plans"));
-const CofreUpload = lazy(() => import("@/pages/CofreUpload"));
-const CofreManualCreate = lazy(() => import("@/pages/CofreManualCreate"));
-const CofreDocumentReview = lazy(() => import("@/pages/CofreDocumentReview"));
-const CofreDocumentoEdit = lazy(() => import("@/pages/CofreDocumentoEdit"));
-const CofreDocumento = lazy(() => import("@/pages/CofreDocumento"));
-const CompartilharDocumento = lazy(() => import("@/pages/CompartilharDocumento"));
-const DocumentScan = lazy(() => import("@/pages/DocumentScan"));
-const More = lazy(() => import("@/pages/More"));
-const CaregiverAccept = lazy(() => import("@/pages/CaregiverAccept"));
-const ConsultationCardView = lazy(() => import("@/pages/ConsultationCardView"));
-const DrugInteractions = lazy(() => import("@/pages/DrugInteractions"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const CampaignGenerator = lazy(() => import("@/pages/internal/CampaignGenerator"));
-const MyProviders = lazy(() => import("@/pages/MyProviders"));
+
+// Global UI overlays (loaded lazily to keep initial bundle small)
 const HealthAIButton = lazy(() => import("@/components/HealthAIButton"));
 const PWAInstallPrompt = lazy(() => import("@/components/PWAInstallPrompt"));
 const AdminFloatingButton = lazy(() => import("@/components/AdminFloatingButton"));
@@ -87,49 +35,18 @@ const NotificationPermissionPrompt = lazy(
   () => import("@/components/NotificationPermissionPrompt"),
 );
 
-const PerformanceSettings = lazy(() => import("@/pages/PerformanceSettings"));
-
+// Paths/prefixes where the bottom Navigation bar is hidden
+// (these pages render their own Navigation or have no bottom nav)
 const HIDE_NAVIGATION_PATHS = [
-  "/auth",
-  "/onboarding",
-  "/onboarding-rapido",
-  "/onboarding-completo",
-  "/bem-vindo",
-  "/",
+  "/auth", "/onboarding", "/onboarding-rapido", "/onboarding-completo", "/bem-vindo", "/",
 ];
-
 const HIDE_NAVIGATION_PREFIXES = [
-  "/estoque",
-  "/historico-medicamentos",
-  "/carteira-vacina",
-  "/vacinas",
-  "/consultas",
-  "/eventos-medicos",
-  "/saude/agenda",
-  "/linha-do-tempo",
-  "/perfis",
-  "/recompensas",
-  "/notificacoes-config",
-  "/configurar-notificacoes",
-  "/alarmes",
-  "/alarme",
-  "/ajuda",
-  "/help-support",
-  "/mais",
-  "/sinais-vitais",
-  "/exportar",
-  "/assinatura",
-  "/tutorial",
-  "/privacidade",
-  "/privacy",
-  "/termos",
-  "/terms",
-  "/sobre",
-  "/about",
-  "/graficos",
-  "/exames",
-  "/relatorios",
-  "/relatorios-medicos",
+  "/estoque", "/historico-medicamentos", "/carteira-vacina", "/vacinas", "/consultas",
+  "/eventos-medicos", "/saude/agenda", "/linha-do-tempo", "/perfis", "/recompensas",
+  "/notificacoes-config", "/configurar-notificacoes", "/alarmes", "/alarme", "/ajuda",
+  "/help-support", "/mais", "/sinais-vitais", "/exportar", "/assinatura", "/tutorial",
+  "/privacidade", "/privacy", "/termos", "/terms", "/sobre", "/about", "/graficos",
+  "/exames", "/relatorios", "/relatorios-medicos",
 ];
 
 const PageLoader = () => (
@@ -142,13 +59,8 @@ export default function AppShell() {
   const { requestNotificationPermission } = usePushNotifications();
   const { shouldReduceEffects } = useDeviceCapability();
 
-  // Apply performance mode class to root for CSS reduction
   useEffect(() => {
-    if (shouldReduceEffects) {
-      document.documentElement.classList.add("performance-mode");
-    } else {
-      document.documentElement.classList.remove("performance-mode");
-    }
+    document.documentElement.classList.toggle("performance-mode", shouldReduceEffects);
   }, [shouldReduceEffects]);
 
   useDoseGeneration();
@@ -157,36 +69,28 @@ export default function AppShell() {
     trackAppOpened();
 
     const handleAlarm = (event: Event) => {
-      const alarmEvent = event as CustomEvent<{ doseId?: string }>;
-      const doseId = alarmEvent.detail?.doseId;
-
+      const { doseId } = (event as CustomEvent<{ doseId?: string }>).detail ?? {};
       toast("Lembrete", {
         description: "Hora de cuidar de você! Toque para registrar.",
         action: {
           label: "Ver",
-          onClick: () => {
+          onClick: () =>
             window.dispatchEvent(
-              new CustomEvent("horamed-action", {
-                detail: { doseId, actionId: "open" },
-              }),
-            );
-          },
+              new CustomEvent("horamed-action", { detail: { doseId, actionId: "open" } }),
+            ),
         },
         duration: 10000,
       });
     };
 
     window.addEventListener("horamed-alarm", handleAlarm);
-
-    return () => {
-      window.removeEventListener("horamed-alarm", handleAlarm);
-    };
+    return () => window.removeEventListener("horamed-alarm", handleAlarm);
   }, []);
 
   const location = useLocation();
   const showNavigation =
     !HIDE_NAVIGATION_PATHS.includes(location.pathname) &&
-    !HIDE_NAVIGATION_PREFIXES.some((path) => location.pathname.startsWith(path));
+    !HIDE_NAVIGATION_PREFIXES.some((p) => location.pathname.startsWith(p));
 
   return (
     <>
@@ -195,648 +99,51 @@ export default function AppShell() {
       <ScrollToTop />
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          {/* ── Public / entry routes ── */}
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
           <Route path="/landing-preview" element={<Landing />} />
-          <Route
-            path="/splash"
-            element={<div className="min-h-screen bg-background" aria-hidden="true" />}
-          />
-          <Route
-            path="/onboarding"
-            element={
-              <ProtectedRoute>
-                <OnboardingFlow />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/splash" element={<div className="min-h-screen bg-background" aria-hidden="true" />} />
+
+          {/* ── Onboarding ── */}
+          <Route path="/onboarding" element={<ProtectedRoute><OnboardingFlow /></ProtectedRoute>} />
           <Route path="/bem-vindo" element={<Navigate to="/onboarding" replace />} />
           <Route path="/welcome" element={<Navigate to="/onboarding" replace />} />
-
-          <Route
-             path="/farmacia"
-             element={
-               <ProtectedRoute>
-                 <Pharmacy />
-               </ProtectedRoute>
-             }
-           />
-           <Route path="/pharmacy" element={<Navigate to="/farmacia" replace />} />
-
-          <Route
-            path="/hoje"
-            element={
-              <ProtectedRoute>
-                <Today />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/today" element={<Navigate to="/hoje" replace />} />
-          <Route
-            path="/rotina"
-            element={
-              <ProtectedRoute>
-                <MedicamentosHub />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/meu-progresso"
-            element={
-              <ProtectedRoute>
-                <MeuProgresso />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/progresso" element={<Navigate to="/meu-progresso" replace />} />
-          <Route path="/conquistas" element={<Navigate to="/meu-progresso?tab=achievements" replace />} />
-          <Route path="/jornada" element={<Navigate to="/meu-progresso?tab=jornada" replace />} />
-          <Route
-            path="/carteira"
-            element={
-              <ProtectedRoute>
-                <Cofre />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/wallet" element={<Navigate to="/carteira" replace />} />
-          <Route path="/cofre" element={<Navigate to="/carteira" replace />} />
-          <Route
-            path="/provedores"
-            element={
-              <ProtectedRoute>
-                <MyProviders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/perfil"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/profile" element={<Navigate to="/perfil" replace />} />
-          <Route
-            path="/medicamentos"
-            element={
-              <ProtectedRoute>
-                <MedicamentosHub />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/medications" element={<Navigate to="/medicamentos" replace />} />
-          <Route path="/saude" element={<Navigate to="/dashboard-saude" replace />} />
-
-          <Route
-            path="/adicionar"
-            element={
-              <ProtectedRoute>
-                <AddItemRedirect />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/adicionar-medicamento" element={<Navigate to="/adicionar" replace />} />
-          <Route path="/add" element={<Navigate to="/adicionar" replace />} />
-          <Route
-            path="/edit/:id"
-            element={
-              <ProtectedRoute>
-                <EditItemRedirect />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/estoque"
-            element={
-              <ProtectedRoute>
-                <MedicamentosHub />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/estoque/:itemId"
-            element={
-              <ProtectedRoute>
-                <StockDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/historico-medicamentos"
-            element={
-              <ProtectedRoute>
-                <MedicationHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/medicamentos/:id/historico"
-            element={
-              <ProtectedRoute>
-                <MedicationHistory />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/progresso/detalhes"
-            element={
-              <ProtectedRoute>
-                <AnalyticsDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/analise-detalhada" element={<Navigate to="/progresso/detalhes" replace />} />
-
-          <Route
-            path="/saude/agenda"
-            element={
-              <ProtectedRoute>
-                <Agenda />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/agenda" element={<Navigate to="/saude/agenda" replace />} />
-          <Route
-            path="/consultas"
-            element={
-              <ProtectedRoute>
-                <MedicalAppointments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/eventos-medicos"
-            element={
-              <ProtectedRoute>
-                <MedicalEventsHub />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/events" element={<Navigate to="/eventos-medicos" replace />} />
-          <Route
-            path="/eventos-medicos/adicionar"
-            element={
-              <ProtectedRoute>
-                <MedicalEventAdd />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/eventos-medicos/calendario"
-            element={
-              <ProtectedRoute>
-                <MedicalEventsCalendar />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/eventos-medicos/list" element={<Navigate to="/eventos-medicos" replace />} />
-          <Route
-            path="/eventos-medicos/:id"
-            element={
-              <ProtectedRoute>
-                <MedicalEventDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/viagem"
-            element={
-              <ProtectedRoute>
-                <TravelMode />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/diario-efeitos"
-            element={
-              <ProtectedRoute>
-                <SideEffectsDiary />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira-vacina"
-            element={
-              <ProtectedRoute>
-                <CarteiraVacina />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vacinas"
-            element={
-              <ProtectedRoute>
-                <CarteiraVacina />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/exames"
-            element={
-              <ProtectedRoute>
-                <MedicalReports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/relatorios"
-            element={
-              <ProtectedRoute>
-                <MedicalReports />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/reports" element={<Navigate to="/relatorios" replace />} />
-          <Route
-            path="/relatorios-medicos"
-            element={
-              <ProtectedRoute>
-                <MedicalReports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/graficos"
-            element={
-              <ProtectedRoute>
-                <Charts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard-saude"
-            element={<Navigate to="/meu-progresso" replace />}
-          />
-          <Route path="/health" element={<Navigate to="/meu-progresso" replace />} />
-          <Route
-            path="/linha-do-tempo"
-            element={
-              <ProtectedRoute>
-                <HealthTimeline />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/timeline" element={<Navigate to="/linha-do-tempo" replace />} />
-          <Route
-            path="/analise-saude"
-            element={
-              <ProtectedRoute>
-                <HealthAnalysis />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/saude/interacoes"
-            element={
-              <ProtectedRoute>
-                <DrugInteractions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/interacoes"
-            element={
-              <ProtectedRoute>
-                <DrugInteractions />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/perfil/criar"
-            element={
-              <ProtectedRoute>
-                <ProfileCreate />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/perfis/novo"
-            element={
-              <ProtectedRoute>
-                <ProfileCreate />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/perfis/gerenciar"
-            element={
-              <ProtectedRoute>
-                <ProfileManage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/perfil/editar/:id"
-            element={
-              <ProtectedRoute>
-                <ProfileEdit />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/perfil/editar" element={<Navigate to="/perfis/gerenciar" replace />} />
-          <Route
-            path="/profile/edit"
-            element={
-              <ProtectedRoute>
-                <ProfileEdit />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/perfil/indique-e-ganhe"
-            element={
-              <ProtectedRoute>
-                <IndiqueGanhe />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/indique-ganhe" element={<Navigate to="/perfil/indique-e-ganhe" replace />} />
-          <Route path="/recompensas" element={<Navigate to="/meu-progresso?tab=achievements" replace />} />
-          <Route
-            path="/peso"
-            element={
-              <ProtectedRoute>
-                <WeightHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/peso/historico"
-            element={
-              <ProtectedRoute>
-                <WeightHistory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/sinais-vitais"
-            element={
-              <ProtectedRoute>
-                <SinaisVitais />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assinatura"
-            element={
-              <ProtectedRoute>
-                <SubscriptionManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assinatura/sucesso"
-            element={
-              <ProtectedRoute>
-                <SubscriptionSuccess />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assinatura/cancelado"
-            element={
-              <ProtectedRoute>
-                <SubscriptionCanceled />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notificacoes-config"
-            element={
-              <ProtectedRoute>
-                <NotificationSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/notifications" element={<Navigate to="/notificacoes-config" replace />} />
-          <Route path="/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
-          <Route path="/notificacoes/config" element={<Navigate to="/notificacoes-config" replace />} />
-          <Route path="/notificacoes/configurar" element={<Navigate to="/notificacoes-config" replace />} />
-          <Route
-            path="/configurar-notificacoes"
-            element={
-              <ProtectedRoute>
-                <NotificationSetup />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/configuracoes/notificacoes" element={<Navigate to="/notificacoes-config" replace />} />
-          <Route
-            path="/desempenho"
-            element={
-              <ProtectedRoute>
-                <PerformanceSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/exportar"
-            element={
-              <ProtectedRoute>
-                <DataExport />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/exportar-dados"
-            element={
-              <ProtectedRoute>
-                <DataExport />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/privacidade" element={<Privacy />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/termos" element={<Terms />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route
-            path="/tutorial"
-            element={
-              <ProtectedRoute>
-                <Tutorial />
-              </ProtectedRoute>
-            }
-          />
           <Route path="/onboarding-completo" element={<Navigate to="/onboarding" replace />} />
           <Route path="/onboarding-rapido" element={<Navigate to="/onboarding" replace />} />
-          <Route
-            path="/ajuda"
-            element={
-              <ProtectedRoute>
-                <HelpSupport />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/support" element={<Navigate to="/ajuda" replace />} />
-          <Route
-            path="/help-support"
-            element={
-              <ProtectedRoute>
-                <HelpSupport />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/sobre" element={<About />} />
-          <Route path="/about" element={<About />} />
-          <Route
-            path="/alarmes"
-            element={
-              <ProtectedRoute>
-                <AlarmSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alarme"
-            element={
-              <ProtectedRoute>
-                <AlarmSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alarmes/diagnostico"
-            element={
-              <ProtectedRoute>
-                <AlarmDiagnostics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/emergencia"
-            element={
-              <ProtectedRoute>
-                <Emergency />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/planos"
-            element={
-              <ProtectedRoute>
-                <Plans />
-              </ProtectedRoute>
-            }
-          />
 
-          <Route
-            path="/carteira/upload"
-            element={
-              <ProtectedRoute>
-                <CofreUpload />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira/criar-manual"
-            element={
-              <ProtectedRoute>
-                <CofreManualCreate />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira/criar"
-            element={<Navigate to="/carteira/criar-manual" replace />}
-          />
-          <Route
-            path="/carteira/:id/review"
-            element={
-              <ProtectedRoute>
-                <CofreDocumentReview />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira/:id/editar"
-            element={
-              <ProtectedRoute>
-                <CofreDocumentoEdit />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira/:id"
-            element={
-              <ProtectedRoute>
-                <CofreDocumento />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/carteira/documento/:id"
-            element={
-              <ProtectedRoute>
-                <CofreDocumento />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/compartilhar/:token" element={<CompartilharDocumento />} />
-          <Route
-            path="/scan"
-            element={
-              <ProtectedRoute>
-                <DocumentScan />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/digitalizar"
-            element={
-              <ProtectedRoute>
-                <DocumentScan />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="/historico" element={<Navigate to="/meu-progresso?tab=historico" replace />} />
-          <Route path="/evolucao" element={<Navigate to="/meu-progresso" replace />} />
+          {/* ── Core app ── */}
+          <Route path="/hoje" element={<ProtectedRoute><Today /></ProtectedRoute>} />
+          <Route path="/today" element={<Navigate to="/hoje" replace />} />
           <Route path="/calendario" element={<Navigate to="/hoje" replace />} />
-          <Route
-            path="/mais"
-            element={
-              <ProtectedRoute>
-                <More />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/saude" element={<Navigate to="/dashboard-saude" replace />} />
 
-          <Route
-            path="/historico-compartilhado/:token"
-            element={<div>Historico Compartilhado</div>}
-          />
-          <Route path="/cuidador/aceitar/:token" element={<CaregiverAccept />} />
-          <Route path="/consulta/:token" element={<ConsultationCardView />} />
+          {/* ── Domain route modules ── */}
+          {MedicamentosRoutes()}
+          {SaudeRoutes()}
+          {CarteiraRoutes()}
+          {PerfilRoutes()}
+          {ConfigRoutes()}
 
+          {/* ── Internal / debug ── */}
           <Route
             path="/internal/campaign-generator"
-            element={
-              <ProtectedRoute>
-                <CampaignGenerator />
-              </ProtectedRoute>
-            }
+            element={<ProtectedRoute><CampaignGenerator /></ProtectedRoute>}
           />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+
       {showNavigation && <Navigation />}
       <Suspense fallback={null}>
         {showNavigation && <HealthAIButton />}
       </Suspense>
-      <Suspense fallback={null}>
-        <PWAInstallPrompt />
-      </Suspense>
+      <Suspense fallback={null}><PWAInstallPrompt /></Suspense>
       <Suspense fallback={null}>
         <NotificationPermissionPrompt onRequestPermission={requestNotificationPermission} />
       </Suspense>
-      <Suspense fallback={null}>
-        <AdminFloatingButton />
-      </Suspense>
+      <Suspense fallback={null}><AdminFloatingButton /></Suspense>
     </>
   );
 }

@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Category {
@@ -94,7 +93,6 @@ export default function CofreManualCreate() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
-      <Navigation />
 
       <div className="container max-w-2xl mx-auto px-4 py-6 pt-24">
         <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">

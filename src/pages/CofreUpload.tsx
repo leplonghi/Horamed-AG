@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { toast } from "sonner";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
 import { isPDF } from "@/lib/pdfProcessor";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -852,8 +851,6 @@ export default function CofreUpload() {
           </Card>
         </div>
       )}
-
-      <Navigation />
     </div>
   );
 }

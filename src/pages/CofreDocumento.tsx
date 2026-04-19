@@ -35,7 +35,6 @@ import { format, isBefore, differenceInDays, parseISO } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import UpgradeModal from "@/components/UpgradeModal";
 import { PrescriptionStatusBadge } from "@/components/PrescriptionStatusBadge";
 import { MedicationQuickAddCard } from "@/components/MedicationQuickAddCard";
@@ -214,7 +213,6 @@ export default function CofreDocumento() {
           <Skeleton className="h-8 w-24 mb-4" />
           <Skeleton className="h-96" />
         </div>
-        <Navigation />
       </div>
     );
   }
@@ -226,7 +224,6 @@ export default function CofreDocumento() {
         <div className="container max-w-4xl mx-auto px-4 py-6">
           <p>{t('cofreDoc.notFound')}</p>
         </div>
-        <Navigation />
       </div>
     );
   }
@@ -798,7 +795,6 @@ export default function CofreDocumento() {
       </AlertDialog>
 
       <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} />
-      <Navigation />
     </div>
   );
 }

@@ -1,66 +1,88 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper functions
+
     function isAuthenticated() {
       return request.auth != null;
     }
-    
+
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
-    
+
     function isValidImageType() {
       return request.resource.contentType.matches('image/.*');
     }
-    
+
     function isValidDocumentType() {
       return request.resource.contentType.matches('image/.*') ||
              request.resource.contentType == 'application/pdf';
     }
-    
+
     function isUnder10MB() {
       return request.resource.size < 10 * 1024 * 1024;
     }
-    
-    // Medical Documents
+
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+
+
+    // Documentos médicos
     match /medical-documents/{userId}/{documentId} {
       allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isAuthenticated() && 
-                      isOwner(userId) && 
-                      isValidDocumentType() && 
+      allow write: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      isValidDocumentType() &&
                       isUnder10MB();
       allow delete: if isAuthenticated() && isOwner(userId);
     }
-    
-    // Profile Avatars (Legacy) — owner-only read to protect family member photos
+
+    // Avatares de perfil (legado)
     match /profile-avatars/{userId}/{fileName} {
       allow read: if isAuthenticated() && isOwner(userId);
       allow write: if isAuthenticated() &&
                       isOwner(userId) &&
                       isValidImageType() &&
-                      request.resource.size < 5 * 1024 * 1024; // 5MB max
+                      isUnder5MB();
       allow delete: if isAuthenticated() && isOwner(userId);
     }
 
-    // User Profiles Avatars (New Structure) — owner-only read
+    // Avatares — nova estrutura por perfil
     match /users/{userId}/profiles/{profileId}/{fileName} {
       allow read: if isAuthenticated() && isOwner(userId);
       allow write: if isAuthenticated() &&
                       isOwner(userId) &&
                       isValidImageType() &&
-                      request.resource.size < 5 * 1024 * 1024;
+                      isUnder5MB();
       allow delete: if isAuthenticated() && isOwner(userId);
     }
-    
-    // Prescription Images
+
+    // Prescrições
     match /prescriptions/{userId}/{prescriptionId} {
       allow read: if isAuthenticated() && isOwner(userId);
-      allow write: if isAuthenticated() && 
-                      isOwner(userId) && 
-                      isValidImageType() && 
+      allow write: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      isValidDocumentType() &&
                       isUnder10MB();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Imagens de OCR (temporárias — usadas durante escaneamento)
+    match /ocr-temp/{userId}/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() &&
+                      isOwner(userId) &&
+                      isValidImageType() &&
+                      isUnder10MB();
+      allow delete: if isAuthenticated() && isOwner(userId);
+    }
+
+    // Exportações geradas (PDF de relatório, etc.)
+    match /exports/{userId}/{fileName} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId) && isUnder10MB();
       allow delete: if isAuthenticated() && isOwner(userId);
     }
   }

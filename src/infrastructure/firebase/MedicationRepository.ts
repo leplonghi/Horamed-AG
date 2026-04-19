@@ -12,8 +12,12 @@ export class MedicationRepository {
    * Busca doses de um perfil específico em um intervalo de datas.
    */
   async getDosesByDateRange(userId: string, profileId: string | undefined, startDate: Date, endDate: Date): Promise<Dose[]> {
+    // Índice composto necessário: userId ASC, profileId ASC, dueAt ASC, status ASC
+    // Definido em firestore.indexes.json
     const constraints: any[] = [
-      where("userId", "==", userId)
+      where("userId", "==", userId),
+      where("dueAt", ">=", startDate.toISOString()),
+      where("dueAt", "<=", endDate.toISOString()),
     ];
 
     if (profileId) {
@@ -23,11 +27,9 @@ export class MedicationRepository {
     const q = query(
       collection(db, "dose_instances"),
       ...constraints,
-      where("dueAt", ">=", startDate.toISOString()),
-      where("dueAt", "<=", endDate.toISOString()),
       orderBy("dueAt", "asc")
     );
-    
+
     try {
       const snapshot = await getDocs(q);
       const doses: Dose[] = [];
@@ -35,8 +37,13 @@ export class MedicationRepository {
         doses.push({ id: docSnap.id, ...docSnap.data() } as Dose);
       });
       return doses;
-    } catch (error) {
-      console.error("[MedicationRepository] Erro ao buscar doses:", error);
+    } catch (error: any) {
+      // Erro de índice faltante: loga URL para criar no console Firebase
+      if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+        console.error("[MedicationRepository] Índice composto ausente. Acesse:", error.message);
+      } else {
+        console.error("[MedicationRepository] Erro ao buscar doses:", error);
+      }
       throw error;
     }
   }

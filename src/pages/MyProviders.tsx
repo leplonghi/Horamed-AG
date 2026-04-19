@@ -298,8 +298,6 @@ export default function MyProviders() {
         onUpdate={handleUpdate}
         editing={editing}
       />
-
-      <Navigation />
     </div>
   );
 }

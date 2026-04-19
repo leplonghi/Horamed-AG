@@ -80,15 +80,18 @@ export function useMedications(profileId?: string) {
                 medConstraints.push(where("profileId", "==", profileId));
             }
 
-            const { data: medications, error: medError } = await fetchCollection<MedicationDoc>(
-                `users/${user.uid}/medications`,
-                medConstraints
-            );
+            // Leituras paralelas — reduz latência de 3 roundtrips sequenciais para 1
+            const [
+                { data: medications, error: medError },
+                { data: allStocks },
+                { data: allSchedules },
+            ] = await Promise.all([
+                fetchCollection<MedicationDoc>(`users/${user.uid}/medications`, medConstraints),
+                fetchCollection<StockDoc>(`users/${user.uid}/stock`),
+                fetchCollection<ScheduleDoc>(`users/${user.uid}/schedules`),
+            ]);
             if (medError) throw medError;
             if (!medications || medications.length === 0) return [];
-
-            const { data: allStocks } = await fetchCollection<StockDoc>(`users/${user.uid}/stock`);
-            const { data: allSchedules } = await fetchCollection<ScheduleDoc>(`users/${user.uid}/schedules`);
 
             const joinedData: Medication[] = medications.map(med => {
                 const medStock = allStocks?.filter(s => s.itemId === med.id).map(s => ({

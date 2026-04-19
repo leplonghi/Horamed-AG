@@ -8,7 +8,6 @@ import {
     updateProfile,
     GoogleAuthProvider,
     signInWithPopup,
-    signInWithRedirect,
     signInWithCredential,
     setPersistence,
     browserLocalPersistence,
@@ -29,9 +28,8 @@ const trySetPersistence = async () => {
     try {
         await setPersistence(auth, isNativePlatform ? indexedDBLocalPersistence : browserLocalPersistence);
     } catch (err: any) {
-        // If localStorage is blocked (common with third-party cookie blocking), fallback to session
         if (err.message?.includes('localStorage') || err.code?.includes('persistence')) {
-            console.warn('⚠️ Local auth persistence denied (storage blocked). Falling back to session persistence...');
+            console.warn('⚠️ Local auth persistence denied. Falling back to session persistence...');
             try {
                 await setPersistence(auth, browserSessionPersistence);
             } catch (err2) {
@@ -43,15 +41,14 @@ const trySetPersistence = async () => {
     }
 };
 
-trySetPersistence();
+// Store the promise so signIn/signUp can await it before authenticating.
+const persistenceReady = trySetPersistence();
 
 function isNoCredentialAvailableError(error: unknown) {
     if (!error || typeof error !== 'object') return false
-
     const message = 'message' in error && typeof error.message === 'string'
         ? error.message.toLowerCase()
         : ''
-
     return (
         message.includes('nocredentialexception') ||
         message.includes('no credential available') ||
@@ -64,6 +61,7 @@ function isNoCredentialAvailableError(error: unknown) {
  */
 export async function signIn(email: string, password: string) {
     try {
+        await persistenceReady;
         const result = await signInWithEmailAndPassword(auth, email, password)
         return { user: result.user, error: null }
     } catch (error: any) {
@@ -76,13 +74,11 @@ export async function signIn(email: string, password: string) {
  */
 export async function signUp(email: string, password: string, displayName?: string) {
     try {
+        await persistenceReady;
         const result = await createUserWithEmailAndPassword(auth, email, password)
-
-        // Update profile with display name if provided
         if (displayName && result.user) {
             await updateProfile(result.user, { displayName })
         }
-
         return { user: result.user, error: null }
     } catch (error: any) {
         return { user: null, error }
@@ -93,13 +89,16 @@ export async function signUp(email: string, password: string, displayName?: stri
  * Sign in with Google
  *
  * Strategy:
- * - Capacitor native (Android/iOS): uses @capacitor-firebase/authentication which calls
- *   the native Android Google Sign-In SDK directly.
- * - Web/PWA on mobile browser: use signInWithRedirect (standard mobile web flow).
- * - Web/PWA on desktop: use signInWithPopup.
+ * - Capacitor native (Android/iOS): uses @capacitor-firebase/authentication.
+ * - Web/PWA (all devices): ALWAYS uses signInWithPopup.
+ *   signInWithRedirect is intentionally avoided because Service Workers in PWAs
+ *   intercept the redirect-back navigation and serve cached content, causing
+ *   getRedirectResult() to return null (auth state lost). Popup is reliable on
+ *   both desktop and mobile browsers.
  */
 export async function signInWithGoogle(options?: { prompt?: string, login_hint?: string }) {
     try {
+        await persistenceReady;
         if (Capacitor.isNativePlatform()) {
             const customParameters: { key: string; value: string }[] = []
             if (options?.prompt) customParameters.push({ key: 'prompt', value: options.prompt })
@@ -109,17 +108,11 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             let nativeResult
 
             try {
-                // Try standard native sign in
                 nativeResult = await FirebaseAuthentication.signInWithGoogle(nativeOptions)
             } catch (error) {
-                const shouldFallbackToLegacyGoogleSignIn =
+                const shouldFallback =
                     Capacitor.getPlatform() === 'android' && isNoCredentialAvailableError(error)
-
-                if (!shouldFallbackToLegacyGoogleSignIn) {
-                    throw error
-                }
-
-                // Fallback for older Android environments or missing Credential Manager
+                if (!shouldFallback) throw error
                 nativeResult = await FirebaseAuthentication.signInWithGoogle({
                     ...nativeOptions,
                     useCredentialManager: false,
@@ -127,46 +120,24 @@ export async function signInWithGoogle(options?: { prompt?: string, login_hint?:
             }
 
             const idToken = nativeResult.credential?.idToken
-            if (!idToken) {
-                throw new Error('Native Google Sign-In did not return an idToken')
-            }
+            if (!idToken) throw new Error('Native Google Sign-In did not return an idToken')
 
-            // Exchange the native idToken for a Firebase JS SDK credential
             const credential = GoogleAuthProvider.credential(idToken)
             const userCredential = await signInWithCredential(auth, credential)
             const additionalInfo = getAdditionalUserInfo(userCredential)
-
-            return {
-                user: userCredential.user,
-                isNewUser: additionalInfo?.isNewUser ?? false,
-                error: null,
-            }
+            return { user: userCredential.user, isNewUser: additionalInfo?.isNewUser ?? false, error: null }
         }
 
-        // Web/PWA context
+        // Web/PWA: always use popup — redirect breaks in PWAs (SW caches app shell,
+        // Firebase loses redirect state, getRedirectResult returns null).
         const provider = new GoogleAuthProvider()
-        provider.setCustomParameters({
-            prompt: 'select_account',
-            ...options,
-        })
+        provider.setCustomParameters({ prompt: 'select_account', ...options })
+        const result = await signInWithPopup(auth, provider)
+        const additionalInfo = getAdditionalUserInfo(result)
+        return { user: result.user, isNewUser: additionalInfo?.isNewUser ?? false, error: null }
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-        if (isMobile) {
-            // Mobile browser: redirect flow is more reliable
-            await signInWithRedirect(auth, provider)
-            return { user: null, isNewUser: false, error: null }
-        } else {
-            const result = await signInWithPopup(auth, provider)
-            const additionalInfo = getAdditionalUserInfo(result)
-            return {
-                user: result.user,
-                isNewUser: additionalInfo?.isNewUser ?? false,
-                error: null,
-            }
-        }
     } catch (error: any) {
-        console.error('Google Sign-In Error:', error);
+        console.error('Google Sign-In Error:', error.code, error.message);
         return { user: null, isNewUser: false, error }
     }
 }
@@ -211,7 +182,6 @@ export function getCurrentUser(): User | null {
 export async function getIdToken(): Promise<string | null> {
     const user = auth.currentUser
     if (!user) return null
-
     try {
         return await user.getIdToken()
     } catch (error) {

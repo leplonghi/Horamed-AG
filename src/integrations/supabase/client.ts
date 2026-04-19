@@ -286,11 +286,17 @@ class SupabaseQueryBuilder {
     const constraints = [];
 
     for (const filter of this.filters) {
-      // Skip relational filters (e.g. "items.user_id") — Firebase doesn't support cross-collection
-      if (filter.field.includes('.')) continue;
+      // Filtros relacionais (ex: "items.user_id") não são suportados no Firestore.
+      // Logamos em dev para facilitar migração, em vez de descartar silenciosamente.
+      if (filter.field.includes('.')) {
+        if (import.meta.env.DEV) {
+          console.warn(`[SupabaseCompat] Filtro relacional ignorado: "${filter.field}". Migre para Firebase nativo.`);
+        }
+        continue;
+      }
 
       if (filter.op === 'in' && Array.isArray(filter.value)) {
-        // Firestore 'in' supports max 30 values
+        // Firestore suporta máximo 30 valores no 'in'
         const values = (filter.value as unknown[]).slice(0, 30);
         constraints.push(where(filter.field, 'in', values));
       } else {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
-import { User, onAuthStateChanged, getRedirectResult, AuthError, signOut as firebaseSignOut } from "firebase/auth";
+import { User, onAuthStateChanged, AuthError, signOut as firebaseSignOut } from "firebase/auth";
 import { auth } from "@/integrations/firebase/client";
 import { Capacitor } from "@capacitor/core";
 import { useNavigate } from "react-router-dom";
@@ -28,48 +28,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearError = () => setError(null);
 
   useEffect(() => {
-    // Handle redirect result on web/PWA (after signInWithRedirect returns)
-    if (!Capacitor.isNativePlatform()) {
-      getRedirectResult(auth)
-        .then((result) => {
-          if (result?.user) {
-            console.log('🔄 Redirect result: user authenticated', result.user.email);
-            setUser(result.user);
-            setLoading(false);
-          }
-        })
-        .catch((err) => {
-          console.error('🔥 Redirect result error:', err);
-          setError(err as AuthError);
-        });
-    }
+    // NOTE: We use signInWithPopup (not signInWithRedirect) for all web/PWA Google auth,
+    // so getRedirectResult is not needed here. Popup auth is handled directly in the
+    // signInWithGoogle function and onAuthStateChanged captures the result.
 
-    // Auth monitor with settle bit
     let settled = false;
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       console.log('🔐 Auth state changed:', firebaseUser?.email ? `User: ${firebaseUser.email}` : 'Signed out');
-      
       setUser(firebaseUser);
       setLoading(false);
       settled = true;
     }, (err) => {
       console.error('🔥 Auth state change error:', err);
       setError(err as AuthError);
-      
-      // If we have a current user even on error, don't set loading false yet
       if (!auth.currentUser) {
         setLoading(false);
         settled = true;
       }
     });
 
-    // Safety timeout: if loading is still true after 3 seconds, force it off
+    // Safety timeout: force loading=false after 5s if onAuthStateChanged never fires
     const safetyTimeout = setTimeout(() => {
       if (!settled) {
         console.warn('⚠️ Auth check timed out. Proceeding with current state...');
         setLoading(false);
-        // If we are still loading after 5s, something is wrong. 
-        // We'll let the app try to render with whatever it has.
       }
     }, 5000);
 

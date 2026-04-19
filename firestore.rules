@@ -14,152 +14,251 @@ service cloud.firestore {
       return request.auth.uid == userId;
     }
 
-    // Uses Firebase Auth custom claims — set via admin SDK when promoting admins.
-    // Fallback: never grants admin if claim is absent.
     function isAdmin() {
       return isAuthenticated() && request.auth.token.admin == true;
     }
 
-    // Caregiver check — determines if the logged user is a designated caregiver for the patient.
-    // Logic: Checks for an APPROVED record in the patient's caregivers subcollection.
+    // Verifica se o usuário logado é cuidador APROVADO do paciente
     function isCaregiverOf(userId) {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)) &&
         get(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)).data.status == "approved";
     }
 
+    // Campos que um cuidador pode alterar numa dose
+    function caregiverDoseFields() {
+      return ['status', 'takenAt', 'skippedAt', 'missedAt', 'updatedAt', 'dueAt'];
+    }
+
+    // Campos que um cuidador pode alterar no registro de cuidado
+    function caregiverSelfFields() {
+      return ['status', 'updatedAt', 'acceptedAt', 'respondedAt'];
+    }
+
+
     // ===================================
     // Users Collection
     // ===================================
 
     match /users/{userId} {
-      // Users can read and write their own data
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isCaregiverOf(userId);
       allow write: if isOwner(userId);
 
-      // Family Profiles (subcollection)
+      // Perfis Familiares (legado)
       match /familyProfiles/{profileId} {
         allow read, write: if isOwner(userId);
       }
 
-      // User Profiles (New subcollection)
+      // Perfis (nova estrutura)
       match /profiles/{profileId} {
         allow read, write: if isOwner(userId);
+
+        // Doses aninhadas por perfil
+        match /doses/{doseId} {
+          allow read: if isOwner(userId) || isCaregiverOf(userId);
+          allow create, delete: if isOwner(userId);
+          allow update: if isOwner(userId) ||
+            (isCaregiverOf(userId) &&
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly(caregiverDoseFields()));
+        }
+
+        // Eventos de saúde por perfil
+        match /healthEvents/{eventId} {
+          allow read: if isOwner(userId) || isCaregiverOf(userId);
+          allow write: if isOwner(userId);
+        }
       }
 
-      // Medications (subcollection)
+      // Medicamentos
       match /medications/{medicationId} {
         allow read: if isOwner(userId) || isCaregiverOf(userId);
         allow write: if isOwner(userId);
       }
 
-      // Doses (subcollection)
+      // Doses (raiz do usuário, sem perfil)
       match /doses/{doseId} {
         allow read: if isOwner(userId) || isCaregiverOf(userId);
-        allow update: if isCaregiverOf(userId) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['taken', 'takenAt', 'updatedAt']);
         allow create, delete: if isOwner(userId);
+        allow update: if isOwner(userId) ||
+          (isCaregiverOf(userId) &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(caregiverDoseFields()));
       }
 
-      // Medical Documents (subcollection)
+
+      // Agendamentos (schedules)
+      match /schedules/{scheduleId} {
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
+        allow write: if isOwner(userId);
+      }
+
+      // Estoque
+      match /stock/{stockId} {
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
+        allow write: if isOwner(userId);
+      }
+
+      // Documentos médicos
       match /documents/{documentId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Medical Reports (subcollection)
+      // Health Documents (nova estrutura)
+      match /healthDocuments/{documentId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Relatórios
       match /reports/{reportId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Weight History (subcollection)
+      // Histórico de peso
       match /weightHistory/{entryId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Vaccination Records (subcollection)
+      // Vacinações
       match /vaccinations/{vaccinationId} {
         allow read: if isOwner(userId) || isCaregiverOf(userId);
         allow write: if isOwner(userId);
       }
 
-      // XP Transactions (subcollection)
+      // Transações de XP
       match /xpTransactions/{transactionId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Achievements (subcollection)
+      // Conquistas
       match /achievements/{achievementId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Referrals (subcollection)
+
+      // Indicações/Referrals
       match /referrals/{referralId} {
-        allow read: if isOwner(userId);
-        allow write: if isOwner(userId);
+        allow read, write: if isOwner(userId);
       }
 
-      // Subscriptions (subcollection) — READ ONLY for clients.
-      // Writes are exclusively performed by Cloud Functions via the Admin SDK.
-      // This prevents users from self-promoting to Premium by writing their own plan.
+      // Assinatura — LEITURA apenas para clientes
+      // Escrita exclusiva via Admin SDK (Cloud Functions)
       match /subscription/{subscriptionId} {
         allow read: if isOwner(userId);
       }
 
-      // Push Subscriptions (subcollection)
+      // Push Subscriptions
       match /pushSubscriptions/{subscriptionId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Notification Metrics (subcollection)
+      // Métricas de notificação
       match /notificationMetrics/{metricId} {
         allow read, write: if isOwner(userId);
       }
 
-      // App Metrics (subcollection)
+      // Métricas do app — CORRIGIDO: permite update além de create
       match /appMetrics/{metricId} {
-        allow read: if isOwner(userId);
-        allow create: if isOwner(userId);
+        allow read, create, update: if isOwner(userId);
       }
 
-      // Referral Rewards (subcollection) — read-only for clients
+      // Recompensas de indicação — somente leitura
       match /referralRewards/{rewardId} {
         allow read: if isOwner(userId);
       }
 
-      // Rewards (subcollection) — read-only for clients
+      // Recompensas — somente leitura
       match /rewards/{rewardId} {
         allow read: if isOwner(userId);
       }
 
-      // Health Providers (subcollection) — personal, private, fully owned by user
+      // Prestadores de saúde
       match /providers/{providerId} {
         allow read, write: if isOwner(userId);
       }
 
-      // Caregivers (subcollection) — users authorized to view/manage this user's health
+
+      // Cuidadores — CORRIGIDO: cuidador pode aceitar/recusar apenas seu próprio status
       match /caregivers/{caregiverUid} {
         allow read: if isOwner(userId) || request.auth.uid == caregiverUid;
+        // Dono gerencia quem é cuidador
+        allow create, delete: if isOwner(userId);
+        // Dono pode alterar tudo; cuidador só atualiza seu próprio status
+        allow update: if isOwner(userId) ||
+          (request.auth.uid == caregiverUid &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(caregiverSelfFields()));
+      }
+
+      // Notificações locais
+      match /notifications/{notificationId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Diário de efeitos colaterais
+      match /sideEffects/{entryId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Eventos de saúde (raiz do usuário)
+      match /healthEvents/{eventId} {
+        allow read: if isOwner(userId) || isCaregiverOf(userId);
         allow write: if isOwner(userId);
+      }
+
+      // Consentimentos LGPD/GDPR
+      match /consents/{consentId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Alarmes
+      match /alarms/{alarmId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Logs de auditoria — append-only para clientes
+      match /auditLogs/{logId} {
+        allow read, create: if isOwner(userId);
       }
     }
 
-    // ===================================
-    // Campaigns & Marketing
-    // ===================================
 
+    // ===================================
+    // dose_instances — Coleção top-level
+    // Usada pelo MedicationRepository para gerenciamento cross-profile
+    // CRÍTICO: estava sem regras — qualquer usuário podia ler/escrever!
+    // ===================================
+    match /dose_instances/{doseId} {
+      // Leitura: dono ou cuidador aprovado
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isCaregiverOf(resource.data.userId)
+      );
+
+      // Criação: só o dono, e o campo userId deve bater com quem está criando
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Atualização: dono pode tudo; cuidador só altera campos de status de dose
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        (isCaregiverOf(resource.data.userId) &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(caregiverDoseFields()))
+      );
+
+      // Exclusão: apenas o dono
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ===================================
+    // Campanhas & Marketing
+    // ===================================
     match /campaigns/{campaignId} {
-      // Allow read for everyone (needed for applying codes on landing pages)
       allow read: if true;
-
-      // Write restricted to admins only — Campaign Generator and redemption
-      // counters must be incremented via Cloud Functions, not client-side.
       allow write: if isAdmin();
     }
 
     // ===================================
-    // Shared Documents (Time-Limited Sharing)
+    // Documentos Compartilhados (tempo limitado)
     // ===================================
-
     match /sharedDocuments/{shareId} {
       allow read: if resource.data.expiresAt > request.time;
       allow create: if isAuthenticated() &&
@@ -171,11 +270,23 @@ service cloud.firestore {
     }
 
     // ===================================
-    // Global Collections (Read-Only)
+    // Dados Globais de Referência (somente leitura para clientes)
     // ===================================
 
-    // Medication Interactions (global reference data)
+    // Interações medicamentosas
     match /interactions/{interactionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Feature Flags
+    match /featureFlags/{flagId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Configurações do app
+    match /appConfig/{configId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }

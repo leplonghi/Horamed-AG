@@ -4,6 +4,7 @@ import {
     doc,
     getDoc,
     getDocs,
+    addDoc,
     setDoc,
     updateDoc,
     deleteDoc,
@@ -12,6 +13,8 @@ import {
     orderBy,
     limit,
     onSnapshot,
+    collectionGroup,
+    getCountFromServer,
     QueryConstraint,
     DocumentData,
     Timestamp,
@@ -150,7 +153,6 @@ export async function addDocument<T = DocumentData>(
     data: any
 ): Promise<{ data: T | null; error: Error | null }> {
     try {
-        const { addDoc } = await import('firebase/firestore')
         const docRef = await addDoc(collection(db, collectionName), {
             ...data,
             createdAt: serverTimestamp(),
@@ -288,7 +290,6 @@ export async function fetchCollectionGroup<T = DocumentData>(
     constraints: QueryConstraint[] = []
 ): Promise<{ data: T[]; error: Error | null }> {
     try {
-        const { collectionGroup } = await import('firebase/firestore')
         const q = query(collectionGroup(db, collectionId), ...constraints)
         const snapshot = await getDocs(q)
         const data = snapshot.docs.map((doc) => ({
@@ -309,7 +310,6 @@ export async function fetchCount(
     constraints: QueryConstraint[] = []
 ): Promise<{ count: number; error: Error | null }> {
     try {
-        const { getCountFromServer } = await import('firebase/firestore')
         const q = query(collection(db, collectionName), ...constraints)
         const snapshot = await getCountFromServer(q)
         return { count: snapshot.data().count, error: null }

@@ -68,7 +68,7 @@ export default function More() {
       setUserEmail(user.email || "");
 
       const { data: profile } = await fetchDocument<{ full_name?: string; nickname?: string }>(
-        "profiles",
+        "users",
         user.uid
       );
       if (profile) setUserName(profile.nickname || profile.full_name || "");

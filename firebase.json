@@ -35,63 +35,55 @@
             {
                 "source": "favicon.ico",
                 "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "public, max-age=86400"
-                    }
+                    { "key": "Cache-Control", "value": "public, max-age=86400" }
                 ]
             },
             {
                 "source": "**/*.@(jpg|jpeg|gif|png|svg|webp)",
                 "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "max-age=31536000"
-                    }
-                ]
-            },
-            {
-                "source": "**/*.@(js|css)",
-                "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "max-age=31536000"
-                    },
-                    {
-                        "key": "Content-Type",
-                        "value": "application/javascript"
-                    }
-                ]
-            },
-            {
-                "source": "**/*.css",
-                "headers": [
-                    {
-                        "key": "Content-Type",
-                        "value": "text/css"
-                    }
+                    { "key": "Cache-Control", "value": "max-age=31536000, immutable" }
                 ]
             },
             {
                 "source": "index.html",
                 "headers": [
-                    {
-                        "key": "Cache-Control",
-                        "value": "no-cache"
-                    },
-                    {
-                        "key": "Content-Type",
-                        "value": "text/html"
-                    }
+                    { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+                    { "key": "Content-Type", "value": "text/html" }
+                ]
+            },
+            {
+                "source": "sw.js",
+                "headers": [
+                    { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+                    { "key": "Content-Type", "value": "application/javascript" }
+                ]
+            },
+            {
+                "source": "workbox-*.js",
+                "headers": [
+                    { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+                    { "key": "Content-Type", "value": "application/javascript" }
+                ]
+            },
+            {
+                "source": "assets/**/*.@(js)",
+                "headers": [
+                    { "key": "Cache-Control", "value": "max-age=31536000, immutable" },
+                    { "key": "Content-Type", "value": "application/javascript" }
+                ]
+            },
+            {
+                "source": "assets/**/*.@(css)",
+                "headers": [
+                    { "key": "Cache-Control", "value": "max-age=31536000, immutable" },
+                    { "key": "Content-Type", "value": "text/css" }
                 ]
             },
             {
                 "source": "**/manifest*.@(json|webmanifest)",
                 "headers": [
-                    {
-                        "key": "Content-Type",
-                        "value": "application/manifest+json"
-                    }
+                    { "key": "Cache-Control", "value": "no-cache" },
+                    { "key": "Content-Type", "value": "application/manifest+json" }
                 ]
             }
         ]

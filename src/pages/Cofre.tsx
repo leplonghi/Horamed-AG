@@ -20,7 +20,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import OceanBackground from "@/components/ui/OceanBackground";
 import PageHeroHeader from "@/components/shared/PageHeroHeader";
 import AdSupportCard from "@/components/AdSupportCard";
@@ -404,8 +403,6 @@ export default function Cofre() {
                 onUpdate={updateProvider}
                 editing={editingProvider}
             />
-
-            <Navigation activePath="/carteira" />
         </div>
     );
 }

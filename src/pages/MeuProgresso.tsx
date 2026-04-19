@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heartbeat, TrendUp, Trophy } from "@phosphor-icons/react";
 import History from "./History";
@@ -70,8 +69,6 @@ export default function MeuProgresso() {
           </TabsContent>
         </Tabs>
       </main>
-
-      <Navigation />
     </div>
   );
 }

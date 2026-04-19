@@ -4,154 +4,171 @@
             "collectionGroup": "doses",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "scheduledFor",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "scheduledFor", "order": "ASCENDING" },
+                { "fieldPath": "status", "order": "ASCENDING" }
             ]
         },
         {
             "collectionGroup": "doses",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "profileId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "scheduledFor",
-                    "order": "ASCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "scheduledFor", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "doses",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "ASCENDING" },
+                { "fieldPath": "status", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "doses",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "ASCENDING" }
+            ]
+        },
+
+        {
+            "collectionGroup": "medications",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "isActive", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
             ]
         },
         {
             "collectionGroup": "medications",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "isActive",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "isActive", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
             ]
         },
         {
             "collectionGroup": "documents",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "type",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "uploadedAt",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "type", "order": "ASCENDING" },
+                { "fieldPath": "uploadedAt", "order": "DESCENDING" }
             ]
         },
         {
             "collectionGroup": "xpTransactions",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
             ]
         },
         {
             "collectionGroup": "referrals",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "referrerUserId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "status",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "referrerUserId", "order": "ASCENDING" },
+                { "fieldPath": "status", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
             ]
         },
+
         {
             "collectionGroup": "healthDocuments",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "profileId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "createdAt",
-                    "order": "DESCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
             ]
         },
         {
             "collectionGroup": "healthEvents",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "userId",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "dueDate",
-                    "order": "ASCENDING"
-                },
-                {
-                    "fieldPath": "completedAt",
-                    "order": "ASCENDING"
-                }
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "dueDate", "order": "ASCENDING" },
+                { "fieldPath": "completedAt", "order": "ASCENDING" }
             ]
         },
         {
             "collectionGroup": "profiles",
             "queryScope": "COLLECTION",
             "fields": [
-                {
-                    "fieldPath": "isPrimary",
-                    "order": "DESCENDING"
-                },
-                {
-                    "fieldPath": "name",
-                    "order": "ASCENDING"
-                }
+                { "fieldPath": "isPrimary", "order": "DESCENDING" },
+                { "fieldPath": "name", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "dose_instances",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "ASCENDING" },
+                { "fieldPath": "status", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "dose_instances",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "ASCENDING" }
+            ]
+        },
+
+        {
+            "collectionGroup": "dose_instances",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "profileId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "ASCENDING" },
+                { "fieldPath": "status", "order": "ASCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "dose_instances",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "itemId", "order": "ASCENDING" },
+                { "fieldPath": "dueAt", "order": "DESCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "sideEffects",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "createdAt", "order": "DESCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "vaccinations",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "appliedAt", "order": "DESCENDING" }
+            ]
+        },
+        {
+            "collectionGroup": "weightHistory",
+            "queryScope": "COLLECTION",
+            "fields": [
+                { "fieldPath": "userId", "order": "ASCENDING" },
+                { "fieldPath": "date", "order": "DESCENDING" }
             ]
         }
     ],

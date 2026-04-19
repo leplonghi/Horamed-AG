@@ -5,7 +5,6 @@ import { Bell, Shield, Question as HelpCircle, SignOut as LogOut, FileArrowDown 
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import CaregiverManager from "@/components/CaregiverManager";
 import { useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
 import Header from "@/components/Header";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -312,8 +311,6 @@ export default function Profile() {
           <div className="text-muted-foreground/40">© {new Date().getFullYear()} HoraMed</div>
         </div>
       </motion.main>
-
-      <Navigation />
     </div>
   );
 }

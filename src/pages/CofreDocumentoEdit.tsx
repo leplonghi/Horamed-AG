@@ -15,7 +15,6 @@ import { useDocumento } from "@/hooks/useCofre";
 import { auth, updateDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -178,7 +177,6 @@ export default function CofreDocumentoEdit() {
           <Skeleton className="h-8 w-24 mb-4" />
           <Skeleton className="h-96" />
         </div>
-        <Navigation />
       </div>
     );
   }
@@ -190,7 +188,6 @@ export default function CofreDocumentoEdit() {
         <div className="container max-w-2xl mx-auto px-4 py-6 pt-24">
           <p>{t('cofreEdit.notFound')}</p>
         </div>
-        <Navigation />
       </div>
     );
   }
@@ -747,7 +744,6 @@ export default function CofreDocumentoEdit() {
           </CardContent>
         </Card>
       </div>
-      <Navigation />
     </div>
   );
 }

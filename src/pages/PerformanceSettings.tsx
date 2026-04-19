@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 
@@ -41,7 +40,6 @@ export default function PerformanceSettings() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <Header />
-      <Navigation />
 
       <main className="container max-w-2xl mx-auto px-4 pt-20 pb-8">
         <div className="flex items-center gap-4 mb-6">

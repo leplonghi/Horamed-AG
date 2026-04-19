@@ -22,35 +22,37 @@ try {
 
 // Register PWA service workers after render
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", async () => {
-    // Register notification worker under its own scope to avoid conflicts
-    // Register notification worker under its own scope to avoid conflicts
-    // REMOVED: Merged into main PWA service worker via importScripts
-    /* 
-    try {
-      const notificationSW = await navigator.serviceWorker.register(
-        "/notifications/sw-notifications.js",
-        { scope: "/notifications/" }
-      );
-      console.log(
-        "[SW] Notification service worker registered:",
-        notificationSW.scope
-      );
-    } catch (error) {
-      console.error("[SW] Notification service worker registration failed:", error);
+  // Reload the page when a new SW takes control so users always get the latest build.
+  // This fires after skipWaiting+clientsClaim — exactly once per SW update.
+  let swReloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!swReloading) {
+      swReloading = true;
+      console.log('[SW] New service worker activated — reloading for latest build.');
+      window.location.reload();
     }
-    */
+  });
 
-    // Register PWA service worker
+  window.addEventListener("load", async () => {
     import("virtual:pwa-register")
       .then(({ registerSW }) => {
         registerSW({
           immediate: true,
-          onNeedRefresh() {
-            // New content available - handled by UI prompt
+          onNeedRefresh(updateSW) {
+            // New content is available — immediately apply it.
+            // The SW has skipWaiting+clientsClaim, so updateSW() activates the new SW
+            // and the controllerchange listener above reloads the page.
+            console.log('[SW] New version available — applying update...');
+            updateSW?.();
           },
           onOfflineReady() {
-            // App ready for offline use
+            console.log('[SW] App ready for offline use.');
+          },
+          onRegisteredSW(swUrl, registration) {
+            // Check for SW updates every 60 seconds to ensure fast rollouts
+            setInterval(() => {
+              registration?.update();
+            }, 60 * 1000);
           },
         });
       })

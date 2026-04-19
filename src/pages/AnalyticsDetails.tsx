@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, endOfDay, subDays } from "date-fns";
 import Header from "@/components/Header";
-import Navigation from "@/components/Navigation";
 import PageHeader from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ChartBar as BarChart3 } from "@phosphor-icons/react";
@@ -96,8 +95,6 @@ export default function AnalyticsDetails() {
           </Card>
         </div>
       </main>
-
-      <Navigation />
     </div>
   );
 }
