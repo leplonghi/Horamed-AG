@@ -1,0 +1,3 @@
+[1m[33m[plugin:vite:reporter][39m[22m [33m[plugin vite:reporter] 
+(!) C:/Antigravity/horamed/horamed/src/lib/eventBus.ts is dynamically imported by C:/Antigravity/horamed/horamed/src/hooks/useDoseGeneration.ts, C:/Antigravity/horamed/horamed/src/hooks/useMedications.ts but also statically imported by C:/Antigravity/horamed/horamed/src/contexts/SubscriptionContext.tsx, dynamic import will not move module into another chunk.
+[39m
