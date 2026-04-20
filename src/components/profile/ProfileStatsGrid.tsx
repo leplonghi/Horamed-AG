@@ -58,7 +58,7 @@ const StatCard = ({ label, value, icon: Icon, color, onClick, badge, isPremium, 
       onClick={onClick}
       className={cn(
         "group relative flex flex-col items-center justify-center gap-3 p-5 rounded-3xl",
-        "bg-white/5 border border-white/10 backdrop-blur-md overflow-hidden",
+        "bg-card/80 border border-border backdrop-blur-md overflow-hidden",
         "shadow-lg hover:shadow-2xl transition-all duration-300",
         badge && "ring-1 ring-primary/40"
       )}
@@ -83,10 +83,10 @@ const StatCard = ({ label, value, icon: Icon, color, onClick, badge, isPremium, 
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <span className="text-2xl font-bold tracking-tight text-white group-hover:scale-105 transition-transform duration-300">
+        <span className="text-2xl font-bold tracking-tight text-foreground group-hover:scale-105 transition-transform duration-300">
           {value}
         </span>
-        <span className="text-[11px] font-medium text-white/40 uppercase tracking-wider mt-1">
+        <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mt-1">
           {label}
         </span>
       </div>
