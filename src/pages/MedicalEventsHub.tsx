@@ -92,7 +92,7 @@ const MedicalEventsHub = () => {
                         <Button
                             onClick={() => navigate('/eventos-medicos/calendario')}
                             variant="outline"
-                            className="w-full h-28 sm:h-32 flex flex-col items-center justify-center gap-3 rounded-[2rem] bg-card/40 backdrop-blur-xl border-white/10 shadow-glass hover:bg-card/60 transition-all"
+                            className="w-full h-28 sm:h-32 flex flex-col items-center justify-center gap-3 rounded-[2rem] bg-card/40 backdrop-blur-xl border-border/50 shadow-glass hover:bg-card/60 transition-all"
                         >
                             <div className="p-3 bg-primary/10 rounded-2xl">
                                 <Calendar className="w-6 h-6 text-primary" />
@@ -117,7 +117,7 @@ const MedicalEventsHub = () => {
                         placeholder={t('medicalEvents.searchPlaceholder')}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12 h-14 rounded-3xl bg-card/40 backdrop-blur-xl border-white/10 shadow-glass focus:shadow-glass-hover transition-all text-foreground placeholder:text-muted-foreground/60"
+                        className="pl-12 h-14 rounded-3xl bg-card/40 backdrop-blur-xl border-border/50 shadow-glass focus:shadow-glass-hover transition-all text-foreground placeholder:text-muted-foreground/60"
                     />
                 </motion.div>
 

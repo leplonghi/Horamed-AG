@@ -293,7 +293,7 @@ export default function CofreDocumento() {
                 <div className="space-y-6">
                   {/* Dados do Paciente */}
                   {(meta?.patient_name || meta?.patient_age || meta?.patient_cpf) && (
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-5 rounded-2xl bg-muted/20 border border-border/40">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
                         <IconUser className="w-4 h-4 text-primary" /> {t('cofreDoc.patientData')}
                       </h3>
@@ -328,7 +328,7 @@ export default function CofreDocumento() {
 
                   {/* Identificação do Emitente */}
                   {(meta?.emitter_name || meta?.emitter_address || documento.provider) && (
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-5 rounded-2xl bg-muted/20 border border-border/40">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
                         <IconHealth className="w-4 h-4 text-emerald-500" /> {t('cofreDoc.emitter')}
                       </h3>
@@ -365,7 +365,7 @@ export default function CofreDocumento() {
 
                   {/* Dados do Médico */}
                   {meta?.doctor_name && (
-                    <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-5 rounded-2xl bg-muted/20 border border-border/40">
                       <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
                         <Stethoscope className="w-4 h-4 text-blue-500" /> {t('cofreDoc.doctorData')}
                       </h3>
@@ -414,7 +414,7 @@ export default function CofreDocumento() {
                     {meta?.prescription_type && (
                       <div className="col-span-2">
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mb-1">{t('cofreDoc.prescriptionType')}</p>
-                        <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-white/5 border-white/10 text-sm font-bold capitalize">
+                        <Badge variant="secondary" className="px-4 py-1.5 rounded-full bg-muted/30 border-border/40 text-sm font-bold capitalize">
                           {meta.prescription_type}
                         </Badge>
                       </div>
@@ -422,7 +422,7 @@ export default function CofreDocumento() {
                     {meta?.diagnosis && (
                       <div className="col-span-2">
                         <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mb-1">{t('cofreDoc.diagnosis')}</p>
-                        <p className="font-medium bg-white/5 p-4 rounded-xl border border-white/10 leading-relaxed italic">
+                        <p className="font-medium bg-muted/20 p-4 rounded-xl border border-border/40 leading-relaxed italic">
                           "{meta.diagnosis}"
                         </p>
                       </div>
@@ -432,7 +432,7 @@ export default function CofreDocumento() {
                   {/* Status da Receita */}
                   {documento?.categorySlug === 'receita' && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                      <Separator className="bg-white/10 my-4" />
+                      <Separator className="bg-muted/30 my-4" />
                       <div className="space-y-4 pt-2">
                         <PrescriptionStatusBadge
                           status={
@@ -479,23 +479,23 @@ export default function CofreDocumento() {
 
                 {documento.notes && (
                   <div className="pt-2">
-                    <Separator className="bg-white/10 mb-4" />
+                    <Separator className="bg-muted/30 mb-4" />
                     <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mb-2">📝 {t('cofreDoc.notes')}</p>
                     <p className="text-sm text-foreground/80 leading-relaxed">{documento.notes}</p>
                   </div>
                 )}
 
                 <div className="pt-4 flex flex-wrap gap-2">
-                  <Button onClick={() => navigate(`/carteira/${id}/editar`)} variant="outline" size="lg" className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm h-12 flex-1 sm:flex-none">
+                  <Button onClick={() => navigate(`/carteira/${id}/editar`)} variant="outline" size="lg" className="rounded-2xl border-border/50 bg-muted/20 hover:bg-muted/30 backdrop-blur-sm h-12 flex-1 sm:flex-none">
                     <Edit className="w-4 h-4 mr-2" />
                     {t('cofreDoc.edit')}
                   </Button>
-                  <Button onClick={handleCompartilhar} variant="outline" size="lg" className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm h-12 flex-1 sm:flex-none">
+                  <Button onClick={handleCompartilhar} variant="outline" size="lg" className="rounded-2xl border-border/50 bg-muted/20 hover:bg-muted/30 backdrop-blur-sm h-12 flex-1 sm:flex-none">
                     <Share2 className="w-4 h-4 mr-2" />
                     {t('cofreDoc.shareLink')}
                   </Button>
                   {signedUrl && (
-                    <Button asChild variant="outline" size="lg" className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10 backdrop-blur-sm h-12 flex-1 sm:flex-none">
+                    <Button asChild variant="outline" size="lg" className="rounded-2xl border-border/50 bg-muted/20 hover:bg-muted/30 backdrop-blur-sm h-12 flex-1 sm:flex-none">
                       <a href={signedUrl} download target="_blank" rel="noopener noreferrer">
                         <Download className="w-4 h-4 mr-2" />
                         {t('common.download')}
@@ -522,7 +522,7 @@ export default function CofreDocumento() {
               <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass overflow-hidden">
                 <Collapsible open={expandedSections.prescriptions} onOpenChange={() => toggleSection('prescriptions')}>
                   <CollapsibleTrigger asChild>
-                    <div {...pressable(() => toggleSection('prescriptions'))} className="p-6 cursor-pointer focus-visible:bg-white/5 outline-none">
+                    <div {...pressable(() => toggleSection('prescriptions'))} className="p-6 cursor-pointer focus-visible:bg-muted/20 outline-none">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-[1.25rem] bg-blue-500/10 flex items-center justify-center">
@@ -561,7 +561,7 @@ export default function CofreDocumento() {
                                 "p-5 rounded-[1.75rem] border transition-all duration-300",
                                 isAdded
                                   ? 'bg-emerald-500/5 border-emerald-500/10 opacity-70'
-                                  : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                                  : 'bg-muted/30 border-border/40 hover:bg-muted/30 hover:border-border/40'
                               )}
                             >
                               {isAdded && (
@@ -583,7 +583,7 @@ export default function CofreDocumento() {
                                   )}
                                 </div>
                                 {med.is_generic !== undefined && (
-                                  <Badge variant="outline" className={cn("rounded-lg border-0 font-bold px-3 py-1", med.is_generic ? "bg-primary/10 text-primary" : "bg-white/5 text-muted-foreground")}>
+                                  <Badge variant="outline" className={cn("rounded-lg border-0 font-bold px-3 py-1", med.is_generic ? "bg-primary/10 text-primary" : "bg-muted/20 text-muted-foreground")}>
                                     {med.is_generic ? `${t('cofreDoc.generic')}` : t('cofreDoc.brand')}
                                   </Badge>
                                 )}
@@ -615,7 +615,7 @@ export default function CofreDocumento() {
                                   </div>
                                 )}
                                 {med.instructions && (
-                                  <div className="col-span-2 mt-2 pt-3 border-t border-white/5 italic text-muted-foreground text-xs leading-relaxed">
+                                  <div className="col-span-2 mt-2 pt-3 border-t border-border/30 italic text-muted-foreground text-xs leading-relaxed">
                                     "{med.instructions}"
                                   </div>
                                 )}
@@ -627,7 +627,7 @@ export default function CofreDocumento() {
 
                       <Button
                         variant="ghost"
-                        className="w-full h-12 rounded-[1.25rem] bg-white/5 hover:bg-white/10 text-primary font-bold"
+                        className="w-full h-12 rounded-[1.25rem] bg-muted/20 hover:bg-muted/30 text-primary font-bold"
                         onClick={() => navigate('/rotina')}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
@@ -645,7 +645,7 @@ export default function CofreDocumento() {
               <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass overflow-hidden">
                 <Collapsible open={expandedSections.exam} onOpenChange={() => toggleSection('exam')}>
                   <CollapsibleTrigger asChild>
-                    <div {...pressable(() => toggleSection('exam'))} className="p-6 cursor-pointer focus-visible:bg-white/5 outline-none">
+                    <div {...pressable(() => toggleSection('exam'))} className="p-6 cursor-pointer focus-visible:bg-muted/20 outline-none">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-[1.25rem] bg-emerald-500/10 flex items-center justify-center">
@@ -666,7 +666,7 @@ export default function CofreDocumento() {
 
                       <div className="grid gap-3">
                         {meta.extracted_values.map((val: any, idx: number) => (
-                          <div key={idx} className="p-4 rounded-2xl bg-white/5 border border-white/10 transition-all hover:bg-white/10">
+                          <div key={idx} className="p-4 rounded-2xl bg-muted/20 border border-border/40 transition-all hover:bg-muted/30">
                             <div className="flex items-start justify-between gap-4">
                               <div className="space-y-1">
                                 <p className="font-bold text-sm text-foreground/90">{val.parameter}</p>
@@ -716,7 +716,7 @@ export default function CofreDocumento() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-6 pt-2">
-                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <div className="p-4 rounded-2xl bg-muted/20 border border-border/40">
                       <p className="font-bold text-lg text-foreground/90">{meta.vaccine_name}</p>
                       {meta.dose_number && (
                         <p className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-1">
@@ -762,7 +762,7 @@ export default function CofreDocumento() {
             <motion.div variants={itemVariants}>
               <Card className="rounded-[2.5rem] border-0 bg-card/40 backdrop-blur-xl shadow-glass overflow-hidden">
                 <CardContent className="p-3">
-                  <div className="rounded-[1.75rem] overflow-hidden bg-black/10 border border-white/5 relative group">
+                  <div className="rounded-[1.75rem] overflow-hidden bg-black/10 border border-border/30 relative group">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none group-hover:opacity-0 transition-opacity" />
                     {documento.mimeType === "application/pdf" ? (
                       <iframe src={signedUrl} className="w-full h-[600px] border-0" title="PDF Preview" />
@@ -786,7 +786,7 @@ export default function CofreDocumento() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-3">
-            <AlertDialogCancel className="rounded-2xl border-white/10 bg-white/5 hover:bg-white/10">{t('common.cancel')}</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-2xl border-border/50 bg-muted/20 hover:bg-muted/30">{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletar} className="rounded-2xl bg-rose-500 text-white hover:bg-rose-600 border-0 shadow-glow-sm">
               {t('cofreDoc.delete')}
             </AlertDialogAction>

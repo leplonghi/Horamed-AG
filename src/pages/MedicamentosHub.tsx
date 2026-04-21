@@ -71,7 +71,7 @@ export default function MedicamentosHub() {
           </div>
 
           <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-14 p-1 rounded-3xl bg-card/40 backdrop-blur-xl border border-white/10 shadow-glass gap-1 sm:gap-2">
+            <TabsList className="w-full grid grid-cols-3 h-14 p-1 rounded-3xl bg-card/40 backdrop-blur-xl border border-border/50 shadow-glass gap-1 sm:gap-2">
               <TabsTrigger value="rotina" className="rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-glow flex items-center justify-center gap-1 sm:gap-2 transition-all font-semibold px-1 sm:px-3 overflow-hidden">
                 <Pill className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
                 <span className="text-[11px] sm:text-sm truncate max-w-full">{t("meds.myMeds")}</span>
