@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Typography: Inter — Professional medical-grade sans-serif ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..700&display=swap');
+
 /* Critical splash screen CSS (moved from index.html inline style) */
 html { background-color: #f8f9fb; }
 .dark html, html.dark { background-color: #0d0f12; }
@@ -124,6 +127,35 @@ All colors MUST be HSL.
     --performance-bg: 84 75% 97%;
     --performance-border: 84 75% 48%;
 
+    /* ─── Category color tokens (replaces hardcoded Tailwind palette) ── */
+    --category-medicamento: 224 82% 56%;
+    --category-medicamento-muted: 224 82% 97%;
+    --category-vitamina: 152 70% 42%;
+    --category-vitamina-muted: 152 70% 97%;
+    --category-suplemento: 190 75% 40%;
+    --category-suplemento-muted: 190 75% 97%;
+    --category-outro: 220 10% 52%;
+    --category-outro-muted: 220 10% 97%;
+
+    /* ─── Supplement sub-category tokens ───────────────────────────── */
+    --supplement-energy: 38 92% 50%;
+    --supplement-energy-muted: 38 92% 97%;
+    --supplement-sleep: 245 60% 60%;
+    --supplement-sleep-muted: 245 60% 97%;
+    --supplement-immunity: 152 70% 42%;
+    --supplement-immunity-muted: 152 70% 97%;
+    --supplement-performance: 25 85% 52%;
+    --supplement-performance-muted: 25 85% 97%;
+    --supplement-hydration: 192 80% 42%;
+    --supplement-hydration-muted: 192 80% 97%;
+
+    /* ─── Third-party integration brand colors ──────────────────────── */
+    --integration-google: 4 82% 56%;
+    --integration-apple: 349 80% 60%;
+    --integration-fitbit: 182 100% 36%;
+    --integration-garmin: 210 100% 38%;
+    --integration-oura: 0 0% 10%;
+
     /* Master Gradients (Consolidated) */
     --master-gradient-primary: linear-gradient(135deg, 
       hsl(var(--gradient-start)) 0%, 
@@ -219,6 +251,35 @@ All colors MUST be HSL.
     --performance-foreground: 0 0% 100%;
     --performance-bg: 84 70% 12%;
     --performance-border: 84 70% 55%;
+
+    /* ─── Category tokens — Dark Mode ──────────────────────────────── */
+    --category-medicamento: 217 85% 65%;
+    --category-medicamento-muted: 217 85% 12%;
+    --category-vitamina: 152 65% 50%;
+    --category-vitamina-muted: 152 65% 12%;
+    --category-suplemento: 190 70% 52%;
+    --category-suplemento-muted: 190 70% 12%;
+    --category-outro: 220 10% 55%;
+    --category-outro-muted: 220 10% 12%;
+
+    /* ─── Supplement sub-category tokens — Dark Mode ────────────────── */
+    --supplement-energy: 38 85% 60%;
+    --supplement-energy-muted: 38 85% 12%;
+    --supplement-sleep: 245 65% 70%;
+    --supplement-sleep-muted: 245 65% 12%;
+    --supplement-immunity: 152 65% 50%;
+    --supplement-immunity-muted: 152 65% 12%;
+    --supplement-performance: 25 80% 62%;
+    --supplement-performance-muted: 25 80% 12%;
+    --supplement-hydration: 192 75% 55%;
+    --supplement-hydration-muted: 192 75% 12%;
+
+    /* ─── Integration colors unchanged in dark mode ─────────────────── */
+    --integration-google: 4 75% 62%;
+    --integration-apple: 349 75% 65%;
+    --integration-fitbit: 182 80% 45%;
+    --integration-garmin: 210 80% 52%;
+    --integration-oura: 0 0% 70%;
   }
 }
 
@@ -228,7 +289,8 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased font-sans;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     line-height: 1.5;
     /* Native App Feel */
     -webkit-touch-callout: none;
@@ -669,6 +731,31 @@ All colors MUST be HSL.
     background-color: hsl(var(--destructive) / 0.1);
     color: hsl(var(--destructive));
   }
+
+  /* ─── Category pills ────────────────────────────────────────────── */
+  .pill-medicamento {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+    background-color: hsl(var(--category-medicamento) / 0.1);
+    color: hsl(var(--category-medicamento));
+  }
+  .pill-vitamina {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+    background-color: hsl(var(--category-vitamina) / 0.1);
+    color: hsl(var(--category-vitamina));
+  }
+  .pill-suplemento {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+    background-color: hsl(var(--category-suplemento) / 0.1);
+    color: hsl(var(--category-suplemento));
+  }
+
+  /* ─── Semantic status utilities (substitui bg-green-50, text-red-600 etc.) ── */
+  .status-success   { color: hsl(var(--success)); }
+  .status-warning   { color: hsl(var(--warning)); }
+  .status-error     { color: hsl(var(--destructive)); }
+  .bg-success-subtle { background-color: hsl(var(--success) / 0.08); }
+  .bg-warning-subtle { background-color: hsl(var(--warning) / 0.08); }
+  .bg-error-subtle   { background-color: hsl(var(--destructive) / 0.08); }
 
   /* ========== BUTTON GLOW EFFECTS ========== */
 

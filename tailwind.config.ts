@@ -14,6 +14,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'sans-serif'],
+        mono: ['"JetBrains Mono"', '"Fira Code"', 'Menlo', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -115,6 +119,56 @@ export default {
           foreground: "hsl(var(--performance-foreground))",
           background: "hsl(var(--performance-bg))",
           border: "hsl(var(--performance-border))",
+        },
+        // ─── Category tokens (replaces hardcoded Tailwind palette classes) ───
+        category: {
+          medicamento: {
+            DEFAULT: "hsl(var(--category-medicamento))",
+            muted: "hsl(var(--category-medicamento-muted))",
+          },
+          vitamina: {
+            DEFAULT: "hsl(var(--category-vitamina))",
+            muted: "hsl(var(--category-vitamina-muted))",
+          },
+          suplemento: {
+            DEFAULT: "hsl(var(--category-suplemento))",
+            muted: "hsl(var(--category-suplemento-muted))",
+          },
+          outro: {
+            DEFAULT: "hsl(var(--category-outro))",
+            muted: "hsl(var(--category-outro-muted))",
+          },
+        },
+        // ─── Supplement sub-category tokens ─────────────────────────────────
+        supplement: {
+          energy: {
+            DEFAULT: "hsl(var(--supplement-energy))",
+            muted: "hsl(var(--supplement-energy-muted))",
+          },
+          sleep: {
+            DEFAULT: "hsl(var(--supplement-sleep))",
+            muted: "hsl(var(--supplement-sleep-muted))",
+          },
+          immunity: {
+            DEFAULT: "hsl(var(--supplement-immunity))",
+            muted: "hsl(var(--supplement-immunity-muted))",
+          },
+          performance: {
+            DEFAULT: "hsl(var(--supplement-performance))",
+            muted: "hsl(var(--supplement-performance-muted))",
+          },
+          hydration: {
+            DEFAULT: "hsl(var(--supplement-hydration))",
+            muted: "hsl(var(--supplement-hydration-muted))",
+          },
+        },
+        // ─── Third-party integration brand colors ────────────────────────────
+        integration: {
+          google:  "hsl(var(--integration-google))",
+          apple:   "hsl(var(--integration-apple))",
+          fitbit:  "hsl(var(--integration-fitbit))",
+          garmin:  "hsl(var(--integration-garmin))",
+          oura:    "hsl(var(--integration-oura))",
         },
       },
       borderRadius: {

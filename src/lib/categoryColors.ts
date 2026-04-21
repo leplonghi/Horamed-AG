@@ -13,40 +13,42 @@ interface CategoryColorConfig {
 }
 
 // ─── Paletas por categoria ────────────────────────────────────────────────────
-// softFrom/softTo → fundo suave do card (quase branco com leve tint)
-// accentFrom/accentTo → gradiente do círculo do ícone (saturado)
+// Geradas programaticamente via HSL — alinhadas com o sistema de tokens CSS.
+// softFrom/softTo → fundo suave do card  |  accentFrom/accentTo → ícone saturado
+//
+// Hues derivados dos tokens:
+//   medicamento → --category-medicamento  ≈ 224°
+//   vitamina    → --category-vitamina     ≈ 152°
+//   suplemento  → --category-suplemento   ≈ 190° (teal) + variações quentes 25°
+//   outro       → --category-outro        ≈ 220° (neutro)
 
-const MEDICAMENTO_PALETTES = [
-  { softFrom: "#e6f0ff", softTo: "#c7dfff", accentFrom: "#4a7fd4", accentTo: "#2f5fb0", text: "#1e3a6e" },
-  { softFrom: "#e9edff", softTo: "#cad4ff", accentFrom: "#5b72e8", accentTo: "#3f58c8", text: "#1e2e6e" },
-  { softFrom: "#e6f4ff", softTo: "#bde4ff", accentFrom: "#3a96d0", accentTo: "#2475b0", text: "#1a3a5a" },
-  { softFrom: "#ebf0ff", softTo: "#c9d8ff", accentFrom: "#6887ee", accentTo: "#4a68cc", text: "#1e2e68" },
-  { softFrom: "#e0f2ff", softTo: "#bce1ff", accentFrom: "#2d87d8", accentTo: "#1a69b8", text: "#1a3660" },
-  { softFrom: "#e9edff", softTo: "#c7d4ff", accentFrom: "#7280ec", accentTo: "#5568d0", text: "#252060" },
-];
+interface PaletteEntry {
+  softFrom: string;
+  softTo: string;
+  accentFrom: string;
+  accentTo: string;
+  text: string;
+}
 
-const VITAMINA_PALETTES = [
-  { softFrom: "#ebfff4", softTo: "#c2f7dc", accentFrom: "#28b578", accentTo: "#1a9460", text: "#0f4a2e" },
-  { softFrom: "#e6fdf2", softTo: "#bff3db", accentFrom: "#36c48a", accentTo: "#24a070", text: "#0e4434" },
-  { softFrom: "#eafff7", softTo: "#bdf4e5", accentFrom: "#22ad82", accentTo: "#168a65", text: "#0c3e30" },
-  { softFrom: "#e6fdf0", softTo: "#bcf4d1", accentFrom: "#40c07a", accentTo: "#2a9e60", text: "#113a24" },
-  { softFrom: "#f0fffa", softTo: "#ccfbee", accentFrom: "#2fc496", accentTo: "#1da078", text: "#0c3e30" },
-  { softFrom: "#ebfff2", softTo: "#c4f2d7", accentFrom: "#32b068", accentTo: "#209050", text: "#0e3820" },
-];
+function generatePalette(
+  hues: number[],
+  softL = 96,
+  accentS = 62,
+  accentL = 52,
+): PaletteEntry[] {
+  return hues.map((h, i) => ({
+    softFrom:   `hsl(${h} 90% ${softL - i}%)`,
+    softTo:     `hsl(${h} 85% ${softL - 6 - i}%)`,
+    accentFrom: `hsl(${h} ${accentS}% ${accentL - i * 2}%)`,
+    accentTo:   `hsl(${h} ${accentS - 4}% ${accentL - 10 - i * 2}%)`,
+    text:       `hsl(${h} 55% ${28 - i * 2}%)`,
+  }));
+}
 
-const SUPLEMENTO_PALETTES = [
-  { softFrom: "#fff4e6", softTo: "#ffd8b1", accentFrom: "#e0874a", accentTo: "#c4672e", text: "#5a2e0e" },
-  { softFrom: "#fff1e6", softTo: "#ffccaa", accentFrom: "#da6a3c", accentTo: "#be4e24", text: "#541c08" },
-  { softFrom: "#fff9e6", softTo: "#ffd699", accentFrom: "#d89a40", accentTo: "#bc7c26", text: "#5a340a" },
-  { softFrom: "#fff4f0", softTo: "#ffcdbc", accentFrom: "#cc7060", accentTo: "#b05048", text: "#4a1c18" },
-  { softFrom: "#fff6e6", softTo: "#ffdbb5", accentFrom: "#d88a56", accentTo: "#bc6c3c", text: "#52280e" },
-  { softFrom: "#fff1e6", softTo: "#ffc8b3", accentFrom: "#c86040", accentTo: "#ac4428", text: "#481808" },
-];
-
-const OUTRO_PALETTES = [
-  { softFrom: "#edf2f7", softTo: "#cbd5e0", accentFrom: "#7890a8", accentTo: "#587090", text: "#2a3a4a" },
-  { softFrom: "#f2f5f8", softTo: "#d1dbe5", accentFrom: "#6a82a0", accentTo: "#4e6888", text: "#283848" },
-];
+const MEDICAMENTO_PALETTES = generatePalette([213, 228, 204, 222, 200, 233]);
+const VITAMINA_PALETTES    = generatePalette([148, 150, 152, 154, 156, 150], 96, 60, 44);
+const SUPLEMENTO_PALETTES  = generatePalette([25, 22, 32, 20, 28, 18], 96, 68, 56);
+const OUTRO_PALETTES       = generatePalette([210, 215], 95, 22, 52);
 
 const CATEGORY_PALETTE_MAP: Record<string, typeof MEDICAMENTO_PALETTES> = {
   medicamento: MEDICAMENTO_PALETTES,
@@ -62,82 +64,85 @@ const CATEGORY_ICON_MAP: Record<string, typeof Pill> = {
   outro: Package,
 };
 
-// ─── categoryColors mantido para compatibilidade com outros componentes ────────
+// ─── categoryColors — usa tokens semânticos do design system ─────────────────
+// Substitui classes Tailwind hardcoded (blue-600, green-600, teal-600, gray-600)
+// por tokens definidos em index.css e tailwind.config.ts via --category-*.
 export const categoryColors: Record<string, CategoryColorConfig> = {
   medicamento: {
     icon: Pill,
-    color: "text-blue-600 dark:text-blue-400",
-    bgColor: "bg-blue-50 dark:bg-blue-950/30",
-    borderColor: "border-blue-200 dark:border-blue-800",
-    iconBg: "bg-blue-100 dark:bg-blue-900/50",
-    badgeColor: "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
+    color:       "text-category-medicamento",
+    bgColor:     "bg-category-medicamento-muted dark:bg-category-medicamento/10",
+    borderColor: "border-category-medicamento/25 dark:border-category-medicamento/30",
+    iconBg:      "bg-category-medicamento/10 dark:bg-category-medicamento/20",
+    badgeColor:  "bg-category-medicamento/10 text-category-medicamento",
   },
   vitamina: {
     icon: Leaf,
-    color: "text-green-600 dark:text-green-400",
-    bgColor: "bg-green-50 dark:bg-green-950/30",
-    borderColor: "border-green-200 dark:border-green-800",
-    iconBg: "bg-green-100 dark:bg-green-900/50",
-    badgeColor: "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
+    color:       "text-category-vitamina",
+    bgColor:     "bg-category-vitamina-muted dark:bg-category-vitamina/10",
+    borderColor: "border-category-vitamina/25 dark:border-category-vitamina/30",
+    iconBg:      "bg-category-vitamina/10 dark:bg-category-vitamina/20",
+    badgeColor:  "bg-category-vitamina/10 text-category-vitamina",
   },
   suplemento: {
     icon: Heart,
-    color: "text-teal-600 dark:text-teal-400",
-    bgColor: "bg-teal-50 dark:bg-teal-950/30",
-    borderColor: "border-teal-200 dark:border-teal-800",
-    iconBg: "bg-teal-100 dark:bg-teal-900/50",
-    badgeColor: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300",
+    color:       "text-category-suplemento",
+    bgColor:     "bg-category-suplemento-muted dark:bg-category-suplemento/10",
+    borderColor: "border-category-suplemento/25 dark:border-category-suplemento/30",
+    iconBg:      "bg-category-suplemento/10 dark:bg-category-suplemento/20",
+    badgeColor:  "bg-category-suplemento/10 text-category-suplemento",
   },
   outro: {
     icon: Package,
-    color: "text-gray-600 dark:text-gray-400",
-    bgColor: "bg-gray-50 dark:bg-gray-950/30",
-    borderColor: "border-gray-200 dark:border-gray-800",
-    iconBg: "bg-gray-100 dark:bg-gray-900/50",
-    badgeColor: "bg-gray-100 text-gray-700 dark:bg-gray-900/50 dark:text-gray-300",
+    color:       "text-category-outro",
+    bgColor:     "bg-category-outro-muted dark:bg-category-outro/10",
+    borderColor: "border-category-outro/25 dark:border-category-outro/30",
+    iconBg:      "bg-category-outro/10 dark:bg-category-outro/20",
+    badgeColor:  "bg-category-outro/10 text-category-outro",
   },
 };
 
+// ─── supplementCategoryColors — usa tokens --supplement-* ────────────────────
 export const supplementCategoryColors: Record<string, CategoryColorConfig> = {
   energy: {
     icon: Zap,
-    color: "text-amber-600 dark:text-amber-400",
-    bgColor: "bg-amber-50 dark:bg-amber-950/30",
-    borderColor: "border-amber-200 dark:border-amber-800",
-    iconBg: "bg-amber-100 dark:bg-amber-900/50",
-    badgeColor: "bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300",
+    color:       "text-supplement-energy",
+    bgColor:     "bg-supplement-energy-muted dark:bg-supplement-energy/10",
+    borderColor: "border-supplement-energy/25 dark:border-supplement-energy/30",
+    iconBg:      "bg-supplement-energy/10 dark:bg-supplement-energy/20",
+    badgeColor:  "bg-supplement-energy/10 text-supplement-energy",
   },
   sleep: {
     icon: Moon,
-    color: "text-indigo-600 dark:text-indigo-400",
-    bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
-    borderColor: "border-indigo-200 dark:border-indigo-800",
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/50",
-    badgeColor: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300",
+    color:       "text-supplement-sleep",
+    bgColor:     "bg-supplement-sleep-muted dark:bg-supplement-sleep/10",
+    borderColor: "border-supplement-sleep/25 dark:border-supplement-sleep/30",
+    iconBg:      "bg-supplement-sleep/10 dark:bg-supplement-sleep/20",
+    badgeColor:  "bg-supplement-sleep/10 text-supplement-sleep",
   },
   immunity: {
     icon: Shield,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
-    borderColor: "border-emerald-200 dark:border-emerald-800",
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
-    badgeColor: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300",
+    color:       "text-supplement-immunity",
+    bgColor:     "bg-supplement-immunity-muted dark:bg-supplement-immunity/10",
+    borderColor: "border-supplement-immunity/25 dark:border-supplement-immunity/30",
+    iconBg:      "bg-supplement-immunity/10 dark:bg-supplement-immunity/20",
+    badgeColor:  "bg-supplement-immunity/10 text-supplement-immunity",
   },
   performance: {
     icon: Dumbbell,
-    color: "text-orange-600 dark:text-orange-400",
-    bgColor: "bg-orange-50 dark:bg-orange-950/30",
-    borderColor: "border-orange-200 dark:border-orange-800",
-    iconBg: "bg-orange-100 dark:bg-orange-900/50",
-    badgeColor: "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
+    color:       "text-supplement-performance",
+    bgColor:     "bg-supplement-performance-muted dark:bg-supplement-performance/10",
+    borderColor: "border-supplement-performance/25 dark:border-supplement-performance/30",
+    iconBg:      "bg-supplement-performance/10 dark:bg-supplement-performance/20",
+    badgeColor:  "bg-supplement-performance/10 text-supplement-performance",
   },
   hydration: {
     icon: Droplets,
-    color: "text-cyan-600 dark:text-cyan-400",
-    bgColor: "bg-cyan-50 dark:bg-cyan-950/30",
-    borderColor: "border-cyan-200 dark:border-cyan-800",
-    iconBg: "bg-cyan-100 dark:bg-cyan-900/50",
-    badgeColor: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300",
+    color:       "text-supplement-hydration",
+    bgColor:     "bg-supplement-hydration-muted dark:bg-supplement-hydration/10",
+    borderColor: "border-supplement-hydration/25 dark:border-supplement-hydration/30",
+    iconBg:      "bg-supplement-hydration/10 dark:bg-supplement-hydration/20",
+    badgeColor:  "bg-supplement-hydration/10 text-supplement-hydration",
   },
 };
 
