@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análise Competitiva - HoraMed | Brasil 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --surface-2: #fafaf8;
+  --border: #e5e5e0;
+  --border-strong: #d4d4cc;
+  --text: #1a1a1a;
+  --text-muted: #6b6b66;
+  --text-soft: #999992;
+  --primary: #2563eb;
+  --primary-soft: #dbeafe;
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --neutral: #6b7280;
+  --neutral-soft: #f3f4f6;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1280px; margin: 0 auto; padding: 32px 24px; }
+header.hero { background: linear-gradient(180deg, #ffffff 0%, #fafaf8 100%); border-bottom: 1px solid var(--border); padding: 40px 24px 32px; margin-bottom: 32px; }
+.hero-inner { max-width: 1280px; margin: 0 auto; }
+.hero-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--primary-soft); color: var(--primary); padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; margin-bottom: 16px; }
+.hero-tag::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+h1 { font-size: 32px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.5px; }
+.hero-sub { font-size: 16px; color: var(--text-muted); max-width: 720px; }
+.hero-meta { display: flex; flex-wrap: wrap; gap: 24px; margin-top: 20px; font-size: 13px; color: var(--text-muted); }
+.hero-meta strong { color: var(--text); font-weight: 500; }
+nav.toc { position: sticky; top: 0; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); padding: 12px 24px; margin-bottom: 32px; }
+.toc-inner { max-width: 1280px; margin: 0 auto; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: thin; }
+.toc a { padding: 8px 14px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 500; white-space: nowrap; transition: all 0.15s; }
+.toc a:hover { background: var(--neutral-soft); color: var(--text); }
+section { margin-bottom: 56px; scroll-margin-top: 80px; }
+section h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.3px; }
+section .section-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; max-width: 760px; }
+.insights { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.insight { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); }
+.insight-num { display: inline-block; width: 28px; height: 28px; background: var(--primary-soft); color: var(--primary); border-radius: 50%; text-align: center; line-height: 28px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.insight h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.insight p { font-size: 14px; color: var(--text-muted); }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+.filter-btn:hover { border-color: var(--border-strong); }
+.filter-btn.active { background: var(--text); color: white; border-color: var(--text); }
+.competitors { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.comp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); transition: all 0.2s; display: flex; flex-direction: column; }
+.comp-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); }
+.comp-card.hidden { display: none; }
+.comp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.comp-name { font-size: 17px; font-weight: 600; }
+.comp-tag { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; letter-spacing: 0.3px; text-transform: uppercase; }
+.tag-direto { background: var(--danger-soft); color: var(--danger); }
+.tag-substituto { background: var(--neutral-soft); color: var(--neutral); }
+.tag-adjacente { background: var(--warning-soft); color: var(--warning); }
+.tag-horamed { background: var(--success-soft); color: var(--success); }
+.comp-origin { font-size: 12px; color: var(--text-soft); margin-bottom: 12px; }
+.comp-origin a { color: var(--primary); text-decoration: none; margin-right: 8px; }
+.comp-origin a:hover { text-decoration: underline; }
+.comp-positioning { font-size: 13px; color: var(--text); margin-bottom: 14px; font-style: italic; padding: 10px; background: var(--surface-2); border-left: 2px solid var(--border-strong); border-radius: 4px; }
+.comp-row { display: flex; gap: 8px; font-size: 12px; padding: 6px 0; border-top: 1px dashed var(--border); }
+.comp-row:first-of-type { border-top: none; }
+.comp-row strong { color: var(--text-muted); min-width: 110px; font-weight: 500; }
+.comp-row span { color: var(--text); flex: 1; }
+.comp-row code { background: var(--neutral-soft); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+.confidence { margin-top: 12px; padding: 8px 10px; background: var(--warning-soft); border-radius: var(--radius-sm); font-size: 11px; color: var(--warning); display: flex; align-items: center; gap: 6px; }
+.confidence.high { background: var(--success-soft); color: var(--success); }
+.confidence.medium { background: var(--warning-soft); color: var(--warning); }
+.matrix-wrapper { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+.matrix-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.matrix-table th, .matrix-table td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.matrix-table thead th { background: var(--surface-2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted); }
+.matrix-table tbody tr:hover { background: var(--surface-2); }
+.matrix-table .area-name { font-weight: 600; color: var(--text); }
+.matrix-table .area-why { font-size: 11px; color: var(--text-soft); margin-top: 2px; }
+.score-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; text-align: center; min-width: 80px; }
+.s-strong { background: var(--success-soft); color: var(--success); }
+.s-adequate { background: var(--primary-soft); color: var(--primary); }
+.s-weak { background: var(--warning-soft); color: var(--warning); }
+.s-absent { background: var(--neutral-soft); color: var(--neutral); }
+.matrix-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+.matrix-legend .score-pill { min-width: 60px; }
+.map-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; box-shadow: var(--shadow-sm); }
+.map-svg { width: 100%; height: auto; max-height: 480px; }
+.cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 880px) { .cols-2 { grid-template-columns: 1fr; } }
+.gap-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; box-shadow: var(--shadow-sm); }
+.gap-card h3 { font-size: 15px; margin-bottom: 12px; }
+.gap-card ul { list-style: none; }
+.gap-card li { padding: 10px 0 10px 20px; position: relative; font-size: 13px; color: var(--text-muted); border-top: 1px dashed var(--border); }
+.gap-card li:first-child { border-top: none; }
+.gap-card li::before { content: '→'; position: absolute; left: 0; color: var(--primary); font-weight: 600; }
+.gap-card li strong { color: var(--text); font-weight: 600; }
+.pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+@media (max-width: 880px) { .pillars { grid-template-columns: 1fr; } }
+.pillar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; }
+.pillar-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 18px; font-weight: 600; }
+.p-indispensavel .pillar-icon { background: var(--success-soft); color: var(--success); }
+.p-monetizado .pillar-icon { background: var(--primary-soft); color: var(--primary); }
+.p-viral .pillar-icon { background: var(--warning-soft); color: var(--warning); }
+.pillar h3 { font-size: 17px; margin-bottom: 6px; }
+.pillar .pillar-tag { font-size: 11px; color: var(--text-soft); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+.pillar p { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+.pillar .moves { background: var(--surface-2); border-radius: 8px; padding: 12px; }
+.pillar .moves h4 { font-size: 12px; color: var(--text); margin-bottom: 8px; font-weight: 600; }
+.pillar .moves ol { padding-left: 18px; font-size: 12px; color: var(--text-muted); }
+.pillar .moves li { padding: 3px 0; }
+.trend-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; box-shadow: var(--shadow-sm); }
+.trend-card h3 { font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.trend-card h3::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--primary); }
+.trend-card.signal h3::before { background: var(--success); }
+.trend-card.noise h3::before { background: var(--text-soft); }
+.trend-card .trend-impl { font-size: 12px; color: var(--text-muted); }
+.trend-card .trend-action { margin-top: 10px; font-size: 11px; font-weight: 600; padding: 4px 8px; background: var(--neutral-soft); border-radius: 4px; display: inline-block; }
+footer.foot { padding: 32px 24px; margin-top: 64px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-soft); }
+footer.foot p { margin-bottom: 8px; }
+footer.foot strong { color: var(--text-muted); }
+.radar-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; box-shadow: var(--shadow-sm); }
+.radar-canvas-wrap { max-width: 540px; margin: 0 auto; }
+.disclaimer { background: var(--warning-soft); border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 24px; font-size: 13px; color: var(--warning); display: flex; gap: 10px; align-items: flex-start; }
+.disclaimer strong { color: #92400e; }
+.disclaimer-icon { font-size: 16px; flex-shrink: 0; }
+.anvisa-banner { background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%); border: 1px solid #fcd34d; border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; }
+.anvisa-banner-inner { display: flex; align-items: flex-start; gap: 14px; }
+.anvisa-banner-icon { background:#d97706; color:white; width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; flex-shrink:0; }
+.anvisa-banner h3 { font-size:17px; margin-bottom:8px; color:#92400e; }
+.anvisa-banner p, .anvisa-banner li { color:#78350f; }
+.anvisa-banner ul { font-size:13px; padding-left:20px; line-height:1.7; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Análise Competitiva</div>
+    <h1>HoraMed no mercado brasileiro de saúde digital</h1>
+    <p class="hero-sub">Mapa estratégico para um app de gestão de medicamentos e carteira de saúde competir, monetizar e crescer num nicho onde o usuário típico ainda usa alarme do celular.</p>
+    <div class="hero-meta">
+      <span><strong>Geografia:</strong> Brasil</span>
+      <span><strong>Conjunto:</strong> Diretos + Substitutos + Adjacentes</span>
+      <span><strong>Audiência:</strong> Founder/time interno</span>
+      <span><strong>Data:</strong> Abril 2026 (atualizada)</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#resumo">Resumo</a>
+    <a href="#concorrentes">Concorrentes</a>
+    <a href="#deep-dive">Deep-dive</a>
+    <a href="#matriz">Matriz</a>
+    <a href="#radar">Radar</a>
+    <a href="#posicionamento">Posicionamento</a>
+    <a href="#gaps">Gaps</a>
+    <a href="#tendencias">Tendências</a>
+    <a href="#estrategia">Estratégia</a>
+    <a href="#metodologia">Metodologia</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="disclaimer">
+    <span class="disclaimer-icon">⚠</span>
+    <div>
+      <strong>Honestidade metodológica.</strong> Esta análise não cita estatísticas de mercado (TAM/SAM) sem fontes verificáveis. Cada feature de concorrente foi confirmada em fontes oficiais (lojas de apps, sites das empresas, documentação técnica) verificadas em set/2026. Onde houver incerteza, o nível de confiança é marcado explicitamente.
+    </div>
+  </div>
+
+  <!-- ========== RESUMO ========== -->
+  <section id="resumo">
+    <h2>Resumo executivo</h2>
+    <p class="section-sub">Cinco insights que orientam o resto do documento. Se você só tiver 60 segundos, leia daqui.</p>
+
+    <div class="insights">
+      <div class="insight">
+        <span class="insight-num">1</span>
+        <h3>O concorrente real é o esquecimento, não outro app</h3>
+        <p>A maior parte dos pacientes brasileiros que precisa de lembrete usa o alarme do celular ou caixinha semanal. A guerra do HoraMed é contra "não-consumo".</p>
+      </div>
+      <div class="insight">
+        <span class="insight-num">2</span>
+        <h3>Diretos globais (Medisafe, MyTherapy) têm tração mas pouca brasilidade</h3>
+        <p>Estão em PT-BR, mas não conversam com o ecossistema brasileiro: Memed, farmácias com programas de desconto, SUS, RDC 1.000/2025 da ANVISA.</p>
+      </div>
+      <div class="insight">
+        <span class="insight-num">3</span>
+        <h3>Multi-perfil familiar é uma posição pouco reivindicada</h3>
+        <p>Concorrentes diretos focam no "eu paciente". HoraMed já tem perfis individualizados — pode reposicionar como "app da família que cuida da família".</p>
+      </div>
+      <div class="insight">
+        <span class="insight-num">4</span>
+        <h3>Janela ANVISA fecha em 01/06/2026</h3>
+        <p>RDC 1.000/2025 exige receitas controladas nato-digitais via API SNCR. Memed lidera com 324+ integrações. Quem integrar primeiro vira "app paciente certificado para receita digital".</p>
+      </div>
+      <div class="insight">
+        <span class="insight-num">5</span>
+        <h3>Monetização B2C pura é arriscada; B2B2C é o caminho denso</h3>
+        <p>Medisafe cobra US$ 4,99/mês (não-otimizado para BR). MyTherapy é 100% gratuito. HoraMed deve mirar freemium B2C + receita real via farmácia, operadora e pharma.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONCORRENTES ========== -->
+  <section id="concorrentes">
+    <h2>Conjunto competitivo</h2>
+    <p class="section-sub">Filtre para ver apenas concorrentes diretos, substitutos ou adjacentes (Memed, reclassificado).</p>
+
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-btn active" data-filter="all">Todos</button>
+      <button class="filter-btn" data-filter="horamed">HoraMed</button>
+      <button class="filter-btn" data-filter="direto">Diretos</button>
+      <button class="filter-btn" data-filter="substituto">Substitutos</button>
+      <button class="filter-btn" data-filter="adjacente">Adjacentes</button>
+    </div>
+
+    <div class="competitors" id="competitorsGrid">
+
+      <div class="comp-card" data-cat="horamed">
+        <div class="comp-head">
+          <div class="comp-name">HoraMed</div>
+          <span class="comp-tag tag-horamed">Você</span>
+        </div>
+        <div class="comp-origin">Brasil • Web + iOS + Android (Capacitor) • React/Supabase</div>
+        <div class="comp-positioning">"App brasileiro de gestão de medicamentos e carteira de saúde, com perfis familiares individualizados."</div>
+        <div class="comp-row"><strong>Forças</strong><span>Multi-perfil isolado por profile_id, carteira de saúde (vacinas/exames/receitas), feature flags para evolução modular, IA para interações (em flag), notificações com ações rápidas.</span></div>
+        <div class="comp-row"><strong>Fraquezas</strong><span>Marca pouco conhecida, ainda sem distribuição via canal grande, monetização não validada publicamente.</span></div>
+        <div class="comp-row"><strong>Oportunidade</strong><span>Posicionamento "família que cuida da família", integração com Memed antes de 01/06/2026, parceria com farmácias e operadoras.</span></div>
+        <div class="confidence high">✓ Confiança alta — baseado em código e docs do repo (REDESIGN_SUMMARY.md, FEATURE_FLAGS.md, PERFIS_INDIVIDUALIZADOS.md)</div>
+      </div>
+
+      <div class="comp-card" data-cat="direto">
+        <div class="comp-head">
+          <div class="comp-name">Medisafe</div>
+          <span class="comp-tag tag-direto">Direto global</span>
+        </div>
+        <div class="comp-origin">EUA/Israel • iOS + Android • 16 línguas, incluindo PT-BR<br><a href="https://apps.apple.com/br/app/lembrete-de-remedios-e-pilula/id573916946">App Store BR</a><a href="https://play.google.com/store/apps/details?id=com.medisafe.android.client">Google Play</a><a href="https://medisafe.com">medisafe.com</a></div>
+        <div class="comp-positioning">"The #1 medication management platform" — ranqueado em primeiro lugar por farmacêuticos e médicos (claim do site). No Brasil: "Lembrete de Remedios e Pilula".</div>
+        <div class="comp-row"><strong>Features confirmadas</strong><span>Lembretes; integração Apple HealthKit (glicemia, pressão, peso, pulso, temperatura); import de receita via Health Records (100+ hospitais EUA, não BR); perfil família com sync em tempo real; alerta a familiar quando alguém esquece dose; alertas de interação medicamentosa; relatórios PDF para médico; lembrete de refill.</span></div>
+        <div class="comp-row"><strong>Modelo monetização</strong><span><strong>Premium:</strong> US$ 4,99/mês ou US$ 39,99/ano. Inclui Medfriend ilimitado, perfis ilimitados, 20+ medições, 12+ vozes de alerta, temas, sem ads. <strong>B2B:</strong> dados de adesão e mercado para indústria farmacêutica (modelo desde 2013).</span></div>
+        <div class="comp-row"><strong>Pontos fracos no BR</strong><span>Sem integração com Memed ou ecossistema de receita digital BR. Sem comparativo de preços de farmácias BR. Sem carteira de saúde brasileira (vacinação SUS, exames). PT-BR é tradução, não localização. Pricing em USD não otimizado para BR.</span></div>
+        <div class="confidence high">✓ Confiança alta — pricing, features e modelo verificados em set/2026.</div>
+      </div>
+
+      <div class="comp-card" data-cat="direto">
+        <div class="comp-head">
+          <div class="comp-name">MyTherapy</div>
+          <span class="comp-tag tag-direto">Direto global</span>
+        </div>
+        <div class="comp-origin">Alemanha (Smartpatient GmbH) • iOS + Android • PT-BR no Brasil<br><a href="https://apps.apple.com/us/app/pill-reminder-mytherapy/id662170995">App Store</a><a href="https://play.google.com/store/apps/details?id=eu.smartpatient.mytherapy">Google Play</a><a href="https://www.mytherapyapp.com">mytherapyapp.com</a></div>
+        <div class="comp-positioning">"Meds & Pill Reminder" — app premiado com posicionamento clínico-científico. Desenvolvido com hospital universitário (Charité, Berlim).</div>
+        <div class="comp-row"><strong>Features confirmadas</strong><span>Lembretes flexíveis para pílulas, gotas, injeções, vitaminas e suplementos; documentação automática de cada dose (taken/skipped) com notas; lembrete de refill e nova receita; tracking de peso, pressão, oxigênio sanguíneo (SpO2) e glicemia; diário de saúde integrado; relatórios para médico.</span></div>
+        <div class="comp-row"><strong>Modelo monetização</strong><span><strong>100% gratuito para o usuário</strong> — sem tier paga. Receita vem de parcerias com pharma para programas de adesão patrocinados, estudos clínicos e licenciamento institucional.</span></div>
+        <div class="comp-row"><strong>Pontos fracos no BR</strong><span>Posicionamento clínico-clean pode afastar público leigo brasileiro. Multi-perfil mais raso que Medisafe. Sem integração com SUS, Memed ou farmácias BR. Não tem carteira de saúde de documentos (vacinas, exames como anexos).</span></div>
+        <div class="confidence high">✓ Confiança alta — features verificadas em set/2026 no site oficial e App Store.</div>
+      </div>
+
+      <div class="comp-card" data-cat="direto">
+        <div class="comp-head">
+          <div class="comp-name">Apps brasileiros pequenos</div>
+          <span class="comp-tag tag-direto">Direto local</span>
+        </div>
+        <div class="comp-origin">Brasil • Predominantemente Android • Vários publicadores independentes</div>
+        <div class="comp-positioning">Categoria de apps tipo "Lembrete de Remédio", "Caixa de Remédios", "Lembre-me Medicamentos" — posicionamento utilitário simples.</div>
+        <div class="comp-row"><strong>Forças</strong><span>Em PT-BR nativo, leves, frequentemente gratuitos sem login, baixa fricção de instalação para usuários menos técnicos.</span></div>
+        <div class="comp-row"><strong>Fraquezas</strong><span>Em geral apenas lembrete básico, sem carteira de documentos, sem multi-perfil estruturado, UX datada, monetização frequentemente por anúncios, manutenção irregular.</span></div>
+        <div class="comp-row"><strong>Por que importa</strong><span>É o que o usuário brasileiro instala quando busca "lembrete de remédio" na Play Store — o HoraMed compete com eles pelo download.</span></div>
+        <div class="confidence medium">~ Confiança média — categoria existe, apps individuais variam. Auditoria direta na Play Store recomendada.</div>
+      </div>
+
+      <div class="comp-card" data-cat="substituto">
+        <div class="comp-head">
+          <div class="comp-name">Alarme nativo do celular</div>
+          <span class="comp-tag tag-substituto">Substituto</span>
+        </div>
+        <div class="comp-origin">iOS Clock / Google Clock — pré-instalado em todo smartphone</div>
+        <div class="comp-positioning">Solução zero-fricção: já está instalado, todo mundo sabe usar, gratuito.</div>
+        <div class="comp-row"><strong>Por que vence</strong><span>Inércia. O usuário pensa "para que baixar um app se o alarme já funciona?" — argumento difícil de quebrar para regimes simples (1-2 medicamentos, horário fixo).</span></div>
+        <div class="comp-row"><strong>Por que perde</strong><span>Não rastreia adesão, não distingue medicamentos, não funciona para múltiplas pessoas, sem registro histórico, sem inteligência sobre estoque.</span></div>
+        <div class="comp-row"><strong>Implicação</strong><span>HoraMed precisa provar valor além do lembrete: histórico, estoque, perfil familiar, carteira de saúde.</span></div>
+        <div class="confidence high">✓ Confiança alta</div>
+      </div>
+
+      <div class="comp-card" data-cat="substituto">
+        <div class="comp-head">
+          <div class="comp-name">Caixinha semanal de medicamentos</div>
+          <span class="comp-tag tag-substituto">Substituto</span>
+        </div>
+        <div class="comp-origin">Organizador físico (pillbox), vendido em farmácias por R$ 5–25</div>
+        <div class="comp-positioning">Solução analógica clássica para idosos e cuidadores — segunda-feira a domingo, manhã/tarde/noite.</div>
+        <div class="comp-row"><strong>Por que vence</strong><span>Tátil, visual, não depende de bateria/sinal, ritual semanal de "preparar a caixinha" cria adesão por hábito.</span></div>
+        <div class="comp-row"><strong>Por que perde</strong><span>Sem alerta, sem histórico, sem detecção de troca, sem informação de bula.</span></div>
+        <div class="comp-row"><strong>Implicação</strong><span>Para idosos, o digital precisa coexistir com a caixinha — não substituí-la.</span></div>
+        <div class="confidence high">✓ Confiança alta</div>
+      </div>
+
+      <div class="comp-card" data-cat="substituto">
+        <div class="comp-head">
+          <div class="comp-name">Cuidador familiar (humano)</div>
+          <span class="comp-tag tag-substituto">Substituto</span>
+        </div>
+        <div class="comp-origin">Filhos, cônjuge, cuidador profissional</div>
+        <div class="comp-positioning">"Minha filha me lembra" — solução relacional, não tecnológica.</div>
+        <div class="comp-row"><strong>Por que vence</strong><span>Atendimento humano, contexto emocional, capaz de resolver exceções (faltou comprimido, está passando mal).</span></div>
+        <div class="comp-row"><strong>Por que perde</strong><span>Não escala — o cuidador também esquece, viaja, trabalha. Sobrecarga emocional.</span></div>
+        <div class="comp-row"><strong>Implicação</strong><span>O HoraMed pode se posicionar como "extensão do cuidador, não substituto".</span></div>
+        <div class="confidence high">✓ Confiança alta</div>
+      </div>
+
+      <div class="comp-card" data-cat="substituto">
+        <div class="comp-head">
+          <div class="comp-name">Google Calendar / Tasks / Keep</div>
+          <span class="comp-tag tag-substituto">Substituto</span>
+        </div>
+        <div class="comp-origin">Apps do Google pré-instalados em Android</div>
+        <div class="comp-positioning">Ferramenta genérica usada para tudo — incluindo lembrete de medicamento.</div>
+        <div class="comp-row"><strong>Por que vence</strong><span>Já instalado, sincroniza entre dispositivos, recorrência fácil de configurar.</span></div>
+        <div class="comp-row"><strong>Por que perde</strong><span>Não foi projetado para isso — sem dosagem, sem estoque, sem informação clínica.</span></div>
+        <div class="comp-row"><strong>Implicação</strong><span>Permitir export para Google Calendar pode ser ponte de adoção.</span></div>
+        <div class="confidence high">✓ Confiança alta</div>
+      </div>
+
+      <div class="comp-card" data-cat="adjacente">
+        <div class="comp-head">
+          <div class="comp-name">Memed</div>
+          <span class="comp-tag tag-adjacente">Adjacente — possível parceiro</span>
+        </div>
+        <div class="comp-origin">Brasil • Plataforma de prescrição digital • <strong>324+ integrações</strong> com hospitais, prontuários, telemedicina e healthtechs<br><a href="https://memed.com.br">memed.com.br</a><a href="https://doc.memed.com.br">doc.memed.com.br</a><a href="https://memed.com.br/parceiro-software/">Programa Parceiro</a><a href="https://github.com/jonatassales/memed-react">memed-react (lib comunidade)</a></div>
+        <div class="comp-positioning">"Soluções digitais para médicos e pacientes" — receita digital com comparativo de preços em <strong>70+ farmácias parceiras</strong>. Médico emite, paciente recebe no celular.</div>
+        <div class="comp-row"><strong>Por que reclassifiquei</strong><span>Memed não é app de medication reminder — usuário primário é o médico. Paciente recebe a receita pronta. Não compete diretamente em adesão, mas é o portão de entrada de toda receita médica digital no Brasil.</span></div>
+        <div class="comp-row"><strong>Sinal regulatório crítico</strong><span><strong>RDC 1.000/2025 da ANVISA</strong> entrou em vigor em 13/02/2026 e estabelece <strong>01/06/2026</strong> como prazo para o SNCR (Sistema Nacional de Controle de Receituário) estar plenamente operacional para receitas eletrônicas controladas. Após essa data, receituários azul e amarelo precisam ser nato-digitais via API integrada ao SNCR. Memed é o player dominante.</span></div>
+        <div class="comp-row"><strong>Como integrar</strong><span><strong>Memed Bridge</strong> (integração simplificada, baixo desenvolvimento), <strong>API SaaS</strong> (licença pessoal mundial gratuita), ou biblioteca <code>memed-react</code> open-source. Requer JS básico e Event Sourcing. Doc pública em doc.memed.com.br.</span></div>
+        <div class="comp-row"><strong>Caminho de oportunidade</strong><span>HoraMed integra como "lado paciente da receita digital": médico prescreve via Memed → paciente recebe no app HoraMed via SDK/QR → regime é importado automaticamente, com lembretes, comparativo de preços e tracking de adesão.</span></div>
+        <div class="confidence high">✓ Confiança alta — features, integração e marco regulatório verificados em fontes oficiais Memed, ANVISA e SBIS.</div>
+      </div>
+
+      <div class="comp-card" data-cat="adjacente">
+        <div class="comp-head">
+          <div class="comp-name">Apps de farmácias (Drogasil, Pague Menos, Drogaria SP)</div>
+          <span class="comp-tag tag-adjacente">Adjacente</span>
+        </div>
+        <div class="comp-origin">Brasil • Apps próprios das grandes redes</div>
+        <div class="comp-positioning">"Compre, ganhe pontos, tenha desconto" — foco em e-commerce e fidelidade.</div>
+        <div class="comp-row"><strong>Risco competitivo</strong><span>Têm distribuição massiva (milhões de baixados) e poder de incentivo (descontos). Se uma rede grande adicionar lembrete + carteira de saúde, vira concorrente perigoso.</span></div>
+        <div class="comp-row"><strong>Oportunidade</strong><span>Parceria white-label: HoraMed embarcado dentro do app da farmácia, ou integração com programas de medicamento contínuo (PMC).</span></div>
+        <div class="confidence medium">~ Confiança média — relevância estratégica é certa, features atuais variam por rede.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========== DEEP-DIVE ========== -->
+  <section id="deep-dive">
+    <h2>Deep-dive — Medisafe, MyTherapy e Memed</h2>
+    <p class="section-sub">Comparação lado-a-lado dos três concorrentes que você priorizou. Todos os dados verificados em fontes oficiais (lojas de apps, sites das empresas, documentação técnica e ANVISA) em set/2026.</p>
+
+    <div class="matrix-wrapper" style="margin-bottom: 24px;">
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width:22%;">Dimensão</th>
+            <th>Medisafe</th>
+            <th>MyTherapy</th>
+            <th>Memed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><div class="area-name">País de origem</div></td><td>EUA / Israel</td><td>Alemanha (Smartpatient GmbH)</td><td>Brasil</td></tr>
+          <tr><td><div class="area-name">Usuário primário</div></td><td>Paciente final</td><td>Paciente final</td><td><strong>Médico</strong> (paciente é secundário)</td></tr>
+          <tr><td><div class="area-name">Categoria</div></td><td>Medication reminder + adesão</td><td>Medication reminder + diário clínico</td><td>Prescrição digital</td></tr>
+          <tr><td><div class="area-name">Pricing público</div></td><td>Free; Premium US$ 4,99/mês ou US$ 39,99/ano</td><td>100% gratuito (sem tier paga)</td><td>API gratuita p/ médicos; modelo B2B/parceiros</td></tr>
+          <tr><td><div class="area-name">Modelo de receita</div></td><td>Premium B2C + B2B com pharma (dados de adesão)</td><td>Parcerias pharma + estudos clínicos + licenciamento institucional</td><td>SaaS para clínicas/hospitais + parcerias com farmácias</td></tr>
+          <tr><td><div class="area-name">Multi-perfil família</div></td><td>Sim, com sync em tempo real e Medfriend</td><td>Limitado — foco no paciente individual</td><td>N/A — fluxo é médico→paciente</td></tr>
+          <tr><td><div class="area-name">Interações medicamentosas</div></td><td>Drug-to-drug warnings nativos</td><td>Não como feature destacada</td><td>N/A no app paciente</td></tr>
+          <tr><td><div class="area-name">Integração com saúde</div></td><td>Apple HealthKit, Health Records (100+ hospitais EUA)</td><td>Tracking nativo de pressão, peso, glicemia, SpO2</td><td>324+ integrações com prontuários, hospitais, telemedicina</td></tr>
+          <tr><td><div class="area-name">Localização para o Brasil</div></td><td>PT-BR (1 de 16 línguas) — tradução, não localização</td><td>PT-BR ("Lembrete de Medicamentos" no Google Play BR)</td><td><strong>Nativo brasileiro</strong>, integrado a 70+ farmácias BR</td></tr>
+          <tr><td><div class="area-name">API/SDK pública para integração</div></td><td>Não publica API pública para apps de paciente</td><td>Não publica API pública</td><td><strong>Sim — Memed Bridge, API SaaS, lib React</strong></td></tr>
+          <tr><td><div class="area-name">Conformidade regulatória</div></td><td>HIPAA-influenced (origem EUA)</td><td>GDPR nativo (origem UE)</td><td>LGPD + RDC 1.000/2025 ANVISA + SNCR</td></tr>
+          <tr><td><div class="area-name">Vetor competitivo principal</div></td><td>Marca + base instalada global + pricing premium B2C</td><td>Credibilidade clínica + gratuidade total</td><td>Distribuição via ecossistema médico brasileiro</td></tr>
+          <tr><td><div class="area-name">Risco para HoraMed</div></td><td>Médio — diferenciação por brasilidade vence</td><td>Médio — gratuidade pressiona pricing</td><td><strong>Alto se for inimigo, alto se for parceiro</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="anvisa-banner">
+      <div class="anvisa-banner-inner">
+        <div class="anvisa-banner-icon">!</div>
+        <div>
+          <h3>Janela ANVISA — RDC 1.000/2025 e prazo de 01/06/2026</h3>
+          <p style="font-size:14px; margin-bottom:12px;">A Resolução da Diretoria Colegiada nº 1.000/2025 da ANVISA, em vigor desde 13/02/2026, exige que receitas eletrônicas de medicamentos controlados (azul e amarela) sejam <strong>natas digitais</strong> e emitidas via <strong>API integrada ao SNCR</strong> — Sistema Nacional de Controle de Receituários. A data-limite para operação plena é <strong>01/06/2026</strong>, com tolerância de 30 dias para receitas sem numeração SNCR.</p>
+          <p style="font-size:14px; margin-bottom:12px;">Memed é o player dominante neste trilho técnico e regulatório. Apps de paciente que integrarem antes de 01/06/2026 ganham vantagem real:</p>
+          <ul>
+            <li>Pacientes que precisam de receituário azul/amarelo não terão receita em papel — digitalização passa a ser exigência regulatória, não preferência.</li>
+            <li>O fluxo "médico prescreve via Memed → paciente recebe no app" deixa de ser caso de uso para virar caminho padrão.</li>
+            <li>Apps que não integrarem com receita digital ficam fora do fluxo natural de medicação controlada — segmento crítico para HoraMed (saúde mental, transtornos do sono, dor crônica, oncologia).</li>
+            <li>Medisafe e MyTherapy <strong>não estão posicionados</strong> nesse fluxo brasileiro. Janela aberta.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="cols-2">
+      <div class="gap-card">
+        <h3>Plano de integração com Memed (sugestão técnica)</h3>
+        <ul>
+          <li><strong>Fase 1 — Discovery (4 semanas):</strong> contato com programa parceiro (memed.com.br/parceiro-software), assinatura de termos SaaS, leitura de doc.memed.com.br, prototipação com biblioteca <code>memed-react</code> ou Memed Bridge.</li>
+          <li><strong>Fase 2 — MVP de import (6-8 semanas):</strong> fluxo "Importar receita Memed" no HoraMed: paciente cola link/QR da receita digital, app puxa dados estruturados (medicamento, dosagem, frequência, duração) e cria regime automaticamente.</li>
+          <li><strong>Fase 3 — Integração profunda (timeline aberta):</strong> hand-off do médico parceiro: clínicas que prescrevem via Memed oferecem "envie direto para o HoraMed" no consultório.</li>
+          <li><strong>Fase 4 — Ecossistema:</strong> conforme SNCR exige integração para controlados pós-01/06/2026, posicionar HoraMed como "app paciente certificado para receita digital de controlados". Diferencial regulatório.</li>
+        </ul>
+      </div>
+      <div class="gap-card">
+        <h3>O que copiar (e o que NÃO copiar) dos diretos</h3>
+        <ul>
+          <li><strong>Copiar do Medisafe:</strong> notificação a familiar quando alguém esquece dose. Feature high-value, low-cost que aumenta retenção em famílias com idoso.</li>
+          <li><strong>Copiar do Medisafe:</strong> import de regime via fontes externas (no caso BR: Memed) — grande alavanca de redução de fricção de onboarding.</li>
+          <li><strong>Copiar do MyTherapy:</strong> diário de saúde com tracking de pressão, glicemia, peso integrado ao mesmo timeline dos medicamentos. Pacientes crônicos veem correlação visual.</li>
+          <li><strong>Copiar do MyTherapy:</strong> relatório imprimível para o médico — entrega valor offline, vira gancho de conversa em consulta.</li>
+          <li><strong>NÃO copiar do Medisafe:</strong> 12 vozes de alerta e formas de pillbox como features Premium. Em mercado brasileiro, parece supérfluo e não justifica preço.</li>
+          <li><strong>NÃO copiar do MyTherapy:</strong> visual ultra-clínico. Brasileiro responde melhor a tom acolhedor que a tom hospitalar.</li>
+          <li><strong>NÃO copiar de ninguém:</strong> ads in-app. Em saúde, ads quebram confiança rápido. Receita vem de B2B2C, não de impressão.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== MATRIZ ========== -->
+  <section id="matriz">
+    <h2>Matriz de capacidades</h2>
+    <p class="section-sub">Comparação por área funcional, ponderada pelo que importa ao usuário brasileiro.</p>
+
+    <div class="matrix-wrapper">
+      <table class="matrix-table">
+        <thead>
+          <tr><th>Área de capacidade</th><th>HoraMed</th><th>Medisafe</th><th>MyTherapy</th><th>Apps BR pequenos</th><th>Alarme + Caixinha</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><div class="area-name">Lembretes e adesão</div><div class="area-why">Função-base. Se isto falhar, nada mais importa.</div></td><td><span class="score-pill s-strong">Forte</span></td><td><span class="score-pill s-strong">Forte</span></td><td><span class="score-pill s-strong">Forte</span></td><td><span class="score-pill s-adequate">Adequado</span></td><td><span class="score-pill s-weak">Limitado</span></td></tr>
+          <tr><td><div class="area-name">Carteira de saúde / documentos</div><div class="area-why">Vacinas, exames e receitas em um lugar = motivo para abrir o app fora do horário.</div></td><td><span class="score-pill s-strong">Forte</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-adequate">Adequado</span></td><td><span class="score-pill s-absent">Ausente</span></td><td><span class="score-pill s-absent">Ausente</span></td></tr>
+          <tr><td><div class="area-name">Múltiplos perfis (família)</div><div class="area-why">Mercado mal atendido pelos diretos globais.</div></td><td><span class="score-pill s-strong">Forte</span></td><td><span class="score-pill s-adequate">Adequado</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-absent">Ausente</span></td><td><span class="score-pill s-absent">Ausente</span></td></tr>
+          <tr><td><div class="area-name">IA / interações medicamentosas</div><div class="area-why">Diferencial clínico raro em apps de paciente final.</div></td><td><span class="score-pill s-adequate">Adequado (em flag)</span></td><td><span class="score-pill s-adequate">Adequado</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-absent">Ausente</span></td><td><span class="score-pill s-absent">Ausente</span></td></tr>
+          <tr><td><div class="area-name">Gamificação e engajamento</div><div class="area-why">Streaks aumentam retenção sem parecer trivial.</div></td><td><span class="score-pill s-adequate">Adequado (em flag)</span></td><td><span class="score-pill s-adequate">Adequado</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-absent">Ausente</span></td></tr>
+          <tr><td><div class="area-name">Pesquisa de preços / farmácia</div><div class="area-why">Brasileiros gastam alto e procuram desconto — economia é argumento de adoção.</div></td><td><span class="score-pill s-adequate">Adequado (em flag)</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-absent">Ausente</span></td><td><span class="score-pill s-absent">Ausente</span></td><td><span class="score-pill s-absent">Ausente</span></td></tr>
+          <tr><td><div class="area-name">Privacidade / LGPD</div><div class="area-why">Dado de saúde é "categoria especial" na LGPD.</div></td><td><span class="score-pill s-adequate">Adequado (a verificar)</span></td><td><span class="score-pill s-adequate">Adequado (HIPAA)</span></td><td><span class="score-pill s-strong">Forte (GDPR nativo)</span></td><td><span class="score-pill s-weak">Limitado</span></td><td><span class="score-pill s-strong">N/A (offline)</span></td></tr>
+          <tr><td><div class="area-name">Monetização e pricing</div><div class="area-why">Define sustentabilidade.</div></td><td><span class="score-pill s-weak">Em definição</span></td><td><span class="score-pill s-strong">Forte (US$ 4,99/mês + B2B pharma)</span></td><td><span class="score-pill s-adequate">Free + parcerias</span></td><td><span class="score-pill s-weak">Ads</span></td><td><span class="score-pill s-strong">N/A (gratuito)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="matrix-legend">
+      <span><span class="score-pill s-strong">Forte</span> Liderança</span>
+      <span><span class="score-pill s-adequate">Adequado</span> Funciona</span>
+      <span><span class="score-pill s-weak">Limitado</span> Existe com gaps</span>
+      <span><span class="score-pill s-absent">Ausente</span> Não tem</span>
+    </div>
+  </section>
+
+  <!-- ========== RADAR ========== -->
+  <section id="radar">
+    <h2>Visualização radar</h2>
+    <p class="section-sub">Mesma matriz em forma visual. Forte=4, Adequado=3, Limitado=2, Ausente=1.</p>
+    <div class="radar-wrap">
+      <div class="radar-canvas-wrap">
+        <canvas id="radarChart" height="540"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== POSICIONAMENTO ========== -->
+  <section id="posicionamento">
+    <h2>Mapa de posicionamento</h2>
+    <p class="section-sub">Eixo X: foco individual ↔ família. Eixo Y: lembrete simples ↔ saúde integrada.</p>
+
+    <div class="map-wrap">
+      <svg class="map-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Mapa de posicionamento competitivo">
+        <line x1="60" y1="250" x2="740" y2="250" stroke="#d4d4cc" stroke-width="1"/>
+        <line x1="400" y1="40" x2="400" y2="460" stroke="#d4d4cc" stroke-width="1"/>
+        <text x="60" y="30" font-size="12" font-weight="600" fill="#6b6b66">Lembrete simples</text>
+        <text x="640" y="30" font-size="12" font-weight="600" fill="#6b6b66" text-anchor="end">Saúde integrada</text>
+        <text x="60" y="485" font-size="12" font-weight="600" fill="#6b6b66">Indivíduo</text>
+        <text x="740" y="485" font-size="12" font-weight="600" fill="#6b6b66" text-anchor="end">Família/Cuidador</text>
+        <text x="230" y="60" font-size="11" fill="#999992" text-anchor="middle" font-style="italic">Utilitário individual</text>
+        <text x="570" y="60" font-size="11" fill="#999992" text-anchor="middle" font-style="italic">Plataforma clínica</text>
+        <text x="230" y="475" font-size="11" fill="#999992" text-anchor="middle" font-style="italic">Cuidador básico</text>
+        <text x="570" y="475" font-size="11" fill="#999992" text-anchor="middle" font-style="italic">Hub familiar de saúde ★</text>
+        <circle cx="600" cy="370" r="32" fill="#16a34a" fill-opacity="0.15" stroke="#16a34a" stroke-width="2"/>
+        <text x="600" y="375" font-size="13" font-weight="700" fill="#16a34a" text-anchor="middle">HoraMed</text>
+        <circle cx="320" cy="180" r="22" fill="#dc2626" fill-opacity="0.15" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="320" y="184" font-size="11" font-weight="600" fill="#dc2626" text-anchor="middle">Medisafe</text>
+        <circle cx="490" cy="150" r="22" fill="#dc2626" fill-opacity="0.15" stroke="#dc2626" stroke-width="1.5"/>
+        <text x="490" y="154" font-size="11" font-weight="600" fill="#dc2626" text-anchor="middle">MyTherapy</text>
+        <circle cx="180" cy="320" r="22" fill="#d97706" fill-opacity="0.15" stroke="#d97706" stroke-width="1.5"/>
+        <text x="180" y="324" font-size="10" font-weight="600" fill="#d97706" text-anchor="middle">Apps BR</text>
+        <circle cx="120" cy="400" r="20" fill="#6b7280" fill-opacity="0.15" stroke="#6b7280" stroke-width="1.5"/>
+        <text x="120" y="404" font-size="10" font-weight="600" fill="#6b7280" text-anchor="middle">Alarme</text>
+        <circle cx="250" cy="430" r="20" fill="#6b7280" fill-opacity="0.15" stroke="#6b7280" stroke-width="1.5"/>
+        <text x="250" y="434" font-size="10" font-weight="600" fill="#6b7280" text-anchor="middle">Caixinha</text>
+        <circle cx="540" cy="280" r="20" fill="#d97706" fill-opacity="0.15" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 2"/>
+        <text x="540" y="284" font-size="10" font-weight="600" fill="#d97706" text-anchor="middle">Memed</text>
+        <rect x="500" y="320" width="220" height="120" fill="none" stroke="#16a34a" stroke-width="1" stroke-dasharray="6 4" rx="8"/>
+      </svg>
+    </div>
+
+    <p style="margin-top:16px; font-size:13px; color:var(--text-muted);">
+      <strong>Leitura:</strong> O quadrante inferior direito — "Hub familiar de saúde" — é o território mais defensável para o HoraMed. A área em traço verde é o espaço aberto.
+    </p>
+  </section>
+
+  <!-- ========== GAPS ========== -->
+  <section id="gaps">
+    <h2>Gaps e oportunidades</h2>
+    <p class="section-sub">Quatro tipos de posições estratégicas: o que ninguém reivindica, o que está saturado, o que emerge, o que é vulnerável.</p>
+
+    <div class="cols-2">
+      <div class="gap-card">
+        <h3>★ Posições não reivindicadas (oportunidade)</h3>
+        <ul>
+          <li><strong>"App da família que cuida da família"</strong> — multi-perfil é função, não posicionamento. Nenhum direto comunica isso como promessa central.</li>
+          <li><strong>"Carteira de saúde brasileira no bolso"</strong> — vacinação (incluindo Conecte SUS), exames, receitas, consultas, num lugar só.</li>
+          <li><strong>"Eu falo com sua receita digital"</strong> — integração explícita com Memed. Reduz fricção de cadastro a quase zero.</li>
+          <li><strong>"Cuidado contínuo de quem não pode esquecer"</strong> — foco em pacientes crônicos (diabetes, hipertensão, oncológico, transplantado).</li>
+        </ul>
+      </div>
+      <div class="gap-card">
+        <h3>○ Posições saturadas (evite)</h3>
+        <ul>
+          <li><strong>"O melhor lembrete de medicamento"</strong> — todo concorrente diz isso. Vira ruído.</li>
+          <li><strong>"Powered by AI"</strong> — claim genérico em 2026 perdeu valor.</li>
+          <li><strong>"Simples e fácil de usar"</strong> — promessa de tabela; precisa de prova específica.</li>
+        </ul>
+      </div>
+      <div class="gap-card">
+        <h3>↑ Posições emergentes (monitore)</h3>
+        <ul>
+          <li><strong>Receita digital + dispensação rastreada (RDC 1.000/2025)</strong> — Memed é o player central. Quem integrar primeiro leva vantagem.</li>
+          <li><strong>Adesão como métrica clínica</strong> — operadoras começam a remunerar adesão em crônicos. Janela para B2B2C.</li>
+          <li><strong>Wearables brasileiros</strong> — relógios e oxímetros baratos criam fluxo de dado vital sem custo de hardware próprio.</li>
+        </ul>
+      </div>
+      <div class="gap-card">
+        <h3>! Posições vulneráveis dos concorrentes</h3>
+        <ul>
+          <li><strong>Medisafe e MyTherapy não conhecem o Brasil</strong> — sem Memed, sem Conecte SUS. Janela para "o app feito aqui".</li>
+          <li><strong>Apps BR pequenos não escalam UX nem confiança</strong> — HoraMed pode ganhar pelo "produto bem feito".</li>
+          <li><strong>Memed é B2B do médico</strong> — relação com paciente final é fraca. Espaço para "outra ponta da receita digital".</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TENDÊNCIAS ========== -->
+  <section id="tendencias">
+    <h2>Tendências de mercado (sinal vs ruído)</h2>
+    <p class="section-sub">Sinal = movimento real com lastro. Ruído = hype sem tração no usuário brasileiro.</p>
+
+    <div class="insights">
+      <div class="trend-card signal">
+        <h3>SINAL — RDC 1.000/2025 ANVISA torna receita digital obrigatória</h3>
+        <p class="trend-impl">Em vigor desde 13/02/2026, exige receitas controladas nato-digitais via API SNCR até <strong>01/06/2026</strong>. Memed lidera com 324+ integrações.</p>
+        <span class="trend-action">Resposta: liderar — integrar com Memed antes de 01/06/2026.</span>
+      </div>
+      <div class="trend-card signal">
+        <h3>SINAL — Operadoras pagando por adesão</h3>
+        <p class="trend-impl">Planos e operadoras de medicação contínua começam a comprar engajamento de pacientes crônicos como redução de custo evitado.</p>
+        <span class="trend-action">Resposta: fast-follow — abrir conversas B2B2C.</span>
+      </div>
+      <div class="trend-card">
+        <h3>NEUTRO — IA generativa para saúde do consumidor</h3>
+        <p class="trend-impl">Tema quente em conferência. No consumidor brasileiro, ainda há ceticismo e questão regulatória. HoraMed já tem em flag.</p>
+        <span class="trend-action">Resposta: monitorar, ativar quando houver caso clínico claro.</span>
+      </div>
+      <div class="trend-card noise">
+        <h3>RUÍDO — Web3 para registros médicos</h3>
+        <p class="trend-impl">Conferências falam, ninguém usa. Tração nula em paciente final no horizonte 12-24 meses.</p>
+        <span class="trend-action">Resposta: ignorar.</span>
+      </div>
+      <div class="trend-card signal">
+        <h3>SINAL — LGPD em saúde se tornando dura</h3>
+        <p class="trend-impl">ANPD intensificando fiscalização sobre dados de categoria especial. Concorrentes globais ficam expostos.</p>
+        <span class="trend-action">Resposta: liderar — usar conformidade explícita como ativo de marca.</span>
+      </div>
+      <div class="trend-card">
+        <h3>NEUTRO — Wearables baratos chineses</h3>
+        <p class="trend-impl">Smartwatches abaixo de R$ 200 viram comuns. Integração via Bluetooth ainda é frágil.</p>
+        <span class="trend-action">Resposta: monitorar; integrar via Health Connect e HealthKit primeiro.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== ESTRATÉGIA ========== -->
+  <section id="estrategia">
+    <h2>Resposta à pergunta estratégica</h2>
+    <p class="section-sub"><em>"Como devemos proceder para ser indispensável, monetizado e viral dentro de um nicho tão específico?"</em></p>
+    <p style="font-size:14px; color:var(--text-muted); margin-bottom:8px;">Cada palavra da pergunta vira um pilar com hipóteses concretas, não slogans. Eles têm ordem.</p>
+
+    <div class="pillars">
+      <div class="pillar p-indispensavel">
+        <div class="pillar-icon">●</div>
+        <span class="pillar-tag">Pilar 1 — primeiro</span>
+        <h3>Indispensável</h3>
+        <p>Indispensabilidade não vem do lembrete (substituível pelo alarme). Vem de <strong>dados acumulados que doem perder</strong>: histórico de adesão, carteira de documentos, perfis familiares, sinais vitais cruzados.</p>
+        <div class="moves">
+          <h4>Movimentos concretos</h4>
+          <ol>
+            <li>Tornar a carteira de saúde o "motivo" de abrir o app — campanha de digitalização de carteira de vacinação.</li>
+            <li>Importação automática via Memed/QR — quanto mais regime importado, mais dor em sair.</li>
+            <li>Relatório mensal imprimível para levar ao médico — entrega de valor offline.</li>
+            <li>Exportação para PDF garantida — prometer "você pode sair quando quiser" aumenta confiança.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="pillar p-monetizado">
+        <div class="pillar-icon">$</div>
+        <span class="pillar-tag">Pilar 2 — segundo</span>
+        <h3>Monetizado</h3>
+        <p>Paciente individual brasileiro raramente paga R$ 19,90/mês por lembrete. O dinheiro está em <strong>quem economiza com a adesão dele</strong>: planos, operadoras, indústria farma, farmácias com PMC.</p>
+        <div class="moves">
+          <h4>Movimentos concretos</h4>
+          <ol>
+            <li><strong>Freemium B2C</strong> como aquisição (gratuito até 2 perfis e 5 medicamentos; Premium para família, exportação avançada, IA).</li>
+            <li><strong>B2B2C com farmácia</strong>: white-label do HoraMed dentro do app de uma rede regional.</li>
+            <li><strong>B2B2C com operadora</strong>: programa de adesão para crônicos, contrato por paciente/mês com KPI.</li>
+            <li><strong>Patrocínio farma com firewall ético</strong>: indústria patrocina adesão em terapias específicas com transparência ao usuário.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="pillar p-viral">
+        <div class="pillar-icon">↗</div>
+        <span class="pillar-tag">Pilar 3 — terceiro</span>
+        <h3>Viral</h3>
+        <p>Saúde não é viral por hype. É viral por <strong>cuidado relacional</strong>: filha instala para o pai, pai instala para a esposa. Cada perfil novo é uma instalação em potencial.</p>
+        <div class="moves">
+          <h4>Movimentos concretos</h4>
+          <ol>
+            <li><strong>Convite a cuidador</strong> built-in: ao criar perfil familiar, sugerir "envie convite ao [Pai]".</li>
+            <li><strong>Compartilhar carteira de vacinação</strong> via link público temporário (com consentimento) — útil em viagem, escola, RH.</li>
+            <li><strong>Conteúdo dirigido a cuidador</strong> (não a paciente): "5 sinais de sobrecarga ao cuidar do seu pai" — segmento desatendido.</li>
+            <li><strong>Programa de indicação clínica</strong>: parceria com geriatras e pediatras que recomendam o app no consultório.</li>
+            <li><strong>Viralidade negativa que evita</strong>: nada de banner agressivo, anúncio enganoso ou push intrusivo.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 20px; margin-top: 24px; box-shadow: var(--shadow-sm);">
+      <h3 style="font-size:15px; margin-bottom:8px;">Sequência recomendada (12 meses)</h3>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">Tentar os três pilares ao mesmo tempo dispersa o time. Sequência:</p>
+      <ol style="padding-left:20px; font-size:13px; color:var(--text-muted);">
+        <li style="padding:4px 0;"><strong style="color:var(--text);">Trimestre 1-2 — Indispensável + integração Memed:</strong> investir em retenção e fechar integração Memed antes de 01/06/2026 (janela ANVISA). Alvo: D30 acima de 35%, NPS acima de 40, base de 5-10 mil ativos.</li>
+        <li style="padding:4px 0;"><strong style="color:var(--text);">Trimestre 3 — Viralidade orgânica:</strong> ativar convite a cuidador, compartilhamento de carteira, conteúdo. Meta: K-factor acima de 0.3.</li>
+        <li style="padding:4px 0;"><strong style="color:var(--text);">Trimestre 4 — Monetização:</strong> com base instalada e dados de adesão validados, abrir conversas B2B com 1 farmácia regional e 1 operadora pequena.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ========== METODOLOGIA ========== -->
+  <section id="metodologia">
+    <h2>Metodologia e limitações</h2>
+    <p class="section-sub">Honestidade sobre como esta análise foi feita e onde ela não é suficiente.</p>
+
+    <div class="cols-2">
+      <div class="gap-card">
+        <h3>Como foi feito</h3>
+        <ul>
+          <li><strong>HoraMed:</strong> baseado nos arquivos do repositório (REDESIGN_SUMMARY.md, FEATURE_FLAGS.md, PERFIS_INDIVIDUALIZADOS.md, QUICK_ACTIONS_DOCS.md).</li>
+          <li><strong>Medisafe, MyTherapy, Memed:</strong> features, pricing e modelo verificados via web research em set/2026 — App Store BR, Google Play, sites oficiais (medisafe.com, mytherapyapp.com, memed.com.br) e doc técnica (doc.memed.com.br).</li>
+          <li><strong>RDC 1.000/2025 ANVISA e SNCR:</strong> verificado em fontes oficiais (gov.br/anvisa, SBIS, Conselho Federal de Farmácia).</li>
+          <li><strong>Posicionamento:</strong> inferido de homepages, descrições de loja e claims públicos.</li>
+        </ul>
+      </div>
+      <div class="gap-card">
+        <h3>O que esta análise NÃO entrega</h3>
+        <ul>
+          <li><strong>Win/loss real</strong> — entrevistas com usuários que escolheram outro app ou desinstalaram. Hipóteses não substituem isso.</li>
+          <li><strong>Tamanho de mercado</strong> — TAM/SAM exigem pesquisa primária ou relatório pago. Não inventei números.</li>
+          <li><strong>Auditoria feature-a-feature hands-on</strong> — não instalei pessoalmente os apps; features são as públicamente declaradas.</li>
+          <li><strong>Pricing de mercado BR</strong> — Medisafe Premium é cobrado em USD; conversão e percepção local exige pesquisa.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gap-card" style="margin-top:20px;">
+      <h3>Próximos passos sugeridos</h3>
+      <ul>
+        <li><strong>Pesquisa primária:</strong> 8-10 entrevistas com usuários atuais e ex-usuários de concorrentes.</li>
+        <li><strong>Auditoria competitiva hands-on:</strong> instalar Medisafe, MyTherapy e 3 apps BR pequenos; documentar fluxo de cadastro, lembrete e exportação.</li>
+        <li><strong>Memed touchpoint:</strong> contatar programa parceiro Memed (memed.com.br/parceiro-software) e iniciar Discovery na próxima semana — janela ANVISA fecha em 01/06/2026.</li>
+        <li><strong>Conversa B2B exploratória:</strong> 2-3 farmácias regionais e 1 operadora pequena focada em crônicos.</li>
+        <li><strong>Validar feature flags em produção:</strong> ativar gradualmente preços de farmácia e interações em coorte controlada.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot">
+  <p><strong>Análise competitiva — HoraMed | Brasil | Abril 2026 (atualizada)</strong></p>
+  <p>Documento elaborado com base em material do repositório e em fontes oficiais verificadas em set/2026 dos concorrentes. Não cita dados de mercado sem fonte e não inventa funcionalidades. Use como hipótese de trabalho — confirme cada item antes de levar a comitê ou investidor.</p>
+  <p style="margin-top:8px;">Concorrentes citados (com links nos cards): Medisafe (medisafe.com), MyTherapy (mytherapyapp.com), Memed (memed.com.br). Marco regulatório: RDC 1.000/2025 da ANVISA, SNCR, prazo 01/06/2026.</p>
+</footer>
+
+<script>
+document.getElementById('filterBar').addEventListener('click', function(e) {
+  if (!e.target.classList.contains('filter-btn')) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  var filter = e.target.dataset.filter;
+  document.querySelectorAll('#competitorsGrid .comp-card').forEach(card => {
+    if (filter === 'all' || card.dataset.cat === filter) card.classList.remove('hidden');
+    else card.classList.add('hidden');
+  });
+});
+
+window.addEventListener('load', function() {
+  var ctx = document.getElementById('radarChart');
+  if (!ctx) return;
+  var labels = ['Lembretes/adesão','Carteira documentos','Multi-perfil','IA/interações','Gamificação','Preços farmácia','LGPD','Monetização'];
+  var datasets = [
+    { label: 'HoraMed', data: [4,4,4,3,3,3,3,2], borderColor: '#16a34a', backgroundColor: 'rgba(22,163,74,0.15)', borderWidth: 2 },
+    { label: 'Medisafe', data: [4,2,3,3,3,2,3,4], borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.10)', borderWidth: 2 },
+    { label: 'MyTherapy', data: [4,3,2,2,2,1,4,3], borderColor: '#d97706', backgroundColor: 'rgba(217,119,6,0.10)', borderWidth: 2 },
+    { label: 'Apps BR pequenos', data: [3,1,1,1,2,1,2,2], borderColor: '#6b7280', backgroundColor: 'rgba(107,114,128,0.08)', borderWidth: 1, borderDash: [4,4] }
+  ];
+  new Chart(ctx, {
+    type: 'radar',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          beginAtZero: true, min: 0, max: 4,
+          ticks: { stepSize: 1, color: '#999992', font: { size: 10 }, backdropColor: 'transparent' },
+          grid: { color: '#e5e5e0' },
+          angleLines: { color: '#e5e5e0' },
+          pointLabels: { font: { size: 11 }, color: '#1a1a1a' }
+        }
+      },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              var levels = ['Ausente','Limitado','Adequado','Forte'];
+              return ctx.dataset.label + ': ' + levels[ctx.parsed.r - 1] + ' (' + ctx.parsed.r + ')';
+            }
+          }
+        }
+      }
+    }
+  });
+});
+</script>
+
+</body>
+</html>

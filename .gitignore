@@ -42,3 +42,25 @@ migration-data/
 
 # Android build artifacts
 plugins/*/android/build/
+
+# Build/deploy scripts with embedded secrets (NEVER commit — contain keystore password)
+build_aab_*.bat
+build_cap_gradle_*.bat
+commit_*.bat
+do_commit.bat
+
+# Build/deploy logs
+build_*_out.txt
+build_*_err.txt
+cap_sync_*.txt
+deploy_*_out.txt
+deploy_*_err.txt
+commit_*_out.txt
+
+# Vite build cache files (auto-generated)
+vite.config.ts.timestamp-*.mjs
+
+# Stray dev artifacts (review before committing)
+generatePalette()
+semantic
+
