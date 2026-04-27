@@ -102,14 +102,15 @@ export const useMedicationAlarm = () => {
         const nowIso = now.toISOString();
         const alertWindowIso = alertWindow.toISOString();
 
-        // Query Doses
-        const dosesRef = collection(db, 'users', user.uid, 'doses');
+        // Query Doses from dose_instances (global collection)
+        const dosesRef = collection(db, 'dose_instances');
         const dosesQuery = query(
           dosesRef,
+          where('userId', '==', user.uid),
           where('status', '==', 'scheduled'),
-          where('scheduledTime', '>=', nowIso),
-          where('scheduledTime', '<=', alertWindowIso),
-          orderBy('scheduledTime'),
+          where('dueAt', '>=', nowIso),
+          where('dueAt', '<=', alertWindowIso),
+          orderBy('dueAt'),
           limit(20) // Safety limit
         );
 
@@ -137,17 +138,18 @@ export const useMedicationAlarm = () => {
 
           const dosesToProcess: DoseInstance[] = await Promise.all(dosesSnap.docs.map(async (d) => {
             const data = d.data();
-            let name = data.medicationName;
-            if (!name && data.medicationId) {
-              name = await fetchMedName(data.medicationId);
+            let name = data.itemName || data.medicationName;
+            const itemId = data.itemId || data.item_id || data.medicationId;
+            if (!name && itemId) {
+              name = await fetchMedName(itemId);
             }
             return {
               id: d.id,
-              scheduledTime: data.scheduledTime,
+              scheduledTime: data.dueAt,
               status: data.status,
-              medicationId: data.medicationId,
+              medicationId: itemId,
               medicationName: name,
-              doseText: data.doseText
+              doseText: data.doseText || data.dose_text
             };
           }));
 

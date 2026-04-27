@@ -50,7 +50,7 @@ export const useOverdueDoses = () => {
       let itemsQuery = query(itemsRef);
 
       if (profileId) {
-        itemsQuery = query(itemsRef, where("profileId", "==", profileId)); // CamelCase
+        itemsQuery = query(itemsRef, where("profileId", "==", profileId));
       }
 
       const itemsSnap = await getDocs(itemsQuery);
@@ -60,16 +60,14 @@ export const useOverdueDoses = () => {
       const itemIds = items.map(i => i.id);
       const itemsMap = new Map(items.map(i => [i.id, i]));
 
-      // Fetch Doses
-      const dosesRef = collection(db, 'users', user.uid, 'doses');
+      // Fetch Doses from dose_instances (global collection)
+      const dosesRef = collection(db, 'dose_instances');
       const dosesQuery = query(
         dosesRef,
+        where("userId", "==", user.uid),
         where("status", "==", "scheduled"),
-        where("scheduledTime", "<", nowIso),
-        where("scheduledTime", ">=", twoHoursAgoIso)
-        // cannot easily filter by item_id IN [...] if list is large, but Firestore 'in' has limit 10.
-        // Better to filter results in memory if easy, or use 'in' chunks.
-        // Since we query by User, getting all "scheduled late doses" for the user is efficient enough.
+        where("dueAt", "<", nowIso),
+        where("dueAt", ">=", twoHoursAgoIso)
       );
 
       const dosesSnap = await getDocs(dosesQuery);
@@ -80,35 +78,30 @@ export const useOverdueDoses = () => {
           const data = d.data();
           return {
             id: d.id,
-            scheduledTime: data.scheduledTime,
-            medicationId: data.medicationId,
+            dueAt: data.dueAt,
+            itemId: data.itemId || data.item_id,
             status: data.status
           };
         })
-        .filter(d => itemsMap.has(d.medicationId)); // Only include doses for relevant items (profile filter)
+        .filter(d => itemsMap.has(d.itemId)); // Only include doses for relevant items (profile filter)
 
       // Sort - with safe date parsing
       doses.sort((a, b) => {
-        const dateA = a.scheduledTime ? safeDateParse(a.scheduledTime) : new Date();
-        const dateB = b.scheduledTime ? safeDateParse(b.scheduledTime) : new Date();
+        const dateA = a.dueAt ? safeDateParse(a.dueAt) : new Date();
+        const dateB = b.dueAt ? safeDateParse(b.dueAt) : new Date();
         return (isNaN(dateA.getTime()) ? 0 : dateA.getTime()) - (isNaN(dateB.getTime()) ? 0 : dateB.getTime());
       });
 
-      // Try to get profile name if easy, otherwise "Você"
-      // Assuming med data has cached profile name or we just use "Você" if own profile.
-      // Or we assume fetching profiles... 
-      // For speed, let's look at item.
-
       return doses.map((dose) => {
-        const item = itemsMap.get(dose.medicationId);
+        const item = itemsMap.get(dose.itemId);
 
         // Safe date parsing - prevent crashes
         let dueAt: Date;
         try {
-          if (!dose.scheduledTime) {
+          if (!dose.dueAt) {
             dueAt = new Date();
           } else {
-            const parsed = safeDateParse(dose.scheduledTime);
+            const parsed = safeDateParse(dose.dueAt);
             dueAt = isNaN(parsed.getTime()) ? new Date() : parsed;
           }
         } catch {
@@ -118,11 +111,11 @@ export const useOverdueDoses = () => {
         return {
           id: dose.id,
           dueAt,
-          itemId: dose.medicationId,
-          itemName: item.name || "Medicamento",
-          doseText: item.doseText,
+          itemId: dose.itemId,
+          itemName: item?.name || "Medicamento",
+          doseText: item?.doseText || null,
           minutesOverdue: differenceInMinutes(now, dueAt),
-          profileName: item.profileName || "Paciente", // Assume we store profileName on item or fallback
+          profileName: item?.profileName || "Paciente",
         };
       });
     },

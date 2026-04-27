@@ -117,7 +117,13 @@ export function useStockProjection(profileId?: string) {
           d.status === 'scheduled' || d.status === 'taken'
         );
 
-        const dailyConsumptionAvg = takenDoses.length / 7;
+        // Calculate daily consumption: use taken doses if available, otherwise estimate from schedule
+        let dailyConsumptionAvg = takenDoses.length / 7;
+        if (dailyConsumptionAvg === 0 && scheduledDoses.length > 0) {
+          // Fallback: estimate from scheduled doses (assume they've been consistent)
+          dailyConsumptionAvg = scheduledDoses.length / 7;
+        }
+        
         const adherence = scheduledDoses.length > 0
           ? (takenDoses.length / scheduledDoses.length) * 100
           : 0;

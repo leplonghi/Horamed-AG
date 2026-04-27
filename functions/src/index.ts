@@ -620,7 +620,93 @@ CONTEXTO DE SAÚDE DO USUÁRIO (Use para personalizar, mas não mencione se não
 
 /**
  * ==================================================================
- * 4. NOTIFICATIONS
+ * 4. DOSE GENERATION
+ * ==================================================================
+ */
+
+export const generateDoseInstances = functions.https.onCall(async (data, context) => {
+    if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Auth required');
+
+    const userId = context.auth.uid;
+    const days = data.days || 7;
+    const now = new Date();
+
+    try {
+        // Fetch active medications for user
+        const medicationsSnap = await db.collection('users').doc(userId).collection('medications')
+            .where('isActive', '==', true)
+            .get();
+
+        if (medicationsSnap.empty) {
+            return { generated: 0, message: 'No active medications found' };
+        }
+
+        interface MedicationData {
+            id: string;
+            name: string;
+            schedule?: string[];
+            times?: string[];
+            profileId?: string;
+            doseText?: string;
+            dose_text?: string;
+        }
+
+        const medications = medicationsSnap.docs.map(d => ({ id: d.id, ...d.data() } as MedicationData));
+        let generatedCount = 0;
+
+        for (const med of medications) {
+            const schedule = med.schedule || med.times || [];
+            if (!Array.isArray(schedule) || schedule.length === 0) continue;
+
+            // Generate doses for each day and time
+            for (let d = 0; d < days; d++) {
+                const date = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+                const dateStr = date.toISOString().split('T')[0];
+
+                for (const time of schedule) {
+                    const dueAt = new Date(`${dateStr}T${time}:00`);
+                    if (dueAt < now) continue; // Skip past doses
+
+                    // Check if dose already exists
+                    const existingSnap = await db.collection('dose_instances')
+                        .where('userId', '==', userId)
+                        .where('itemId', '==', med.id)
+                        .where('dueAt', '==', dueAt.toISOString())
+                        .limit(1)
+                        .get();
+
+                    if (!existingSnap.empty) continue;
+
+                    // Create new dose instance
+                    await db.collection('dose_instances').add({
+                        userId,
+                        itemId: med.id,
+                        itemName: med.name,
+                        profileId: med.profileId || null,
+                        dueAt: dueAt.toISOString(),
+                        status: 'scheduled',
+                        doseText: med.doseText || med.dose_text || null,
+                        createdAt: admin.firestore.Timestamp.now(),
+                        notificationSent: false,
+                    });
+
+                    generatedCount++;
+                }
+            }
+        }
+
+        functions.logger.info(`[generateDoseInstances] Generated ${generatedCount} doses for user ${userId}`);
+        return { generated: generatedCount };
+
+    } catch (error) {
+        functions.logger.error('[generateDoseInstances] Error:', error);
+        throw new functions.https.HttpsError('internal', 'Failed to generate doses');
+    }
+});
+
+/**
+ * ==================================================================
+ * 5. NOTIFICATIONS
  * ==================================================================
  */
 
@@ -650,33 +736,53 @@ export const scheduleDoseNotifications = functions.pubsub.schedule('every 15 min
     const buffer = 15 * 60 * 1000;
     const targetTime = admin.firestore.Timestamp.fromMillis(now.toMillis() + buffer);
 
-    const snapshot = await db.collectionGroup('doses')
-        .where('scheduledTime', '>=', now)
-        .where('scheduledTime', '<=', targetTime)
-        .where('notificationSent', '==', false)
+    // Query dose_instances collection (global flat collection used by the app)
+    const snapshot = await db.collection('dose_instances')
+        .where('dueAt', '>=', now.toDate().toISOString())
+        .where('dueAt', '<=', targetTime.toDate().toISOString())
+        .where('status', '==', 'scheduled')
         .get();
+
+    functions.logger.info(`[scheduleDoseNotifications] Found ${snapshot.docs.length} doses to notify`);
 
     const promises = snapshot.docs.map(async (doc) => {
         const dose = doc.data();
-        const userId = doc.ref.parent.parent?.id;
-        if (!userId) return;
+        const userId = dose.userId;
+        if (!userId) {
+            functions.logger.warn(`[scheduleDoseNotifications] Dose ${doc.id} has no userId`);
+            return;
+        }
 
         const userDoc = await db.collection('users').doc(userId).get();
         const token = userDoc.data()?.pushToken;
-        if (!token) return;
+        if (!token) {
+            functions.logger.warn(`[scheduleDoseNotifications] User ${userId} has no pushToken`);
+            return;
+        }
+
+        // Check if already notified for this dose window
+        const alreadyNotified = dose.notificationSent === true || dose.notifiedAt;
+        if (alreadyNotified) {
+            functions.logger.info(`[scheduleDoseNotifications] Dose ${doc.id} already notified`);
+            return;
+        }
 
         try {
             await admin.messaging().send({
                 token,
                 notification: {
                     title: 'Hora do Medicamento 💊',
-                    body: `Está na hora de tomar ${dose.medicationName || 'seu medicamento'}`
+                    body: `Está na hora de tomar ${dose.itemName || dose.medicationName || 'seu medicamento'}`
                 },
-                data: { doseId: doc.id }
+                data: { doseId: doc.id, type: 'dose' }
             });
-            await doc.ref.update({ notificationSent: true });
+            await doc.ref.update({ 
+                notificationSent: true,
+                notifiedAt: admin.firestore.Timestamp.now()
+            });
+            functions.logger.info(`[scheduleDoseNotifications] Sent notification for dose ${doc.id} to user ${userId}`);
         } catch (e) {
-            console.error(`Failed to send to ${userId}`, e);
+            functions.logger.error(`[scheduleDoseNotifications] Failed to send to ${userId}`, e);
         }
     });
 
