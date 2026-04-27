@@ -103,7 +103,8 @@ export function useTodayData(
         ? `users/${userId}/profiles/${profileId}`
         : `users/${userId}`;
       return {
-        doses: `${base}/doses`,
+        // Doses are stored in the global dose_instances collection, not per-user subcollection
+        doses: "dose_instances",
         appointments: `${base}/appointments`,
         events: `${base}/healthEvents`,
       };
@@ -195,15 +196,31 @@ export function useTodayData(
           setTimeout(() => reject(new Error("Firebase request timeout")), TIMEOUT_MS)
         );
 
+        // Build constraints for dose_instances (global collection with userId filter)
+        const doseDayConstraints: any[] = [
+          where("userId", "==", userId),
+          where("dueAt", ">=", dayStart.toISOString()),
+          where("dueAt", "<=", dayEnd.toISOString()),
+          orderBy("dueAt", "asc"),
+        ];
+        if (profileId) {
+          doseDayConstraints.push(where("profileId", "==", profileId));
+        }
+
+        const doseWeekConstraints: any[] = [
+          where("userId", "==", userId),
+          where("dueAt", ">=", weekStart.toISOString()),
+          where("dueAt", "<=", weekEnd.toISOString()),
+        ];
+        if (profileId) {
+          doseWeekConstraints.push(where("profileId", "==", profileId));
+        }
+
         const fetchAll = Promise.all([
           profileId
             ? fetchDocument<Profile>(`users/${userId}/profiles`, profileId)
             : fetchDocument<{ nickname?: string; fullName?: string }>(`users`, userId),
-          fetchCollection<Dose>(paths.doses, [
-            where("dueAt", ">=", dayStart.toISOString()),
-            where("dueAt", "<=", dayEnd.toISOString()),
-            orderBy("dueAt", "asc"),
-          ]),
+          fetchCollection<Dose>(paths.doses, doseDayConstraints),
           fetchCollection<MedicalEvent>(paths.appointments, [
             where("date", ">=", dayStart.toISOString()),
             where("date", "<=", dayEnd.toISOString()),
@@ -214,10 +231,7 @@ export function useTodayData(
             where("date", "<=", dayEnd.toISOString()),
             orderBy("date", "asc"),
           ]),
-          fetchCollection<Dose>(paths.doses, [
-            where("dueAt", ">=", weekStart.toISOString()),
-            where("dueAt", "<=", weekEnd.toISOString()),
-          ]),
+          fetchCollection<Dose>(paths.doses, doseWeekConstraints),
         ]);
 
         const [nameResult, dosesResult, appointmentsResult, eventsResult, weekDosesResult] = 

@@ -101,30 +101,30 @@ export function DailyCheckInWidget({ onLogComplete, hasLoggedToday }: DailyCheck
                     <div className="grid grid-cols-3 gap-2">
                         <Button
                             variant="outline"
-                            className="flex flex-col h-16 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all group rounded-xl border-dashed"
+                            className="flex flex-col h-16 hover:bg-green-50 hover:border-green-300 hover:text-green-700 transition-all group rounded-xl border-dashed border-green-200"
                             onClick={() => handleFeelingSelect('great')}
                             disabled={isSaving}
                         >
-                            <Smile className="h-5 w-5 mb-1 text-zinc-400 group-hover:text-blue-500 transition-colors" />
-                            <span className="text-[10px] font-black uppercase">{t('symptom.feelingGreat')}</span>
+                            <Smile className="h-5 w-5 mb-1 text-green-500 transition-colors" weight="duotone" />
+                            <span className="text-[10px] font-black uppercase text-green-700">{t('symptom.feelingGreat')}</span>
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex flex-col h-16 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all group rounded-xl border-dashed"
+                            className="flex flex-col h-16 hover:bg-amber-50 hover:border-amber-300 hover:text-amber-700 transition-all group rounded-xl border-dashed border-amber-200"
                             onClick={() => handleFeelingSelect('okay')}
                             disabled={isSaving}
                         >
-                            <Meh className="h-5 w-5 mb-1 text-zinc-400 group-hover:text-amber-500 transition-colors" />
-                            <span className="text-[10px] font-black uppercase text-center leading-none px-1">{t('symptom.feelingOkay')}</span>
+                            <Meh className="h-5 w-5 mb-1 text-amber-500 transition-colors" weight="duotone" />
+                            <span className="text-[10px] font-black uppercase text-center leading-none px-1 text-amber-700">{t('symptom.feelingOkay')}</span>
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex flex-col h-16 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-700 transition-all group rounded-xl border-dashed"
+                            className="flex flex-col h-16 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 transition-all group rounded-xl border-dashed border-rose-200"
                             onClick={() => handleFeelingSelect('poor')}
                             disabled={isSaving}
                         >
-                            <Frown className="h-5 w-5 mb-1 text-zinc-400 group-hover:text-rose-500 transition-colors" />
-                            <span className="text-[10px] font-black uppercase">{t('symptom.feelingPoor')}</span>
+                            <Frown className="h-5 w-5 mb-1 text-rose-500 transition-colors" weight="duotone" />
+                            <span className="text-[10px] font-black uppercase text-rose-700">{t('symptom.feelingPoor')}</span>
                         </Button>
                     </div>
                 </CardContent>

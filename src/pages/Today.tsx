@@ -4,6 +4,7 @@ import { auth } from "@/integrations/firebase/client";
 import { fetchDocument, updateDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { ptBR, enUS } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
 import Header from "@/components/Header";
@@ -337,7 +338,7 @@ export default function Today() {
                   <div className="flex items-center gap-2 mt-1">
                     <p className="text-xs text-muted-foreground">
                       {language === "pt" ? "Meu Painel de Saúde" : "My Health Dashboard"} ·{" "}
-                      {format(selectedDate, language === "pt" ? "EEEE, d 'de' MMMM" : "EEEE, MMMM d")}
+                      {format(selectedDate, language === "pt" ? "EEEE, d 'de' MMMM" : "EEEE, MMMM d", { locale: language === "pt" ? ptBR : enUS })}
                     </p>
                     <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] text-green-600 dark:text-green-400 font-bold uppercase tracking-wider">
                       <Lock size={10} weight="fill" />

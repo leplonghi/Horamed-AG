@@ -105,7 +105,7 @@ export default function DayTimeline({
       {/* Header Section */}
       <div className="flex items-center justify-between px-1">
         <h3 className="text-sm font-black text-blue-600/80 uppercase tracking-widest">
-          {language === 'pt' ? 'ROUTINA DE HOJE' : 'TODAY\'S ROUTINE'}
+          {language === 'pt' ? 'ROTINA DE HOJE' : 'TODAY\'S ROUTINE'}
         </h3>
       </div>
 
@@ -121,10 +121,10 @@ export default function DayTimeline({
               <Calendar className="h-6 w-6" />
             </div>
             <p className="text-slate-600 font-bold mb-0.5 text-base">
-              {language === 'pt' ? 'Tudo tranquilo!' : 'All clear!'}
+              {language === 'pt' ? 'Nenhum medicamento agendado' : 'No medications scheduled'}
             </p>
             <p className="text-xs text-slate-400">
-              {language === 'pt' ? 'Nenhum medicamento agendado.' : 'No medications scheduled.'}
+              {language === 'pt' ? 'Adicione medicamentos para começar' : 'Add medications to get started'}
             </p>
           </motion.div>
         ) : (

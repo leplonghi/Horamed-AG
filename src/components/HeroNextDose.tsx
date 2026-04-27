@@ -248,7 +248,7 @@ function HeroNextDose({ dose, nextDayDose, onTake, onSnooze, onMore, allDoneToda
   }
 
   // ✅ ESTADO: Tudo certo por hoje — strip compacta
-  if (allDoneToday || (!dose && !nextDayDose)) {
+  if (allDoneToday) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 6 }}
