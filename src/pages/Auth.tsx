@@ -39,6 +39,10 @@ export default function Auth() {
   const {
     t
   } = useLanguage();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -73,11 +77,6 @@ export default function Auth() {
       }
     }
   }, [authError]);
-
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [referralCode, setReferralCode] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isFirstVisit] = useState(() => !localStorage.getItem('horamed_has_visited'));
