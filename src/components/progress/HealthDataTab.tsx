@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { useNavigate } from "react-router-dom";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -74,7 +74,7 @@ function CircularProgress({ value, size = 120, strokeWidth = 10 }: {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-black tracking-tighter" style={{ color: "hsl(var(--primary))" }}>{Math.round(value)}%</span>
-        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">Adesão</span>
+        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">AdesÃ£o</span>
       </div>
     </div>
   );
@@ -125,7 +125,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
       // Adherence (30 days)
       const { data: recentDoses } = await fetchCollection<Record<string, unknown>>(
         "dose_instances",
-        [where("dueAt", ">=", thirtyDaysAgo)]
+        [where("dueAt", ">=", thirtyDaysAgo.toISOString())]
       );
       const { data: allItems } = await fetchCollection<Record<string, unknown>>(`users/${user.uid}/medications`);
       const itemProfileMap = new Map(allItems?.map((i: Record<string, unknown>) => [i.id, i.profileId]));
@@ -230,7 +230,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
 
       const { data: periodDoses } = await fetchCollection<Record<string, unknown>>(
         "dose_instances",
-        [where("dueAt", ">=", mesAnteriorInicio), where("dueAt", "<=", mesAtualFim)]
+        [where("dueAt", ">=", mesAnteriorInicio.toISOString()), where("dueAt", "<=", mesAtualFim.toISOString())]
       );
       const filteredPeriodDoses = activeProfile
         ? periodDoses?.filter((d: Record<string, unknown>) => itemProfileMap.get(d.itemId as string) === activeProfile.id)
@@ -289,17 +289,17 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
 
   const vitalsGrid = [
     {
-      icon: Heart, label: "Pressão", value: stats.lastBP || "—",
+      icon: Heart, label: "PressÃ£o", value: stats.lastBP || "â€”",
       unit: "mmHg", color: "text-rose-500", bg: "bg-rose-500/10",
       onClick: () => navigate("/sinais-vitais"),
     },
     {
-      icon: Gauge, label: "Glicemia", value: stats.lastGlucose ?? "—",
+      icon: Gauge, label: "Glicemia", value: stats.lastGlucose ?? "â€”",
       unit: "mg/dL", color: "text-amber-500", bg: "bg-amber-500/10",
       onClick: () => navigate("/sinais-vitais"),
     },
     {
-      icon: Footprints, label: "Peso", value: stats.lastWeight ?? "—",
+      icon: Footprints, label: "Peso", value: stats.lastWeight ?? "â€”",
       unit: "kg", color: "text-emerald-500", bg: "bg-emerald-500/10",
       onClick: () => navigate("/sinais-vitais"),
     },
@@ -332,7 +332,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
               <div className="flex-1 space-y-3 w-full">
                 <div className="text-center sm:text-left">
                   <h3 className="text-lg font-bold">Atividade Geral</h3>
-                  <p className="text-xs text-muted-foreground">Últimos 30 dias</p>
+                  <p className="text-xs text-muted-foreground">Ãšltimos 30 dias</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-primary/5 rounded-xl p-2.5">
@@ -370,7 +370,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
                 <div className="flex-1 min-w-0">
                   <p className="text-xl font-bold truncate">{vital.value}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {vital.label} · {vital.unit}
+                    {vital.label} Â· {vital.unit}
                   </p>
                 </div>
               </CardContent>
@@ -388,14 +388,14 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
         </Button>
         <Button variant="outline" onClick={() => navigate("/relatorios")}
           className="h-14 rounded-2xl gap-2 text-base border-border/50 bg-card/60 backdrop-blur-sm">
-          <Share2 className="h-5 w-5" /> Relatório
+          <Share2 className="h-5 w-5" /> RelatÃ³rio
         </Button>
       </motion.div>
 
       {/* Health Tools */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
-          Ferramentas de Saúde
+          Ferramentas de SaÃºde
         </h2>
         <HealthToolsGrid />
       </div>
@@ -407,10 +407,10 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
             <AlertCircle className="h-5 w-5 text-rose-500 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="font-semibold text-rose-900 dark:text-rose-100 text-sm">
-                Atenção: Progresso Baixo ({stats.taxaAdesao}%)
+                AtenÃ§Ã£o: Progresso Baixo ({stats.taxaAdesao}%)
               </h3>
               <p className="text-xs text-rose-700 dark:text-rose-300 mt-1">
-                Manter a regularidade é essencial para o tratamento.
+                Manter a regularidade Ã© essencial para o tratamento.
               </p>
               <Button size="sm" variant="destructive" className="mt-2 rounded-xl"
                 onClick={() => navigate("/hoje")}>
@@ -447,7 +447,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
-              Evolução Mensal
+              EvoluÃ§Ã£o Mensal
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR })} vs {format(new Date(), "MMMM", { locale: ptBR })}
@@ -463,9 +463,9 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
                 <div key={item.label} className="bg-background/60 rounded-2xl p-3 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-muted-foreground font-medium">{item.label}</span>
-                    {item.trend === "up" && <Badge className="bg-emerald-500 text-[9px] px-1 py-0">↑{Math.abs(item.diff)}{item.suffix}</Badge>}
-                    {item.trend === "down" && <Badge variant="destructive" className="text-[9px] px-1 py-0">↓{Math.abs(item.diff)}{item.suffix}</Badge>}
-                    {item.trend === "stable" && <Badge variant="secondary" className="text-[9px] px-1 py-0">—</Badge>}
+                    {item.trend === "up" && <Badge className="bg-emerald-500 text-[9px] px-1 py-0">â†‘{Math.abs(item.diff)}{item.suffix}</Badge>}
+                    {item.trend === "down" && <Badge variant="destructive" className="text-[9px] px-1 py-0">â†“{Math.abs(item.diff)}{item.suffix}</Badge>}
+                    {item.trend === "stable" && <Badge variant="secondary" className="text-[9px] px-1 py-0">â€”</Badge>}
                   </div>
                   <p className="text-xl font-bold">{item.cur}</p>
                   <p className="text-[10px] text-muted-foreground">{item.prev}</p>
@@ -482,7 +482,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
-              Adesão (30 dias)
+              AdesÃ£o (30 dias)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -538,7 +538,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
               <Card className="rounded-3xl border border-border/30 shadow-[var(--shadow-glass)] bg-card/80 backdrop-blur-xl">
                 <CardHeader className="pb-1 pt-4 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Heart className="h-4 w-4 text-rose-500" /> Pressão Arterial
+                    <Heart className="h-4 w-4 text-rose-500" /> PressÃ£o Arterial
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 pb-3">
@@ -549,8 +549,8 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
                       <YAxis tick={{ fontSize: 9 }} />
                       <Tooltip contentStyle={{ borderRadius: 12, fontSize: 11 }} />
                       <Legend iconSize={8} wrapperStyle={{ fontSize: 10 }} />
-                      <Line type="monotone" dataKey="sistolica" stroke="#ef4444" strokeWidth={2} name="Sistólica" />
-                      <Line type="monotone" dataKey="diastolica" stroke="#3b82f6" strokeWidth={2} name="Diastólica" />
+                      <Line type="monotone" dataKey="sistolica" stroke="#ef4444" strokeWidth={2} name="SistÃ³lica" />
+                      <Line type="monotone" dataKey="diastolica" stroke="#3b82f6" strokeWidth={2} name="DiastÃ³lica" />
                     </RechartsLineChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -588,7 +588,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
             <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="font-semibold mb-2">Comece a usar o app para ver insights</h3>
             <p className="text-sm text-muted-foreground mb-4 max-w-md mx-auto">
-              À medida que registrar doses e sinais vitais, esta página trará correlações entre adesão e saúde.
+              Ã€ medida que registrar doses e sinais vitais, esta pÃ¡gina trarÃ¡ correlaÃ§Ãµes entre adesÃ£o e saÃºde.
             </p>
             <div className="flex gap-2 justify-center flex-wrap">
               <Button className="rounded-2xl" onClick={() => navigate("/hoje")}>
@@ -613,9 +613,9 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
         <CardContent>
           <div className="grid grid-cols-3 gap-2">
             {[
-              { icon: Clock, label: "Histórico", sub: "Ver doses", path: "/historico" },
+              { icon: Clock, label: "HistÃ³rico", sub: "Ver doses", path: "/historico" },
               { icon: Calendar, label: "Timeline", sub: "Linha do tempo", path: "/linha-do-tempo" },
-              { icon: FileText, label: "Relatórios", sub: "Gerar PDF", path: "/relatorios" },
+              { icon: FileText, label: "RelatÃ³rios", sub: "Gerar PDF", path: "/relatorios" },
             ].map((link) => (
               <Button key={link.path} variant="outline"
                 className="h-auto py-3 flex-col gap-1.5 rounded-2xl border-border/30"
@@ -631,3 +631,4 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
     </div>
   );
 }
+

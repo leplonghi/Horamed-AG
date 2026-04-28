@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Lightbulb, X, Warning as AlertTriangle, Info, TrendUp as TrendingUp } from "@phosphor-icons/react";
@@ -39,7 +39,7 @@ export default function SmartInsightsCard() {
       const dosesSnap = await getDocs(query(
         collection(db, "dose_instances"),
         where("userId", "==", user.uid),
-        where("dueAt", ">=", last14Days)
+        where("dueAt", ">=", last14Days.toISOString())
       ));
       const doses = dosesSnap.docs.map(d => d.data() as {
         status?: string;
@@ -220,8 +220,9 @@ export default function SmartInsightsCard() {
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-3 right-3 h-7 w-7 hover:bg-background/50 transition-all hover:scale-110"
+              className="absolute top-3 right-3 h-9 w-9 hover:bg-background/50 transition-all hover:scale-110 focus-visible:ring-2 focus-visible:ring-ring/50"
               onClick={() => dismissInsight(insight.id)}
+              aria-label="Descartar insight"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -230,8 +231,8 @@ export default function SmartInsightsCard() {
               <div className={cn(
                 "p-3 rounded-xl transition-transform duration-300 hover:scale-110",
                 insight.priority === "high" ? "bg-destructive/20" :
-                insight.priority === "medium" ? "bg-orange-500/20" :
-                "bg-primary/20"
+                insight.priority === "medium" ? "bg-warning/20" :
+                "bg-success/20"
               )}>
                 {getIcon(insight.type)}
               </div>
@@ -252,3 +253,4 @@ export default function SmartInsightsCard() {
     </div>
   );
 }
+

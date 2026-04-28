@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+﻿import { useState, useCallback, useEffect, useRef } from "react";
 import { format, startOfDay, endOfDay, addDays, subDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -8,7 +8,6 @@ import { useProfileCacheContext } from "@/contexts/ProfileCacheContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { symptomService } from "@/lib/symptomService";
 import {
-  fetchCollection,
   fetchDocument,
   where,
   orderBy,
@@ -36,7 +35,7 @@ export interface TimelineItem {
   doctor?: string;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const safeDate = (value: unknown): Date => {
   if (!value) return new Date();
@@ -60,7 +59,7 @@ const safeDate = (value: unknown): Date => {
   return new Date();
 };
 
-// ── Hook ─────────────────────────────────────────────────────────────────────
+// â”€â”€ Hook â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export function useTodayData(
   selectedDate: Date,
@@ -72,7 +71,7 @@ export function useTodayData(
   const { getProfileCache } = useProfileCacheContext();
   const { t } = useLanguage();
 
-  // ── State ────────────────────────────────────────────────────────────────
+  // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -94,7 +93,7 @@ export function useTodayData(
     onSnoozeRef.current = onSnooze;
   });
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const getUserPaths = useCallback(
     (userId: string) => {
@@ -112,7 +111,7 @@ export function useTodayData(
     [activeProfile?.id]
   );
 
-  // ── Load tomorrow's first dose ───────────────────────────────────────────
+  // â”€â”€ Load tomorrow's first dose â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const loadTomorrowFirstDose = useCallback(async () => {
     if (!authUser) return;
@@ -120,8 +119,8 @@ export function useTodayData(
       const tomorrow = addDays(new Date(), 1);
       const paths = getUserPaths(authUser.uid);
       const { data } = await fetchCollection<Dose>(paths.doses, [
-        where("dueAt", ">=", startOfDay(tomorrow)),
-        where("dueAt", "<=", endOfDay(tomorrow)),
+        where("dueAt", ">=", startOfDay(tomorrow).toISOString()),
+        where("dueAt", "<=", endOfDay(tomorrow).toISOString()),
         where("status", "==", "scheduled"),
         orderBy("dueAt", "asc"),
         limit(1),
@@ -135,11 +134,11 @@ export function useTodayData(
         setNextDayDose(null);
       }
     } catch {
-      // non-critical — swallow silently
+      // non-critical â€” swallow silently
     }
   }, [authUser, getUserPaths]);
 
-  // ── Main data loader ─────────────────────────────────────────────────────
+  // â”€â”€ Main data loader â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const loadData = useCallback(
     async (date: Date, forceLoading = false) => {
@@ -164,8 +163,8 @@ export function useTodayData(
               type: dose.items?.category === "vitamina" ? "vitamin" : 
                     dose.items?.category === "suplemento" ? "supplement" : "medication",
               category: dose.items?.category,
-              title: dose.itemName || dose.items?.name || "",
-              subtitle: dose.doseText || dose.items?.dose_text,
+              title: dose.itemName || medNamesMap.get(dose.itemId || dose.item_id || "") || "Medicamento",
+              subtitle: dose.doseText || "",
               status:
                 dose.status === "taken" ? "done" : dose.status === "missed" ? "missed" : "pending",
               itemId: dose.item_id || dose.itemId,
@@ -189,7 +188,7 @@ export function useTodayData(
         const weekStart = startOfDay(subDays(date, 3));
         const weekEnd = endOfDay(addDays(date, 3));
 
-        // ── Main Data Fetching ───────────────────────────────────────────────
+        // â”€â”€ Main Data Fetching â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // We use a Promise.race with a timeout to avoid hanging indefinitely
         const TIMEOUT_MS = 6000;
         const timeoutPromise = new Promise((_, reject) => 
@@ -199,8 +198,8 @@ export function useTodayData(
         // Build constraints for dose_instances (global collection with userId filter)
         const doseDayConstraints: any[] = [
           where("userId", "==", userId),
-          where("dueAt", ">=", dayStart),
-          where("dueAt", "<=", dayEnd),
+          where("dueAt", ">=", dayStart.toISOString()),
+          where("dueAt", "<=", dayEnd.toISOString()),
           orderBy("dueAt", "asc"),
         ];
         if (profileId) {
@@ -209,8 +208,8 @@ export function useTodayData(
 
         const doseWeekConstraints: any[] = [
           where("userId", "==", userId),
-          where("dueAt", ">=", weekStart),
-          where("dueAt", "<=", weekEnd),
+          where("dueAt", ">=", weekStart.toISOString()),
+          where("dueAt", "<=", weekEnd.toISOString()),
         ];
         if (profileId) {
           doseWeekConstraints.push(where("profileId", "==", profileId));
@@ -244,6 +243,20 @@ export function useTodayData(
         const appointments = appointmentsResult.data || [];
         const events = eventsResult.data || [];
 
+        // Fetch medication names for doses that don't have itemName embedded
+        const itemIds = doses.filter(d => !d.itemName && d.itemId).map(d => d.itemId);
+        let medNamesMap = new Map<string, string>();
+        if (itemIds.length > 0) {
+          try {
+            const { data: meds } = await fetchCollection(`users/${userId}/medications`, []);
+            if (meds) {
+              meds.forEach((m: any) => {
+                if (m.id && m.name) medNamesMap.set(m.id, m.name);
+              });
+            }
+          } catch { /* non-critical */ }
+        }
+
         // 4. Calculate event counts for the calendar dots
         const counts: Record<string, number> = {};
         (weekDosesResult.data || []).forEach(d => {
@@ -260,8 +273,8 @@ export function useTodayData(
             type: dose.items?.category === "vitamina" ? ("vitamin" as const) : 
                   dose.items?.category === "suplemento" ? ("supplement" as const) : ("medication" as const),
             category: dose.items?.category || undefined,
-            title: dose.itemName || dose.items?.name || "",
-            subtitle: dose.doseText || dose.items?.dose_text,
+            title: dose.itemName || medNamesMap.get(dose.itemId || dose.item_id || "") || "Medicamento",
+            subtitle: dose.doseText || "",
             status:
               dose.status === "taken" ? ("done" as const) : dose.status === "missed" ? ("missed" as const) : ("pending" as const),
             itemId: dose.item_id || dose.itemId,
@@ -269,10 +282,10 @@ export function useTodayData(
               onMarkDoneRef.current(
                 dose.id,
                 dose.item_id || dose.itemId || "",
-                dose.itemName || dose.items?.name || ""
+                dose.itemName || medNamesMap.get(dose.itemId || dose.item_id || "") || "Medicamento"
               ),
             onSnooze: () =>
-              onSnoozeRef.current(dose.id, dose.itemName || dose.items?.name || ""),
+              onSnoozeRef.current(dose.id, dose.itemName || medNamesMap.get(dose.itemId || dose.item_id || "") || "Medicamento"),
           })),
           ...appointments.map((apt) => ({
             id: apt.id,
@@ -300,9 +313,9 @@ export function useTodayData(
 
         setTimelineItems(items);
 
-        // ── Generative Clara Insight ──────────────────────────────────────
+        // â”€â”€ Generative Clara Insight â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         let insight = "";
-        const patientName = nd?.nickname || nd?.fullName || "você";
+        const patientName = nd?.nickname || nd?.fullName || "vocÃª";
         
         const supplementsCount = doses.filter(d => d.items?.category === 'suplemento' || d.items?.category === 'vitamina').length;
         const isWellnessFocused = supplementsCount > doses.length / 2;
@@ -312,21 +325,21 @@ export function useTodayData(
           
           if (taken === doses.length) {
             insight = isWellnessFocused 
-              ? `Incrível, ${patientName}! Meta de bem-estar batida. Você está no caminho certo!`
-              : `Parabéns, ${patientName}! Você completou toda a sua rotina de hoje.`;
+              ? `IncrÃ­vel, ${patientName}! Meta de bem-estar batida. VocÃª estÃ¡ no caminho certo!`
+              : `ParabÃ©ns, ${patientName}! VocÃª completou toda a sua rotina de hoje.`;
           } else if (taken > 0) {
             insight = isWellnessFocused
-              ? `Foco total! Você já completou ${taken} etapas da sua rotina de performance hoje.`
-              : `Continue assim! Você já tomou ${taken} de ${doses.length} doses hoje.`;
+              ? `Foco total! VocÃª jÃ¡ completou ${taken} etapas da sua rotina de performance hoje.`
+              : `Continue assim! VocÃª jÃ¡ tomou ${taken} de ${doses.length} doses hoje.`;
           } else {
             insight = isWellnessFocused
-              ? `Bom dia, ${patientName}! Hoje é dia de potencializar sua saúde. Tem ${doses.length} itens na lista!`
-              : `Bom dia, ${patientName}! Você tem ${doses.length} doses planejadas para hoje.`;
+              ? `Bom dia, ${patientName}! Hoje Ã© dia de potencializar sua saÃºde. Tem ${doses.length} itens na lista!`
+              : `Bom dia, ${patientName}! VocÃª tem ${doses.length} doses planejadas para hoje.`;
           }
         } else if (items.length > 0) {
-          insight = `${patientName}, você tem ${items.length} compromissos de saúde hoje.`;
+          insight = `${patientName}, vocÃª tem ${items.length} compromissos de saÃºde hoje.`;
         } else {
-          insight = "Dia tranquilo! Nenhuma medicação ou compromisso agendado.";
+          insight = "Dia tranquilo! Nenhuma medicaÃ§Ã£o ou compromisso agendado.";
         }
 
         // Contextual awareness
@@ -388,7 +401,7 @@ export function useTodayData(
     [authUser, activeProfile?.id, t, getProfileCache, getUserPaths, loadTomorrowFirstDose]
   );
 
-  // ── Event counts (calendar dots) ─────────────────────────────────────────
+  // â”€â”€ Event counts (calendar dots) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const loadEventCounts = useCallback(async () => {
     if (!authUser) return;
@@ -403,8 +416,8 @@ export function useTodayData(
 
       const [dosesResult, appointmentsResult, eventsResult] = await Promise.all([
         fetchCollection<Dose>(paths.doses, [
-          where("dueAt", ">=", monthStart),
-          where("dueAt", "<=", monthEnd),
+          where("dueAt", ">=", monthStart.toISOString()),
+          where("dueAt", "<=", monthEnd.toISOString()),
         ]),
         fetchCollection<Appointment>(paths.appointments, [
           where("date", ">=", monthStart),
@@ -435,7 +448,7 @@ export function useTodayData(
     }
   }, [authUser, selectedDate, getUserPaths]);
 
-  // ── Low stock (for Clara) ────────────────────────────────────────────────
+  // â”€â”€ Low stock (for Clara) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   const loadLowStock = useCallback(async () => {
     if (!authUser) return;
@@ -454,7 +467,7 @@ export function useTodayData(
     }
   }, [authUser]);
 
-  // ── Effects ──────────────────────────────────────────────────────────────
+  // â”€â”€ Effects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   // Stable ref to always call latest loadData without stale closure in eventBus listener
   const latestLoadRef = useRef(() => loadData(selectedDate));
@@ -521,3 +534,5 @@ export function useTodayData(
     optimisticMarkDone,
   };
 }
+
+

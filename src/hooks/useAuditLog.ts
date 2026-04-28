@@ -1,4 +1,4 @@
-import { auth } from "@/integrations/firebase/client";
+﻿import { auth } from "@/integrations/firebase/client";
 import { addDocument } from "@/integrations/firebase";
 
 interface AuditLogParams {
@@ -20,7 +20,7 @@ export const useAuditLog = () => {
       if (!user) return;
 
       // Log directly to Firestore subcollection
-      await addDocument(`users/${user.uid}/audit_logs`, {
+      await addDocument(`users/${user.uid}/auditLogs`, {
         action,
         resource,
         resourceId: resource_id, // camelCase
@@ -37,3 +37,4 @@ export const useAuditLog = () => {
 
   return { logAction };
 };
+

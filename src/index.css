@@ -1,8 +1,8 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ─── Typography: Inter — Professional medical-grade sans-serif ─── */
+/* â”€â”€â”€ Typography: Inter â€” Professional medical-grade sans-serif â”€â”€â”€ */
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,300..700&display=swap');
 
 /* Critical splash screen CSS (moved from index.html inline style) */
@@ -52,10 +52,10 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 85% 42%;
     --warning-foreground: 0 0% 100%;
 
-    --success: 152 70% 42%;
+    --success: 152 76% 32%;
     --success-foreground: 210 40% 98%;
 
     --border: 214 32% 91%;
@@ -127,7 +127,7 @@ All colors MUST be HSL.
     --performance-bg: 84 75% 97%;
     --performance-border: 84 75% 48%;
 
-    /* ─── Category color tokens (replaces hardcoded Tailwind palette) ── */
+    /* â”€â”€â”€ Category color tokens (replaces hardcoded Tailwind palette) â”€â”€ */
     --category-medicamento: 224 82% 56%;
     --category-medicamento-muted: 224 82% 97%;
     --category-vitamina: 152 70% 42%;
@@ -137,7 +137,7 @@ All colors MUST be HSL.
     --category-outro: 220 10% 52%;
     --category-outro-muted: 220 10% 97%;
 
-    /* ─── Supplement sub-category tokens ───────────────────────────── */
+    /* â”€â”€â”€ Supplement sub-category tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     --supplement-energy: 38 92% 50%;
     --supplement-energy-muted: 38 92% 97%;
     --supplement-sleep: 245 60% 60%;
@@ -149,7 +149,7 @@ All colors MUST be HSL.
     --supplement-hydration: 192 80% 42%;
     --supplement-hydration-muted: 192 80% 97%;
 
-    /* ─── Third-party integration brand colors ──────────────────────── */
+    /* â”€â”€â”€ Third-party integration brand colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     --integration-google: 4 82% 56%;
     --integration-apple: 349 80% 60%;
     --integration-fitbit: 182 100% 36%;
@@ -195,9 +195,9 @@ All colors MUST be HSL.
 
     --destructive: 0 65% 55%;
     --destructive-foreground: 0 0% 100%;
-    --warning: 38 92% 55%;
+    --warning: 38 85% 55%;
     --warning-foreground: 0 0% 100%;
-    --success: 152 70% 45%;
+    --success: 152 76% 45%;
     --success-foreground: 0 0% 100%;
     --border: 200 20% 20%;
     --input: 200 20% 20%;
@@ -252,7 +252,7 @@ All colors MUST be HSL.
     --performance-bg: 84 70% 12%;
     --performance-border: 84 70% 55%;
 
-    /* ─── Category tokens — Dark Mode ──────────────────────────────── */
+    /* â”€â”€â”€ Category tokens â€” Dark Mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     --category-medicamento: 217 85% 65%;
     --category-medicamento-muted: 217 85% 12%;
     --category-vitamina: 152 65% 50%;
@@ -262,7 +262,7 @@ All colors MUST be HSL.
     --category-outro: 220 10% 55%;
     --category-outro-muted: 220 10% 12%;
 
-    /* ─── Supplement sub-category tokens — Dark Mode ────────────────── */
+    /* â”€â”€â”€ Supplement sub-category tokens â€” Dark Mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     --supplement-energy: 38 85% 60%;
     --supplement-energy-muted: 38 85% 12%;
     --supplement-sleep: 245 65% 70%;
@@ -274,7 +274,7 @@ All colors MUST be HSL.
     --supplement-hydration: 192 75% 55%;
     --supplement-hydration-muted: 192 75% 12%;
 
-    /* ─── Integration colors unchanged in dark mode ─────────────────── */
+    /* â”€â”€â”€ Integration colors unchanged in dark mode â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     --integration-google: 4 75% 62%;
     --integration-apple: 349 75% 65%;
     --integration-fitbit: 182 80% 45%;
@@ -615,8 +615,8 @@ All colors MUST be HSL.
   /* ========== GRADIENT BUTTON CONTRACT ========== */
   /*
    * ACCESSIBILITY RULE: When using gradients on interactive elements with text:
-   *   - gradient lightness must be ≤ 50% for white text (WCAG AA 4.5:1 for small, 3:1 for large text)
-   *   - gradient lightness must be ≥ 60% for dark text
+   *   - gradient lightness must be â‰¤ 50% for white text (WCAG AA 4.5:1 for small, 3:1 for large text)
+   *   - gradient lightness must be â‰¥ 60% for dark text
    *   - Always use `whitespace-nowrap overflow-hidden` to prevent text overflow
    *
    * Approved dark-enough Tailwind stops for white text:
@@ -732,7 +732,7 @@ All colors MUST be HSL.
     color: hsl(var(--destructive));
   }
 
-  /* ─── Category pills ────────────────────────────────────────────── */
+  /* â”€â”€â”€ Category pills â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
   .pill-medicamento {
     @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
     background-color: hsl(var(--category-medicamento) / 0.1);
@@ -749,7 +749,7 @@ All colors MUST be HSL.
     color: hsl(var(--category-suplemento));
   }
 
-  /* ─── Semantic status utilities (substitui bg-green-50, text-red-600 etc.) ── */
+  /* â”€â”€â”€ Semantic status utilities (substitui bg-green-50, text-red-600 etc.) â”€â”€ */
   .status-success   { color: hsl(var(--success)); }
   .status-warning   { color: hsl(var(--warning)); }
   .status-error     { color: hsl(var(--destructive)); }
@@ -942,7 +942,7 @@ All colors MUST be HSL.
     transform: scale(1.05);
   }
 
-  /* ========== FLUID TYPOGRAPHY (clamp) — Phase 1 ========== */
+  /* ========== FLUID TYPOGRAPHY (clamp) â€” Phase 1 ========== */
   /* Optimized clamp values for smooth scaling */
 
   .text-fluid-xs    { font-size: clamp(0.65rem, 1.8vw, 0.75rem); }
@@ -955,7 +955,7 @@ All colors MUST be HSL.
   .text-fluid-4xl   { font-size: clamp(2.8rem, 7.5vw, 3.75rem); }
 
 
-  /* Page heading — replaces hardcoded `text-xl font-bold` on TodayRedesign */
+  /* Page heading â€” replaces hardcoded `text-xl font-bold` on TodayRedesign */
   .heading-page-fluid {
     font-size: clamp(1.2rem, 5vw, 1.75rem);
     font-weight: 700;
@@ -963,7 +963,7 @@ All colors MUST be HSL.
     line-height: 1.2;
   }
 
-  /* Stat numbers — replaces `text-3xl sm:text-4xl` */
+  /* Stat numbers â€” replaces `text-3xl sm:text-4xl` */
   .stat-number-fluid {
     font-size: clamp(1.75rem, 6vw, 2.5rem);
     font-weight: 600;
@@ -971,14 +971,14 @@ All colors MUST be HSL.
     line-height: 1.1;
   }
 
-  /* ========== GLASS TIER SYSTEM — Phase 1 ========== */
+  /* ========== GLASS TIER SYSTEM â€” Phase 1 ========== */
   /*
-   * Tier 1 = Hero/Primary element (1 per screen)  — strongest glass, glow
-   * Tier 2 = Secondary cards (status, vitals)     — standard glass
-   * Tier 3 = Tertiary/supporting (alerts, widgets) — almost flat, subtle border
+   * Tier 1 = Hero/Primary element (1 per screen)  â€” strongest glass, glow
+   * Tier 2 = Secondary cards (status, vitals)     â€” standard glass
+   * Tier 3 = Tertiary/supporting (alerts, widgets) â€” almost flat, subtle border
    */
 
-  /* Tier 1 — dominant hero card with strong glow */
+  /* Tier 1 â€” dominant hero card with strong glow */
   .card-tier-1 {
     @apply relative rounded-3xl border-0 overflow-hidden;
     background: hsl(var(--card) / 0.92);
@@ -1000,7 +1000,7 @@ All colors MUST be HSL.
     transform: translateY(-2px);
   }
 
-  /* Tier 2 — secondary context cards */
+  /* Tier 2 â€” secondary context cards */
   .card-tier-2 {
     @apply relative rounded-2xl border-0 overflow-hidden;
     background: hsl(var(--card) / 0.82);
@@ -1015,7 +1015,7 @@ All colors MUST be HSL.
     transform: translateY(-1px);
   }
 
-  /* Tier 3 — lightweight supporting cards (no blur) */
+  /* Tier 3 â€” lightweight supporting cards (no blur) */
   .card-tier-3 {
     @apply relative rounded-xl border-0 overflow-hidden;
     background: hsl(var(--card) / 0.95);
@@ -1173,3 +1173,4 @@ All colors MUST be HSL.
     -webkit-backdrop-filter: none !important;
   }
 }
+

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
@@ -6,7 +6,7 @@ import { safeDateParse } from "@/lib/safeDateUtils";
 
 /**
  * Hook para redirecionamento inteligente baseado em doses pendentes
- * Se há dose pendente nos próximos 30 min ou atrasada, redireciona para /hoje
+ * Se hÃ¡ dose pendente nos prÃ³ximos 30 min ou atrasada, redireciona para /hoje
  */
 export const useSmartRedirect = () => {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export const useSmartRedirect = () => {
           "dose_instances",
           [where("userId", "==", user.uid), 
             where('status', '==', 'scheduled'),
-            where('dueAt', '<=', thirtyMinutesFromNow), // Changed due_at to dueAt
+            where('dueAt', '<=', thirtyMinutesFromNow.toISOString()), // Changed due_at to dueAt
             orderBy('dueAt', 'asc'),
             limit(1)
           ]
@@ -59,3 +59,4 @@ export const useSmartRedirect = () => {
     return () => clearTimeout(timer);
   }, [location.pathname, navigate, user]);
 };
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,14 +33,14 @@ export function DailyChallenges() {
   const [claimingId, setClaimingId] = useState<string | null>(null);
 
   const t = {
-    title: language === 'pt' ? 'Desafios Diários' : 'Daily Challenges',
+    title: language === 'pt' ? 'Desafios DiÃ¡rios' : 'Daily Challenges',
     dailyDose: language === 'pt' ? 'Dose do Dia' : 'Daily Dose',
     dailyDoseDesc: language === 'pt' ? 'Tome sua primeira dose de hoje' : 'Take your first dose today',
-    onTimeChampion: language === 'pt' ? 'Campeão da Pontualidade' : 'On-Time Champion',
-    onTimeChampionDesc: language === 'pt' ? 'Tome 3 doses no horário correto' : 'Take 3 doses on time',
+    onTimeChampion: language === 'pt' ? 'CampeÃ£o da Pontualidade' : 'On-Time Champion',
+    onTimeChampionDesc: language === 'pt' ? 'Tome 3 doses no horÃ¡rio correto' : 'Take 3 doses on time',
     perfectDay: language === 'pt' ? 'Dia Perfeito' : 'Perfect Day',
     perfectDayDesc: language === 'pt' ? 'Complete todas as doses do dia' : 'Complete all doses today',
-    bonus: language === 'pt' ? 'Bônus' : 'Bonus',
+    bonus: language === 'pt' ? 'BÃ´nus' : 'Bonus',
     claim: language === 'pt' ? 'Resgatar' : 'Claim',
     claimed: language === 'pt' ? 'Resgatado' : 'Claimed',
     complete: language === 'pt' ? 'completos' : 'complete',
@@ -64,8 +64,8 @@ export function DailyChallenges() {
       // No Firestore, filtramos diretamente por userId e intervalo de data
       const { data: doses, error } = await fetchCollection("dose_instances", [
         where("userId", "==", user.uid),
-        where("dueAt", ">=", today),
-        where("dueAt", "<", tomorrow)
+        where("dueAt", ">=", today.toISOString()),
+        where("dueAt", "<", tomorrow.toISOString())
       ]);
 
       if (error) throw error;
@@ -82,7 +82,7 @@ export function DailyChallenges() {
           id: "daily_dose",
           title: t.dailyDose,
           description: t.dailyDoseDesc,
-          icon: <Target className="h-5 w-5 text-blue-500" />,
+          icon: <Target className="h-5 w-5 text-primary" />,
           current: Math.min(takenDoses.length, 1),
           target: 1,
           xpReward: 20,
@@ -94,7 +94,7 @@ export function DailyChallenges() {
           id: "on_time_champion",
           title: t.onTimeChampion,
           description: t.onTimeChampionDesc,
-          icon: <Clock className="h-5 w-5 text-green-500" />,
+          icon: <Clock className="h-5 w-5 text-success" />,
           current: onTimeDoses,
           target: 3,
           xpReward: 50,
@@ -106,7 +106,7 @@ export function DailyChallenges() {
           id: "perfect_day",
           title: t.perfectDay,
           description: t.perfectDayDesc,
-          icon: <Sparkles className="h-5 w-5 text-teal-500" />,
+          icon: <Sparkles className="h-5 w-5 text-primary" />,
           current: takenDoses.length,
           target: Math.max(totalDoses, 1),
           xpReward: 100,
@@ -139,7 +139,7 @@ export function DailyChallenges() {
     const challenge = challenges.find(c => c.id === challengeId);
     if (challenge) {
       toast.success(`+${challenge.xpReward} ${t.xpEarned}`, {
-        icon: "🎉",
+        icon: "ðŸŽ‰",
       });
     }
     
@@ -176,7 +176,7 @@ export function DailyChallenges() {
     <Card className="p-4 overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-yellow-500" />
+          <Zap className="h-5 w-5 text-warning" />
           <h3 className="font-semibold">{t.title}</h3>
         </div>
         <Badge variant="outline" className="gap-1">
@@ -209,7 +209,7 @@ export function DailyChallenges() {
               transition={{ delay: index * 0.1 }}
               className={`p-3 rounded-lg border transition-all ${
                 challenge.claimed 
-                  ? 'bg-green-500/10 border-green-500/30' 
+                  ? 'bg-success/10 border-success/30' 
                   : challenge.completed 
                     ? 'bg-primary/5 border-primary/30' 
                     : 'bg-card'
@@ -220,7 +220,7 @@ export function DailyChallenges() {
                   challenge.completed ? 'bg-primary/10' : 'bg-muted'
                 }`}>
                   {challenge.completed ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    <CheckCircle2 className="h-5 w-5 text-success" />
                   ) : (
                     challenge.icon
                   )}
@@ -273,8 +273,8 @@ export function DailyChallenges() {
                 )}
 
                 {challenge.claimed && (
-                  <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                    ✓ {t.claimed}
+                  <Badge variant="secondary" className="bg-success/10 text-success">
+                    âœ“ {t.claimed}
                   </Badge>
                 )}
               </div>
@@ -285,3 +285,4 @@ export function DailyChallenges() {
     </Card>
   );
 }
+

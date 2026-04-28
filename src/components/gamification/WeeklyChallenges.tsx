@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ export default function WeeklyChallenges() {
     earlyBird: language === 'pt' ? 'Madrugador' : 'Early Bird',
     earlyBirdDesc: language === 'pt' ? 'Tome 5 doses antes das 8h' : 'Take 5 doses before 8am',
     perfectTiming: language === 'pt' ? 'Timing Perfeito' : 'Perfect Timing',
-    perfectTimingDesc: language === 'pt' ? 'Tome 10 doses no horário exato' : 'Take 10 doses on exact time',
+    perfectTimingDesc: language === 'pt' ? 'Tome 10 doses no horÃ¡rio exato' : 'Take 10 doses on exact time',
   };
 
   useEffect(() => {
@@ -65,8 +65,8 @@ export default function WeeklyChallenges() {
       // Get week's doses using Firestore query
       const { data: doses, error } = await fetchCollection("dose_instances", [
         where("userId", "==", user.uid),
-        where("dueAt", ">=", weekStart),
-        where("dueAt", "<=", weekEnd)
+        where("dueAt", ">=", weekStart.toISOString()),
+        where("dueAt", "<=", weekEnd.toISOString())
       ]);
 
       if (error) throw error;
@@ -94,7 +94,7 @@ export default function WeeklyChallenges() {
           id: "week_100",
           title: t.complete100,
           description: t.complete100Desc,
-          icon: <Trophy className="h-5 w-5 text-yellow-500" />,
+          icon: <Trophy className="h-5 w-5 text-warning" />,
           current: takenDoses.length,
           target: Math.max(totalDoses, 1),
           xpReward: 500,
@@ -107,7 +107,7 @@ export default function WeeklyChallenges() {
           id: "streak_week",
           title: t.streakWeek,
           description: t.streakWeekDesc,
-          icon: <Flame className="h-5 w-5 text-orange-500" />,
+          icon: <Flame className="h-5 w-5 text-warning" />,
           current: streakDays,
           target: 7,
           xpReward: 300,
@@ -120,7 +120,7 @@ export default function WeeklyChallenges() {
           id: "early_bird",
           title: t.earlyBird,
           description: t.earlyBirdDesc,
-          icon: <Star className="h-5 w-5 text-blue-500" />,
+          icon: <Star className="h-5 w-5 text-primary" />,
           current: earlyDoses,
           target: 5,
           xpReward: 200,
@@ -133,7 +133,7 @@ export default function WeeklyChallenges() {
           id: "perfect_timing",
           title: t.perfectTiming,
           description: t.perfectTimingDesc,
-          icon: <Target className="h-5 w-5 text-teal-500" />,
+          icon: <Target className="h-5 w-5 text-primary" />,
           current: onTimeDoses,
           target: 10,
           xpReward: 400,
@@ -166,7 +166,7 @@ export default function WeeklyChallenges() {
       prev.map(c => c.id === challengeId ? { ...c, claimed: true } : c)
     );
     
-    toast.success(`+${challenge.xpReward} XP! 🎉`);
+    toast.success(`+${challenge.xpReward} XP! ðŸŽ‰`);
     setClaimingId(null);
   };
 
@@ -198,7 +198,7 @@ export default function WeeklyChallenges() {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-warning" />
             <span className="text-base">{t.title}</span>
           </div>
           <Badge variant="outline" className="gap-1">
@@ -210,12 +210,12 @@ export default function WeeklyChallenges() {
       
       <CardContent className="space-y-4">
         {/* Progress Summary */}
-        <div className="p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
+        <div className="p-3 bg-gradient-to-r from-warning/10 to-warning/5 rounded-lg border border-warning/20">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">
               {completedCount}/{challenges.filter(c => !c.isPremium || isPremium).length} {language === 'pt' ? 'completos' : 'complete'}
             </span>
-            <span className="text-sm font-bold text-yellow-600">
+            <span className="text-sm font-bold text-warning">
               +{totalXP} XP
             </span>
           </div>
@@ -238,7 +238,7 @@ export default function WeeklyChallenges() {
                     isLocked 
                       ? 'bg-muted/50 opacity-60'
                       : challenge.claimed 
-                        ? 'bg-green-500/10 border-green-500/30' 
+                        ? 'bg-success/10 border-success/30' 
                         : challenge.completed 
                           ? 'bg-primary/5 border-primary/30' 
                           : 'bg-card'
@@ -251,7 +251,7 @@ export default function WeeklyChallenges() {
                       {isLocked ? (
                         <Lock className="h-5 w-5 text-muted-foreground" />
                       ) : challenge.completed ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <CheckCircle2 className="h-5 w-5 text-success" />
                       ) : (
                         challenge.icon
                       )}
@@ -261,7 +261,7 @@ export default function WeeklyChallenges() {
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm">{challenge.title}</p>
                         {challenge.isPremium && (
-                          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-yellow-500/20 to-orange-500/20">
+                          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-warning/20 to-warning/10">
                             {t.premium}
                           </Badge>
                         )}
@@ -272,7 +272,7 @@ export default function WeeklyChallenges() {
                         <div className="mt-2">
                           <div className="flex items-center justify-between text-xs mb-1">
                             <span>{challenge.current}/{challenge.target}</span>
-                            <span className="text-yellow-600">+{challenge.xpReward} XP</span>
+                            <span className="text-warning">+{challenge.xpReward} XP</span>
                           </div>
                           <Progress 
                             value={(challenge.current / challenge.target) * 100} 
@@ -287,7 +287,7 @@ export default function WeeklyChallenges() {
                         size="sm"
                         onClick={() => claimReward(challenge.id)}
                         disabled={claimingId === challenge.id}
-                        className="shrink-0 gap-1 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600"
+                        className="shrink-0 gap-1 bg-gradient-to-r from-warning to-warning/80 hover:from-warning/90 hover:to-warning/70"
                       >
                         {claimingId === challenge.id ? (
                           <motion.div
@@ -306,8 +306,8 @@ export default function WeeklyChallenges() {
                     )}
 
                     {challenge.claimed && (
-                      <Badge variant="secondary" className="bg-green-500/10 text-green-600">
-                        ✓ {t.claimed}
+                      <Badge variant="secondary" className="bg-success/10 text-success">
+                        âœ“ {t.claimed}
                       </Badge>
                     )}
                   </div>
@@ -320,3 +320,4 @@ export default function WeeklyChallenges() {
     </Card>
   );
 }
+

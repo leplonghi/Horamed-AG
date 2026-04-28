@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { auth, fetchCollection, where, query } from "@/integrations/firebase";
 import { startOfWeek, startOfMonth, subDays } from "date-fns";
 import { safeDateParse } from "@/lib/safeDateUtils";
@@ -82,7 +82,7 @@ export function useXPSystem() {
       const thirtyDaysAgo = subDays(new Date(), 30);
 
       const { data: recentDoses } = await fetchCollection<DoseDoc>(dosesPath, [
-        where("dueAt", ">=", thirtyDaysAgo)
+        where("dueAt", ">=", thirtyDaysAgo.toISOString())
       ]);
 
       if (recentDoses) {
@@ -141,3 +141,4 @@ export function useXPSystem() {
 
   return { ...xpData, loading, refresh: calculateXP };
 }
+

@@ -1,4 +1,4 @@
-import { memo } from "react";
+﻿import { memo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, CaretRight as ChevronRight } from "@phosphor-icons/react";
@@ -34,8 +34,8 @@ function MonthlyReportWidget() {
       const { data } = await fetchCollection<any>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where('dueAt', '>=', monthStart),
-          where('dueAt', '<=', monthEnd)
+          where('dueAt', '>=', monthStart.toISOString()),
+          where('dueAt', '<=', monthEnd.toISOString())
         ]
       );
 
@@ -53,22 +53,22 @@ function MonthlyReportWidget() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <Card className="bg-gradient-to-br from-teal-500/10 to-indigo-500/5 border-teal-500/20 mb-4">
+      <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 mb-4">
         <CardContent className="p-3">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-teal-500/20">
-              <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="p-2 rounded-lg bg-primary/20">
+              <FileText className="h-5 w-5 text-primary" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-teal-700 dark:text-teal-300">
+              <p className="text-sm font-semibold text-primary">
                 {language === 'pt'
-                  ? `📊 Relatório de ${monthName}`
-                  : `📊 ${monthName} Report`}
+                  ? `ðŸ“Š RelatÃ³rio de ${monthName}`
+                  : `ðŸ“Š ${monthName} Report`}
               </p>
               <p className="text-xs text-muted-foreground">
                 {language === 'pt'
-                  ? 'Pronto para consulta médica'
+                  ? 'Pronto para consulta mÃ©dica'
                   : 'Ready for your doctor'}
               </p>
             </div>
@@ -77,7 +77,7 @@ function MonthlyReportWidget() {
               variant="ghost"
               size="sm"
               onClick={() => navigate('/relatorios')}
-              className="shrink-0 text-xs h-8 px-2 text-teal-600 hover:text-teal-700 hover:bg-teal-500/10"
+              className="shrink-0 text-xs h-8 px-2 text-primary hover:text-primary hover:bg-primary/10"
             >
               {language === 'pt' ? 'Ver' : 'View'}
               <ChevronRight className="h-3.5 w-3.5 ml-0.5" />

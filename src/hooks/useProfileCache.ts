@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+﻿import { useState, useCallback, useRef } from 'react';
 import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
@@ -98,8 +98,8 @@ export function useProfileCache() {
           "dose_instances",
           [where("userId", "==", userId), 
             where('profileId', '==', profileId),
-            where('dueAt', '>=', today),
-            where('dueAt', '<=', endOfDay),
+            where('dueAt', '>=', today.toISOString()),
+            where('dueAt', '<=', endOfDay.toISOString()),
             orderBy('dueAt', 'asc')
           ]
         ),
@@ -167,7 +167,7 @@ export function useProfileCache() {
         return newCache;
       });
     } catch {
-      // Silent fail — cache is optional, app works without it
+      // Silent fail â€” cache is optional, app works without it
     } finally {
       isFetchingRef.current.delete(profileId);
     }
@@ -239,3 +239,4 @@ export function useProfileCache() {
     updateProfileCache
   };
 }
+

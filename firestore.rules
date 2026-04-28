@@ -1,4 +1,4 @@
-rules_version = '2';
+﻿rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -21,8 +21,8 @@ service cloud.firestore {
     // Verifica se o usuário logado é cuidador APROVADO do paciente
     function isCaregiverOf(userId) {
       return isAuthenticated() &&
-        exists(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)).data.status == "approved";
+        exists(/databases//documents/users//caregivers/) &&
+        get(/databases//documents/users//caregivers/).data.status == "approved";
     }
 
     // Campos que um cuidador pode alterar numa dose
@@ -290,5 +290,97 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
+
+    // ===================================
+    // Top-Level Collections — SECURITY FIX
+    // Coleções sem regras estavam abertas para qualquer usuário autenticado
+    // ===================================
+
+    // Symptom logs (dados de saúde sensíveis — LGPD)
+    match /symptom_logs/{logId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Items (medicamentos — legado/migração)
+    match /items/{itemId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // Subscriptions (dados de pagamento)
+    match /subscriptions/{subId} {
+      allow read: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow write: if isAdmin();
+    }
+
+    // Notification preferences
+    match /notification_preferences/{prefId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // User profiles (legado/migração)
+    match /user_profiles/{profileId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Health insights
+    match /health_insights/{insightId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Health history
+    match /health_history/{entryId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Medical exams
+    match /medical_exams/{examId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Document sharing (legado)
+    match /compartilhamentos_doc/{shareId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Health events (legado)
+    match /eventos_saude/{eventId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Health documents (legado)
+    match /documentos_saude/{docId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Profiles (legado)
+    match /profiles/{profileId} {
+      allow read, write: if isAuthenticated() && resource.data.user_id == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+
+    // Schedules (top-level — legado)
+    match /schedules/{scheduleId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Stock (top-level — legado)
+    match /stock/{stockId} {
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
   }
 }
+

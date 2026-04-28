@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, Check, WarningCircle as AlertCircle } from "@phosphor-icons/react";
 import { format, addDays, startOfWeek, isSameDay, isToday, addWeeks, isBefore, startOfDay } from "date-fns";
@@ -65,8 +65,8 @@ export default function MiniWeekCalendar({
           collection(db, "doses"),
           where("userId", "==", user.uid),
           where("itemId", "in", itemIds),
-          where("dueAt", ">=", weekStart),
-          where("dueAt", "<", weekEnd)
+          where("dueAt", ">=", weekStart.toISOString()),
+          where("dueAt", "<", weekEnd.toISOString())
         );
 
         const dosesSnapshot = await getDocs(dosesQuery);
@@ -157,7 +157,8 @@ export default function MiniWeekCalendar({
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={goToPreviousWeek}
-          className="p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors active:bg-muted/80"
+          className="p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors active:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Semana anterior"
         >
           <ChevronLeft className="w-4 h-4 text-foreground" />
         </motion.button>
@@ -174,7 +175,8 @@ export default function MiniWeekCalendar({
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={goToNextWeek}
-          className="p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors active:bg-muted/80"
+          className="p-2 rounded-xl bg-muted/50 hover:bg-muted transition-colors active:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 min-w-[44px] min-h-[44px] flex items-center justify-center"
+          aria-label="Próxima semana"
         >
           <ChevronRight className="w-4 h-4 text-foreground" />
         </motion.button>
@@ -256,7 +258,7 @@ export default function MiniWeekCalendar({
                             fill="none"
                             strokeLinecap="round"
                             strokeDasharray="4 3"
-                            className="stroke-slate-400"
+                            className="stroke-muted-foreground"
                           />
                         ) : (
                           <motion.circle
@@ -306,11 +308,11 @@ export default function MiniWeekCalendar({
                     transition={{ delay: i * 0.04 }}
                     className={cn(
                       "text-[9px] font-medium mt-0.5 px-1.5 py-0.5 rounded-full",
-                      status === "complete" && "bg-emerald-500/15 text-emerald-600",
-                      status === "partial" && "bg-amber-500/15 text-amber-600",
+                      status === "complete" && "bg-success/15 text-success",
+                      status === "partial" && "bg-warning/15 text-warning",
                       status === "pending" && "bg-primary/15 text-primary",
                       status === "missed" && "bg-destructive/15 text-destructive",
-                      status === "forgiven" && "bg-slate-100 text-slate-400"
+                      status === "forgiven" && "bg-muted text-muted-foreground"
                     )}
                   >
                     {data.completed}/{data.total}
@@ -351,3 +353,4 @@ export default function MiniWeekCalendar({
     </div>
   );
 }
+

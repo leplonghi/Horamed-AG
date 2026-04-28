@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchCollection } from '@/integrations/firebase';
+import { fetchCollection, fetchDocument, where } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
 import Header from '@/components/Header';
@@ -81,11 +81,11 @@ export default function DataExport() {
 
       doc.setFontSize(16);
       doc.setTextColor(82, 109, 255);
-      doc.text(language === 'pt' ? 'Exportação de Dados - HoraMed' : 'Data Export - HoraMed', 105, yPos + 8, { align: 'center' });
+      doc.text(language === 'pt' ? 'ExportaÃ§Ã£o de Dados - HoraMed' : 'Data Export - HoraMed', 105, yPos + 8, { align: 'center' });
 
       doc.setFontSize(8);
       doc.setTextColor(100, 116, 139);
-      doc.text(format(new Date(), language === 'pt' ? "dd/MM/yyyy 'às' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale }), 105, yPos + 14, { align: 'center' });
+      doc.text(format(new Date(), language === 'pt' ? "dd/MM/yyyy 'Ã s' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale }), 105, yPos + 14, { align: 'center' });
 
       yPos += 25;
 
@@ -148,7 +148,7 @@ export default function DataExport() {
         ]);
         autoTable(doc, {
           startY: yPos,
-          head: [[language === 'pt' ? 'Nome' : 'Name', language === 'pt' ? 'Relação' : 'Relationship', language === 'pt' ? 'Data de Nascimento' : 'Birth Date']],
+          head: [[language === 'pt' ? 'Nome' : 'Name', language === 'pt' ? 'RelaÃ§Ã£o' : 'Relationship', language === 'pt' ? 'Data de Nascimento' : 'Birth Date']],
           body: profilesData,
           theme: 'grid',
           headStyles: {
@@ -229,7 +229,7 @@ export default function DataExport() {
         ];
         autoTable(doc, {
           startY: yPos,
-          head: [[language === 'pt' ? 'Métrica' : 'Metric', language === 'pt' ? 'Valor' : 'Value']],
+          head: [[language === 'pt' ? 'MÃ©trica' : 'Metric', language === 'pt' ? 'Valor' : 'Value']],
           body: summaryData,
           theme: 'grid',
           headStyles: {
@@ -263,13 +263,13 @@ export default function DataExport() {
         yPos += 10;
 
         const docsData = data.documents.slice(0, 20).map((document: any) => [
-          document.title || (language === 'pt' ? 'Sem título' : 'No title'),
+          document.title || (language === 'pt' ? 'Sem tÃ­tulo' : 'No title'),
           document.categoryId || '-',
           document.issuedAt ? format(safeDateParse(document.issuedAt), 'dd/MM/yyyy', { locale: dateLocale }) : '-',
         ]);
         autoTable(doc, {
           startY: yPos,
-          head: [[language === 'pt' ? 'Título' : 'Title', language === 'pt' ? 'Categoria' : 'Category', language === 'pt' ? 'Data' : 'Date']],
+          head: [[language === 'pt' ? 'TÃ­tulo' : 'Title', language === 'pt' ? 'Categoria' : 'Category', language === 'pt' ? 'Data' : 'Date']],
           body: docsData,
           theme: 'grid',
           headStyles: {
@@ -331,7 +331,7 @@ export default function DataExport() {
         ]);
         autoTable(doc, {
           startY: yPos,
-          head: [[language === 'pt' ? 'Título' : 'Title', language === 'pt' ? 'Severidade' : 'Severity', language === 'pt' ? 'Tipo' : 'Type']],
+          head: [[language === 'pt' ? 'TÃ­tulo' : 'Title', language === 'pt' ? 'Severidade' : 'Severity', language === 'pt' ? 'Tipo' : 'Type']],
           body: insightsData,
           theme: 'grid',
           headStyles: {
@@ -366,7 +366,7 @@ export default function DataExport() {
         [language === 'pt' ? 'Total de Doses' : 'Total Doses', (data.doses?.length || 0).toString()],
         [language === 'pt' ? 'Total de Documentos' : 'Total Documents', (data.documents?.length || 0).toString()],
         [language === 'pt' ? 'Total de Insights' : 'Total Insights', (data.healthInsights?.length || 0).toString()],
-        [language === 'pt' ? 'Data da Exportação' : 'Export Date', format(new Date(), language === 'pt' ? "dd/MM/yyyy 'às' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale })],
+        [language === 'pt' ? 'Data da ExportaÃ§Ã£o' : 'Export Date', format(new Date(), language === 'pt' ? "dd/MM/yyyy 'Ã s' HH:mm" : "MM/dd/yyyy 'at' HH:mm", { locale: dateLocale })],
       ];
       autoTable(doc, {
         startY: yPos,
@@ -398,7 +398,7 @@ export default function DataExport() {
         doc.setTextColor(100, 116, 139);
         doc.text(
           language === 'pt'
-            ? `Página ${i} de ${pageCount} | HoraMed - Gestão de Saúde`
+            ? `PÃ¡gina ${i} de ${pageCount} | HoraMed - GestÃ£o de SaÃºde`
             : `Page ${i} of ${pageCount} | HoraMed - Health Management`,
           105,
           287,
@@ -585,3 +585,4 @@ export default function DataExport() {
     </div>
   );
 }
+

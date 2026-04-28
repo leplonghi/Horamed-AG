@@ -1,9 +1,9 @@
-/**
+﻿/**
  * Hook de alarme nativo Android para HoraMed
  * 
- * Garante alarmes confiáveis mesmo com:
+ * Garante alarmes confiÃ¡veis mesmo com:
  * - App fechado
- * - Modo avião
+ * - Modo aviÃ£o
  * - Economia de bateria
  * - Tela bloqueada
  */
@@ -139,8 +139,8 @@ export const useAndroidAlarm = () => {
       // Also create a critical channel for urgent alarms
       await LocalNotifications.createChannel({
         id: "horamed_critical",
-        name: "Alertas Críticos",
-        description: "Alertas críticos que não podem ser perdidos",
+        name: "Alertas CrÃ­ticos",
+        description: "Alertas crÃ­ticos que nÃ£o podem ser perdidos",
         importance: 5,
         visibility: 1,
         sound: "alarm.wav",
@@ -314,8 +314,8 @@ export const useAndroidAlarm = () => {
 
       const { data: doses } = await fetchCollection<Dose>(paths.doses, [
         where("status", "==", "scheduled"),
-        where("dueAt", ">=", now),
-        where("dueAt", "<=", next24h),
+        where("dueAt", ">=", now.toISOString()),
+        where("dueAt", "<=", next24h.toISOString()),
         orderBy("dueAt", "asc"),
       ]);
 
@@ -329,7 +329,7 @@ export const useAndroidAlarm = () => {
 
           await scheduleAlarm({
             id: notificationId,
-            title: "⏰ Hora do remédio!",
+            title: "â° Hora do remÃ©dio!",
             body: `${dose.itemName || dose.items?.name}${dose.doseText || dose.items?.dose_text ? ` - ${dose.doseText || dose.items?.dose_text}` : ""}`,
             scheduledAt: dueAt,
             doseId: dose.id,
@@ -396,8 +396,8 @@ export const useAndroidAlarm = () => {
 
     const success = await scheduleAlarm({
       id: testId,
-      title: "🧪 Teste de Alarme",
-      body: "Se você recebeu isso, o alarme está funcionando!",
+      title: "ðŸ§ª Teste de Alarme",
+      body: "Se vocÃª recebeu isso, o alarme estÃ¡ funcionando!",
       scheduledAt: testTime,
       doseId: `test-${testId}`,
       itemId: `test-item-${testId}`,
@@ -517,3 +517,4 @@ export const useAndroidAlarm = () => {
 };
 
 export default useAndroidAlarm;
+

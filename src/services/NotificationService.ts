@@ -1,14 +1,14 @@
-/**
- * NotificationService - Serviço Unificado de Notificações HoraMed
+﻿/**
+ * NotificationService - ServiÃ§o Unificado de NotificaÃ§Ãµes HoraMed
  * 
  * Arquitetura:
- * 1. Alarme Local (PRIMÁRIO) - Capacitor LocalNotifications
+ * 1. Alarme Local (PRIMÃRIO) - Capacitor LocalNotifications
  *    - Funciona offline, app fechado, tela bloqueada
  *    - Canal dedicado horamed_alarm com IMPORTANCE_HIGH
  * 
  * 2. Push FCM (BACKUP) - Firebase Cloud Messaging
- *    - Complementar, não substituto
- *    - Sync via notification_id único
+ *    - Complementar, nÃ£o substituto
+ *    - Sync via notification_id Ãºnico
  * 
  * 3. Logs em notificationLogs para telemetria (Firestore subcollection)
  */
@@ -125,7 +125,7 @@ class NotificationService {
       this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error("[NotificationService] Erro na inicialização:", error);
+      console.error("[NotificationService] Erro na inicializaÃ§Ã£o:", error);
       return false;
     }
   }
@@ -154,7 +154,7 @@ class NotificationService {
 
         return localResult.display === "granted";
       } catch (error) {
-        console.error("[NotificationService] Erro ao pedir permissões:", error);
+        console.error("[NotificationService] Erro ao pedir permissÃµes:", error);
         return false;
       }
     } else {
@@ -215,7 +215,7 @@ class NotificationService {
     // 1. Try LOCAL ALARM first (PRIMARY)
     if (isNative) {
       try {
-        const title = `💊 ${dose.itemName}`;
+        const title = `ðŸ’Š ${dose.itemName}`;
         const body = dose.doseText || "Hora de tomar seu medicamento";
         // Get custom sound and vibration settings
         const soundFile = SOUND_MAP[dose.sound || "default"];
@@ -293,7 +293,7 @@ class NotificationService {
 
     // Web fallback
     if ("Notification" in window && Notification.permission === "granted") {
-      const title = `💊 ${dose.itemName}`;
+      const title = `ðŸ’Š ${dose.itemName}`;
       const body = dose.doseText || "Hora de tomar seu medicamento";
       const delay = dose.scheduledAt.getTime() - Date.now();
       if (delay > 0) {
@@ -320,7 +320,7 @@ class NotificationService {
       }
     }
 
-    return { success: false, method: "none", notificationId, error: "Nenhum método disponível" };
+    return { success: false, method: "none", notificationId, error: "Nenhum mÃ©todo disponÃ­vel" };
   }
 
   /**
@@ -346,7 +346,7 @@ class NotificationService {
       await sendDoseNotification({
         doseId: dose.doseId,
         userId: user.uid,
-        title: "⏰ Hora do remédio!",
+        title: "â° Hora do remÃ©dio!",
         body: dose.doseText ? `${dose.itemName} - ${dose.doseText}` : dose.itemName,
         scheduledAt: dose.scheduledAt,
       });
@@ -374,8 +374,8 @@ class NotificationService {
         "dose_instances",
         [where("userId", "==", user.uid), 
           where("status", "==", "scheduled"),
-          where("dueAt", ">=", now),
-          where("dueAt", "<=", next24h),
+          where("dueAt", ">=", now.toISOString()),
+          where("dueAt", "<=", next24h.toISOString()),
           orderBy("dueAt", "asc")
         ]
       );
@@ -590,3 +590,4 @@ class NotificationService {
 // Export singleton
 export const notificationService = NotificationService.getInstance();
 export default notificationService;
+

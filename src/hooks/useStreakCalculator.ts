@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+﻿import { useCallback, useRef } from "react";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, subDays } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -46,7 +46,7 @@ export function useStreakCalculator() {
         "dose_instances",
         [
           where("userId", "==", user.uid),
-          where("dueAt", ">=", startDate),
+          where("dueAt", ">=", startDate.toISOString()),
           orderBy("dueAt", "asc")
         ]
       );
@@ -93,7 +93,7 @@ export function useStreakCalculator() {
           }
           const weeklyAvg = windowTotal > 0 ? windowTaken / windowTotal : 0;
           if (weeklyAvg >= 0.8) {
-            // Forgive this day — streak continues
+            // Forgive this day â€” streak continues
             forgiveUsed = true;
             currentStreak++;
             checkDate = subDays(checkDate, 1);
@@ -145,7 +145,7 @@ export function useStreakCalculator() {
 
       // Generate weekly adherence trend (last 7 days)
       const weeklyAdherence = [];
-      const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+      const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'SÃ¡b'];
 
       for (let i = 6; i >= 0; i--) {
         const d = subDays(new Date(), i);

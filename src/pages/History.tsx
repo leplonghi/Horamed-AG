@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -123,8 +123,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
 
       // Query Constraints
       const constraints = [
-        where('dueAt', '>=', startDate),
-        where('dueAt', '<=', endDate),
+        where('dueAt', '>=', startDate.toISOString()),
+        where('dueAt', '<=', endDate.toISOString()),
         orderBy('dueAt', 'desc')
       ];
 
@@ -152,8 +152,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
 
       // Previous period
       const prevConstraints = [
-        where('dueAt', '>=', previousStartDate),
-        where('dueAt', '<=', previousEndDate)
+        where('dueAt', '>=', previousStartDate.toISOString()),
+        where('dueAt', '<=', previousEndDate.toISOString())
       ];
       const { data: prevDosesData } = await fetchCollection<any>("dose_instances", prevConstraints);
 
@@ -194,8 +194,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
       const itemsMap = new Map(items?.map(i => [i.id, i]));
 
       const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
-        where('dueAt', '>=', thirtyDaysAgo),
-        where('dueAt', '<=', now)
+        where('dueAt', '>=', thirtyDaysAgo.toISOString()),
+        where('dueAt', '<=', now.toISOString())
       ]);
 
       // Group by medication

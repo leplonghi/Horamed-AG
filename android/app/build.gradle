@@ -4,7 +4,7 @@ android {
     namespace "com.horamed.app"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "co.median.android.lppjaqn"
+        applicationId "com.horamed.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 54

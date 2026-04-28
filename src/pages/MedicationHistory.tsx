@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { auth, fetchCollection, fetchDocument, where, orderBy } from "@/integrations/firebase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,8 +62,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
     const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
       dosesPath,
       [
-        where('dueAt', '>=', startDate),
-        where('dueAt', '<=', endDate),
+        where('dueAt', '>=', startDate.toISOString()),
+        where('dueAt', '<=', endDate.toISOString()),
         orderBy('dueAt', 'desc')
       ]
     );
@@ -124,8 +124,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
         dosesPath,
         [
           where('itemId', '==', id),
-          where('dueAt', '>=', startDate),
-          where('dueAt', '<=', endDate),
+          where('dueAt', '>=', startDate.toISOString()),
+          where('dueAt', '<=', endDate.toISOString()),
           orderBy('dueAt', 'desc')
         ]
       );
@@ -185,7 +185,7 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
           <h1 className="text-3xl font-bold mb-2">
             {id
               ? (medication?.name || t('common.loading'))
-              : (language === 'pt' ? 'Histórico de Doses' : 'Dose History')
+              : (language === 'pt' ? 'HistÃ³rico de Doses' : 'Dose History')
             }
           </h1>
           <p className="text-muted-foreground">

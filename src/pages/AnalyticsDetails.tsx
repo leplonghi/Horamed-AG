@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where, orderBy } from "@/integrations/firebase";
 import { startOfDay, endOfDay, subDays } from "date-fns";
@@ -24,8 +24,8 @@ export default function AnalyticsDetails() {
 
       // Fetch Doses
       const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
-        where('dueAt', '>=', startOfDay(startDate)),
-        where('dueAt', '<=', endOfDay(now)),
+        where('dueAt', '>=', startOfDay(startDate).toISOString()),
+        where('dueAt', '<=', endOfDay(now).toISOString()),
         orderBy('dueAt', 'asc')
       ]);
 
@@ -70,15 +70,15 @@ export default function AnalyticsDetails() {
         </Button>
 
         <PageHeader
-          title="Análise Detalhada de Progresso"
-          description="Veja estatísticas completas de adesão e pontualidade"
+          title="AnÃ¡lise Detalhada de Progresso"
+          description="Veja estatÃ­sticas completas de adesÃ£o e pontualidade"
           icon={<BarChart3 className="h-6 w-6 text-primary" />}
         />
 
         <div className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Evolução de Adesão</CardTitle>
+              <CardTitle>EvoluÃ§Ã£o de AdesÃ£o</CardTitle>
             </CardHeader>
             <CardContent>
               <AdherenceChart period="month" />
@@ -98,3 +98,4 @@ export default function AnalyticsDetails() {
     </div>
   );
 }
+

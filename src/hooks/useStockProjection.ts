@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+﻿import { useQuery } from "@tanstack/react-query";
 import { auth, fetchCollection, where, orderBy, fetchDocument } from "@/integrations/firebase";
 import { differenceInDays, subDays } from "date-fns";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
@@ -101,7 +101,7 @@ export function useStockProjection(profileId?: string) {
       const { data: doses } = await fetchCollection<DoseDoc>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where('dueAt', '>=', sevenDaysAgo),
+          where('dueAt', '>=', sevenDaysAgo.toISOString()),
           where('itemId', 'in', itemIds)
         ]
       );
@@ -188,3 +188,4 @@ export function useStockProjection(profileId?: string) {
     enabled: true,
   });
 }
+

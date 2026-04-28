@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,13 +32,13 @@ export default function FamilyLeaderboard() {
     title: language === 'pt' ? 'Ranking Familiar' : 'Family Leaderboard',
     thisWeek: language === 'pt' ? 'Esta semana' : 'This week',
     streak: language === 'pt' ? 'dias' : 'days',
-    you: language === 'pt' ? 'Você' : 'You',
-    adherence: language === 'pt' ? 'Adesão' : 'Adherence',
+    you: language === 'pt' ? 'VocÃª' : 'You',
+    adherence: language === 'pt' ? 'AdesÃ£o' : 'Adherence',
     noFamily: language === 'pt' 
       ? 'Adicione familiares para competir!' 
       : 'Add family members to compete!',
     premiumOnly: language === 'pt' 
-      ? 'Ranking familiar é um recurso Premium' 
+      ? 'Ranking familiar Ã© um recurso Premium' 
       : 'Family leaderboard is a Premium feature',
   };
 
@@ -72,7 +72,7 @@ export default function FamilyLeaderboard() {
         
         const { data: doses, error: doseError } = await fetchCollection("dose_instances", [
           where("profileId", "==", profile.id),
-          where("dueAt", ">=", weekStart)
+          where("dueAt", ">=", weekStart.toISOString())
         ]);
 
         if (doseError) console.error(`Error fetching doses for profile ${profile.id}:`, doseError);
@@ -123,13 +123,13 @@ export default function FamilyLeaderboard() {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Crown className="h-5 w-5 text-yellow-500" />;
+        return <Crown className="h-5 w-5 text-warning" />;
       case 2:
-        return <Medal className="h-5 w-5 text-gray-400" />;
+        return <Medal className="h-5 w-5 text-muted-foreground" />;
       case 3:
-        return <Medal className="h-5 w-5 text-amber-600" />;
+        return <Medal className="h-5 w-5 text-warning/80" />
       default:
-        return <span className="text-sm font-bold text-muted-foreground">{rank}º</span>;
+        return <span className="text-sm font-bold text-muted-foreground">{rank}Âº</span>;
     }
   };
 
@@ -137,11 +137,11 @@ export default function FamilyLeaderboard() {
     if (isCurrentUser) return "bg-primary/10 border-primary/30";
     switch (rank) {
       case 1:
-        return "bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30";
+        return "bg-gradient-to-r from-warning/10 to-warning/5 border-warning/30";
       case 2:
-        return "bg-gray-500/5 border-gray-500/20";
+        return "bg-muted/30 border-muted/40";
       case 3:
-        return "bg-amber-500/5 border-amber-500/20";
+        return "bg-warning/5 border-warning/20"
       default:
         return "bg-card";
     }
@@ -227,7 +227,7 @@ export default function FamilyLeaderboard() {
               </div>
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Flame className="h-3 w-3 text-orange-500" />
+                  <Flame className="h-3 w-3 text-warning" />
                   {member.streak} {t.streak}
                 </span>
                 <span>{member.adherenceRate}% {t.adherence}</span>
@@ -236,7 +236,7 @@ export default function FamilyLeaderboard() {
 
             {/* XP */}
             <div className="text-right">
-              <div className="flex items-center gap-1 text-yellow-600">
+              <div className="flex items-center gap-1 text-warning">
                 <Star className="h-4 w-4" />
                 <span className="font-bold">{member.weeklyXP}</span>
               </div>
@@ -248,3 +248,4 @@ export default function FamilyLeaderboard() {
     </Card>
   );
 }
+

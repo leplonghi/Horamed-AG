@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Hook to ensure dose instances are generated for the user's medications
  * This runs on app initialization and periodically to keep doses up-to-date
  */
@@ -37,7 +37,7 @@ export function useDoseGeneration() {
       // First, check if user has any active schedules
       const { data: schedules } = await fetchCollection(
         `users/${user.uid}/schedules`,
-        [where('isActive', '==', true)]
+        []
       );
 
       if (!schedules || schedules.length === 0) {
@@ -55,8 +55,8 @@ export function useDoseGeneration() {
         "dose_instances",
         [
           where("userId", "==", user.uid),
-          where("dueAt", ">=", todayStart),
-          where("dueAt", "<=", todayEnd),
+          where("dueAt", ">=", todayStart.toISOString()),
+          where("dueAt", "<=", todayEnd.toISOString()),
         ]
       );
 
@@ -65,8 +65,8 @@ export function useDoseGeneration() {
         [
           where("userId", "==", user.uid),
           where("status", "==", "scheduled"),
-          where("dueAt", ">", todayEnd),
-          where("dueAt", "<=", next7Days),
+          where("dueAt", ">", todayEnd.toISOString()),
+          where("dueAt", "<=", next7Days.toISOString()),
         ]
       );
 
@@ -132,3 +132,4 @@ export function useDoseGeneration() {
 
   return { generateDoses };
 }
+

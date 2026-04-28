@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -152,8 +152,8 @@ export default function ImprovedCalendar({
             collection(db, "doses"),
             where("userId", "==", user.uid),
             where("itemId", "in", itemIds),
-            where("dueAt", ">=", dayStart),
-            where("dueAt", "<=", dayEnd),
+            where("dueAt", ">=", dayStart.toISOString()),
+            where("dueAt", "<=", dayEnd.toISOString()),
             orderBy("dueAt", "asc"),
             firestoreLimit(5)
           );
@@ -216,9 +216,9 @@ export default function ImprovedCalendar({
                     key={idx}
                     className={cn(
                       "flex items-center gap-2 p-2 rounded-lg text-xs transition-colors",
-                      dose.status === "taken" && "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20",
-                      dose.status === "scheduled" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
-                      dose.status === "missed" && "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
+                      dose.status === "taken" && "bg-success/10 text-success border border-success/20",
+                      dose.status === "scheduled" && "bg-primary/10 text-primary border border-primary/20",
+                      dose.status === "missed" && "bg-destructive/10 text-destructive border border-destructive/20"
                     )}
                   >
                     <Clock className="h-3.5 w-3.5 shrink-0 opacity-70" />
@@ -323,7 +323,7 @@ export default function ImprovedCalendar({
             "relative flex flex-col items-center justify-center",
             "w-36 h-36 rounded-[2.5rem] transition-all duration-500 shadow-xl",
             isDayToday 
-              ? "bg-gradient-to-br from-primary via-primary/90 to-blue-600 text-primary-foreground scale-105" 
+              ? "bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground scale-105" 
               : "bg-gradient-to-br from-accent to-accent/50 border border-primary/5"
           )}
         >
@@ -370,7 +370,7 @@ export default function ImprovedCalendar({
                   "w-full flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-300",
                   "hover:bg-accent/80 hover:scale-105 active:scale-95",
                   isSelected 
-                    ? "bg-gradient-to-br from-primary to-blue-600 text-primary-foreground shadow-lg shadow-primary/25 z-0" 
+                    ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/25 z-0" 
                     : "bg-background border border-accent/50",
                   isDayToday && !isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
                 )}
@@ -433,7 +433,7 @@ export default function ImprovedCalendar({
                     "w-full aspect-square p-2 rounded-xl transition-all duration-300 flex items-center justify-center relative",
                     "hover:bg-accent/80 hover:scale-110 active:scale-95",
                     isSelected 
-                      ? "bg-gradient-to-br from-primary to-blue-600 text-primary-foreground shadow-lg z-0" 
+                      ? "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg z-0" 
                       : "bg-background border border-accent/30",
                     isDayToday && !isSelected && "ring-2 ring-primary ring-inset",
                     !isCurrentMonth && "opacity-20 grayscale-[0.8]"
@@ -504,3 +504,4 @@ export default function ImprovedCalendar({
     </Card>
   );
 }
+

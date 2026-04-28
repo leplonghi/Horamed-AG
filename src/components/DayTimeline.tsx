@@ -1,4 +1,4 @@
-import { Card, CardContent } from "@/components/ui/card";
+﻿import { Card, CardContent } from "@/components/ui/card";
 import { format, isToday } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { Check, CalendarBlank as Calendar, Stethoscope, TestTube, Pill, DotsThreeOutlineVertical } from "@phosphor-icons/react";
@@ -58,42 +58,42 @@ export default function DayTimeline({
 
     // Base styles (Clean Blue Theme)
     const base = {
-      card: "bg-white/80 backdrop-blur-sm border-0 shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5",
-      iconBox: "bg-blue-100/50 text-blue-600",
-      title: "text-slate-800",
-      subtitle: "text-slate-500",
-      timeBadge: "bg-blue-50 text-blue-600 font-extrabold"
+      card: "bg-card/80 backdrop-blur-sm border-0 shadow-clean-sm hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5",
+      iconBox: "bg-primary/10 text-primary",
+      title: "text-foreground",
+      subtitle: "text-muted-foreground",
+      timeBadge: "bg-primary/10 text-primary font-extrabold"
     };
 
     if (type === "medication") {
-      base.iconBox = "bg-blue-100 text-blue-600";
+      base.iconBox = "bg-primary/15 text-primary";
     } else if (type === "appointment") {
-      base.iconBox = "bg-indigo-100 text-indigo-600";
-      base.timeBadge = "bg-indigo-50 text-indigo-600";
+      base.iconBox = "bg-accent/15 text-accent";
+      base.timeBadge = "bg-accent/10 text-accent";
     } else if (type === "exam") {
-      base.iconBox = "bg-sky-100 text-sky-600";
-      base.timeBadge = "bg-sky-50 text-sky-600";
+      base.iconBox = "bg-gradient-mid/15 text-gradient-mid";
+      base.timeBadge = "bg-gradient-mid/10 text-gradient-mid";
     } else if (type === "procedure") {
-      base.iconBox = "bg-emerald-100 text-emerald-600";
-      base.timeBadge = "bg-emerald-50 text-emerald-600";
+      base.iconBox = "bg-success/15 text-success";
+      base.timeBadge = "bg-success/10 text-success";
     }
 
     if (isDone) {
       return {
-        card: "bg-slate-100/40 border-0 opacity-50 shadow-none",
-        iconBox: "bg-slate-200 text-slate-400",
-        title: "text-slate-400 line-through",
-        subtitle: "text-slate-300",
-        timeBadge: "bg-slate-100 text-slate-300"
+        card: "bg-muted/40 border-0 opacity-50 shadow-none",
+        iconBox: "bg-muted text-muted-foreground/50",
+        title: "text-muted-foreground/50 line-through",
+        subtitle: "text-muted-foreground/30",
+        timeBadge: "bg-slate-100 text-muted-foreground/30"
       };
     }
 
     if (status === "missed") {
       return {
         ...base,
-        card: "bg-red-50/40 border border-red-100/50",
-        iconBox: "bg-red-100 text-red-500",
-        timeBadge: "bg-red-50 text-red-500"
+        card: "bg-destructive/10 border border-destructive/20",
+        iconBox: "bg-destructive/15 text-destructive",
+        timeBadge: "bg-destructive/10 text-destructive"
       }
     }
 
@@ -115,16 +115,16 @@ export default function DayTimeline({
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center p-8 bg-white/40 rounded-3xl border border-dashed border-slate-200 text-center"
+            className="flex flex-col items-center justify-center p-8 bg-card/40 rounded-3xl border border-dashed border-border text-center"
           >
-            <div className="h-12 w-12 bg-slate-100/50 rounded-full flex items-center justify-center mb-3 text-slate-400">
+            <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mb-3 text-muted-foreground">
               <Calendar className="h-6 w-6" />
             </div>
-            <p className="text-slate-600 font-bold mb-0.5 text-base">
+            <p className="text-foreground font-bold mb-0.5 text-base">
               {language === 'pt' ? 'Nenhum medicamento agendado' : 'No medications scheduled'}
             </p>
-            <p className="text-xs text-slate-400">
-              {language === 'pt' ? 'Adicione medicamentos para começar' : 'Add medications to get started'}
+            <p className="text-xs text-muted-foreground">
+              {language === 'pt' ? 'Adicione medicamentos para comeÃ§ar' : 'Add medications to get started'}
             </p>
           </motion.div>
         ) : (
@@ -230,3 +230,4 @@ export default function DayTimeline({
     </div>
   );
 }
+

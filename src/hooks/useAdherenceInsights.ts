@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+﻿import { useState, useEffect, useCallback, useRef } from "react";
 import { format, subDays, startOfDay, endOfDay } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
@@ -57,14 +57,14 @@ export function useAdherenceInsights(windowDays = 7) {
 
     try {
       const { data } = await fetchCollection<Dose>(`${basePath}/doses`, [
-        where("dueAt", ">=", windowStart),
-        where("dueAt", "<=", windowEnd),
+        where("dueAt", ">=", windowStart.toISOString()),
+        where("dueAt", "<=", windowEnd.toISOString()),
         orderBy("dueAt", "asc"),
       ]);
 
       const doses = data ?? [];
 
-      // ── Build per-day buckets ────────────────────────────────────────────
+      // â”€â”€ Build per-day buckets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const buckets: Record<string, { taken: number; total: number }> = {};
 
       // Pre-fill all days so days with no doses still appear in history
@@ -84,7 +84,7 @@ export function useAdherenceInsights(windowDays = 7) {
         if (dose.status === "taken") buckets[dayKey].taken += 1;
       }
 
-      // ── Summarise ───────────────────────────────────────────────────────
+      // â”€â”€ Summarise â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
       const history = Object.entries(buckets).map(([date, { taken, total }]) => ({
         date,
         rate: total > 0 ? taken / total : 0,
@@ -93,13 +93,13 @@ export function useAdherenceInsights(windowDays = 7) {
       const totalTaken = doses.filter((d) => d.status === "taken").length;
       const totalDoses = doses.length;
 
-      // ── Streak (consecutive complete days going back from today) ─────────
+      // â”€â”€ Streak (consecutive complete days going back from today) â”€â”€â”€â”€â”€â”€â”€â”€â”€
       let streak = 0;
       const dayKeys = Object.keys(buckets).sort().reverse();
 
       for (const key of dayKeys) {
         const { taken, total } = buckets[key];
-        if (total === 0) break; // No meds scheduled → don't break streak
+        if (total === 0) break; // No meds scheduled â†’ don't break streak
         if (taken < total) break;
         streak++;
       }
@@ -112,7 +112,7 @@ export function useAdherenceInsights(windowDays = 7) {
         history,
       });
     } catch {
-      // Non-critical — keep previous stats
+      // Non-critical â€” keep previous stats
     } finally {
       setLoading(false);
     }
@@ -128,3 +128,4 @@ export function useAdherenceInsights(windowDays = 7) {
 
   return { ...stats, loading, refresh: compute };
 }
+

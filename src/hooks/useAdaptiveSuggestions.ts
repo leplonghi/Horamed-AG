@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchCollection, where, orderBy, limit } from '@/integrations/firebase';
 import { differenceInDays } from 'date-fns';
@@ -26,7 +26,7 @@ interface AdaptiveSuggestion {
 }
 
 /**
- * Hook para gerar sugestões adaptativas baseadas no comportamento do usuário
+ * Hook para gerar sugestÃµes adaptativas baseadas no comportamento do usuÃ¡rio
  */
 export const useAdaptiveSuggestions = () => {
   const [suggestions, setSuggestions] = useState<AdaptiveSuggestion[]>([]);
@@ -46,7 +46,7 @@ export const useAdaptiveSuggestions = () => {
         const { data: doses, error } = await fetchCollection<DoseDoc>(
           "dose_instances",
           [where("userId", "==", user.uid), 
-            where('dueAt', '>=', sevenDaysAgo), // Changed to ISO comparison
+            where('dueAt', '>=', sevenDaysAgo.toISOString()), // Changed to ISO comparison
             orderBy('dueAt', 'desc'),
             limit(100)
           ]
@@ -97,7 +97,7 @@ export const useAdaptiveSuggestions = () => {
 
             newSuggestions.push({
               type: 'reschedule',
-              message: `Você costuma tomar ${name} com ${avgDelayHours}h${avgDelayMinutes}min de atraso. Quer ajustar o horário?`,
+              message: `VocÃª costuma tomar ${name} com ${avgDelayHours}h${avgDelayMinutes}min de atraso. Quer ajustar o horÃ¡rio?`,
               itemId,
               itemName: name,
             });
@@ -124,7 +124,7 @@ export const useAdaptiveSuggestions = () => {
           if (currentStreak >= 7 && currentStreak % 7 === 0) {
             newSuggestions.push({
               type: 'streak_motivation',
-              message: `🔥 Incrível! ${currentStreak} doses seguidas de ${name}. Continue assim!`,
+              message: `ðŸ”¥ IncrÃ­vel! ${currentStreak} doses seguidas de ${name}. Continue assim!`,
               itemId,
               itemName: name,
             });
@@ -150,3 +150,4 @@ export const useAdaptiveSuggestions = () => {
 
   return { suggestions };
 };
+

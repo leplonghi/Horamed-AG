@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import logoImageSrc from "@/assets/logo_HoraMed.png";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -111,7 +111,7 @@ export default function MedicalReports() {
 
       // 4. Fetch Dose Instances
       const { data: doses } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
-        where('dueAt', '>=', startDate),
+        where('dueAt', '>=', startDate.toISOString()),
         orderBy('dueAt', 'desc')
       ]);
 
@@ -236,14 +236,14 @@ export default function MedicalReports() {
               <ChevronLeft className="h-5 w-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground">Relatórios Médicos</h1>
-              <p className="text-sm text-muted-foreground">Gere relatórios profissionais em PDF</p>
+              <h1 className="text-2xl font-bold text-foreground">RelatÃ³rios MÃ©dicos</h1>
+              <p className="text-sm text-muted-foreground">Gere relatÃ³rios profissionais em PDF</p>
             </div>
             {isPremium && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => shareTextViaWhatsApp('Acompanhe meu tratamento pelo HoraMed — relatórios profissionais de medicamentos e aderência.')}
+                onClick={() => shareTextViaWhatsApp('Acompanhe meu tratamento pelo HoraMed â€” relatÃ³rios profissionais de medicamentos e aderÃªncia.')}
                 className="gap-1.5 shrink-0"
               >
                 <Share2 className="h-4 w-4" />
@@ -260,7 +260,7 @@ export default function MedicalReports() {
                 <div className="flex-1">
                   <h3 className="font-semibold text-foreground mb-1">Recurso Premium</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    A geração de relatórios médicos está disponível apenas para usuários Premium.
+                    A geraÃ§Ã£o de relatÃ³rios mÃ©dicos estÃ¡ disponÃ­vel apenas para usuÃ¡rios Premium.
                   </p>
                   <Button size="sm" onClick={() => navigate('/planos')}>
                     Ver Planos Premium
@@ -274,27 +274,27 @@ export default function MedicalReports() {
           <Card className="p-4">
             <div className="flex items-center gap-3 mb-3">
               <Calendar className="h-5 w-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Período do Relatório</h3>
+              <h3 className="font-semibold text-foreground">PerÃ­odo do RelatÃ³rio</h3>
             </div>
             <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione o período" />
+                <SelectValue placeholder="Selecione o perÃ­odo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7">Últimos 7 dias</SelectItem>
-                <SelectItem value="15">Últimos 15 dias</SelectItem>
-                <SelectItem value="30">Últimos 30 dias</SelectItem>
-                <SelectItem value="60">Últimos 60 dias</SelectItem>
-                <SelectItem value="90">Últimos 90 dias</SelectItem>
-                <SelectItem value="180">Últimos 6 meses</SelectItem>
-                <SelectItem value="365">Último ano</SelectItem>
+                <SelectItem value="7">Ãšltimos 7 dias</SelectItem>
+                <SelectItem value="15">Ãšltimos 15 dias</SelectItem>
+                <SelectItem value="30">Ãšltimos 30 dias</SelectItem>
+                <SelectItem value="60">Ãšltimos 60 dias</SelectItem>
+                <SelectItem value="90">Ãšltimos 90 dias</SelectItem>
+                <SelectItem value="180">Ãšltimos 6 meses</SelectItem>
+                <SelectItem value="365">Ãšltimo ano</SelectItem>
               </SelectContent>
             </Select>
           </Card>
 
           {/* Report Types */}
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground px-2">Tipos de Relatório</h2>
+            <h2 className="text-lg font-semibold text-foreground px-2">Tipos de RelatÃ³rio</h2>
 
             {/* Complete Report */}
             <Card className="p-4 hover:shadow-md transition-shadow">
@@ -303,9 +303,9 @@ export default function MedicalReports() {
                   <FileText className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-1">Relatório Completo</h3>
+                  <h3 className="font-semibold text-foreground mb-1">RelatÃ³rio Completo</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Documento completo com todos os dados: perfil de saúde, medicamentos, estoque, agendamentos, histórico de aderência e evolução de saúde.
+                    Documento completo com todos os dados: perfil de saÃºde, medicamentos, estoque, agendamentos, histÃ³rico de aderÃªncia e evoluÃ§Ã£o de saÃºde.
                   </p>
                   <Button
                     className="w-full"
@@ -313,7 +313,7 @@ export default function MedicalReports() {
                     disabled={!isPremium || isGenerating}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Gerar Relatório Completo
+                    Gerar RelatÃ³rio Completo
                   </Button>
                 </div>
               </div>
@@ -326,9 +326,9 @@ export default function MedicalReports() {
                   <Pill className="h-6 w-6 text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-1">Relatório de Medicamentos</h3>
+                  <h3 className="font-semibold text-foreground mb-1">RelatÃ³rio de Medicamentos</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Documento focado em medicamentos: lista detalhada com dosagens, horários, frequências, observações e controle de estoque.
+                    Documento focado em medicamentos: lista detalhada com dosagens, horÃ¡rios, frequÃªncias, observaÃ§Ãµes e controle de estoque.
                   </p>
                   <Button
                     variant="outline"
@@ -337,7 +337,7 @@ export default function MedicalReports() {
                     disabled={!isPremium || isGenerating}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Gerar Relatório de Medicamentos
+                    Gerar RelatÃ³rio de Medicamentos
                   </Button>
                 </div>
               </div>
@@ -350,9 +350,9 @@ export default function MedicalReports() {
                   <Clock className="h-6 w-6 text-success" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-1">Relatório de Aderência</h3>
+                  <h3 className="font-semibold text-foreground mb-1">RelatÃ³rio de AderÃªncia</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Análise completa da aderência ao tratamento: estatísticas, gráficos, doses tomadas, perdidas e padrões de comportamento.
+                    AnÃ¡lise completa da aderÃªncia ao tratamento: estatÃ­sticas, grÃ¡ficos, doses tomadas, perdidas e padrÃµes de comportamento.
                   </p>
                   <Button
                     variant="outline"
@@ -361,7 +361,7 @@ export default function MedicalReports() {
                     disabled={!isPremium || isGenerating}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Gerar Relatório de Aderência
+                    Gerar RelatÃ³rio de AderÃªncia
                   </Button>
                 </div>
               </div>
@@ -374,9 +374,9 @@ export default function MedicalReports() {
                   <Activity className="h-6 w-6 text-warning" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground mb-1">Relatório de Saúde</h3>
+                  <h3 className="font-semibold text-foreground mb-1">RelatÃ³rio de SaÃºde</h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    Acompanhamento da evolução de saúde: histórico de peso, altura, IMC e dados vitais ao longo do tempo.
+                    Acompanhamento da evoluÃ§Ã£o de saÃºde: histÃ³rico de peso, altura, IMC e dados vitais ao longo do tempo.
                   </p>
                   <Button
                     variant="outline"
@@ -385,7 +385,7 @@ export default function MedicalReports() {
                     disabled={!isPremium || isGenerating}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    Gerar Relatório de Saúde
+                    Gerar RelatÃ³rio de SaÃºde
                   </Button>
                 </div>
               </div>
@@ -398,13 +398,13 @@ export default function MedicalReports() {
               <FileCheck className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="text-sm text-muted-foreground space-y-2">
                 <p>
-                  <strong className="text-foreground">Importante:</strong> Estes relatórios são documentos informativos gerados com base nos dados cadastrados no aplicativo.
+                  <strong className="text-foreground">Importante:</strong> Estes relatÃ³rios sÃ£o documentos informativos gerados com base nos dados cadastrados no aplicativo.
                 </p>
                 <p>
-                  • Os relatórios podem ser compartilhados com seu médico durante consultas
+                  â€¢ Os relatÃ³rios podem ser compartilhados com seu mÃ©dico durante consultas
                 </p>
                 <p>
-                  • Todos os dados são processados localmente no seu dispositivo
+                  â€¢ Todos os dados sÃ£o processados localmente no seu dispositivo
                 </p>
               </div>
             </div>
@@ -416,3 +416,4 @@ export default function MedicalReports() {
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { auth, fetchCollection, where, query, orderBy } from "@/integrations/firebase";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -59,7 +59,7 @@ export default function Charts() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Mantém check de subscription, mas respeita feature flag também
+    // MantÃ©m check de subscription, mas respeita feature flag tambÃ©m
     if (!hasFeature('charts')) {
       setShowUpgradeModal(true);
     } else {
@@ -122,7 +122,7 @@ export default function Charts() {
       const startDateStr = startDate.toISOString();
 
       // Fetch doses
-      const filters = [where("dueAt", ">=", startDateStr)];
+      const filters = [where("dueAt", ">=", startDateStr.toISOString())];
       if (activeProfile) {
         filters.push(where("profileId", "==", activeProfile.id));
       }
@@ -388,10 +388,10 @@ export default function Charts() {
                         stats.weeklyAdherence >= 70 ? 'text-warning' :
                           'text-destructive'
                     }`}>
-                    {stats.weeklyAdherence >= 90 ? `🎯 ${t('charts.excellent')}` :
-                      stats.weeklyAdherence >= 80 ? `👍 ${t('charts.veryGood')}` :
-                        stats.weeklyAdherence >= 70 ? `💪 ${t('charts.good')}` :
-                          `⚠️ ${t('charts.needsImprovement')}`}
+                    {stats.weeklyAdherence >= 90 ? `ðŸŽ¯ ${t('charts.excellent')}` :
+                      stats.weeklyAdherence >= 80 ? `ðŸ‘ ${t('charts.veryGood')}` :
+                        stats.weeklyAdherence >= 70 ? `ðŸ’ª ${t('charts.good')}` :
+                          `âš ï¸ ${t('charts.needsImprovement')}`}
                   </p>
                 </div>
                 <div className="h-14 w-14 rounded-full bg-primary/20 flex items-center justify-center">
@@ -567,7 +567,7 @@ export default function Charts() {
             <div className="space-y-3">
               <div className="p-3 bg-background rounded-lg">
                 <p className="font-medium mb-1 flex items-center gap-2">
-                  {stats.weeklyAdherence >= 90 ? '🌟' : stats.weeklyAdherence >= 80 ? '👍' : stats.weeklyAdherence >= 70 ? '😊' : '⚠️'}
+                  {stats.weeklyAdherence >= 90 ? 'ðŸŒŸ' : stats.weeklyAdherence >= 80 ? 'ðŸ‘' : stats.weeklyAdherence >= 70 ? 'ðŸ˜Š' : 'âš ï¸'}
                   <span>Status Geral</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -640,3 +640,4 @@ export default function Charts() {
     </>
   );
 }
+

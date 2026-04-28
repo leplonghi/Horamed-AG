@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { auth, fetchCollection, where, updateDocument } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -55,8 +55,8 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             const { data: doses, error } = await fetchCollection<DoseDoc>(
                 "dose_instances",
                 [where("userId", "==", user.uid), 
-                    where("dueAt", ">=", startOfWeek),
-                    where("dueAt", "<=", endOfWeek)
+                    where("dueAt", ">=", startOfWeek.toISOString()),
+                    where("dueAt", "<=", endOfWeek.toISOString())
                 ]
             );
 
@@ -114,8 +114,8 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
 
             toast.success(
                 language === 'pt'
-                    ? `Marcado como ${statusText}${variables.newStatus === 'taken' ? ' 💚' : ''}`
-                    : `Marked as ${statusText}${variables.newStatus === 'taken' ? ' 💚' : ''}`
+                    ? `Marcado como ${statusText}${variables.newStatus === 'taken' ? ' ðŸ’š' : ''}`
+                    : `Marked as ${statusText}${variables.newStatus === 'taken' ? ' ðŸ’š' : ''}`
             );
             queryClient.invalidateQueries({ queryKey: ["weekly-doses"] });
         },
@@ -129,3 +129,4 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
         updateDoseStatus: updateStatusMutation.mutateAsync
     };
 }
+

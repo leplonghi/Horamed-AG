@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+﻿import { useEffect, useState, useCallback, useRef } from "react";
 import { PushNotifications, ActionPerformed } from "@capacitor/push-notifications";
 import { LocalNotifications, LocalNotificationSchema, ScheduleEvery } from "@capacitor/local-notifications";
 import { Capacitor } from "@capacitor/core";
@@ -120,7 +120,7 @@ export const usePushNotifications = () => {
       await LocalNotifications.createChannel({
         id: CHANNEL_ID,
         name: "Lembretes de Medicamentos",
-        description: "Notificações para lembrar de tomar medicamentos",
+        description: "NotificaÃ§Ãµes para lembrar de tomar medicamentos",
         importance: 5, // IMPORTANCE_HIGH
         visibility: 1, // PUBLIC
         sound: "default",
@@ -137,17 +137,17 @@ export const usePushNotifications = () => {
             actions: [
               {
                 id: "taken",
-                title: "✓ Tomei",
+                title: "âœ“ Tomei",
                 foreground: true,
               },
               {
                 id: "snooze",
-                title: "⏰ 15 min",
+                title: "â° 15 min",
                 foreground: false,
               },
               {
                 id: "skip",
-                title: "→ Pular",
+                title: "â†’ Pular",
                 foreground: false,
                 destructive: true,
               },
@@ -158,7 +158,7 @@ export const usePushNotifications = () => {
             actions: [
               {
                 id: "view",
-                title: "📊 Ver Resumo",
+                title: "ðŸ“Š Ver Resumo",
                 foreground: true,
               },
             ],
@@ -365,7 +365,7 @@ export const usePushNotifications = () => {
     if (!isNativePlatform) {
       // Check if browser supports notifications
       if (!("Notification" in window)) {
-        toast.error("Este navegador não suporta notificações.");
+        toast.error("Este navegador nÃ£o suporta notificaÃ§Ãµes.");
         return false;
       }
 
@@ -373,7 +373,7 @@ export const usePushNotifications = () => {
         const permission = await Notification.requestPermission();
 
         if (permission === 'granted') {
-          toast.success("Notificações ativadas!");
+          toast.success("NotificaÃ§Ãµes ativadas!");
 
           if ('serviceWorker' in navigator) {
             const registration = await navigator.serviceWorker.ready;
@@ -385,12 +385,12 @@ export const usePushNotifications = () => {
 
           return true;
         } else {
-          toast.error("Permissão de notificação negada.");
+          toast.error("PermissÃ£o de notificaÃ§Ã£o negada.");
           return false;
         }
       } catch (error) {
         console.error("Error requesting web permissions:", error);
-        toast.error("Erro ao solicitar permissões.");
+        toast.error("Erro ao solicitar permissÃµes.");
         return false;
       }
     }
@@ -404,12 +404,12 @@ export const usePushNotifications = () => {
         await scheduleNext48Hours();
         return true;
       } else {
-        toast.error("Permissão de notificação necessária");
+        toast.error("PermissÃ£o de notificaÃ§Ã£o necessÃ¡ria");
         return false;
       }
     } catch (error) {
       console.error("Error requesting native permissions:", error);
-      toast.error("Erro ao ativar notificações");
+      toast.error("Erro ao ativar notificaÃ§Ãµes");
       return false;
     }
   };
@@ -432,8 +432,8 @@ export const usePushNotifications = () => {
       "dose_instances",
       [where("userId", "==", user.uid), 
         where('status', '==', 'scheduled'),
-        where('dueAt', '>=', start),
-        where('dueAt', '<=', end),
+        where('dueAt', '>=', start.toISOString()),
+        where('dueAt', '<=', end.toISOString()),
         orderBy('dueAt', 'asc') // Firestore requires composite index for this
       ]
     );
@@ -478,9 +478,9 @@ export const usePushNotifications = () => {
         });
 
         const hour = dueDate.getHours();
-        const timeEmoji = hour >= 5 && hour < 12 ? '🌅' :
-          hour >= 12 && hour < 18 ? '☀️' :
-            hour >= 18 && hour < 21 ? '🌆' : '🌙';
+        const timeEmoji = hour >= 5 && hour < 12 ? 'ðŸŒ…' :
+          hour >= 12 && hour < 18 ? 'â˜€ï¸' :
+            hour >= 18 && hour < 21 ? 'ðŸŒ†' : 'ðŸŒ™';
 
         alertMinutes.forEach((minutesBefore) => {
           const scheduledAt = minutesBefore > 0 ? subMinutes(dueDate, minutesBefore) : dueDate;
@@ -492,11 +492,11 @@ export const usePushNotifications = () => {
 
           const title = minutesBefore === 0
             ? `${timeEmoji} ${notificationConfig.title}`
-            : `⏰ ${itemData.name} em ${minutesBefore} min`;
+            : `â° ${itemData.name} em ${minutesBefore} min`;
 
           const body = minutesBefore === 0
             ? `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`
-            : `${itemData.doseText || 'Prepare sua próxima dose.'}`;
+            : `${itemData.doseText || 'Prepare sua prÃ³xima dose.'}`;
 
           const timeoutId = window.setTimeout(() => {
             if (Notification.permission === 'granted' && !isInQuietHours(new Date())) {
@@ -550,8 +550,8 @@ export const usePushNotifications = () => {
       if (dose?.status === 'scheduled') {
         // Dose still not taken, repeat notification
         if ('Notification' in window && Notification.permission === 'granted') {
-          const notification = new Notification(`⚠️ Lembrete: ${config.title}`, {
-            body: `Você ainda não tomou ${itemName}`,
+          const notification = new Notification(`âš ï¸ Lembrete: ${config.title}`, {
+            body: `VocÃª ainda nÃ£o tomou ${itemName}`,
             icon: '/favicon.png',
             tag: `dose-repeat-${doseId}`,
             requireInteraction: true,
@@ -606,7 +606,7 @@ export const usePushNotifications = () => {
 
           if (pushPermStatus.receive === "granted") {
             await PushNotifications.register();
-            toast.success("✓ Notificações push ativadas!", { duration: 2000 });
+            toast.success("âœ“ NotificaÃ§Ãµes push ativadas!", { duration: 2000 });
           } else if (pushPermStatus.receive === "denied") {
             const deniedEvent = new CustomEvent('native-notification-denied');
             window.dispatchEvent(deniedEvent);
@@ -648,7 +648,7 @@ export const usePushNotifications = () => {
         "pushNotificationReceived",
         (notification) => {
           if (!isInQuietHours(new Date())) {
-            toast.info(notification.title || "💊 Lembrete de Medicamento", {
+            toast.info(notification.title || "ðŸ’Š Lembrete de Medicamento", {
               description: notification.body,
               duration: 5000,
             });
@@ -711,7 +711,7 @@ export const usePushNotifications = () => {
 
       if (!isOnline) {
         saveOfflineAction(doseId, action);
-        toast.info(`⏸️ Ação salva (offline). Sincronizará quando conectar.`, { duration: 3000 });
+        toast.info(`â¸ï¸ AÃ§Ã£o salva (offline). SincronizarÃ¡ quando conectar.`, { duration: 3000 });
         return;
       }
 
@@ -722,20 +722,20 @@ export const usePushNotifications = () => {
       });
 
       if (action === 'taken') {
-        toast.success(data.message || '✅ Dose marcada!', {
-          description: data.streak > 3 ? `🔥 ${data.streak} dias seguidos!` : undefined,
+        toast.success(data.message || 'âœ… Dose marcada!', {
+          description: data.streak > 3 ? `ðŸ”¥ ${data.streak} dias seguidos!` : undefined,
           duration: 3000
         });
       } else if (action === 'snooze') {
-        toast.info(data.message || '⏰ Lembrete adiado 15 minutos', { duration: 2000 });
+        toast.info(data.message || 'â° Lembrete adiado 15 minutos', { duration: 2000 });
         await scheduleSnoozeNotification(doseId, 15);
       } else if (action === 'skip') {
-        toast.info('→ Dose pulada', { duration: 2000 });
+        toast.info('â†’ Dose pulada', { duration: 2000 });
       }
     } catch (error) {
       console.error('Error handling dose action:', error);
       saveOfflineAction(doseId, action);
-      toast.error('Erro. Salvamos sua ação e tentaremos novamente.', { duration: 3000 });
+      toast.error('Erro. Salvamos sua aÃ§Ã£o e tentaremos novamente.', { duration: 3000 });
     }
   };
 
@@ -839,9 +839,9 @@ export const usePushNotifications = () => {
         });
 
         const hour = dueDate.getHours();
-        const timeEmoji = hour >= 5 && hour < 12 ? '🌅' :
-          hour >= 12 && hour < 18 ? '☀️' :
-            hour >= 18 && hour < 21 ? '🌆' : '🌙';
+        const timeEmoji = hour >= 5 && hour < 12 ? 'ðŸŒ…' :
+          hour >= 12 && hour < 18 ? 'â˜€ï¸' :
+            hour >= 18 && hour < 21 ? 'ðŸŒ†' : 'ðŸŒ™';
 
         return alertMinutes
           .map((minutesBefore) => {
@@ -854,19 +854,19 @@ export const usePushNotifications = () => {
             const isExactTime = minutesBefore === 0;
             const title = isExactTime
               ? `${timeEmoji} ${notificationConfig.title}`
-              : `⏰ ${itemData.name} em ${minutesBefore} min`;
+              : `â° ${itemData.name} em ${minutesBefore} min`;
 
             const body = isExactTime
               ? `${itemData.name}${itemData.doseText ? ` - ${itemData.doseText}` : ''}`
-              : `${itemData.doseText || 'Prepare sua próxima dose.'}`;
+              : `${itemData.doseText || 'Prepare sua prÃ³xima dose.'}`;
 
             return {
               id: createNotificationId(`${dose.id}-${minutesBefore}`),
               title,
               body,
               largeBody: isExactTime
-                ? `Está na hora de tomar ${itemData.name}.${itemData.doseText ? `\nDose: ${itemData.doseText}` : ''}`
-                : `Seu lembrete de ${itemData.name} será em ${minutesBefore} minutos.`,
+                ? `EstÃ¡ na hora de tomar ${itemData.name}.${itemData.doseText ? `\nDose: ${itemData.doseText}` : ''}`
+                : `Seu lembrete de ${itemData.name} serÃ¡ em ${minutesBefore} minutos.`,
               summaryText: "HoraMed",
               schedule: { at: scheduledAt },
               channelId: CHANNEL_ID,
@@ -915,7 +915,7 @@ export const usePushNotifications = () => {
         const timeUntilSnooze = snoozeTime.getTime() - Date.now();
         setTimeout(() => {
           if ('Notification' in window && Notification.permission === 'granted') {
-            const notification = new Notification(`⏰ Lembrete Adiado`, {
+            const notification = new Notification(`â° Lembrete Adiado`, {
               body: `${itemData?.name || 'Medicamento'}${itemData?.doseText ? ` - ${itemData.doseText}` : ''}`,
               icon: '/favicon.png',
               tag: `snooze-${doseId}`,
@@ -934,9 +934,9 @@ export const usePushNotifications = () => {
       await LocalNotifications.schedule({
         notifications: [{
           id: Date.now(),
-          title: `⏰ Lembrete Adiado`,
+          title: `â° Lembrete Adiado`,
           body: `${itemData?.name || 'Medicamento'}${itemData?.doseText ? ` - ${itemData.doseText}` : ''}`,
-          largeBody: `Você adiou este lembrete. Hora de tomar ${itemData?.name || 'seu medicamento'}.`,
+          largeBody: `VocÃª adiou este lembrete. Hora de tomar ${itemData?.name || 'seu medicamento'}.`,
           summaryText: "HoraMed",
           schedule: { at: snoozeTime },
           channelId: CHANNEL_ID,
@@ -1022,9 +1022,9 @@ export const usePushNotifications = () => {
       await LocalNotifications.schedule({
         notifications: [{
           id: 999999,
-          title: "📊 Resumo do Dia",
+          title: "ðŸ“Š Resumo do Dia",
           body: "Veja seu progresso e doses pendentes",
-          largeBody: "Confira como foi seu dia com os medicamentos e veja se há doses pendentes.",
+          largeBody: "Confira como foi seu dia com os medicamentos e veja se hÃ¡ doses pendentes.",
           summaryText: "HoraMed",
           schedule: { at: summaryTime, repeats: true, every: "day" as ScheduleEvery },
           channelId: CHANNEL_ID,
@@ -1108,3 +1108,4 @@ export const usePushNotifications = () => {
     requestNotificationPermission,
   };
 };
+

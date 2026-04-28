@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+﻿import { useState, useEffect, useCallback } from "react";
 import { auth, fetchCollection, fetchDocument, updateDocument, where } from "@/integrations/firebase";
 import { useRewardHistory } from "@/hooks/useRewardHistory";
 import { startOfDay, subDays, startOfWeek } from "date-fns";
@@ -76,8 +76,8 @@ export function useStreakProtection() {
       const { data: yesterdayDoses } = await fetchCollection<any>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where("dueAt", ">=", yesterday),
-          where("dueAt", "<", startOfDay(new Date()))
+          where("dueAt", ">=", yesterday.toISOString()),
+          where("dueAt", "<", startOfDay(new Date()).toISOString())
         ]
       );
 
@@ -138,7 +138,7 @@ export function useStreakProtection() {
       // Log reward for freeze usage
       logReward({
         title: "Escudo Ativado",
-        description: "Você usou um congelamento de streak para salvar sua sequência.",
+        description: "VocÃª usou um congelamento de streak para salvar sua sequÃªncia.",
         value: "-1 Freeze",
         type: "negative", // Subtracting a resource, but it's a positive action for the user
         date: new Date()
@@ -192,8 +192,8 @@ export function useStreakProtection() {
 
       if (newMissionsCompleted >= data.recoveryMissionsNeeded) {
         logReward({
-          title: "Sequência Recuperada",
-          description: `Você completou as missões e recuperou seu streak!`,
+          title: "SequÃªncia Recuperada",
+          description: `VocÃª completou as missÃµes e recuperou seu streak!`,
           value: "+50 XP",
           type: "positive",
           date: new Date()
@@ -218,3 +218,5 @@ export function useStreakProtection() {
     refresh: loadProtectionData,
   };
 }
+
+

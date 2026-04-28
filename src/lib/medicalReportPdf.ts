@@ -1,4 +1,4 @@
-async function getJsPDF() {
+﻿async function getJsPDF() {
   const [{ jsPDF }, { default: autoTable }] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
@@ -80,13 +80,13 @@ export async function generateMedicalReport(
   // Title
   doc.setFontSize(22);
   doc.setTextColor(...COLORS.primary);
-  doc.text(language === 'pt' ? 'Relatório Médico' : 'Medical Report', logoImage ? 50 : 15, yPos + 10);
+  doc.text(language === 'pt' ? 'RelatÃ³rio MÃ©dico' : 'Medical Report', logoImage ? 50 : 15, yPos + 10);
 
   doc.setFontSize(10);
   doc.setTextColor(...COLORS.secondary);
   doc.text(
     language === 'pt'
-      ? `Gerado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+      ? `Gerado em: ${format(new Date(), "dd/MM/yyyy 'Ã s' HH:mm", { locale: ptBR })}`
       : `Generated: ${format(new Date(), "MM/dd/yyyy 'at' HH:mm")}`,
     logoImage ? 50 : 15,
     yPos + 18
@@ -95,7 +95,7 @@ export async function generateMedicalReport(
   yPos = 50;
 
   // Patient Info Section
-  yPos = addSectionHeader(doc, language === 'pt' ? '👤 Dados do Paciente' : '👤 Patient Info', yPos);
+  yPos = addSectionHeader(doc, language === 'pt' ? 'ðŸ‘¤ Dados do Paciente' : 'ðŸ‘¤ Patient Info', yPos);
 
   const patientInfo = [
     [language === 'pt' ? 'Nome' : 'Name', data.profile.full_name || '-'],
@@ -106,7 +106,7 @@ export async function generateMedicalReport(
 
   if (data.profile.weight_kg && data.profile.height_cm) {
     const bmi = data.profile.weight_kg / Math.pow(data.profile.height_cm / 100, 2);
-    patientInfo.push(['IMC', `${bmi.toFixed(1)} kg/m²`]);
+    patientInfo.push(['IMC', `${bmi.toFixed(1)} kg/mÂ²`]);
   }
 
   autoTable(doc, {
@@ -124,7 +124,7 @@ export async function generateMedicalReport(
   yPos = (doc as any).lastAutoTable.finalY + 10;
 
   // Adherence Summary
-  yPos = addSectionHeader(doc, language === 'pt' ? '📊 Resumo de Adesão' : '📊 Adherence Summary', yPos);
+  yPos = addSectionHeader(doc, language === 'pt' ? 'ðŸ“Š Resumo de AdesÃ£o' : 'ðŸ“Š Adherence Summary', yPos);
 
   const adherenceColor = data.adherence.overall >= 80 ? COLORS.success :
     data.adherence.overall >= 60 ? COLORS.warning : COLORS.danger;
@@ -135,23 +135,23 @@ export async function generateMedicalReport(
   doc.setFontSize(24);
   doc.text(`${data.adherence.overall}%`, 45, yPos + 18, { align: 'center' });
   doc.setFontSize(8);
-  doc.text(language === 'pt' ? 'ADESÃO GERAL' : 'OVERALL ADHERENCE', 45, yPos + 26, { align: 'center' });
+  doc.text(language === 'pt' ? 'ADESÃƒO GERAL' : 'OVERALL ADHERENCE', 45, yPos + 26, { align: 'center' });
 
   const trendText = data.adherence.trend === 'up'
-    ? (language === 'pt' ? '↑ Melhorando' : '↑ Improving')
+    ? (language === 'pt' ? 'â†‘ Melhorando' : 'â†‘ Improving')
     : data.adherence.trend === 'down'
-      ? (language === 'pt' ? '↓ Reduzindo' : '↓ Declining')
-      : (language === 'pt' ? '→ Estável' : '→ Stable');
+      ? (language === 'pt' ? 'â†“ Reduzindo' : 'â†“ Declining')
+      : (language === 'pt' ? 'â†’ EstÃ¡vel' : 'â†’ Stable');
 
   doc.setTextColor(...COLORS.secondary);
   doc.setFontSize(10);
-  doc.text(`${language === 'pt' ? 'Mês anterior' : 'Last month'}: ${data.adherence.lastMonth}% ${trendText}`, 85, yPos + 18);
+  doc.text(`${language === 'pt' ? 'MÃªs anterior' : 'Last month'}: ${data.adherence.lastMonth}% ${trendText}`, 85, yPos + 18);
 
   yPos += 40;
 
   // Medications Table
   yPos = checkPageBreak(doc, yPos, 60);
-  yPos = addSectionHeader(doc, language === 'pt' ? '💊 Medicamentos Ativos' : '💊 Active Medications', yPos);
+  yPos = addSectionHeader(doc, language === 'pt' ? 'ðŸ’Š Medicamentos Ativos' : 'ðŸ’Š Active Medications', yPos);
 
   if (data.medications.length > 0) {
     autoTable(doc, {
@@ -159,8 +159,8 @@ export async function generateMedicalReport(
       head: [[
         language === 'pt' ? 'Medicamento' : 'Medication',
         language === 'pt' ? 'Dose' : 'Dosage',
-        language === 'pt' ? 'Horários' : 'Times',
-        language === 'pt' ? 'Adesão' : 'Adherence'
+        language === 'pt' ? 'HorÃ¡rios' : 'Times',
+        language === 'pt' ? 'AdesÃ£o' : 'Adherence'
       ]],
       body: data.medications.map(med => [
         med.name,
@@ -187,13 +187,13 @@ export async function generateMedicalReport(
   // Vital Signs
   if (data.vitals.length > 0) {
     yPos = checkPageBreak(doc, yPos, 60);
-    yPos = addSectionHeader(doc, language === 'pt' ? '❤️ Sinais Vitais (Últimos 7 dias)' : '❤️ Vital Signs (Last 7 days)', yPos);
+    yPos = addSectionHeader(doc, language === 'pt' ? 'â¤ï¸ Sinais Vitais (Ãšltimos 7 dias)' : 'â¤ï¸ Vital Signs (Last 7 days)', yPos);
 
     autoTable(doc, {
       startY: yPos,
       head: [[
         language === 'pt' ? 'Data' : 'Date',
-        language === 'pt' ? 'Pressão' : 'BP',
+        language === 'pt' ? 'PressÃ£o' : 'BP',
         language === 'pt' ? 'FC' : 'HR',
         language === 'pt' ? 'Glicemia' : 'Glucose',
         language === 'pt' ? 'Peso' : 'Weight'
@@ -223,14 +223,14 @@ export async function generateMedicalReport(
   // Drug Interactions
   if (data.interactions && data.interactions.length > 0) {
     yPos = checkPageBreak(doc, yPos, 50);
-    yPos = addSectionHeader(doc, language === 'pt' ? '⚠️ Interações Medicamentosas' : '⚠️ Drug Interactions', yPos);
+    yPos = addSectionHeader(doc, language === 'pt' ? 'âš ï¸ InteraÃ§Ãµes Medicamentosas' : 'âš ï¸ Drug Interactions', yPos);
 
     autoTable(doc, {
       startY: yPos,
       head: [[
         language === 'pt' ? 'Medicamentos' : 'Medications',
         language === 'pt' ? 'Severidade' : 'Severity',
-        language === 'pt' ? 'Descrição' : 'Description'
+        language === 'pt' ? 'DescriÃ§Ã£o' : 'Description'
       ]],
       body: data.interactions.map(int => [
         `${int.drugA} + ${int.drugB}`,
@@ -253,7 +253,7 @@ export async function generateMedicalReport(
   // Side Effects
   if (data.sideEffects.length > 0) {
     yPos = checkPageBreak(doc, yPos, 50);
-    yPos = addSectionHeader(doc, language === 'pt' ? '🩺 Efeitos Colaterais Registrados' : '🩺 Recorded Side Effects', yPos);
+    yPos = addSectionHeader(doc, language === 'pt' ? 'ðŸ©º Efeitos Colaterais Registrados' : 'ðŸ©º Recorded Side Effects', yPos);
 
     autoTable(doc, {
       startY: yPos,
@@ -312,7 +312,7 @@ function addFooter(doc: jsPDF, language: 'pt' | 'en') {
     doc.setFontSize(8);
     doc.setTextColor(...COLORS.secondary);
     doc.text(
-      `${language === 'pt' ? 'Página' : 'Page'} ${i} ${language === 'pt' ? 'de' : 'of'} ${pageCount} | HoraMed`,
+      `${language === 'pt' ? 'PÃ¡gina' : 'Page'} ${i} ${language === 'pt' ? 'de' : 'of'} ${pageCount} | HoraMed`,
       105,
       285,
       { align: 'center' }
@@ -321,7 +321,7 @@ function addFooter(doc: jsPDF, language: 'pt' | 'en') {
     doc.setTextColor(150, 150, 150);
     doc.text(
       language === 'pt'
-        ? 'Este relatório é apenas informativo e não substitui consulta médica.'
+        ? 'Este relatÃ³rio Ã© apenas informativo e nÃ£o substitui consulta mÃ©dica.'
         : 'This report is for informational purposes only and does not replace medical consultation.',
       105,
       290,
@@ -355,7 +355,7 @@ async function fetchReportData(): Promise<MedicalReportData> {
     "dose_instances",
     [
       where('userId', '==', user.uid),
-      where('dueAt', '>=', thirtyDaysAgo)
+      where('dueAt', '>=', thirtyDaysAgo.toISOString())
     ]
   );
 
@@ -387,8 +387,8 @@ async function fetchReportData(): Promise<MedicalReportData> {
     "dose_instances",
     [
       where('userId', '==', user.uid),
-      where('dueAt', '>=', sixtyDaysAgo),
-      where('dueAt', '<', thirtyDaysAgo)
+      where('dueAt', '>=', sixtyDaysAgo.toISOString()),
+      where('dueAt', '<', thirtyDaysAgo.toISOString())
     ]
   );
 
@@ -503,3 +503,4 @@ export async function shareMedicalReport(language: 'pt' | 'en' = 'pt'): Promise<
   const baseUrl = window.location.origin;
   return `${baseUrl}/compartilhar/relatorio/${token}`;
 }
+

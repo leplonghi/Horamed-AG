@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, isAfter, startOfDay } from "date-fns";
 import { ptBR, enUS } from "date-fns/locale";
 import { CaretLeft as ChevronLeft, CaretRight as ChevronRight, CalendarBlank as CalendarIcon } from "@phosphor-icons/react";
@@ -38,8 +38,8 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
       try {
         const dosesConstraints: any[] = [
           where("userId", "==", user.uid),
-          where("dueAt", ">=", monthStart),
-          where("dueAt", "<=", monthEnd)
+          where("dueAt", ">=", monthStart.toISOString()),
+          where("dueAt", "<=", monthEnd.toISOString())
         ];
 
         if (profileId) {
@@ -88,17 +88,17 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
   };
 
   const getProgressColor = (rate: number): string => {
-    if (rate >= 100) return "bg-green-500";
-    if (rate >= 75) return "bg-blue-500";
-    if (rate >= 50) return "bg-yellow-500";
-    if (rate > 0) return "bg-orange-500";
-    return "bg-red-500";
+    if (rate >= 100) return "bg-success";
+    if (rate >= 75) return "bg-primary";
+    if (rate >= 50) return "bg-warning";
+    if (rate > 0) return "bg-warning/70";
+    return "bg-destructive";
   };
 
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const firstDayOfWeek = monthStart.getDay();
   const weekDays = language === 'pt' 
-    ? ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"]
+    ? ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "SÃ¡b"]
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -190,23 +190,23 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
         {/* Legend */}
         <div className="flex flex-wrap gap-4 pt-4 border-t">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <div className="w-3 h-3 rounded-full bg-success" />
             <span className="text-sm">100%</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <div className="w-3 h-3 rounded-full bg-primary" />
             <span className="text-sm">75-99%</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500" />
+            <div className="w-3 h-3 rounded-full bg-warning" />
             <span className="text-sm">50-74%</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-orange-500" />
+            <div className="w-3 h-3 rounded-full bg-warning/70" />
             <span className="text-sm">1-49%</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500" />
+            <div className="w-3 h-3 rounded-full bg-destructive" />
             <span className="text-sm">0%</span>
           </div>
         </div>
@@ -230,3 +230,4 @@ export function MonthlyProgressCalendar({ profileId }: { profileId?: string }) {
     </Card>
   );
 }
+

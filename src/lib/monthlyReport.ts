@@ -1,4 +1,4 @@
-import { fetchCollection, fetchDocument, where } from "@/integrations/firebase";
+﻿import { fetchCollection, fetchDocument, where } from "@/integrations/firebase";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 async function getJsPDF() {
@@ -82,8 +82,8 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
     "dose_instances",
     [
       where('userId', '==', userId),
-      where('dueAt', '>=', monthStart),
-      where('dueAt', '<=', monthEnd)
+      where('dueAt', '>=', monthStart.toISOString()),
+      where('dueAt', '<=', monthEnd.toISOString())
     ]
   );
 
@@ -136,7 +136,7 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
 
   return {
     userId,
-    userName: profile?.fullName || profile?.full_name || 'Usuário',
+    userName: profile?.fullName || profile?.full_name || 'UsuÃ¡rio',
     month,
     totalDoses,
     takenDoses,
@@ -154,22 +154,22 @@ function generateInsights(adherenceRate: number, punctualityRate: number, missed
   const insights: string[] = [];
 
   if (adherenceRate >= 90) {
-    insights.push('🎉 Excelente! Você manteve uma adesão acima de 90% este mês.');
+    insights.push('ðŸŽ‰ Excelente! VocÃª manteve uma adesÃ£o acima de 90% este mÃªs.');
   } else if (adherenceRate >= 70) {
-    insights.push('👍 Boa adesão! Continue assim para melhores resultados.');
+    insights.push('ðŸ‘ Boa adesÃ£o! Continue assim para melhores resultados.');
   } else {
-    insights.push('💡 Sua adesão pode melhorar. Tente ajustar os horários dos lembretes.');
+    insights.push('ðŸ’¡ Sua adesÃ£o pode melhorar. Tente ajustar os horÃ¡rios dos lembretes.');
   }
 
   if (punctualityRate >= 80) {
-    insights.push('⏰ Parabéns! Você foi pontual na maioria das doses.');
+    insights.push('â° ParabÃ©ns! VocÃª foi pontual na maioria das doses.');
   }
 
   if (missedDoses > 0) {
-    insights.push(`📊 Você economizou ${missedDoses} doses perdidas este mês com os lembretes.`);
+    insights.push(`ðŸ“Š VocÃª economizou ${missedDoses} doses perdidas este mÃªs com os lembretes.`);
   }
 
-  insights.push('📈 Sua rotina está mais estável comparada aos meses anteriores.');
+  insights.push('ðŸ“ˆ Sua rotina estÃ¡ mais estÃ¡vel comparada aos meses anteriores.');
 
   return insights;
 }
@@ -186,7 +186,7 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
 
   doc.setFontSize(16);
   doc.setTextColor(0, 0, 0);
-  doc.text(`Relatório Mensal - ${monthName}`, 105, 30, { align: 'center' });
+  doc.text(`RelatÃ³rio Mensal - ${monthName}`, 105, 30, { align: 'center' });
 
   doc.setFontSize(12);
   doc.text(data.userName, 105, 38, { align: 'center' });
@@ -194,7 +194,7 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
   // Metrics Section
   let yPosition = 50;
   doc.setFontSize(14);
-  doc.text('Resumo do Mês', 20, yPosition);
+  doc.text('Resumo do MÃªs', 20, yPosition);
   yPosition += 10;
 
   doc.setFontSize(11);
@@ -217,7 +217,7 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
 
     doc.setFontSize(10);
     data.medications.slice(0, 8).forEach((med) => {
-      doc.text(`• ${med.name}`, 20, yPosition);
+      doc.text(`â€¢ ${med.name}`, 20, yPosition);
       yPosition += 6;
     });
     yPosition += 10;
@@ -226,14 +226,14 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
   // Stock Predictions
   if (data.stockPredictions.length > 0) {
     doc.setFontSize(14);
-    doc.text('Previsão de Estoque', 20, yPosition);
+    doc.text('PrevisÃ£o de Estoque', 20, yPosition);
     yPosition += 10;
 
     doc.setFontSize(10);
     data.stockPredictions.slice(0, 5).forEach((stock) => {
       if (stock.projectedEnd) {
         const daysLeft = Math.ceil((safeDateParse(stock.projectedEnd).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-        doc.text(`• ${stock.name}: ${daysLeft} dias restantes`, 20, yPosition);
+        doc.text(`â€¢ ${stock.name}: ${daysLeft} dias restantes`, 20, yPosition);
         yPosition += 6;
       }
     });
@@ -247,7 +247,7 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
   }
 
   doc.setFontSize(14);
-  doc.text('Insights e Recomendações', 20, yPosition);
+  doc.text('Insights e RecomendaÃ§Ãµes', 20, yPosition);
   yPosition += 10;
 
   doc.setFontSize(10);
@@ -263,7 +263,8 @@ async function createReportPDF(data: MonthlyReportData): Promise<Blob> {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text('Gerado pelo HoraMed - Sua saúde no horário certo', 105, 285, { align: 'center' });
+  doc.text('Gerado pelo HoraMed - Sua saÃºde no horÃ¡rio certo', 105, 285, { align: 'center' });
 
   return doc.output('blob');
 }
+

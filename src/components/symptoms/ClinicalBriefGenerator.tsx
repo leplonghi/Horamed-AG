@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Spinner as Loader2, Download, WarningCircle as AlertCircle } from "@phosphor-icons/react";
@@ -31,8 +31,8 @@ export function ClinicalBriefGenerator() {
             const dosesRef = collection(db, "dose_instances");
             const dosesQuery = query(
                 dosesRef,
-                where('dueAt', '>=', startDate),
-                where('dueAt', '<=', endDate)
+                where('dueAt', '>=', startDate.toISOString()),
+                where('dueAt', '<=', endDate.toISOString())
             );
             const dosesSnapshot = await getDocs(dosesQuery);
 
@@ -224,3 +224,4 @@ export function ClinicalBriefGenerator() {
         </Card>
     );
 }
+

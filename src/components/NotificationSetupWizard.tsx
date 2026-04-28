@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,28 +38,28 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
   const [steps, setSteps] = useState<SetupStep[]>([
     {
       id: 'permission',
-      title: 'Permissão de Notificações',
+      title: 'PermissÃ£o de NotificaÃ§Ãµes',
       description: isNative
-        ? `Permitir que o HoraMed envie notificações no seu ${platform === 'ios' ? 'iPhone' : 'Android'}`
-        : 'Permitir notificações no navegador',
+        ? `Permitir que o HoraMed envie notificaÃ§Ãµes no seu ${platform === 'ios' ? 'iPhone' : 'Android'}`
+        : 'Permitir notificaÃ§Ãµes no navegador',
       status: 'pending'
     },
     {
       id: 'register',
       title: 'Registrar Dispositivo',
-      description: 'Conectar seu dispositivo ao servidor de notificações',
+      description: 'Conectar seu dispositivo ao servidor de notificaÃ§Ãµes',
       status: 'pending'
     },
     {
       id: 'schedule',
       title: 'Agendar Alarmes',
-      description: 'Configurar lembretes para suas próximas doses',
+      description: 'Configurar lembretes para suas prÃ³ximas doses',
       status: 'pending'
     },
     {
       id: 'test',
-      title: 'Testar Notificação',
-      description: 'Enviar uma notificação de teste para confirmar',
+      title: 'Testar NotificaÃ§Ã£o',
+      description: 'Enviar uma notificaÃ§Ã£o de teste para confirmar',
       status: 'pending'
     }
   ]);
@@ -83,8 +83,8 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         if (pushPermStatus.receive !== 'granted') {
           updateStepStatus('permission', 'error',
             platform === 'ios'
-              ? 'Vá em Ajustes > HoraMed > Notificações e ative'
-              : 'Vá em Configurações > Apps > HoraMed > Notificações'
+              ? 'VÃ¡ em Ajustes > HoraMed > NotificaÃ§Ãµes e ative'
+              : 'VÃ¡ em ConfiguraÃ§Ãµes > Apps > HoraMed > NotificaÃ§Ãµes'
           );
           return false;
         }
@@ -93,7 +93,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         const localPermStatus = await LocalNotifications.requestPermissions();
 
         if (localPermStatus.display !== 'granted') {
-          updateStepStatus('permission', 'error', 'Permissão de notificações locais negada');
+          updateStepStatus('permission', 'error', 'PermissÃ£o de notificaÃ§Ãµes locais negada');
           return false;
         }
 
@@ -102,7 +102,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       } else {
         // Web notifications
         if (!('Notification' in window)) {
-          updateStepStatus('permission', 'error', 'Seu navegador não suporta notificações');
+          updateStepStatus('permission', 'error', 'Seu navegador nÃ£o suporta notificaÃ§Ãµes');
           return false;
         }
 
@@ -113,14 +113,14 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           return true;
         } else {
           updateStepStatus('permission', 'error',
-            'Clique no ícone de cadeado na barra de endereço e ative as notificações'
+            'Clique no Ã­cone de cadeado na barra de endereÃ§o e ative as notificaÃ§Ãµes'
           );
           return false;
         }
       }
     } catch (error) {
       console.error("[Setup] Permission error:", error);
-      updateStepStatus('permission', 'error', 'Erro ao solicitar permissão');
+      updateStepStatus('permission', 'error', 'Erro ao solicitar permissÃ£o');
       return false;
     }
   };
@@ -131,7 +131,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
     try {
       const user = auth.currentUser;
       if (!user) {
-        updateStepStatus('register', 'error', 'Você precisa estar logado');
+        updateStepStatus('register', 'error', 'VocÃª precisa estar logado');
         return false;
       }
 
@@ -180,7 +180,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           await LocalNotifications.createChannel({
             id: 'horamed-medicamentos',
             name: 'Lembretes de Medicamentos',
-            description: 'Notificações para lembrar de tomar medicamentos',
+            description: 'NotificaÃ§Ãµes para lembrar de tomar medicamentos',
             importance: 5, // IMPORTANCE_HIGH
             visibility: 1, // PUBLIC
             sound: 'default',
@@ -214,7 +214,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
     try {
       const user = auth.currentUser;
       if (!user) {
-        updateStepStatus('schedule', 'error', 'Usuário não encontrado');
+        updateStepStatus('schedule', 'error', 'UsuÃ¡rio nÃ£o encontrado');
         return false;
       }
 
@@ -227,8 +227,8 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
       const { data: doses, error } = await fetchCollection<any>(dosesPath, [
         where("status", "==", "scheduled"),
-        where("dueAt", ">=", now),
-        where("dueAt", "<=", next48h),
+        where("dueAt", ">=", now.toISOString()),
+        where("dueAt", "<=", next48h.toISOString()),
         orderBy("dueAt", "asc")
       ]);
 
@@ -252,8 +252,8 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
           return {
             id: index + 1,
-            title: `💊 Hora do ${dose.itemName || 'Medicamento'}`,
-            body: dose.doseText || 'Está na hora de tomar seu medicamento',
+            title: `ðŸ’Š Hora do ${dose.itemName || 'Medicamento'}`,
+            body: dose.doseText || 'EstÃ¡ na hora de tomar seu medicamento',
             schedule: { at: dueDate },
             sound: 'default',
             channelId: 'horamed-medicamentos',
@@ -294,8 +294,8 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           notifications: [
             {
               id: 99999,
-              title: '✅ HoraMed Funcionando!',
-              body: 'Você receberá lembretes mesmo com o app fechado',
+              title: 'âœ… HoraMed Funcionando!',
+              body: 'VocÃª receberÃ¡ lembretes mesmo com o app fechado',
               schedule: { at: new Date(Date.now() + 2000) }, // 2 seconds
               sound: 'default',
               channelId: 'horamed-medicamentos',
@@ -305,14 +305,14 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         });
       } else {
         // Web notification
-        new Notification('✅ HoraMed Funcionando!', {
-          body: 'Você receberá lembretes quando o navegador estiver aberto',
+        new Notification('âœ… HoraMed Funcionando!', {
+          body: 'VocÃª receberÃ¡ lembretes quando o navegador estiver aberto',
           icon: '/favicon.png',
         });
       }
 
       updateStepStatus('test', 'success');
-      toast.success('Notificação de teste enviada!');
+      toast.success('NotificaÃ§Ã£o de teste enviada!');
       return true;
     } catch (error) {
       console.error("[Setup] Test error:", error);
@@ -370,7 +370,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
       return <Loader2 className="h-5 w-5 animate-spin text-primary" />;
     }
     if (step.status === 'success') {
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      return <CheckCircle2 className="h-5 w-5 text-success" />;
     }
     if (step.status === 'error') {
       return <XCircle className="h-5 w-5 text-destructive" />;
@@ -394,7 +394,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BellRing className="h-5 w-5 text-primary" />
-            Configurar Notificações
+            Configurar NotificaÃ§Ãµes
           </DialogTitle>
           <DialogDescription>
             {isNative
@@ -410,7 +410,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
               key={step.id}
               className={cn(
                 "transition-all",
-                step.status === 'success' && "border-green-500/30 bg-green-500/5",
+                step.status === 'success' && "border-success/30 bg-success/5",
                 step.status === 'error' && "border-destructive/30 bg-destructive/5"
               )}
             >
@@ -440,36 +440,36 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
             </p>
             {platform === 'ios' ? (
               <ol className="list-decimal list-inside space-y-1">
-                <li>Uma janela pedirá permissão para notificações</li>
+                <li>Uma janela pedirÃ¡ permissÃ£o para notificaÃ§Ãµes</li>
                 <li>Toque em <strong>"Permitir"</strong></li>
-                <li>Se negou antes: Ajustes → HoraMed → Notificações → Ativar</li>
+                <li>Se negou antes: Ajustes â†’ HoraMed â†’ NotificaÃ§Ãµes â†’ Ativar</li>
               </ol>
             ) : platform === 'android' ? (
               <ol className="list-decimal list-inside space-y-1">
-                <li>Uma janela pedirá permissão para notificações</li>
+                <li>Uma janela pedirÃ¡ permissÃ£o para notificaÃ§Ãµes</li>
                 <li>Toque em <strong>"Permitir"</strong></li>
-                <li>Se negou antes: Configurações → Apps → HoraMed → Notificações</li>
-                <li>Desative otimização de bateria para o HoraMed</li>
+                <li>Se negou antes: ConfiguraÃ§Ãµes â†’ Apps â†’ HoraMed â†’ NotificaÃ§Ãµes</li>
+                <li>Desative otimizaÃ§Ã£o de bateria para o HoraMed</li>
               </ol>
             ) : (
               <ol className="list-decimal list-inside space-y-1">
-                <li>Clique em "Iniciar Configuração"</li>
-                <li>Seu navegador pedirá permissão</li>
+                <li>Clique em "Iniciar ConfiguraÃ§Ã£o"</li>
+                <li>Seu navegador pedirÃ¡ permissÃ£o</li>
                 <li>Clique em "Permitir"</li>
-                <li>⚠️ Notificações funcionam apenas com navegador aberto</li>
+                <li>âš ï¸ NotificaÃ§Ãµes funcionam apenas com navegador aberto</li>
               </ol>
             )}
           </div>
         )}
 
         {allStepsComplete && (
-          <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
-            <CheckCircle2 className="h-8 w-8 text-green-500 mx-auto mb-2" />
-            <p className="font-medium text-green-700 dark:text-green-400">
+          <div className="bg-success/10 border border-success/30 rounded-lg p-4 text-center">
+            <CheckCircle2 className="h-8 w-8 text-success mx-auto mb-2" />
+            <p className="font-medium text-success">
               Tudo Configurado!
             </p>
             <p className="text-sm text-muted-foreground">
-              Você receberá lembretes mesmo com o app fechado
+              VocÃª receberÃ¡ lembretes mesmo com o app fechado
             </p>
           </div>
         )}
@@ -498,7 +498,7 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
           {!isProcessing && !hasError && !allStepsComplete && (
             <Button onClick={runSetup} className="flex-1">
               <Bell className="h-4 w-4 mr-2" />
-              Iniciar Configuração
+              Iniciar ConfiguraÃ§Ã£o
             </Button>
           )}
 
@@ -520,3 +520,4 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
     </Dialog>
   );
 }
+
