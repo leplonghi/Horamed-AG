@@ -45,6 +45,13 @@ export const useOverdueDoses = () => {
       const nowIso = now.toISOString();
       const twoHoursAgoIso = twoHoursAgo.toISOString();
 
+      // Debug logging
+      console.log('[useOverdueDoses] Fetching overdue doses:', {
+        now: nowIso,
+        twoHoursAgo: twoHoursAgoIso,
+        profileId: profileId || 'none'
+      });
+
       // Fetch Items (Medications)
       const itemsRef = collection(db, 'users', user.uid, 'medications');
       let itemsQuery = query(itemsRef);
@@ -66,11 +73,13 @@ export const useOverdueDoses = () => {
         dosesRef,
         where("userId", "==", user.uid),
         where("status", "==", "scheduled"),
-        where("dueAt", "<", now),
-        where("dueAt", ">=", twoHoursAgo)
+        where("dueAt", "<", nowIso),
+        where("dueAt", ">=", twoHoursAgoIso)
       );
 
       const dosesSnap = await getDocs(dosesQuery);
+
+      console.log('[useOverdueDoses] Found doses:', dosesSnap.docs.length);
 
       // Filter by items and map
       const doses = dosesSnap.docs
@@ -80,10 +89,13 @@ export const useOverdueDoses = () => {
             id: d.id,
             dueAt: data.dueAt,
             itemId: data.itemId || data.item_id,
-            status: data.status
+            status: data.status,
+            itemName: data.itemName
           };
         })
         .filter(d => itemsMap.has(d.itemId)); // Only include doses for relevant items (profile filter)
+      
+      console.log('[useOverdueDoses] After profile filter:', doses.length);
 
       // Sort - with safe date parsing
       doses.sort((a, b) => {

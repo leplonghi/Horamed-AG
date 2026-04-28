@@ -633,11 +633,28 @@ export const generateDoseInstances = functions.https.onCall(async (data, context
 
     try {
         // Fetch active medications for user
+        // Also include medications without isActive field (backward compatibility)
         const medicationsSnap = await db.collection('users').doc(userId).collection('medications')
             .where('isActive', '==', true)
             .get();
+        
+        // Also fetch medications without isActive field (backward compatibility)
+        const allMedicationsSnap = await db.collection('users').doc(userId).collection('medications').get();
+        
+        const activeMeds = medicationsSnap.docs;
+        const noStatusMeds = allMedicationsSnap.docs.filter(d => d.data().isActive === undefined);
+        
+        // Combine unique medications
+        const allMedDocs = [...activeMeds];
+        const seenIds = new Set(activeMeds.map(d => d.id));
+        for (const med of noStatusMeds) {
+            if (!seenIds.has(med.id)) {
+                allMedDocs.push(med);
+                seenIds.add(med.id);
+            }
+        }
 
-        if (medicationsSnap.empty) {
+        if (allMedDocs.length === 0) {
             return { generated: 0, message: 'No active medications found' };
         }
 
@@ -651,7 +668,7 @@ export const generateDoseInstances = functions.https.onCall(async (data, context
             dose_text?: string;
         }
 
-        const medications = medicationsSnap.docs.map(d => ({ id: d.id, ...d.data() } as MedicationData));
+        const medications = allMedDocs.map(d => ({ id: d.id, ...d.data() } as MedicationData));
         let generatedCount = 0;
 
         for (const med of medications) {
@@ -678,17 +695,21 @@ export const generateDoseInstances = functions.https.onCall(async (data, context
                     if (!existingSnap.empty) continue;
 
                     // Create new dose instance
-                    await db.collection('dose_instances').add({
+                    const doseData: any = {
                         userId,
                         itemId: med.id,
                         itemName: med.name,
-                        profileId: med.profileId || null,
                         dueAt: dueAt.toISOString(),
                         status: 'scheduled',
                         doseText: med.doseText || med.dose_text || null,
                         createdAt: admin.firestore.Timestamp.now(),
                         notificationSent: false,
-                    });
+                    };
+                    // Only add profileId if it exists (Firestore null queries don't work well)
+                    if (med.profileId) {
+                        doseData.profileId = med.profileId;
+                    }
+                    await db.collection('dose_instances').add(doseData);
 
                     generatedCount++;
                 }

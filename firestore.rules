@@ -21,8 +21,8 @@ service cloud.firestore {
     // Verifica se o usuário logado é cuidador APROVADO do paciente
     function isCaregiverOf(userId) {
       return isAuthenticated() &&
-        exists(/databases//documents/users//caregivers/) &&
-        get(/databases//documents/users//caregivers/).data.status == "approved";
+        exists(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(userId)/caregivers/$(request.auth.uid)).data.status == "approved";
     }
 
     // Campos que um cuidador pode alterar numa dose

@@ -196,26 +196,22 @@ export function useTodayData(
         );
 
         // Build constraints for dose_instances (global collection with userId filter)
+        // Fetch ALL doses for the user in the date range, then filter by profileId client-side
+        // This avoids Firestore null-comparison issues and handles backward compatibility
         const doseDayConstraints: any[] = [
           where("userId", "==", userId),
           where("dueAt", ">=", dayStart.toISOString()),
           where("dueAt", "<=", dayEnd.toISOString()),
           orderBy("dueAt", "asc"),
         ];
-        if (profileId) {
-          doseDayConstraints.push(where("profileId", "==", profileId));
-        }
 
         const doseWeekConstraints: any[] = [
           where("userId", "==", userId),
           where("dueAt", ">=", weekStart.toISOString()),
           where("dueAt", "<=", weekEnd.toISOString()),
         ];
-        if (profileId) {
-          doseWeekConstraints.push(where("profileId", "==", profileId));
-        }
 
-        const fetchAll = Promise.all([
+        const fetchPromises: Promise<any>[] = [
           profileId
             ? fetchDocument<Profile>(`users/${userId}/profiles`, profileId)
             : fetchDocument<{ nickname?: string; fullName?: string }>(`users`, userId),
@@ -231,17 +227,32 @@ export function useTodayData(
             orderBy("date", "asc"),
           ]),
           fetchCollection<Dose>(paths.doses, doseWeekConstraints),
-        ]);
+        ];
 
-        const [nameResult, dosesResult, appointmentsResult, eventsResult, weekDosesResult] = 
-          await Promise.race([fetchAll, timeoutPromise]) as any;
+        const fetchAll = Promise.all(fetchPromises);
 
+        const results = await Promise.race([fetchAll, timeoutPromise]) as any[];
+
+        const nameResult = results[0];
         const nd = nameResult?.data as { nickname?: string; fullName?: string; name?: string } | null;
         if (nd) setUserName(nd.nickname || nd.fullName || nd.name || "");
 
-        const doses = dosesResult.data || [];
-        const appointments = appointmentsResult.data || [];
-        const events = eventsResult.data || [];
+        // Filter doses by profileId client-side
+        // If profileId is set: show doses for that profile OR doses without profileId (backward compat)
+        // If no profileId: show all doses
+        let allDoses: Dose[] = results[1]?.data || [];
+        let allWeekDoses: Dose[] = results[4]?.data || [];
+
+        let doses: Dose[] = allDoses;
+        let weekDoses: Dose[] = allWeekDoses;
+
+        if (profileId) {
+          doses = allDoses.filter(d => d.profileId === profileId || !d.profileId);
+          weekDoses = allWeekDoses.filter(d => d.profileId === profileId || !d.profileId);
+        }
+
+        const appointments = results[2]?.data || [];
+        const events = results[3]?.data || [];
 
         // Fetch medication names for doses that don't have itemName embedded
         const itemIds = doses.filter(d => !d.itemName && d.itemId).map(d => d.itemId);
@@ -259,7 +270,7 @@ export function useTodayData(
 
         // 4. Calculate event counts for the calendar dots
         const counts: Record<string, number> = {};
-        (weekDosesResult.data || []).forEach(d => {
+        weekDoses.forEach(d => {
           const dDate = format(safeDate(d.dueAt || d.due_at), "yyyy-MM-dd");
           counts[dDate] = (counts[dDate] || 0) + 1;
         });

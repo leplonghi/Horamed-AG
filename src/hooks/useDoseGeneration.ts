@@ -34,13 +34,17 @@ export function useDoseGeneration() {
     isGenerating.current = true;
 
     try {
-      // First, check if user has any active schedules
-      const { data: schedules } = await fetchCollection(
-        `users/${user.uid}/schedules`,
+      // First, check if user has any active medications
+      const { data: medications } = await fetchCollection(
+        `users/${user.uid}/medications`,
         []
       );
+      
+      // Filter active medications (backward compatibility: include those without isActive)
+      const activeMeds = medications?.filter(m => m.isActive !== false) || [];
 
-      if (!schedules || schedules.length === 0) {
+      if (activeMeds.length === 0) {
+        console.log('[DoseGeneration] No active medications found');
         localStorage.setItem(STORAGE_KEY, now.toString());
         return;
       }
@@ -76,10 +80,10 @@ export function useDoseGeneration() {
       // Regenerate if: today has no doses OR future pipeline is thin
       const needsGeneration =
         todayCount === 0 ||
-        futureCount < schedules.length * 3; // at least 3 days ahead per schedule
+        futureCount < activeMeds.length * 3; // at least 3 days ahead per medication
 
       if (needsGeneration) {
-        console.log(`[DoseGeneration] Triggering CF: today=${todayCount}, future=${futureCount}, schedules=${schedules.length}`);
+        console.log(`[DoseGeneration] Triggering CF: today=${todayCount}, future=${futureCount}, activeMeds=${activeMeds.length}`);
         const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
         try {
           await generateDoseInstances({ days: 7 });

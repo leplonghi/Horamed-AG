@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from "react";
+﻿import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
@@ -19,6 +19,8 @@ import { SaudeRoutes } from "./routes/SaudeRoutes";
 import { CarteiraRoutes } from "./routes/CarteiraRoutes";
 import { PerfilRoutes } from "./routes/PerfilRoutes";
 import { ConfigRoutes } from "./routes/ConfigRoutes";
+import PoliticaDePrivacidade from "@/pages/legal/PoliticaDePrivacidade";
+import TermosDeUso from "@/pages/legal/TermosDeUso";
 
 // Lazy pages that don't fit a domain module
 const Today = lazy(() => import("@/pages/Today"));

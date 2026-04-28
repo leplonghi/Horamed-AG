@@ -75,7 +75,7 @@ export default function Today() {
   const { activeProfile, profiles, switchProfile } = useUserProfiles();
   const { t, language } = useLanguage();
   useSmartRedirect();
-  const { overdueDoses } = useOverdueDoses();
+  const { overdueDoses, refresh: refreshOverdueDoses } = useOverdueDoses();
 
   const [showConfetti, setShowConfetti] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -171,14 +171,18 @@ export default function Today() {
         setShowConfetti(true);
       }
 
+      optimisticMarkDone(doseId);
       refreshStreak();
       refreshAlerts();
+      refreshOverdueDoses();
+      // Reload today's data after a short delay to sync with server
+      setTimeout(() => reloadTodayData(), 500);
     } catch (error) {
       console.error("Error marking dose:", error);
       toast.error(t('todayRedesign.confirmDoseError'));
       throw error;
     }
-  }, [t, showFeedback, refreshStreak, refreshAlerts, activeProfile?.id]);
+  }, [t, showFeedback, refreshStreak, refreshAlerts, refreshOverdueDoses, optimisticMarkDone, reloadTodayData, activeProfile?.id]);
 
   const markAsSkipped = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -187,11 +191,12 @@ export default function Today() {
       await medicationRepository.markDoseAsSkipped(user.uid, activeProfile?.id, doseId, itemName);
       toast.info(t('todayRedesign.skipSuccess', { name: itemName }));
       refreshAlerts();
+      refreshOverdueDoses();
     } catch (error) {
       console.error("Error skipping dose:", error);
       toast.error(t('todayRedesign.skipError'));
     }
-  }, [t, refreshAlerts, activeProfile?.id]);
+  }, [t, refreshAlerts, refreshOverdueDoses, activeProfile?.id]);
 
   const markAsMissed = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -200,11 +205,12 @@ export default function Today() {
       await medicationRepository.markDoseAsMissed(user.uid, activeProfile?.id, doseId, itemName);
       toast.info(t('todayRedesign.missedSuccess', { name: itemName }));
       refreshAlerts();
+      refreshOverdueDoses();
     } catch (error) {
       console.error("Error marking dose as missed:", error);
       toast.error(t('todayRedesign.missedError'));
     }
-  }, [t, refreshAlerts, activeProfile?.id]);
+  }, [t, refreshAlerts, refreshOverdueDoses, activeProfile?.id]);
 
   const snoozeDose = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -247,6 +253,7 @@ export default function Today() {
     lowStockItems,
     claraInsight,
     optimisticMarkDone,
+    reload: reloadTodayData,
   } = useTodayData(selectedDate, markAsTaken, snoozeDose);
 
   // Keep the ref updated with the latest stats from the hook

@@ -548,12 +548,12 @@ exports.healthAssistant = functions.https.onCall(async (data, context) => {
             const gSnap = await db.collection(`users/${context.auth.uid}/glucoseLogs`).orderBy('recordedAt', 'desc').limit(1).get();
             const lastG = gSnap.empty ? null : gSnap.docs[0].data();
             healthContext = `
-CONTEXTO DE SAÚDE DO USUÁRIO (Use para personalizar, mas não mencione se não for relevante):
+CONTEXTO DE SAÃšDE DO USUÃRIO (Use para personalizar, mas nÃ£o mencione se nÃ£o for relevante):
 - Nome: ${userData.displayName || 'Paciente'}
 - Idade: ${age} anos
-- Peso: ${userData.weightKg ? userData.weightKg + ' kg' : 'Não informado'}
-- Altura: ${userData.heightCm ? userData.heightCm + ' cm' : 'Não informada'}
-- Pressão: ${lastP ? `${lastP.systolic}/${lastP.diastolic}` : 'N/A'}
+- Peso: ${userData.weightKg ? userData.weightKg + ' kg' : 'NÃ£o informado'}
+- Altura: ${userData.heightCm ? userData.heightCm + ' cm' : 'NÃ£o informada'}
+- PressÃ£o: ${lastP ? `${lastP.systolic}/${lastP.diastolic}` : 'N/A'}
 - Glicose: ${lastG ? `${lastG.value}` : 'N/A'}
             `.trim();
         }
@@ -561,7 +561,7 @@ CONTEXTO DE SAÚDE DO USUÁRIO (Use para personalizar, mas não mencione se não
             chatOptions.systemInstruction += `\n\n${healthContext}`;
         }
         else {
-            chatOptions.systemInstruction = `Você é a Clara, assistente de saúde do HoraMed. ${healthContext}`;
+            chatOptions.systemInstruction = `VocÃª Ã© a Clara, assistente de saÃºde do HoraMed. ${healthContext}`;
         }
         const chat = model.startChat(chatOptions);
         const result = await chat.sendMessage(lastMessage);
@@ -573,7 +573,7 @@ CONTEXTO DE SAÚDE DO USUÁRIO (Use para personalizar, mas não mencione se não
         if ((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes('API_KEY')) {
             return {
                 role: 'assistant',
-                content: '⚠️ Erro de configuração: API Key do Gemini não encontrada no servidor.'
+                content: 'âš ï¸ Erro de configuraÃ§Ã£o: API Key do Gemini nÃ£o encontrada no servidor.'
             };
         }
         throw new functions.https.HttpsError('internal', 'AI processing failed');
@@ -592,13 +592,27 @@ exports.generateDoseInstances = functions.https.onCall(async (data, context) => 
     const now = new Date();
     try {
         // Fetch active medications for user
+        // Also include medications without isActive field (backward compatibility)
         const medicationsSnap = await db.collection('users').doc(userId).collection('medications')
             .where('isActive', '==', true)
             .get();
-        if (medicationsSnap.empty) {
+        // Also fetch medications without isActive field (backward compatibility)
+        const allMedicationsSnap = await db.collection('users').doc(userId).collection('medications').get();
+        const activeMeds = medicationsSnap.docs;
+        const noStatusMeds = allMedicationsSnap.docs.filter(d => d.data().isActive === undefined);
+        // Combine unique medications
+        const allMedDocs = [...activeMeds];
+        const seenIds = new Set(activeMeds.map(d => d.id));
+        for (const med of noStatusMeds) {
+            if (!seenIds.has(med.id)) {
+                allMedDocs.push(med);
+                seenIds.add(med.id);
+            }
+        }
+        if (allMedDocs.length === 0) {
             return { generated: 0, message: 'No active medications found' };
         }
-        const medications = medicationsSnap.docs.map(d => (Object.assign({ id: d.id }, d.data())));
+        const medications = allMedDocs.map(d => (Object.assign({ id: d.id }, d.data())));
         let generatedCount = 0;
         for (const med of medications) {
             const schedule = med.schedule || med.times || [];
@@ -622,17 +636,21 @@ exports.generateDoseInstances = functions.https.onCall(async (data, context) => 
                     if (!existingSnap.empty)
                         continue;
                     // Create new dose instance
-                    await db.collection('dose_instances').add({
+                    const doseData = {
                         userId,
                         itemId: med.id,
                         itemName: med.name,
-                        profileId: med.profileId || null,
                         dueAt: dueAt.toISOString(),
                         status: 'scheduled',
                         doseText: med.doseText || med.dose_text || null,
                         createdAt: admin.firestore.Timestamp.now(),
                         notificationSent: false,
-                    });
+                    };
+                    // Only add profileId if it exists (Firestore null queries don't work well)
+                    if (med.profileId) {
+                        doseData.profileId = med.profileId;
+                    }
+                    await db.collection('dose_instances').add(doseData);
                     generatedCount++;
                 }
             }
@@ -655,6 +673,10 @@ exports.sendDoseNotification = functions.https.onCall(async (data, context) => {
     if (!context.auth)
         throw new functions.https.HttpsError('unauthenticated', 'Auth required');
     const { userId, title, body, doseId } = data;
+    // SECURITY: Only allow users to send notifications to themselves
+    if (context.auth.uid !== userId) {
+        throw new functions.https.HttpsError('permission-denied', 'Cannot send notifications to other users');
+    }
     try {
         const userDoc = await db.collection('users').doc(userId).get();
         const token = (_a = userDoc.data()) === null || _a === void 0 ? void 0 : _a.pushToken;
@@ -681,6 +703,7 @@ exports.scheduleDoseNotifications = functions.pubsub.schedule('every 15 minutes'
         .where('dueAt', '>=', now.toDate().toISOString())
         .where('dueAt', '<=', targetTime.toDate().toISOString())
         .where('status', '==', 'scheduled')
+        .where('notificationSent', '==', false)
         .get();
     functions.logger.info(`[scheduleDoseNotifications] Found ${snapshot.docs.length} doses to notify`);
     const promises = snapshot.docs.map(async (doc) => {
@@ -707,8 +730,8 @@ exports.scheduleDoseNotifications = functions.pubsub.schedule('every 15 minutes'
             await admin.messaging().send({
                 token,
                 notification: {
-                    title: 'Hora do Medicamento 💊',
-                    body: `Está na hora de tomar ${dose.itemName || dose.medicationName || 'seu medicamento'}`
+                    title: 'Hora do Medicamento ðŸ’Š',
+                    body: `EstÃ¡ na hora de tomar ${dose.itemName || dose.medicationName || 'seu medicamento'}`
                 },
                 data: { doseId: doc.id, type: 'dose' }
             });
@@ -757,11 +780,11 @@ exports.extractMedication = functions.https.onCall(async (data, context) => {
             - name: Nome do medicamento
             - dose: Dosagem (ex: 500mg)
             - category: Categoria (ex: antinflamatorio, antibiotico, etc)
-            - duration_days: Duração em dias (se houver, number)
+            - duration_days: DuraÃ§Ã£o em dias (se houver, number)
             - total_doses: Total de doses (se houver, number)
-            - start_date: Data de início (se houver, YYYY-MM-DD)
+            - start_date: Data de inÃ­cio (se houver, YYYY-MM-DD)
             
-            Se não encontrar algum campo, ignore ou retorne null.
+            Se nÃ£o encontrar algum campo, ignore ou retorne null.
         `;
         const text = await processImage(image, prompt);
         // Clean markdown code blocks if present
@@ -782,7 +805,7 @@ exports.extractExam = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('invalid-argument', 'Image data required');
     try {
         const prompt = `
-            Analise este exame médico. Extraia os principais resultados em formato JSON puro.
+            Analise este exame mÃ©dico. Extraia os principais resultados em formato JSON puro.
             Estrutura sugerida: { "title": "Nome do Exame", "date": "YYYY-MM-DD", "results": [{ "parameter": "Nome", "value": "Valor", "reference": "Ref" }] }
         `;
         const text = await processImage(image, prompt);
@@ -803,7 +826,7 @@ exports.extractDocument = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('invalid-argument', 'Image data required');
     try {
         const prompt = `
-            Leia este documento médico e faça um resumo estruturado em JSON.
+            Leia este documento mÃ©dico e faÃ§a um resumo estruturado em JSON.
             Campos: title, type (receita, atestado, laudo, outro), summary, date.
         `;
         const text = await processImage(image, prompt);
@@ -834,8 +857,8 @@ exports.checkInteractions = functions.https.onCall(async (data, context) => {
         if (drugList.length < 2)
             return { interactions: [], hasCritical: false };
         const prompt = `
-            Verifique interações medicamentosas entre os seguintes itens: ${drugList.join(', ')}.
-            Retorne APENAS um JSON puro com a lista de interações.
+            Verifique interaÃ§Ãµes medicamentosas entre os seguintes itens: ${drugList.join(', ')}.
+            Retorne APENAS um JSON puro com a lista de interaÃ§Ãµes.
             Formato:
             {
                 "interactions": [
@@ -843,12 +866,12 @@ exports.checkInteractions = functions.https.onCall(async (data, context) => {
                          "drugA": "Nome A",
                          "drugB": "Nome B",
                          "severity": "low" | "moderate" | "high" | "contraindicated",
-                         "description": "Explicação curta",
+                         "description": "ExplicaÃ§Ã£o curta",
                          "recommendation": "O que fazer"
                     }
                 ]
             }
-            Se não houver interações, retorne { "interactions": [] }.
+            Se nÃ£o houver interaÃ§Ãµes, retorne { "interactions": [] }.
         `;
         const model = getGenAI().getGenerativeModel({ model: "gemini-3-pro-preview" });
         const result = await model.generateContent(prompt);
@@ -907,8 +930,8 @@ exports.voiceToText = functions.https.onCall(async (data, context) => {
         }
 
         Examples:
-        - "Quero adicionar paracetamol" -> { "text": "Quero adicionar paracetamol", "intent": { "type": "ADD_MEDICATION", "confidence": "high", "entities": { "medication": "Paracetamol", "date": null, "quantity": null, "symptom": null }, "action_path": "/adicionar-item", "spokenResponse": "Abrindo formulário para Paracetamol." } }
-        - "Estou com dor de cabeça" -> { "text": "Estou com dor de cabeça", "intent": { "type": "HEALTH_QUERY", "confidence": "high", "entities": { "medication": null, "date": null, "quantity": null, "symptom": "dor de cabeça" }, "action_path": "/saude", "spokenResponse": "Sinto muito. Você quer registrar esse sintoma ou ver seus remédios para dor?" } }
+        - "Quero adicionar paracetamol" -> { "text": "Quero adicionar paracetamol", "intent": { "type": "ADD_MEDICATION", "confidence": "high", "entities": { "medication": "Paracetamol", "date": null, "quantity": null, "symptom": null }, "action_path": "/adicionar-item", "spokenResponse": "Abrindo formulÃ¡rio para Paracetamol." } }
+        - "Estou com dor de cabeÃ§a" -> { "text": "Estou com dor de cabeÃ§a", "intent": { "type": "HEALTH_QUERY", "confidence": "high", "entities": { "medication": null, "date": null, "quantity": null, "symptom": "dor de cabeÃ§a" }, "action_path": "/saude", "spokenResponse": "Sinto muito. VocÃª quer registrar esse sintoma ou ver seus remÃ©dios para dor?" } }
         - "Ir para a agenda" -> { "text": "Ir para a agenda", "intent": { "type": "NAVIGATE", "confidence": "high", "entities": { "medication": null, "date": null, "quantity": null, "symptom": null }, "action_path": "/agenda", "spokenResponse": "Abrindo sua agenda." } }
         `;
         const result = await model.generateContent([
@@ -1130,8 +1153,9 @@ exports.claraWeeklySummary = functions.https.onCall(async (data, context) => {
         const lastWeek = new Date(today);
         lastWeek.setDate(today.getDate() - 7);
         // Fetch doses
-        const dosesSnap = await db.collection('users').doc(uid).collection('doses')
-            .where('scheduledTime', '>=', lastWeek)
+        const dosesSnap = await db.collection('dose_instances')
+            .where('userId', '==', uid)
+            .where('dueAt', '>=', lastWeek.toISOString())
             .get();
         const doses = dosesSnap.docs.map(d => d.data());
         const total = doses.length;
@@ -1144,12 +1168,12 @@ exports.claraWeeklySummary = functions.https.onCall(async (data, context) => {
         const prompt = `
             Gere um resumo semanal motivacional e informativo para o paciente.
             Dados:
-            - Adesão: ${adherence}%
+            - AdesÃ£o: ${adherence}%
             - Doses tomadas: ${taken}/${total}
             - Medicamentos: ${meds.join(', ')}
             
-            O tom deve ser acolhedor, como a Clara (assistente de saúde). Use emojis.
-            Se a adesão for baixa (<80%), seja encorajadora mas firme.
+            O tom deve ser acolhedor, como a Clara (assistente de saÃºde). Use emojis.
+            Se a adesÃ£o for baixa (<80%), seja encorajadora mas firme.
             Se for alta, parabenize.
             Retorne JSON: { "summary": "texto", "metrics": { "adherenceRate": ${adherence}, "onTimeRate": 0, "totalDoses": ${total}, "takenDoses": ${taken}, "missedDoses": ${missed} } }
         `;
@@ -1183,15 +1207,15 @@ exports.claraConsultationPrep = functions.https.onCall(async (data, context) => 
         const adherenceRate = 85; // Placeholder/Calculated
         const sideEffectsCount = 0; // Placeholder
         const prompt = `
-            Gere um relatório preparatório para consulta médica para os últimos ${period} dias.
+            Gere um relatÃ³rio preparatÃ³rio para consulta mÃ©dica para os Ãºltimos ${period} dias.
             Medicamentos em uso: ${medications.map((m) => m.name).join(', ')}.
-            Adesão estimada: ${adherenceRate}%.
+            AdesÃ£o estimada: ${adherenceRate}%.
             
-            Estrutura do relatório (Markdown simples):
-            1. Resumo da Adesão
+            Estrutura do relatÃ³rio (Markdown simples):
+            1. Resumo da AdesÃ£o
             2. Lista de Medicamentos Ativos
-            3. Perguntas Sugeridas para o Médico
-            4. Possíveis Efeitos para relatar
+            3. Perguntas Sugeridas para o MÃ©dico
+            4. PossÃ­veis Efeitos para relatar
             
             Retorne JSON: { "report": "texto_markdown", "metrics": { "medicationsCount": ${medications.length}, "adherenceRate": ${adherenceRate}, "sideEffectsCount": ${sideEffectsCount} } }
         `;
@@ -1224,7 +1248,7 @@ Object.defineProperty(exports, "resetMonthlyProtections", { enumerable: true, ge
 Object.defineProperty(exports, "syncProtectionAvailable", { enumerable: true, get: function () { return resetMonthlyProtections_1.syncProtectionAvailable; } });
 /**
  * ==================================================================
- * 8. MIGRATED FROM SUPABASE — get/update payment method, monthly
+ * 8. MIGRATED FROM SUPABASE â€” get/update payment method, monthly
  *    report, pharmacy prices, whatsapp reminder, google calendar sync
  * ==================================================================
  */
@@ -1309,13 +1333,13 @@ exports.generateMonthlyReport = functions.https.onCall(async (data, context) => 
         const endDate = new Date(year, month, 0, 23, 59, 59);
         const prevStartDate = new Date(year, month - 2, 1);
         const prevEndDate = new Date(year, month - 1, 0, 23, 59, 59);
-        const dosesSnap = await db.collectionGroup('dose_instances')
-            .where('user_id', '==', uid)
-            .where('due_at', '>=', admin.firestore.Timestamp.fromDate(startDate))
-            .where('due_at', '<=', admin.firestore.Timestamp.fromDate(endDate))
+        const dosesSnap = await db.collection('dose_instances')
+            .where('userId', '==', uid)
+            .where('dueAt', '>=', startDate.toISOString())
+            .where('dueAt', '<=', endDate.toISOString())
             .get();
         if (dosesSnap.empty)
-            return { message: 'Nenhum dado disponível para este mês', report: null };
+            return { message: 'Nenhum dado disponÃ­vel para este mÃªs', report: null };
         const doses = dosesSnap.docs.map(d => d.data());
         const totalDoses = doses.length;
         const takenDoses = doses.filter(d => d.status === 'taken').length;
@@ -1323,10 +1347,10 @@ exports.generateMonthlyReport = functions.https.onCall(async (data, context) => 
         const adherenceRate = Math.round((takenDoses / totalDoses) * 100);
         const delays = doses.filter(d => d.status === 'taken' && d.delay_minutes).map(d => d.delay_minutes);
         const avgDelayMinutes = delays.length > 0 ? Math.round(delays.reduce((a, b) => a + b, 0) / delays.length) : 0;
-        const prevSnap = await db.collectionGroup('dose_instances')
-            .where('user_id', '==', uid)
-            .where('due_at', '>=', admin.firestore.Timestamp.fromDate(prevStartDate))
-            .where('due_at', '<=', admin.firestore.Timestamp.fromDate(prevEndDate))
+        const prevSnap = await db.collection('dose_instances')
+            .where('userId', '==', uid)
+            .where('dueAt', '>=', prevStartDate.toISOString())
+            .where('dueAt', '<=', prevEndDate.toISOString())
             .get();
         const prevDoses = prevSnap.docs.map(d => d.data());
         const previousAdherence = prevDoses.length > 0
@@ -1342,7 +1366,7 @@ exports.generateMonthlyReport = functions.https.onCall(async (data, context) => 
                 medStats[name].taken++;
         }
         return {
-            message: 'Relatório gerado com sucesso',
+            message: 'RelatÃ³rio gerado com sucesso',
             report: {
                 month, year, totalDoses, takenDoses, skippedDoses, adherenceRate,
                 previousAdherence, improvementPercent: adherenceRate - previousAdherence,
@@ -1436,8 +1460,8 @@ exports.googleCalendarSync = functions.https.onCall(async (data, context) => {
                 start.setHours(hours, minutes, 0, 0);
                 const end = new Date(start.getTime() + 15 * 60 * 1000);
                 const eventBody = {
-                    summary: `💊 ${med.name}`,
-                    description: `Horamed: ${med.name}${med.doseText ? ` — ${med.doseText}` : ''}`,
+                    summary: `ðŸ’Š ${med.name}`,
+                    description: `Horamed: ${med.name}${med.doseText ? ` â€” ${med.doseText}` : ''}`,
                     start: { dateTime: start.toISOString(), timeZone: 'America/Sao_Paulo' },
                     end: { dateTime: end.toISOString(), timeZone: 'America/Sao_Paulo' },
                     recurrence: ['RRULE:FREQ=DAILY'],
