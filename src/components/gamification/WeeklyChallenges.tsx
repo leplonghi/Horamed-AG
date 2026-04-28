@@ -65,8 +65,8 @@ export default function WeeklyChallenges() {
       // Get week's doses using Firestore query
       const { data: doses, error } = await fetchCollection("dose_instances", [
         where("userId", "==", user.uid),
-        where("dueAt", ">=", weekStart.toISOString()),
-        where("dueAt", "<=", weekEnd.toISOString())
+        where("dueAt", ">=", weekStart),
+        where("dueAt", "<=", weekEnd)
       ]);
 
       if (error) throw error;

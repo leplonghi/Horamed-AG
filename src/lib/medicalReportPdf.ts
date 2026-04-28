@@ -355,7 +355,7 @@ async function fetchReportData(): Promise<MedicalReportData> {
     "dose_instances",
     [
       where('userId', '==', user.uid),
-      where('dueAt', '>=', thirtyDaysAgo.toISOString())
+      where('dueAt', '>=', thirtyDaysAgo)
     ]
   );
 
@@ -387,8 +387,8 @@ async function fetchReportData(): Promise<MedicalReportData> {
     "dose_instances",
     [
       where('userId', '==', user.uid),
-      where('dueAt', '>=', sixtyDaysAgo.toISOString()),
-      where('dueAt', '<', thirtyDaysAgo.toISOString())
+      where('dueAt', '>=', sixtyDaysAgo),
+      where('dueAt', '<', thirtyDaysAgo)
     ]
   );
 

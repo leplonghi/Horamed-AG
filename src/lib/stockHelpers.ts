@@ -100,7 +100,7 @@ async function calculateProjectedEndAt(itemId: string, unitsLeft: number): Promi
       where("userId", "==", userId),
       where("itemId", "==", itemId),
       where("status", "==", "taken"),
-      where("takenAt", ">=", sevenDaysAgo.toISOString())
+      where("takenAt", ">=", sevenDaysAgo)
     ]);
 
     let dailyConsumption = (takenDoses?.length || 0) / 7;

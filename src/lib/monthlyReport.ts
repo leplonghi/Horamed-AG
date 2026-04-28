@@ -82,8 +82,8 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
     "dose_instances",
     [
       where('userId', '==', userId),
-      where('dueAt', '>=', monthStart.toISOString()),
-      where('dueAt', '<=', monthEnd.toISOString())
+      where('dueAt', '>=', monthStart),
+      where('dueAt', '<=', monthEnd)
     ]
   );
 
@@ -126,8 +126,8 @@ async function getMonthlyReportData(userId: string, month: Date): Promise<Monthl
   const { data: healthDocs } = await fetchCollection<HealthDocument>(
     `users/${userId}/healthDocuments`,
     [
-      where('createdAt', '>=', monthStart.toISOString()),
-      where('createdAt', '<=', monthEnd.toISOString())
+      where('createdAt', '>=', monthStart),
+      where('createdAt', '<=', monthEnd)
     ]
   );
 

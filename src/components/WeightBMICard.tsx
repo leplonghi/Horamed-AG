@@ -90,7 +90,7 @@ export default function WeightBMICard({ userId, profileId }: WeightBMICardProps)
       const { data } = await fetchCollection<any>(
         `users/${userId}/vitalSigns`,
         [
-          where('measuredAt', '>=', sixMonthsAgo.toISOString()),
+          where('measuredAt', '>=', sixMonthsAgo),
           orderBy('measuredAt', 'asc')
         ]
       );

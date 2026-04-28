@@ -46,7 +46,7 @@ export function useStreakCalculator() {
         "dose_instances",
         [
           where("userId", "==", user.uid),
-          where("dueAt", ">=", startDate.toISOString()),
+          where("dueAt", ">=", startDate),
           orderBy("dueAt", "asc")
         ]
       );

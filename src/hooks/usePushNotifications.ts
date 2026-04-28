@@ -274,7 +274,7 @@ export const usePushNotifications = () => {
           p256dh,
           auth: authKey,
           userAgent: navigator.userAgent,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date(),
         });
       } else {
         await addDocument(`users/${user.uid}/pushSubscriptions`, {
@@ -282,8 +282,8 @@ export const usePushNotifications = () => {
           p256dh,
           auth: authKey,
           userAgent: navigator.userAgent,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
       }
 
@@ -291,7 +291,7 @@ export const usePushNotifications = () => {
       await setDocument(`users/${user.uid}/notificationPreferences`, 'current', {
         pushEnabled: true,
         pushToken: endpoint.substring(0, 255), // Store endpoint as token for tracking
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date(),
       });
 
       return true;
@@ -432,8 +432,8 @@ export const usePushNotifications = () => {
       "dose_instances",
       [where("userId", "==", user.uid), 
         where('status', '==', 'scheduled'),
-        where('dueAt', '>=', start.toISOString()),
-        where('dueAt', '<=', end.toISOString()),
+        where('dueAt', '>=', start),
+        where('dueAt', '<=', end),
         orderBy('dueAt', 'asc') // Firestore requires composite index for this
       ]
     );
@@ -745,7 +745,7 @@ export const usePushNotifications = () => {
       id: Date.now().toString(),
       doseId,
       action,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
       synced: false
     };
     actions.push(newAction);

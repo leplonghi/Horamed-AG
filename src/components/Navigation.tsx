@@ -93,8 +93,8 @@ function Navigation() {
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
       const { data: documents } = await fetchCollection<any>(`users/${user.uid}/documents`, [
-        where("expiresAt", "<=", thirtyDaysFromNow.toISOString()),
-        where("expiresAt", ">=", new Date().toISOString())
+        where("expiresAt", "<=", thirtyDaysFromNow),
+        where("expiresAt", ">=", new Date())
       ]);
 
       return documents?.length || 0;

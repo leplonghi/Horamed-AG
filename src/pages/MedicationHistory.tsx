@@ -62,8 +62,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
     const { data: dosesData } = await fetchCollection<DoseHistoryDoc>(
       dosesPath,
       [
-        where('dueAt', '>=', startDate.toISOString()),
-        where('dueAt', '<=', endDate.toISOString()),
+        where('dueAt', '>=', startDate),
+        where('dueAt', '<=', endDate),
         orderBy('dueAt', 'desc')
       ]
     );
@@ -124,8 +124,8 @@ export default function MedicationHistory({ hideLayout = false }: { hideLayout?:
         dosesPath,
         [
           where('itemId', '==', id),
-          where('dueAt', '>=', startDate.toISOString()),
-          where('dueAt', '<=', endDate.toISOString()),
+          where('dueAt', '>=', startDate),
+          where('dueAt', '<=', endDate),
           orderBy('dueAt', 'desc')
         ]
       );

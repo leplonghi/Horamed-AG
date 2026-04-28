@@ -82,7 +82,7 @@ export function useXPSystem() {
       const thirtyDaysAgo = subDays(new Date(), 30);
 
       const { data: recentDoses } = await fetchCollection<DoseDoc>(dosesPath, [
-        where("dueAt", ">=", thirtyDaysAgo.toISOString())
+        where("dueAt", ">=", thirtyDaysAgo)
       ]);
 
       if (recentDoses) {

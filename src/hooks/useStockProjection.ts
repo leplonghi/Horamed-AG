@@ -101,7 +101,7 @@ export function useStockProjection(profileId?: string) {
       const { data: doses } = await fetchCollection<DoseDoc>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where('dueAt', '>=', sevenDaysAgo.toISOString()),
+          where('dueAt', '>=', sevenDaysAgo),
           where('itemId', 'in', itemIds)
         ]
       );

@@ -120,8 +120,8 @@ export function useTodayData(
       const tomorrow = addDays(new Date(), 1);
       const paths = getUserPaths(authUser.uid);
       const { data } = await fetchCollection<Dose>(paths.doses, [
-        where("dueAt", ">=", startOfDay(tomorrow).toISOString()),
-        where("dueAt", "<=", endOfDay(tomorrow).toISOString()),
+        where("dueAt", ">=", startOfDay(tomorrow)),
+        where("dueAt", "<=", endOfDay(tomorrow)),
         where("status", "==", "scheduled"),
         orderBy("dueAt", "asc"),
         limit(1),
@@ -199,8 +199,8 @@ export function useTodayData(
         // Build constraints for dose_instances (global collection with userId filter)
         const doseDayConstraints: any[] = [
           where("userId", "==", userId),
-          where("dueAt", ">=", dayStart.toISOString()),
-          where("dueAt", "<=", dayEnd.toISOString()),
+          where("dueAt", ">=", dayStart),
+          where("dueAt", "<=", dayEnd),
           orderBy("dueAt", "asc"),
         ];
         if (profileId) {
@@ -209,8 +209,8 @@ export function useTodayData(
 
         const doseWeekConstraints: any[] = [
           where("userId", "==", userId),
-          where("dueAt", ">=", weekStart.toISOString()),
-          where("dueAt", "<=", weekEnd.toISOString()),
+          where("dueAt", ">=", weekStart),
+          where("dueAt", "<=", weekEnd),
         ];
         if (profileId) {
           doseWeekConstraints.push(where("profileId", "==", profileId));
@@ -222,13 +222,13 @@ export function useTodayData(
             : fetchDocument<{ nickname?: string; fullName?: string }>(`users`, userId),
           fetchCollection<Dose>(paths.doses, doseDayConstraints),
           fetchCollection<MedicalEvent>(paths.appointments, [
-            where("date", ">=", dayStart.toISOString()),
-            where("date", "<=", dayEnd.toISOString()),
+            where("date", ">=", dayStart),
+            where("date", "<=", dayEnd),
             orderBy("date", "asc"),
           ]),
           fetchCollection<MedicalEvent>(paths.events, [
-            where("date", ">=", dayStart.toISOString()),
-            where("date", "<=", dayEnd.toISOString()),
+            where("date", ">=", dayStart),
+            where("date", "<=", dayEnd),
             orderBy("date", "asc"),
           ]),
           fetchCollection<Dose>(paths.doses, doseWeekConstraints),
@@ -403,12 +403,12 @@ export function useTodayData(
 
       const [dosesResult, appointmentsResult, eventsResult] = await Promise.all([
         fetchCollection<Dose>(paths.doses, [
-          where("dueAt", ">=", monthStart.toISOString()),
-          where("dueAt", "<=", monthEnd.toISOString()),
+          where("dueAt", ">=", monthStart),
+          where("dueAt", "<=", monthEnd),
         ]),
         fetchCollection<Appointment>(paths.appointments, [
-          where("date", ">=", monthStart.toISOString()),
-          where("date", "<=", monthEnd.toISOString()),
+          where("date", ">=", monthStart),
+          where("date", "<=", monthEnd),
         ]),
         fetchCollection<HealthEvent>(paths.events, [
           where("type", "==", "renovacao_exame"),

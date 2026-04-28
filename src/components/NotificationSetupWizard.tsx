@@ -227,8 +227,8 @@ export default function NotificationSetupWizard({ open, onClose, onComplete }: N
 
       const { data: doses, error } = await fetchCollection<any>(dosesPath, [
         where("status", "==", "scheduled"),
-        where("dueAt", ">=", now.toISOString()),
-        where("dueAt", "<=", next48h.toISOString()),
+        where("dueAt", ">=", now),
+        where("dueAt", "<=", next48h),
         orderBy("dueAt", "asc")
       ]);
 

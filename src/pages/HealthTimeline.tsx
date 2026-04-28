@@ -100,7 +100,7 @@ export default function HealthTimeline() {
         allEvents.push({
           id: m.id,
           type: 'medicamento',
-          date: m.createdAt || new Date().toISOString(),
+          date: m.createdAt || new Date(),
           title: m.name,
           description: m.doseText || m.category || '',
           metadata: { ...m, stockInfo }
@@ -118,7 +118,7 @@ export default function HealthTimeline() {
         allEvents.push({
           id: d.id,
           type: 'documento',
-          date: d.createdAt || new Date().toISOString(),
+          date: d.createdAt || new Date(),
           title: d.title || 'Documento',
           description: d.provider || d.category || '',
           metadata: d
@@ -149,7 +149,7 @@ export default function HealthTimeline() {
 
       const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
         where("status", "==", "taken"),
-        where("takenAt", ">=", thirtyDaysAgo.toISOString()),
+        where("takenAt", ">=", thirtyDaysAgo),
         orderBy("takenAt", "desc"),
         limit(100)
       ]);

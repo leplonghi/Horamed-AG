@@ -87,7 +87,7 @@ export default function Charts() {
       const { data: history } = await fetchCollection<any>(
         `users/${user.uid}/healthHistory`,
         [
-          where("recordedAt", ">=", thirtyDaysAgo.toISOString()),
+          where("recordedAt", ">=", thirtyDaysAgo),
           orderBy("recordedAt", "asc")
         ]
       );

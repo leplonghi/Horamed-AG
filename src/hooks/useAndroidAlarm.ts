@@ -80,7 +80,7 @@ export const useAndroidAlarm = () => {
         notificationType: "local_alarm",
         title: log.type,
         body: log.details || "",
-        scheduledAt: log.timestamp.toISOString(),
+        scheduledAt: log.timestamp,
         deliveryStatus: log.success ? "delivered" : "failed",
         metadata: {
           alarmId: log.alarmId,
@@ -248,7 +248,7 @@ export const useAndroidAlarm = () => {
             extra: {
               doseId: config.doseId,
               itemId: config.itemId,
-              scheduledAt: config.scheduledAt.toISOString(),
+              scheduledAt: config.scheduledAt,
               ...config.extra,
             },
             autoCancel: false,
@@ -314,8 +314,8 @@ export const useAndroidAlarm = () => {
 
       const { data: doses } = await fetchCollection<Dose>(paths.doses, [
         where("status", "==", "scheduled"),
-        where("dueAt", ">=", now.toISOString()),
-        where("dueAt", "<=", next24h.toISOString()),
+        where("dueAt", ">=", now),
+        where("dueAt", "<=", next24h),
         orderBy("dueAt", "asc"),
       ]);
 

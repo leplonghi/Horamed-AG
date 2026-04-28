@@ -52,8 +52,8 @@ export default function QuickDoseWidget({
         "dose_instances",
         [where("userId", "==", user.uid), 
           where('status', '==', 'scheduled'),
-          where('dueAt', '>=', now.toISOString()),
-          where('dueAt', '<=', next2Hours.toISOString()),
+          where('dueAt', '>=', now),
+          where('dueAt', '<=', next2Hours),
           orderBy('dueAt', 'asc'),
           limit(1)
         ]

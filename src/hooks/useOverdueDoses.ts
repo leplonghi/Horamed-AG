@@ -66,8 +66,8 @@ export const useOverdueDoses = () => {
         dosesRef,
         where("userId", "==", user.uid),
         where("status", "==", "scheduled"),
-        where("dueAt", "<", nowIso),
-        where("dueAt", ">=", twoHoursAgoIso)
+        where("dueAt", "<", now),
+        where("dueAt", ">=", twoHoursAgo)
       );
 
       const dosesSnap = await getDocs(dosesQuery);

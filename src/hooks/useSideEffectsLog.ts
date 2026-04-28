@@ -74,11 +74,11 @@ export function useSideEffectsLog() {
       }
 
       if (startDate) {
-        constraints.push(where('recordedAt', '>=', startDate.toISOString()));
+        constraints.push(where('recordedAt', '>=', startDate));
       }
 
       if (endDate) {
-        constraints.push(where('recordedAt', '<=', endDate.toISOString()));
+        constraints.push(where('recordedAt', '<=', endDate));
       }
 
       const { data: logsData, error } = await fetchCollection<SideEffectLog>(

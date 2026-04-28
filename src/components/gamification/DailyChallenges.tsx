@@ -64,8 +64,8 @@ export function DailyChallenges() {
       // No Firestore, filtramos diretamente por userId e intervalo de data
       const { data: doses, error } = await fetchCollection("dose_instances", [
         where("userId", "==", user.uid),
-        where("dueAt", ">=", today.toISOString()),
-        where("dueAt", "<", tomorrow.toISOString())
+        where("dueAt", ">=", today),
+        where("dueAt", "<", tomorrow)
       ]);
 
       if (error) throw error;

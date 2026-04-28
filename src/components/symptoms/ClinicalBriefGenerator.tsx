@@ -31,8 +31,8 @@ export function ClinicalBriefGenerator() {
             const dosesRef = collection(db, "dose_instances");
             const dosesQuery = query(
                 dosesRef,
-                where('dueAt', '>=', startDate.toISOString()),
-                where('dueAt', '<=', endDate.toISOString())
+                where('dueAt', '>=', startDate),
+                where('dueAt', '<=', endDate)
             );
             const dosesSnapshot = await getDocs(dosesQuery);
 

@@ -57,8 +57,8 @@ export function useAdherenceInsights(windowDays = 7) {
 
     try {
       const { data } = await fetchCollection<Dose>(`${basePath}/doses`, [
-        where("dueAt", ">=", windowStart.toISOString()),
-        where("dueAt", "<=", windowEnd.toISOString()),
+        where("dueAt", ">=", windowStart),
+        where("dueAt", "<=", windowEnd),
         orderBy("dueAt", "asc"),
       ]);
 

@@ -29,7 +29,7 @@ export function useNotificationMetrics(days: number = 7) {
 
       // Fetch from Firestore
       const metricsRef = firestoreCollection(db, 'users', currentUser.uid, 'notificationMetrics');
-      const q = firestoreQuery(metricsRef, firestoreWhere('createdAt', '>=', startDate.toISOString()));
+      const q = firestoreQuery(metricsRef, firestoreWhere('createdAt', '>=', startDate));
       const snap = await firestoreGetDocs(q);
 
       const metrics = snap.docs.map(doc => doc.data());

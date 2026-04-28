@@ -32,7 +32,7 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ["weekly-doses", startOfWeek.toISOString(), endOfWeek.toISOString(), profileId],
+        queryKey: ["weekly-doses", startOfWeek, endOfWeek, profileId],
         queryFn: async () => {
             const user = auth.currentUser;
             if (!user) throw new Error("User not authenticated");
@@ -55,8 +55,8 @@ export function useWeeklyDoses(startOfWeek: Date, endOfWeek: Date, profileId?: s
             const { data: doses, error } = await fetchCollection<DoseDoc>(
                 "dose_instances",
                 [where("userId", "==", user.uid), 
-                    where("dueAt", ">=", startOfWeek.toISOString()),
-                    where("dueAt", "<=", endOfWeek.toISOString())
+                    where("dueAt", ">=", startOfWeek),
+                    where("dueAt", "<=", endOfWeek)
                 ]
             );
 

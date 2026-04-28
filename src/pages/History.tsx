@@ -123,8 +123,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
 
       // Query Constraints
       const constraints = [
-        where('dueAt', '>=', startDate.toISOString()),
-        where('dueAt', '<=', endDate.toISOString()),
+        where('dueAt', '>=', startDate),
+        where('dueAt', '<=', endDate),
         orderBy('dueAt', 'desc')
       ];
 
@@ -152,8 +152,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
 
       // Previous period
       const prevConstraints = [
-        where('dueAt', '>=', previousStartDate.toISOString()),
-        where('dueAt', '<=', previousEndDate.toISOString())
+        where('dueAt', '>=', previousStartDate),
+        where('dueAt', '<=', previousEndDate)
       ];
       const { data: prevDosesData } = await fetchCollection<any>("dose_instances", prevConstraints);
 
@@ -194,8 +194,8 @@ export default function History({ hideLayout = false }: { hideLayout?: boolean }
       const itemsMap = new Map(items?.map(i => [i.id, i]));
 
       const { data: dosesData } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
-        where('dueAt', '>=', thirtyDaysAgo.toISOString()),
-        where('dueAt', '<=', now.toISOString())
+        where('dueAt', '>=', thirtyDaysAgo),
+        where('dueAt', '<=', now)
       ]);
 
       // Group by medication

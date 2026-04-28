@@ -34,8 +34,8 @@ function MonthlyReportWidget() {
       const { data } = await fetchCollection<any>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where('dueAt', '>=', monthStart.toISOString()),
-          where('dueAt', '<=', monthEnd.toISOString())
+          where('dueAt', '>=', monthStart),
+          where('dueAt', '<=', monthEnd)
         ]
       );
 

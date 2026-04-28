@@ -46,7 +46,7 @@ export const useAdaptiveSuggestions = () => {
         const { data: doses, error } = await fetchCollection<DoseDoc>(
           "dose_instances",
           [where("userId", "==", user.uid), 
-            where('dueAt', '>=', sevenDaysAgo.toISOString()), // Changed to ISO comparison
+            where('dueAt', '>=', sevenDaysAgo), // Changed to ISO comparison
             orderBy('dueAt', 'desc'),
             limit(100)
           ]

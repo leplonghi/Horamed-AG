@@ -39,7 +39,7 @@ export default function SmartInsightsCard() {
       const dosesSnap = await getDocs(query(
         collection(db, "dose_instances"),
         where("userId", "==", user.uid),
-        where("dueAt", ">=", last14Days.toISOString())
+        where("dueAt", ">=", last14Days)
       ));
       const doses = dosesSnap.docs.map(d => d.data() as {
         status?: string;

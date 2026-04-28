@@ -16,8 +16,8 @@ export class MedicationRepository {
     // Definido em firestore.indexes.json
     const constraints: any[] = [
       where("userId", "==", userId),
-      where("dueAt", ">=", startDate.toISOString()),
-      where("dueAt", "<=", endDate.toISOString()),
+      where("dueAt", ">=", startDate),
+      where("dueAt", "<=", endDate),
     ];
 
     if (profileId) {
@@ -63,8 +63,8 @@ export class MedicationRepository {
     const q = query(
       collection(db, "dose_instances"),
       ...constraints,
-      where("dueAt", ">=", tomorrowStart.toISOString()),
-      where("dueAt", "<=", tomorrowEnd.toISOString()),
+      where("dueAt", ">=", tomorrowStart),
+      where("dueAt", "<=", tomorrowEnd),
       where("status", "==", "scheduled"),
       orderBy("dueAt", "asc"),
       limit(1)
@@ -105,7 +105,7 @@ export class MedicationRepository {
     const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
-      dueAt: newDateIso
+      dueAt: Timestamp.fromDate(new Date(newDateIso))
     });
     
     eventBus.emit(AppEvents.DOSE_SNOOZED, { userId, profileId, doseId, newDateIso, itemName });

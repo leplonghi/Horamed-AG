@@ -105,13 +105,13 @@ export default function MedicalReports() {
       startDate.setDate(startDate.getDate() - daysAgo);
 
       const { data: vitals } = await fetchCollection<Vital>(`users/${user.uid}/vitals`, [
-        where('date', '>=', startDate.toISOString()),
+        where('date', '>=', startDate),
         orderBy('date', 'desc')
       ]);
 
       // 4. Fetch Dose Instances
       const { data: doses } = await fetchCollection<any>("dose_instances", [where("userId", "==", user.uid), 
-        where('dueAt', '>=', startDate.toISOString()),
+        where('dueAt', '>=', startDate),
         orderBy('dueAt', 'desc')
       ]);
 

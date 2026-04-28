@@ -86,8 +86,8 @@ export async function getFreeExtraSlotsForUser(userId: string, currentMonth: Dat
     `users/${userId}/referrals`,
     [
       where('status', '==', 'active'),
-      where('activatedAt', '>=', monthStart.toISOString()),
-      where('activatedAt', '<=', monthEnd.toISOString())
+      where('activatedAt', '>=', monthStart),
+      where('activatedAt', '<=', monthEnd)
     ]
   );
 

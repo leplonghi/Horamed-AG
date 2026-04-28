@@ -72,7 +72,7 @@ export default function FamilyLeaderboard() {
         
         const { data: doses, error: doseError } = await fetchCollection("dose_instances", [
           where("profileId", "==", profile.id),
-          where("dueAt", ">=", weekStart.toISOString())
+          where("dueAt", ">=", weekStart)
         ]);
 
         if (doseError) console.error(`Error fetching doses for profile ${profile.id}:`, doseError);

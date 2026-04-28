@@ -76,8 +76,8 @@ export function useStreakProtection() {
       const { data: yesterdayDoses } = await fetchCollection<any>(
         "dose_instances",
         [where("userId", "==", user.uid), 
-          where("dueAt", ">=", yesterday.toISOString()),
-          where("dueAt", "<", startOfDay(new Date()).toISOString())
+          where("dueAt", ">=", yesterday),
+          where("dueAt", "<", startOfDay(new Date()))
         ]
       );
 
@@ -129,7 +129,7 @@ export function useStreakProtection() {
           ...currentFlags.streak_protection,
           week_start: weekStart,
           freezes_used_this_week: (data.freezesUsedThisWeek || 0) + 1,
-          last_freeze_date: new Date().toISOString(),
+          last_freeze_date: new Date(),
         }
       };
 
@@ -169,7 +169,7 @@ export function useStreakProtection() {
 
       const recovery: StreakRecoveryData = {
         missions_completed: newMissionsCompleted,
-        last_mission_date: new Date().toISOString(),
+        last_mission_date: new Date(),
       };
 
       // If all missions completed, recover the streak

@@ -125,7 +125,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
       // Adherence (30 days)
       const { data: recentDoses } = await fetchCollection<Record<string, unknown>>(
         "dose_instances",
-        [where("dueAt", ">=", thirtyDaysAgo.toISOString())]
+        [where("dueAt", ">=", thirtyDaysAgo)]
       );
       const { data: allItems } = await fetchCollection<Record<string, unknown>>(`users/${user.uid}/medications`);
       const itemProfileMap = new Map(allItems?.map((i: Record<string, unknown>) => [i.id, i.profileId]));
@@ -160,7 +160,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
       // Vitals
       const { data: sinais } = await fetchCollection<Record<string, unknown>>(
         `users/${user.uid}/vitals`,
-        [where("date", ">=", threeMonthsAgo.toISOString()), orderBy("date", "asc")]
+        [where("date", ">=", threeMonthsAgo), orderBy("date", "asc")]
       );
       const filteredSinais = activeProfile
         ? sinais?.filter((s: Record<string, unknown>) => s.profileId === activeProfile.id)
@@ -230,7 +230,7 @@ export default function HealthDataTab({ hideLayout = false }: { hideLayout?: boo
 
       const { data: periodDoses } = await fetchCollection<Record<string, unknown>>(
         "dose_instances",
-        [where("dueAt", ">=", mesAnteriorInicio.toISOString()), where("dueAt", "<=", mesAtualFim.toISOString())]
+        [where("dueAt", ">=", mesAnteriorInicio), where("dueAt", "<=", mesAtualFim)]
       );
       const filteredPeriodDoses = activeProfile
         ? periodDoses?.filter((d: Record<string, unknown>) => itemProfileMap.get(d.itemId as string) === activeProfile.id)

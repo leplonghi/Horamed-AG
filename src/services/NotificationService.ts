@@ -240,7 +240,7 @@ class NotificationService {
               doseId: dose.doseId,
               itemId: dose.itemId,
               itemName: dose.itemName,
-              scheduledAt: dose.scheduledAt.toISOString(),
+              scheduledAt: dose.scheduledAt,
               notificationType: dose.notificationType || "dose_alarm",
             },
             autoCancel: false,
@@ -348,7 +348,7 @@ class NotificationService {
         userId: user.uid,
         title: "⏰ Hora do remédio!",
         body: dose.doseText ? `${dose.itemName} - ${dose.doseText}` : dose.itemName,
-        scheduledAt: dose.scheduledAt.toISOString(),
+        scheduledAt: dose.scheduledAt,
       });
 
       return true;
@@ -374,8 +374,8 @@ class NotificationService {
         "dose_instances",
         [where("userId", "==", user.uid), 
           where("status", "==", "scheduled"),
-          where("dueAt", ">=", now.toISOString()),
-          where("dueAt", "<=", next24h.toISOString()),
+          where("dueAt", ">=", now),
+          where("dueAt", "<=", next24h),
           orderBy("dueAt", "asc")
         ]
       );
@@ -553,7 +553,7 @@ class NotificationService {
         notificationType: data.type,
         title: data.title,
         body: data.body,
-        scheduledAt: data.scheduledAt.toISOString(),
+        scheduledAt: data.scheduledAt,
         deliveryStatus: data.status,
         metadata: {
           notificationId: data.notificationId,

@@ -84,7 +84,7 @@ export function useHealthAgent() {
       [
         where('userId', '==', user.uid),
         where('eventName', '==', 'ai_agent_query'),
-        where('createdAt', '>=', today.toISOString())
+        where('createdAt', '>=', today)
       ]
     );
 
@@ -191,7 +191,7 @@ export function useHealthAgent() {
       [
         where('userId', '==', user.uid),
         where('eventName', '==', 'ai_agent_query'),
-        where('createdAt', '>=', today.toISOString())
+        where('createdAt', '>=', today)
       ]
     );
 

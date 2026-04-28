@@ -5,10 +5,10 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchCollection, where, orderBy } from '@/integrations/firebase';
+import { fetchCollection, where } from '@/integrations/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/integrations/firebase/client';
-import { safeDateParse } from "@/lib/safeDateUtils";
+import { startOfDay, endOfDay, addDays } from 'date-fns';
 
 const GENERATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
 const STORAGE_KEY = 'last_dose_generation';
@@ -20,7 +20,7 @@ export function useDoseGeneration() {
   const generateDoses = useCallback(async (force = false) => {
     if (!user || isGenerating.current) return;
 
-    // Check if we recently generated doses
+    // Check if we recently generated doses (throttle to avoid excessive CF calls)
     const lastGeneration = localStorage.getItem(STORAGE_KEY);
     const now = Date.now();
 
@@ -34,9 +34,7 @@ export function useDoseGeneration() {
     isGenerating.current = true;
 
     try {
-
       // First, check if user has any active schedules
-      // In Firebase: users/{uid}/schedules
       const { data: schedules } = await fetchCollection(
         `users/${user.uid}/schedules`,
         [where('isActive', '==', true)]
@@ -47,35 +45,51 @@ export function useDoseGeneration() {
         return;
       }
 
-      // Check if we have doses for the next 24 hours
-      const next24h = safeDateParse(now + 24 * 60 * 60 * 1000);
+      // Check if TODAY has enough dose instances (critical: use Date objects, not ISO strings,
+      // so Firestore compares Timestamp == Timestamp, not Timestamp vs string)
+      const todayStart = startOfDay(new Date());
+      const todayEnd = endOfDay(new Date());
+      const next7Days = endOfDay(addDays(new Date(), 7));
 
-      // In Firebase: users/{uid}/doses
-      // We don't filter by schedule IDs here to avoid "in" limits, just date and status
-      const { data: futureDoses } = await fetchCollection(
+      const { data: todayDoses } = await fetchCollection(
         "dose_instances",
-        [where("userId", "==", user.uid), 
-          where('status', '==', 'scheduled'),
-          where('dueAt', '>=', new Date()),
-          where('dueAt', '<=', next24h)
+        [
+          where("userId", "==", user.uid),
+          where("dueAt", ">=", todayStart),
+          where("dueAt", "<=", todayEnd),
         ]
       );
 
+      const { data: futureDoses } = await fetchCollection(
+        "dose_instances",
+        [
+          where("userId", "==", user.uid),
+          where("status", "==", "scheduled"),
+          where("dueAt", ">", todayEnd),
+          where("dueAt", "<=", next7Days),
+        ]
+      );
 
-      // If we have few or no doses, trigger generation
-      if (!futureDoses || futureDoses.length < schedules.length) {
+      const todayCount = todayDoses?.length ?? 0;
+      const futureCount = futureDoses?.length ?? 0;
 
+      // Regenerate if: today has no doses OR future pipeline is thin
+      const needsGeneration =
+        todayCount === 0 ||
+        futureCount < schedules.length * 3; // at least 3 days ahead per schedule
+
+      if (needsGeneration) {
+        console.log(`[DoseGeneration] Triggering CF: today=${todayCount}, future=${futureCount}, schedules=${schedules.length}`);
         const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
-
         try {
-          const result = await generateDoseInstances({ days: 7 });
-
+          await generateDoseInstances({ days: 7 });
           // Also trigger notification scheduling
           const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
           await scheduleDoseNotifications();
-
         } catch (error) {
           console.error('[DoseGeneration] Error calling function:', error);
+          // Don't update localStorage on CF error so next open retries
+          return;
         }
       }
 
@@ -90,44 +104,30 @@ export function useDoseGeneration() {
   // Generate on mount and when user changes
   useEffect(() => {
     if (user) {
-      // Small delay to let app initialize
       const timeout = setTimeout(() => {
         generateDoses();
       }, 2000);
-
       return () => clearTimeout(timeout);
     }
   }, [user, generateDoses]);
 
-  // Also set up periodic check
+  // Periodic check every 6 hours
   useEffect(() => {
     if (!user) return;
-
     const interval = setInterval(() => {
       generateDoses();
     }, GENERATION_INTERVAL);
-
     return () => clearInterval(interval);
   }, [user, generateDoses]);
 
-  // Listen for medication updates (real-time integration)
+  // Force regeneration on medication updates
   useEffect(() => {
     if (!user) return;
-
-    const handler = () => {
-      generateDoses(true); // Force regeneration
-    };
-
     let cleanup: (() => void) | undefined;
-
-    // Dynamic import to avoid cycles if any (though eventBus is lib)
     import('@/lib/eventBus').then(({ eventBus, EVENTS }) => {
-      cleanup = eventBus.on(EVENTS.MEDICATION_UPDATED, handler);
+      cleanup = eventBus.on(EVENTS.MEDICATION_UPDATED, () => generateDoses(true));
     });
-
-    return () => {
-      if (cleanup) cleanup();
-    };
+    return () => { if (cleanup) cleanup(); };
   }, [user, generateDoses]);
 
   return { generateDoses };

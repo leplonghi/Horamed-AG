@@ -263,7 +263,7 @@ export const useResilientReminders = () => {
     reminders.push({
       ...data,
       userId,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(reminders));
 
@@ -271,7 +271,7 @@ export const useResilientReminders = () => {
     try {
       await addDocument(`users/${userId}/localReminders`, {
         doseId: data.doseId,
-        scheduledAt: data.scheduledAt.toISOString(),
+        scheduledAt: data.scheduledAt,
         notificationData: {
           title: data.title,
           body: data.body,
@@ -302,7 +302,7 @@ export const useResilientReminders = () => {
         overdueRef,
         where("status", "==", "failed"),
         where("retryCount", "<", MAX_RETRY_ATTEMPTS),
-        where("scheduledAt", ">=", new Date().toISOString())
+        where("scheduledAt", ">=", new Date())
       );
 
       const failedMetaSnap = await getDocs(q);
@@ -331,7 +331,7 @@ export const useResilientReminders = () => {
           await updateDocument(`users/${user.uid}/localReminders`, reminder.id, {
             status: success ? "sent" : "failed",
             retryCount: (reminder.retryCount || 0) + 1,
-            lastRetryAt: new Date().toISOString(),
+            lastRetryAt: new Date(),
           });
         }
       }
@@ -363,7 +363,7 @@ export const useResilientReminders = () => {
       startDate.setDate(startDate.getDate() - days);
 
       const metricsRef = collection(db, 'users', user.uid, 'notificationMetrics');
-      const q = query(metricsRef, where('createdAt', '>=', startDate.toISOString()));
+      const q = query(metricsRef, where('createdAt', '>=', startDate));
       const snap = await getDocs(q);
       const data = snap.docs.map(d => d.data()) as NotificationMetric[];
 
@@ -416,7 +416,7 @@ export const useResilientReminders = () => {
       const qReminders = query(
         remindersRef,
         where("status", "==", "sent"),
-        where("scheduledAt", "<", cutoffDate.toISOString())
+        where("scheduledAt", "<", cutoffDate)
       );
       const snapReminders = await getDocs(qReminders);
       snapReminders.forEach(async (d) => await deleteDoc(doc(db, 'users', user.uid, 'localReminders', d.id)));
@@ -424,7 +424,7 @@ export const useResilientReminders = () => {
 
       // Delete old metrics
       const metricsRef = collection(db, 'users', user.uid, 'notificationMetrics');
-      const qMetrics = query(metricsRef, where("createdAt", "<", cutoffDate.toISOString()));
+      const qMetrics = query(metricsRef, where("createdAt", "<", cutoffDate));
       const snapMetrics = await getDocs(qMetrics);
       snapMetrics.forEach(async (d) => await deleteDoc(doc(db, 'users', user.uid, 'notificationMetrics', d.id)));
 
