@@ -8,6 +8,7 @@ import { useProfileCacheContext } from "@/contexts/ProfileCacheContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { symptomService } from "@/lib/symptomService";
 import {
+  fetchCollection,
   fetchDocument,
   where,
   orderBy,
