@@ -179,12 +179,9 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       target: 'esnext',
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: false,
-          drop_debugger: false,
-        },
+      minify: 'esbuild',
+      esbuildOptions: {
+        drop: ['debugger'],
       },
       rollupOptions: {
         output: {

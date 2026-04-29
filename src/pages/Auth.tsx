@@ -39,12 +39,29 @@ export default function Auth() {
   const {
     t
   } = useLanguage();
+  
+  // All useState hooks must be called before any useEffect/useCallback
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  const [isLogin, setIsLogin] = useState(true);
+  const [isFirstVisit] = useState(() => !localStorage.getItem('horamed_has_visited'));
+  
+  // All custom hooks must be called before any useEffect/useCallback
+  const {
+    isAvailable,
+    isLoading: biometricLoading,
+    loginWithBiometric,
+    isBiometricEnabled,
+    setupBiometricLogin
+  } = useBiometricAuth();
+  const {
+    fingerprint
+  } = useDeviceFingerprint();
 
   const handleForgotPassword = useCallback(async () => {
     const targetEmail = email.trim();
@@ -77,19 +94,6 @@ export default function Auth() {
       }
     }
   }, [authError]);
-  const [referralCode, setReferralCode] = useState("");
-  const [isLogin, setIsLogin] = useState(true);
-  const [isFirstVisit] = useState(() => !localStorage.getItem('horamed_has_visited'));
-  const {
-    isAvailable,
-    isLoading: biometricLoading,
-    loginWithBiometric,
-    isBiometricEnabled,
-    setupBiometricLogin
-  } = useBiometricAuth();
-  const {
-    fingerprint
-  } = useDeviceFingerprint();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
