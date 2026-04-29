@@ -229,15 +229,13 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      // Get VAPID key from backend
-      const getVapidKey = httpsCallable<Record<string, never>, { publicKey: string }>(functions, 'getVapidKey');
-      const { data: vapidData } = await getVapidKey();
+      // VAPID key is public — read directly from env instead of a Cloud Function call
+      const vapidPublicKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
 
-      if (!vapidData?.publicKey) {
-        console.error("[Web Push] Failed to get VAPID key");
+      if (!vapidPublicKey) {
+        console.error("[Web Push] VITE_FIREBASE_VAPID_KEY not set — web push disabled");
         return false;
       }
-
 
       // Get service worker registration
       const registration = await navigator.serviceWorker.ready;
@@ -247,7 +245,7 @@ export const usePushNotifications = () => {
 
       if (!subscription) {
         // Create new subscription with proper ArrayBuffer
-        const applicationServerKey = getApplicationServerKey(vapidData.publicKey);
+        const applicationServerKey = getApplicationServerKey(vapidPublicKey);
 
         subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,

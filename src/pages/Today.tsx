@@ -88,8 +88,10 @@ export default function Today() {
   const [isDoseModalOpen, setIsDoseModalOpen] = useState(false);
   const [selectedDoseForModal, setSelectedDoseForModal] = useState<any>(null);
 
-  // We use a ref for stats to break the circular dependency between markAsTaken and useTodayData
+  // We use refs to break the circular dependency between markAsTaken and useTodayData
   const todayStatsRef = useRef({ total: 0, taken: 0 });
+  const optimisticMarkDoneRef = useRef<((id: string) => void) | null>(null);
+  const reloadTodayDataRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (isNewMilestone && milestone) {
@@ -171,18 +173,18 @@ export default function Today() {
         setShowConfetti(true);
       }
 
-      optimisticMarkDone(doseId);
+      optimisticMarkDoneRef.current?.(doseId);
       refreshStreak();
       refreshAlerts();
       refreshOverdueDoses();
       // Reload today's data after a short delay to sync with server
-      setTimeout(() => reloadTodayData(), 500);
+      setTimeout(() => reloadTodayDataRef.current?.(), 500);
     } catch (error) {
       console.error("Error marking dose:", error);
       toast.error(t('todayRedesign.confirmDoseError'));
       throw error;
     }
-  }, [t, showFeedback, refreshStreak, refreshAlerts, refreshOverdueDoses, optimisticMarkDone, reloadTodayData, activeProfile?.id]);
+  }, [t, showFeedback, refreshStreak, refreshAlerts, refreshOverdueDoses, activeProfile?.id]);
 
   const markAsSkipped = useCallback(async (doseId: string, itemName: string) => {
     try {
@@ -256,10 +258,16 @@ export default function Today() {
     reload: reloadTodayData,
   } = useTodayData(selectedDate, markAsTaken, snoozeDose);
 
-  // Keep the ref updated with the latest stats from the hook
+  // Keep refs updated with latest values from the hook (breaks circular dependency)
   useEffect(() => {
     todayStatsRef.current = todayStats;
   }, [todayStats]);
+  useEffect(() => {
+    optimisticMarkDoneRef.current = optimisticMarkDone;
+  }, [optimisticMarkDone]);
+  useEffect(() => {
+    reloadTodayDataRef.current = reloadTodayData;
+  }, [reloadTodayData]);
 
   const adherenceRate = todayStats.total > 0
     ? todayStats.taken / todayStats.total

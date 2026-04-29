@@ -4,8 +4,7 @@ import { fetchCollection, setDocument, deleteDocument, where } from '@/integrati
 import { messaging } from '@/integrations/firebase/client';
 import { getToken, deleteToken } from 'firebase/messaging';
 
-// Add VAPID key to environment variables or fetch from remote config
-const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined;
 
 export interface UsePushSubscriptionReturn {
   isSubscribed: boolean;
