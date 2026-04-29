@@ -87,9 +87,7 @@ export function useDoseGeneration() {
         const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
         try {
           await generateDoseInstances({ days: 7 });
-          // Also trigger notification scheduling
-          const scheduleDoseNotifications = httpsCallable(functions, 'scheduleDoseNotifications');
-          await scheduleDoseNotifications();
+          // scheduleDoseNotifications is a pubsub function — it runs on its own schedule every 15min
         } catch (error) {
           console.error('[DoseGeneration] Error calling function:', error);
           // Don't update localStorage on CF error so next open retries

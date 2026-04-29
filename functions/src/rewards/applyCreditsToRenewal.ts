@@ -9,9 +9,16 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2023-10-16' as any,
-});
+// Lazy-init: avoid throwing at module load when env var is missing (e.g. during CF analysis)
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+    if (!_stripe) {
+        const key = process.env.STRIPE_SECRET_KEY;
+        if (!key) throw new Error('STRIPE_SECRET_KEY not configured');
+        _stripe = new Stripe(key, { apiVersion: '2023-10-16' as any });
+    }
+    return _stripe;
+}
 
 export const applyCreditsToRenewal = functions.pubsub
     .schedule('every day 00:00')
@@ -81,7 +88,7 @@ export const applyCreditsToRenewal = functions.pubsub
 async function processRenewal(userId: string, subscriptionId: string, credits: number) {
     try {
         // 1. Busca assinatura no Stripe para saber o valor
-        const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+        const stripeSub = await getStripe().subscriptions.retrieve(subscriptionId);
 
         if (!stripeSub.items.data[0]) {
             console.error(`Assinatura ${subscriptionId} sem itens.`);
@@ -99,7 +106,7 @@ async function processRenewal(userId: string, subscriptionId: string, credits: n
         console.log(`Aplicando R$ ${discountAmount} de desconto para ${userId} (Saldo: R$ ${credits})`);
 
         // 3. Cria um cupom de uso único no Stripe
-        const coupon = await stripe.coupons.create({
+        const coupon = await getStripe().coupons.create({
             amount_off: Math.round(discountAmount * 100), // Centavos
             currency: 'brl',
             duration: 'once',
@@ -111,7 +118,7 @@ async function processRenewal(userId: string, subscriptionId: string, credits: n
         });
 
         // 4. Aplica o cupom na assinatura
-        await stripe.subscriptions.update(subscriptionId, {
+        await getStripe().subscriptions.update(subscriptionId, {
             coupon: coupon.id,
             metadata: {
                 lastCreditDetails: `R$ ${discountAmount.toFixed(2)} applied on ${new Date().toISOString()}`

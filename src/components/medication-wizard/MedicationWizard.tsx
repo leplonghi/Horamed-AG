@@ -8,7 +8,7 @@ import { WizardStepIdentity } from "./WizardStepIdentity";
 import { WizardStepScheduleConditional } from "./WizardStepScheduleConditional";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useSubscription } from "@/hooks/useSubscription";
-import { auth, functions, httpsCallable, fetchDocument, fetchCollection, addDocument, updateDocument, deleteDocument, where } from "@/integrations/firebase";
+import { auth, functions, httpsCallable, fetchDocument, fetchCollection, addDocument, setDocument, updateDocument, deleteDocument, where } from "@/integrations/firebase";
 import { toast } from "sonner";
 import { PremiumPaywall } from "@/components/PremiumPaywall";
 import { cn } from "@/lib/utils";
@@ -416,7 +416,11 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         treatmentStartDate: medicationData.startDate || new Date().toISOString().split('T')[0],
         treatmentEndDate: treatmentEndDate,
         notificationType: medicationData.notificationType,
-        profileId: activeProfile?.id || null, // Ensure profileId is saved
+        profileId: activeProfile?.id || null,
+        // Store times in the medication doc so generateDoseInstances CF can read them
+        times: medicationData.times,
+        frequency: medicationData.frequency,
+        daysOfWeek: medicationData.frequency === 'specific_days' ? medicationData.daysOfWeek : [],
         updatedAt: new Date().toISOString()
       };
 
@@ -493,18 +497,16 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
       // Generate dose instances
       const doseInstances: any[] = [];
       const now = new Date();
+      const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
       const scheduleTimes = medicationData.times;
 
-      // Generate for next 7 days
+      // Generate for next 7 days (day 0 = today)
       for (let day = 0; day < 7; day++) {
         const date = safeDateParse(now);
         date.setDate(date.getDate() + day);
 
         // Filtering for specific days if needed
         if (medicationData.frequency === 'specific_days' && medicationData.daysOfWeek) {
-          // daysOfWeek: 0-6 (Sun-Sat) or 1-7? Date.getDay() returns 0-6 (Sun-Sat).
-          // Need to check what WizardStepScheduleConditional returns.
-          // Assuming 0-6 for now.
           if (!medicationData.daysOfWeek.includes(date.getDay())) {
             continue;
           }
@@ -515,14 +517,20 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           const dueAt = safeDateParse(date);
           dueAt.setHours(hours, minutes, 0, 0);
 
-          if (dueAt > now) {
+          // Future doses → scheduled; today's past doses → missed (for adherence tracking)
+          const isPast = dueAt <= now;
+          const isTodayPast = isPast && dueAt >= todayStart;
+          if (isPast && !isTodayPast) continue; // Skip past days entirely
+
+          if (dueAt > now || isTodayPast) {
             doseInstances.push({
               scheduleId: newScheduleId,
               itemId: itemId,
+              itemName: medicationData.name,
               userId: user.uid,
-              profileId: activeProfile?.id,
+              profileId: activeProfile?.id || null,
               dueAt: dueAt.toISOString(),
-              status: "scheduled",
+              status: isTodayPast ? "missed" : "scheduled",
               createdAt: new Date().toISOString()
             });
           }
@@ -534,9 +542,9 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
         await Promise.all(doseInstances.map(dose => addDocument("dose_instances", dose)));
       }
 
-      // Create stock if enabled
+      // Create stock if enabled — use itemId as document ID so markAsTaken can find it
       if (medicationData.controlStock) {
-        await addDocument(`users/${user.uid}/stock`, {
+        await setDocument(`users/${user.uid}/stock`, itemId, {
           itemId: itemId,
           itemName: medicationData.name,
           userId: user.uid,
@@ -544,7 +552,6 @@ export default function MedicationWizard({ open, onOpenChange, editItemId }: Med
           currentQty: medicationData.unitsTotal,
           unitLabel: medicationData.unitLabel,
           lastRefillAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
         });
       }
 

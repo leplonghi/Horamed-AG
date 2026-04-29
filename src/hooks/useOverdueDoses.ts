@@ -3,9 +3,7 @@ import { auth, db } from "@/integrations/firebase/client";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { differenceInMinutes } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
-import { functions } from "@/integrations/firebase/client";
-import { httpsCallable } from "firebase/functions";
+import { collection, query, where, getDocs, doc, updateDoc, Timestamp } from "firebase/firestore";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 
 interface MedicationItem {
@@ -142,17 +140,18 @@ export const useOverdueDoses = () => {
   }, [queryClient, profileId]);
 
   const markAsTaken = useCallback(async (doseId: string) => {
+    // Optimistic update first
+    queryClient.setQueryData([CACHE_KEY, profileId], (old: OverdueDose[] | undefined) =>
+      old?.filter(d => d.id !== doseId) ?? []
+    );
     try {
-      // Optimistic update
-      queryClient.setQueryData([CACHE_KEY, profileId], (old: OverdueDose[] | undefined) =>
-        old?.filter(d => d.id !== doseId) ?? []
-      );
-
-      const handleDoseAction = httpsCallable(functions, 'handleDoseAction');
-      await handleDoseAction({ doseId, action: 'taken' });
-
+      await updateDoc(doc(db, 'dose_instances', doseId), {
+        status: 'taken',
+        takenAt: Timestamp.now(),
+      });
     } catch (error) {
-      refresh(); // Revert on error
+      console.error('[useOverdueDoses] Error marking dose as taken:', error);
+      refresh(); // Revert optimistic update on error
     }
   }, [queryClient, profileId, refresh]);
 

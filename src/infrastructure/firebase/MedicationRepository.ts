@@ -105,7 +105,7 @@ export class MedicationRepository {
     const doseRef = doc(db, "dose_instances", doseId);
     
     await updateDoc(doseRef, {
-      dueAt: Timestamp.fromDate(new Date(newDateIso))
+      dueAt: newDateIso  // Keep as ISO string — all queries compare strings
     });
     
     eventBus.emit(AppEvents.DOSE_SNOOZED, { userId, profileId, doseId, newDateIso, itemName });
