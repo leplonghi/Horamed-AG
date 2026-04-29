@@ -590,43 +590,48 @@ exports.generateDoseInstances = functions.https.onCall(async (data, context) => 
     const userId = context.auth.uid;
     const days = data.days || 7;
     const now = new Date();
+    const todayStart = new Date(now);
+    todayStart.setHours(0, 0, 0, 0);
     try {
-        // Fetch active medications for user
-        // Also include medications without isActive field (backward compatibility)
-        const medicationsSnap = await db.collection('users').doc(userId).collection('medications')
-            .where('isActive', '==', true)
-            .get();
-        // Also fetch medications without isActive field (backward compatibility)
+        // Fetch all medications (active + no isActive field for backward compat)
         const allMedicationsSnap = await db.collection('users').doc(userId).collection('medications').get();
-        const activeMeds = medicationsSnap.docs;
-        const noStatusMeds = allMedicationsSnap.docs.filter(d => d.data().isActive === undefined);
-        // Combine unique medications
-        const allMedDocs = [...activeMeds];
-        const seenIds = new Set(activeMeds.map(d => d.id));
-        for (const med of noStatusMeds) {
-            if (!seenIds.has(med.id)) {
-                allMedDocs.push(med);
-                seenIds.add(med.id);
-            }
-        }
+        const allMedDocs = allMedicationsSnap.docs.filter(d => d.data().isActive !== false);
         if (allMedDocs.length === 0) {
             return { generated: 0, message: 'No active medications found' };
         }
+        // Fetch all schedules for this user (times may live there instead of on the med doc)
+        const schedulesSnap = await db.collection('users').doc(userId).collection('schedules').get();
+        const schedulesByItemId = new Map();
+        schedulesSnap.docs.forEach(s => {
+            const d = s.data();
+            if (d.itemId && Array.isArray(d.times) && d.times.length > 0) {
+                schedulesByItemId.set(d.itemId, d.times);
+            }
+        });
         const medications = allMedDocs.map(d => (Object.assign({ id: d.id }, d.data())));
         let generatedCount = 0;
         for (const med of medications) {
-            const schedule = med.schedule || med.times || [];
-            if (!Array.isArray(schedule) || schedule.length === 0)
+            // Times priority: medication doc field → schedules subcollection
+            const schedule = (med.schedule || med.times || schedulesByItemId.get(med.id) || []);
+            if (!Array.isArray(schedule) || schedule.length === 0) {
+                functions.logger.warn(`[generateDoseInstances] No times for medication ${med.id} (${med.name})`);
                 continue;
-            // Generate doses for each day and time
+            }
+            // Generate doses for today + next N days
             for (let d = 0; d < days; d++) {
-                const date = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
-                const dateStr = date.toISOString().split('T')[0];
+                const date = new Date(now);
+                date.setDate(date.getDate() + d);
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 for (const time of schedule) {
-                    const dueAt = new Date(`${dateStr}T${time}:00`);
-                    if (dueAt < now)
-                        continue; // Skip past doses
-                    // Check if dose already exists
+                    const [hh, mm] = time.split(':').map(Number);
+                    const dueAt = new Date(`${dateStr}T${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:00`);
+                    // Skip doses from previous days
+                    if (dueAt < todayStart)
+                        continue;
+                    // Today's past times → "missed"; future → "scheduled"
+                    const isPast = dueAt < now;
+                    const status = isPast ? 'missed' : 'scheduled';
+                    // Check if dose already exists (avoid duplicates)
                     const existingSnap = await db.collection('dose_instances')
                         .where('userId', '==', userId)
                         .where('itemId', '==', med.id)
@@ -635,21 +640,18 @@ exports.generateDoseInstances = functions.https.onCall(async (data, context) => 
                         .get();
                     if (!existingSnap.empty)
                         continue;
-                    // Create new dose instance
                     const doseData = {
                         userId,
                         itemId: med.id,
                         itemName: med.name,
                         dueAt: dueAt.toISOString(),
-                        status: 'scheduled',
+                        status,
                         doseText: med.doseText || med.dose_text || null,
                         createdAt: admin.firestore.Timestamp.now(),
                         notificationSent: false,
                     };
-                    // Only add profileId if it exists (Firestore null queries don't work well)
-                    if (med.profileId) {
+                    if (med.profileId)
                         doseData.profileId = med.profileId;
-                    }
                     await db.collection('dose_instances').add(doseData);
                     generatedCount++;
                 }

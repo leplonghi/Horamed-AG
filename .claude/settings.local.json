@@ -14,7 +14,16 @@
       "Bash(firebase --version)",
       "Bash(firebase projects:list)",
       "Bash(node -e *)",
-      "Bash(npx madge *)"
+      "Bash(npx madge *)",
+      "Bash(cp \"C:\\\\Antigravity\\\\horamed\\\\horamed\\\\.env.production\" \"C:\\\\Antigravity\\\\horamed\\\\horamed\\\\.claude\\\\worktrees\\\\nice-davinci-7bfa63\\\\.env.production\")",
+      "Bash(cp \"C:\\\\Antigravity\\\\horamed\\\\horamed\\\\.env\" \"C:\\\\Antigravity\\\\horamed\\\\horamed\\\\.claude\\\\worktrees\\\\nice-davinci-7bfa63\\\\.env\")",
+      "Bash(firebase deploy *)",
+      "Bash(node scripts/check-env.js)",
+      "Bash(VITE_FIREBASE_API_KEY=\"\" node scripts/check-env.js)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(python -c ' *)",
+      "Bash(npm install *)"
     ]
   }
 }

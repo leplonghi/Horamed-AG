@@ -11,7 +11,8 @@ import { functions } from '@/integrations/firebase/client';
 import { startOfDay, endOfDay, addDays } from 'date-fns';
 
 const GENERATION_INTERVAL = 6 * 60 * 60 * 1000; // 6 hours
-const STORAGE_KEY = 'last_dose_generation';
+// v2: bump version to invalidate cached timestamps from before the CF fix
+const STORAGE_KEY = 'last_dose_generation_v2';
 
 export function useDoseGeneration() {
   const { user } = useAuth();
@@ -20,27 +21,15 @@ export function useDoseGeneration() {
   const generateDoses = useCallback(async (force = false) => {
     if (!user || isGenerating.current) return;
 
-    // Check if we recently generated doses (throttle to avoid excessive CF calls)
-    const lastGeneration = localStorage.getItem(STORAGE_KEY);
+    isGenerating.current = true;
     const now = Date.now();
 
-    if (!force && lastGeneration) {
-      const lastTime = parseInt(lastGeneration, 10);
-      if (now - lastTime < GENERATION_INTERVAL) {
-        return;
-      }
-    }
-
-    isGenerating.current = true;
-
     try {
-      // First, check if user has any active medications
+      // ── Step 1: Check active medications ───────────────────────────────
       const { data: medications } = await fetchCollection(
         `users/${user.uid}/medications`,
         []
       );
-      
-      // Filter active medications (backward compatibility: include those without isActive)
       const activeMeds = medications?.filter(m => m.isActive !== false) || [];
 
       if (activeMeds.length === 0) {
@@ -49,8 +38,9 @@ export function useDoseGeneration() {
         return;
       }
 
-      // Check if TODAY has enough dose instances (critical: use Date objects, not ISO strings,
-      // so Firestore compares Timestamp == Timestamp, not Timestamp vs string)
+      // ── Step 2: Check what's actually in dose_instances TODAY ──────────
+      // Do this BEFORE the throttle: if today is empty we must generate
+      // regardless of when we last ran (old CF had a bug, generated 0 doses).
       const todayStart = startOfDay(new Date());
       const todayEnd = endOfDay(new Date());
       const next7Days = endOfDay(addDays(new Date(), 7));
@@ -64,6 +54,20 @@ export function useDoseGeneration() {
         ]
       );
 
+      const todayCount = todayDoses?.length ?? 0;
+
+      // ── Step 3: Apply throttle ONLY when today already has doses ────────
+      if (!force && todayCount > 0) {
+        const lastGeneration = localStorage.getItem(STORAGE_KEY);
+        if (lastGeneration) {
+          const lastTime = parseInt(lastGeneration, 10);
+          if (now - lastTime < GENERATION_INTERVAL) {
+            return; // Throttled — data is fresh
+          }
+        }
+      }
+
+      // ── Step 4: Check future pipeline ──────────────────────────────────
       const { data: futureDoses } = await fetchCollection(
         "dose_instances",
         [
@@ -74,10 +78,8 @@ export function useDoseGeneration() {
         ]
       );
 
-      const todayCount = todayDoses?.length ?? 0;
       const futureCount = futureDoses?.length ?? 0;
 
-      // Regenerate if: today has no doses OR future pipeline is thin
       const needsGeneration =
         todayCount === 0 ||
         futureCount < activeMeds.length * 3; // at least 3 days ahead per medication
@@ -87,11 +89,9 @@ export function useDoseGeneration() {
         const generateDoseInstances = httpsCallable(functions, 'generateDoseInstances');
         try {
           await generateDoseInstances({ days: 7 });
-          // scheduleDoseNotifications is a pubsub function — it runs on its own schedule every 15min
         } catch (error) {
-          console.error('[DoseGeneration] Error calling function:', error);
-          // Don't update localStorage on CF error so next open retries
-          return;
+          console.error('[DoseGeneration] Error calling CF:', error);
+          return; // Don't update localStorage so next open retries
         }
       }
 
