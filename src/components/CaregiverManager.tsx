@@ -106,12 +106,12 @@ export default function CaregiverManager() {
                 className="flex items-center justify-between p-3 border rounded-lg"
               >
                 <div className="flex-1">
-                  <p className="font-medium">{caregiver.email_or_phone}</p>
+                  <p className="font-medium">{caregiver.emailOrPhone}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <Badge variant={caregiver.role === 'helper' ? 'default' : 'secondary'}>
                       {caregiver.role === 'helper' ? t('caregiver.helperRole') : t('caregiver.viewerRole')}
                     </Badge>
-                    {caregiver.accepted_at ? (
+                    {caregiver.acceptedAt ? (
                       <Badge variant="outline" className="gap-1">
                         <CheckCircle className="h-3 w-3" />
                         {t('caregiver.activeStatus')}

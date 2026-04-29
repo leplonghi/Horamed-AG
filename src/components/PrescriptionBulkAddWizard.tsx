@@ -41,6 +41,7 @@ interface Props {
 export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, onClose }: Props) {
   const navigate = useNavigate();
   const { activeProfile } = useUserProfiles();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
@@ -127,7 +128,7 @@ export function PrescriptionBulkAddWizard({ prescriptionId, medications, open, o
           if (itemError || !item) throw itemError || new Error("Failed to create medication");
 
           // Create schedule
-          const times = presetSchedules[med.schedule_preset || med.schedulePreset].times;
+          const times = presetSchedules[med.schedulePreset].times;
           const { error: scheduleError } = await addDocument(`users/${userId}/schedules`, {
             itemId: item.id,
             freqType: "daily",

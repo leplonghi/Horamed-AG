@@ -89,7 +89,7 @@ const SplashScreen = ({ onComplete, minimumDisplayTime = 1000 }: SplashScreenPro
               className="w-44 h-auto drop-shadow-xl"
               loading="eager"
               decoding="async"
-              fetchpriority="high"
+              fetchPriority="high"
             />
           </motion.div>
 

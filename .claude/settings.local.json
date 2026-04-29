@@ -3,7 +3,18 @@
     "allow": [
       "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
       "Skill(commit-commands:commit-push-pr)",
-      "Skill(commit-commands:commit-push-pr:*)"
+      "Skill(commit-commands:commit-push-pr:*)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git pull *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git stash *)",
+      "Bash(git push *)",
+      "Bash(npx vite *)",
+      "Bash(firebase --version)",
+      "Bash(firebase projects:list)",
+      "Bash(node -e *)",
+      "Bash(npx madge *)"
     ]
   }
 }

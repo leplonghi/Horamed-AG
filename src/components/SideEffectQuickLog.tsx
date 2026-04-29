@@ -52,15 +52,15 @@ export function SideEffectQuickLog({
     setIsSubmitting(true);
     try {
       const input: SideEffectInput = {
-        dose_id: doseId,
-        item_id: itemId,
-        profile_id: profileId,
-        overall_feeling: overallFeeling,
-        energy_level: energyLevel,
-        pain_level: painLevel,
-        nausea_level: nauseaLevel,
-        sleep_quality: sleepQuality,
-        side_effect_tags: selectedTags,
+        doseId: doseId,
+        itemId: itemId,
+        profileId: profileId,
+        overallFeeling: overallFeeling,
+        energyLevel: energyLevel,
+        painLevel: painLevel,
+        nauseaLevel: nauseaLevel,
+        sleepQuality: sleepQuality,
+        sideEffectTags: selectedTags,
         notes: notes.trim() || undefined,
       };
 

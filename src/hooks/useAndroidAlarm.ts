@@ -13,6 +13,8 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { auth, db, fetchCollection, addDocument } from "@/integrations/firebase";
+import { where, orderBy } from "@/integrations/firebase";
+import { Dose } from "@/types/dose";
 import { toast } from "sonner";
 import { safeDateParse, safeGetTime } from "@/lib/safeDateUtils";
 

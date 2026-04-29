@@ -71,11 +71,11 @@ function InteractionItem({ interaction, t }: { interaction: MedicationInteractio
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-foreground">
-              {interaction.item_a_name}
+              {interaction.itemAName}
             </span>
             <span className="text-muted-foreground">+</span>
             <span className="font-semibold text-foreground">
-              {interaction.item_b_name}
+              {interaction.itemBName}
             </span>
             <Badge className={`${config.badge} text-xs`}>
               {config.label}

@@ -99,10 +99,11 @@ export default function HealthCalendar({ onDateSelect }: HealthCalendarProps) {
       return;
     }
 
+    // TODO: migrate to Firebase
+    return;
+
     try {
-      const { data, error } = await supabase.functions.invoke('google-calendar-sync', {
-        body: { action: 'sync' }
-      });
+      const { data, error } = await (null as any);
 
       if (error) throw error;
 
